@@ -1,0 +1,152 @@
+# ==========================================
+# .gitignore - Monorepo FullStack
+# NestJS (Backend) + Angular (Frontend)
+# ==========================================
+
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+**/node_modules/
+
+# ==========================================
+# Environment Variables
+# ==========================================
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+!.env.example
+
+# ==========================================
+# Build Outputs
+# ==========================================
+dist/
+build/
+out/
+backend/dist/
+frontend/dist/
+frontend/.angular/
+.next/
+
+# ==========================================
+# Prisma
+# ==========================================
+backend/prisma/migrations/
+!backend/prisma/migrations/.gitkeep
+*.db
+*.db-journal
+
+# ==========================================
+# IDE & Editors
+# ==========================================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+.DS_Store
+
+# ==========================================
+# Operating System
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Testing
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+junit.xml
+
+# ==========================================
+# Docker
+# ==========================================
+docker-compose.override.yml
+.dockerignore
+
+# ==========================================
+# Temporary Files
+# ==========================================
+*.tmp
+*.temp
+tmp/
+temp/
+.cache/
+
+# ==========================================
+# Package Managers
+# ==========================================
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# ==========================================
+# NestJS Specific
+# ==========================================
+backend/.env.test
+backend/.env.production
+
+# ==========================================
+# Angular Specific
+# ==========================================
+frontend/.angular/cache
+frontend/browserslist
+frontend/.sass-cache/
+frontend/connect.lock
+frontend/typings/
+
+# ==========================================
+# Compiled Output
+# ==========================================
+*.js.map
+*.d.ts.map
+
+# ==========================================
+# Misc
+# ==========================================
+.vscode-test
+.turbo
+*.tsbuildinfo
+.eslintcache

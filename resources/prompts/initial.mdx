@@ -1,0 +1,83 @@
+# Prompt: Generación de Arquitectura Monorepo FullStack (NestJS + Angular + Docker)
+
+**Rol:** Actúa como un Arquitecto de Software Senior y experto en DevOps.
+
+**Objetivo:** Necesito generar la estructura base (scaffolding) para un proyecto FullStack en un monorepo orientado a despliegue en producción.
+
+**Stack Tecnológico:**
+- **Backend:** NestJS (última versión) con Fastify.
+- **Frontend:** Angular (versión más reciente estable).
+- **Base de Datos:** MariaDB.
+- **Infraestructura:** Docker y Docker Compose.
+- **ORM:** Prisma.
+
+Por favor, genera los siguientes entregables basándote en los requerimientos detallados a continuación:
+
+## 1. Script de Inicialización (Bash)
+Genera un script de bash (`init.sh`) que automatice la creación de la siguiente estructura de directorios y la instalación de dependencias:
+
+### A. Directorio `backend`
+1.  Inicializar un proyecto NestJS.
+2.  Instalar y configurar **Fastify** (`@nestjs/platform-fastify`) para reemplazar Express.
+3.  Instalar dependencias de seguridad y autenticación:
+    - `@nestjs/passport`, `passport`, `@nestjs/jwt`, `passport-jwt`.
+    - `passport-local` (asumido para estrategia local).
+4.  Instalar **Prisma**: `prisma`, `@prisma/client`.
+5.  Instalar documentación: `@nestjs/swagger`, `swagger-ui-express` (o `fastify-swagger` si es necesario por compatibilidad).
+6.  Instalar configuración: `@nestjs/config`.
+
+### B. Directorio `frontend`
+1.  Crear el directorio `frontend`.
+2.  Crear dentro un archivo `proxy.conf.json` con el siguiente contenido:
+    ```json
+    {
+      "/api": {
+        "target": "http://localhost:3000",
+        "secure": false
+      }
+    }
+    ```
+
+### C. Directorio `docs`
+1.  Crear un directorio `docs` vacío para futura documentación.
+
+### D. Archivo Raíz `.gitignore`
+1.  Generar un `.gitignore` en la raíz que excluya `node_modules` tanto de la raíz como de los subdirectorios, archivos `.env`, `dist`, etc.
+
+---
+
+## 2. Archivos de Configuración Docker
+
+Provee el contenido completo para los siguientes archivos:
+
+### A. `docker-compose.yml` (Raíz - Producción)
+Debe orquestar tres servicios:
+1.  **`db`**: Imagen `mariadb:latest`.
+    - Variables: `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`.
+    - Volumen persistente en `/var/lib/mysql`.
+2.  **`backend`**:
+    - Contexto de build: `./backend`.
+    - Depende de: `db`.
+    - Puertos: `3000:3000`.
+    - Variables de entorno: `DATABASE_URL` (formateada para conectar al servicio `db`), `JWT_SECRET`.
+3.  **`frontend`**:
+    - Contexto de build: `./frontend`.
+    - Puertos: `80:80`.
+
+### B. `backend/Dockerfile`
+Un Dockerfile **Multi-stage** optimizado:
+- **Build:** Instalación de dependencias, generación del cliente de Prisma (`prisma generate`) y compilación (`npm run build`).
+- **Production:** Imagen ligera (node:alpine), copia solo los archivos necesarios del *build* y ejecuta la app.
+
+### C. `frontend/Dockerfile`
+Un Dockerfile **Multi-stage** para SPA:
+- **Stage 1 (Build):** Usa `node:latest`. Copia `package.json`, instala dependencias y compila la app Angular.
+- **Stage 2 (Serve):** Usa `nginx:alpine`. Copia el contenido de la carpeta `dist` generada en el Stage 1 a `/usr/share/nginx/html`.
+
+### D. `frontend/nginx.conf`
+Genera un archivo de configuración básico de Nginx para servir la SPA, asegurando que maneje el enrutamiento del lado del cliente (solución al problema de 404 al recargar):
+- Debe incluir la directiva `try_files $uri $uri/ /index.html;`.
+
+---
+
+**Nota Final:** Por favor, asegúrate de que los nombres de los servicios en el `docker-compose` coincidan con las cadenas de conexión en las variables de entorno sugeridas.
