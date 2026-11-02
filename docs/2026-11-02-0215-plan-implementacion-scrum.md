@@ -53,6 +53,19 @@ Un sistema donde cada **denominación** gestiona sus **sedes o congregaciones**,
 - [ ] Si cambia el esquema: migración revisada a mano, con sus reglas `CHECK` si aplica.
 - [ ] Revisión de código aprobada.
 
+### Flujo de trabajo con Git
+
+Se sigue GitHub Flow: `main` siempre está desplegable y todo cambio entra por un pull request corto.
+
+| Regla | Definición |
+|---|---|
+| Rama principal | `main`, protegida: sin push directo; fusionar exige CI en verde (TEC-01) y una revisión aprobada |
+| Ramas de trabajo | Una por historia o tarea técnica, creada desde `main` y de vida corta (días, no semanas). Nunca una rama por sprint |
+| Nombre | `<tipo>/<id-historia>-<descripcion-corta>`, en inglés y en minúsculas: `feat/a-01-login`, `fix/c-04-duplicate-member`, `chore/tec-01-ci-pipeline` |
+| Tipos | Los de Conventional Commits: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci` |
+| Fusión | *Squash merge*: un commit por historia en `main`, con el mensaje en Conventional Commits. La rama se borra al fusionar |
+| Seguimiento del sprint | En el tablero (GitHub Projects o milestone por sprint), no en ramas. Al cerrar el sprint se etiqueta `main` (`v0.1.0`, `v0.2.0`…) si se despliega |
+
 ## 3. Decisiones de arquitectura
 
 | # | Decisión | Alternativa descartada | Motivo |
