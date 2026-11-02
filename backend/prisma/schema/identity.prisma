@@ -1,0 +1,154 @@
+// ==========================================
+// Identidad y acceso: multiusuario con roles por alcance
+// Un usuario puede tener roles en varias denominaciones o sedes.
+// ==========================================
+
+enum RoleScope {
+  PLATFORM
+  DENOMINATION
+  CONGREGATION
+}
+
+enum UserTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique @db.VarChar(191)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  displayName         String?   @map("display_name") @db.VarChar(150)
+  isActive            Boolean   @default(true) @map("is_active")
+  emailVerifiedAt     DateTime? @map("email_verified_at")
+  lastLoginAt         DateTime? @map("last_login_at")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  roleAssignments       UserRole[]              @relation("UserRoleUser")
+  grantedRoles          UserRole[]              @relation("UserRoleGrantor")
+  reviewedApplications  MembershipApplication[] @relation("ApplicationReviewer")
+  recordedContributions Contribution[]          @relation("ContributionRecorder")
+  voidedContributions   Contribution[]          @relation("ContributionVoider")
+  cashTransactions      CashTransaction[]
+  titheSettlements      TitheSettlement[]
+  refreshTokens         RefreshToken[]
+  userTokens            UserToken[]
+  people                Person[]
+  memberStatusHistories MemberStatusHistory[]
+  memberTransfers       MemberTransfer[]
+
+  @@map("users")
+}
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(50)
+  name            String           @db.VarChar(100)
+  description     String?          @db.VarChar(255)
+  isSystem        Boolean          @default(false) @map("is_system")
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(80)
+  description     String?          @db.VarChar(255)
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// `scopeKey` garantiza la unicidad, porque un índice único admite varios NULL:
+/// "P" para plataforma, "D:<denominationId>" o "C:<congregationId>".
+/// `activeKey` vale 1 mientras el rol está vigente y NULL al revocarlo, para poder concederlo de nuevo.
+/// La coherencia de ambos campos se exige en sql/constraints.sql.
+model UserRole {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
+  roleId         Int       @map("role_id")
+  scope          RoleScope
+  denominationId Int?      @map("denomination_id")
+  congregationId Int?      @map("congregation_id")
+  scopeKey       String    @map("scope_key") @db.VarChar(40)
+  activeKey      Boolean?  @default(true) @map("active_key")
+  grantedById    Int?      @map("granted_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+
+  user         User          @relation("UserRoleUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  role         Role          @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  denomination Denomination? @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  congregation Congregation? @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  grantedBy    User?         @relation("UserRoleGrantor", fields: [grantedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([userId, roleId, scopeKey, activeKey])
+  @@index([denominationId, congregationId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  family    String    @db.VarChar(36)
+  tokenHash String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+model UserToken {
+  id        Int           @id @default(autoincrement())
+  userId    Int           @map("user_id")
+  type      UserTokenType
+  tokenHash String        @unique @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime      @map("expires_at")
+  usedAt    DateTime?     @map("used_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId, type])
+  @@map("user_tokens")
+}
+
+/// Registro de solo inserción. Sin FK para que sobreviva a cambios en usuarios, denominaciones o sedes.
+/// `changes` nunca debe contener datos sensibles en claro.
+model AuditLog {
+  id             BigInt   @id @default(autoincrement())
+  userId         Int?     @map("user_id")
+  denominationId Int?     @map("denomination_id")
+  congregationId Int?     @map("congregation_id")
+  entity         String   @db.VarChar(80)
+  entityId       String   @map("entity_id") @db.VarChar(40)
+  action         String   @db.VarChar(40)
+  changes        Json?
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([denominationId, entity, entityId])
+  @@index([denominationId, createdAt])
+  @@index([congregationId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

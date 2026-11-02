@@ -1,0 +1,378 @@
+// ==========================================
+// Contabilidad: libro de caja por sede y fondo, aportes y presupuesto
+// Dinero en Decimal(14,2), nunca Float. Los registros no se borran: se anulan o se revierten.
+// Las FK incluyen denominationId y congregationId, para que comprobantes, movimientos y aportes
+// pertenezcan a la misma sede.
+// ==========================================
+
+enum AccountNature {
+  INCOME
+  EXPENSE
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+}
+
+/// Sentido del dinero. Una reversa usa el sentido contrario al del movimiento original.
+enum CashDirection {
+  IN
+  OUT
+}
+
+/// Determina el comportamiento: solo TITHE entra en la liquidación y solo VOW admite compromiso.
+enum ContributionCategory {
+  TITHE
+  OFFERING
+  FIRST_FRUITS
+  VOW
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  BANK_DEPOSIT
+  OTHER
+}
+
+enum ContributionStatus {
+  RECORDED
+  VOIDED
+}
+
+enum VowPledgeStatus {
+  ACTIVE
+  FULFILLED
+  CANCELLED
+}
+
+enum TitheSettlementStatus {
+  ISSUED
+  VOIDED
+}
+
+enum BudgetType {
+  FIXED
+  COMMITTEE
+}
+
+enum BudgetStatus {
+  DRAFT
+  APPROVED
+  CLOSED
+}
+
+/// Fondos o comités: Fondo Local, Dorcas, Jóvenes, Escuela Dominical, Construcción...
+model Fund {
+  id                  Int                  @id @default(autoincrement())
+  denominationId      Int                  @map("denomination_id")
+  name                String               @db.VarChar(120)
+  isActive            Boolean              @default(true) @map("is_active")
+  denomination        Denomination         @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accounts            Account[]
+  fundOpeningBalances FundOpeningBalance[]
+  cashTransactions    CashTransaction[]
+  budgetLines         BudgetLine[]
+
+  @@unique([denominationId, name])
+  @@unique([denominationId, id])
+  @@map("funds")
+}
+
+/// Plan de cuentas. `legacyCode` no es único: en los Excel un grupo y su hijo comparten código.
+/// `defaultFundId` es solo una sugerencia: el fondo real se guarda en cada movimiento.
+model Account {
+  id             Int           @id @default(autoincrement())
+  denominationId Int           @map("denomination_id")
+  defaultFundId  Int?          @map("default_fund_id")
+  parentId       Int?          @map("parent_id")
+  code           String        @db.VarChar(20)
+  legacyCode     String?       @map("legacy_code") @db.VarChar(20)
+  name           String        @db.VarChar(150)
+  nature         AccountNature
+  /// Los grupos no reciben movimientos.
+  isPostable     Boolean       @default(true) @map("is_postable")
+  isActive       Boolean       @default(true) @map("is_active")
+
+  denomination      Denomination       @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  defaultFund       Fund?              @relation(fields: [denominationId, defaultFundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  parent            Account?           @relation("AccountHierarchy", fields: [denominationId, parentId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  children          Account[]          @relation("AccountHierarchy")
+  contributionTypes ContributionType[]
+  cashTransactions  CashTransaction[]
+  budgetLines       BudgetLine[]
+
+  @@unique([denominationId, code])
+  @@unique([denominationId, id])
+  @@map("accounts")
+}
+
+/// Diezmo, ofrenda, primicia, voto u otros que defina cada denominación.
+model ContributionType {
+  id             Int                  @id @default(autoincrement())
+  denominationId Int                  @map("denomination_id")
+  category       ContributionCategory
+  code           String               @db.VarChar(30)
+  name           String               @db.VarChar(100)
+  accountId      Int                  @map("account_id")
+  isActive       Boolean              @default(true) @map("is_active")
+
+  denomination  Denomination   @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  account       Account        @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  vowPledges    VowPledge[]
+  contributions Contribution[]
+
+  @@unique([denominationId, code])
+  @@unique([denominationId, id])
+  @@map("contribution_types")
+}
+
+/// Saldo arrastrado de un fondo al iniciar un año. Los saldos mensuales se calculan.
+model FundOpeningBalance {
+  denominationId Int          @map("denomination_id")
+  congregationId Int          @map("congregation_id")
+  fundId         Int          @map("fund_id")
+  year           Int
+  amount         Decimal      @db.Decimal(14, 2)
+  congregation   Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund           Fund         @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([congregationId, fundId, year])
+  @@map("fund_opening_balances")
+}
+
+model AccountingPeriod {
+  id               Int               @id @default(autoincrement())
+  denominationId   Int               @map("denomination_id")
+  congregationId   Int               @map("congregation_id")
+  year             Int
+  month            Int
+  status           PeriodStatus      @default(OPEN)
+  closedAt         DateTime?         @map("closed_at")
+  congregation     Congregation      @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransactions CashTransaction[]
+
+  @@unique([congregationId, year, month])
+  @@unique([denominationId, congregationId, id])
+  @@map("accounting_periods")
+}
+
+/// Comprobante.
+model Voucher {
+  id               Int               @id @default(autoincrement())
+  denominationId   Int               @map("denomination_id")
+  congregationId   Int               @map("congregation_id")
+  type             String            @db.VarChar(30)
+  number           Int
+  issuedOn         DateTime          @map("issued_on") @db.Date
+  signerId         Int?              @map("signer_id")
+  voidedAt         DateTime?         @map("voided_at")
+  voidReason       String?           @map("void_reason") @db.VarChar(255)
+  congregation     Congregation      @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  signer           Person?           @relation(fields: [denominationId, signerId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransactions CashTransaction[]
+  contributions    Contribution[]
+  titheSettlement  TitheSettlement?
+
+  @@unique([congregationId, type, number])
+  @@unique([denominationId, congregationId, id])
+  @@map("vouchers")
+}
+
+/// Libro de caja. `amount` siempre es positivo (sql/constraints.sql); el sentido lo da `direction`.
+/// Se corrige con una reversa: misma cuenta, fondo e importe, y sentido contrario (regla de aplicación).
+/// Que `postedOn` caiga dentro del periodo y que este siga abierto también se valida en la aplicación.
+model CashTransaction {
+  id             Int           @id @default(autoincrement())
+  denominationId Int           @map("denomination_id")
+  congregationId Int           @map("congregation_id")
+  periodId       Int           @map("period_id")
+  accountId      Int           @map("account_id")
+  fundId         Int           @map("fund_id")
+  voucherId      Int?          @map("voucher_id")
+  direction      CashDirection
+  postedOn       DateTime      @map("posted_on") @db.Date
+  amount         Decimal       @db.Decimal(14, 2)
+  description    String        @db.VarChar(255)
+  reversalOfId   Int?          @map("reversal_of_id")
+  createdById    Int           @map("created_by_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  period        AccountingPeriod @relation(fields: [denominationId, congregationId, periodId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  account       Account          @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund          Fund             @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher       Voucher?         @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  reversalOf    CashTransaction? @relation("TransactionReversal", fields: [denominationId, congregationId, reversalOfId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  reversedBy    CashTransaction? @relation("TransactionReversal")
+  createdBy     User             @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  contributions Contribution[]
+
+  @@unique([denominationId, congregationId, id])
+  @@unique([denominationId, congregationId, reversalOfId])
+  @@index([periodId, postedOn])
+  @@index([accountId, postedOn])
+  @@index([fundId, postedOn])
+  @@map("cash_transactions")
+}
+
+/// Promesa de un voto. Sus pagos son aportes con `vowPledgeId`; lo abonado no se guarda, se calcula.
+/// Un miembro trasladado puede pagar en su nueva sede un voto hecho en la anterior.
+model VowPledge {
+  id                 Int             @id @default(autoincrement())
+  denominationId     Int             @map("denomination_id")
+  congregationId     Int             @map("congregation_id")
+  personId           Int             @map("person_id")
+  contributionTypeId Int             @map("contribution_type_id")
+  description        String?         @db.VarChar(255)
+  pledgedAmount      Decimal         @map("pledged_amount") @db.Decimal(14, 2)
+  pledgedOn          DateTime        @map("pledged_on") @db.Date
+  dueOn              DateTime?       @map("due_on") @db.Date
+  status             VowPledgeStatus @default(ACTIVE)
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  congregation     Congregation     @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  person           Person           @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributionType ContributionType @relation(fields: [denominationId, contributionTypeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributions    Contribution[]
+
+  @@unique([denominationId, id])
+  @@unique([denominationId, personId, contributionTypeId, id])
+  @@index([personId, status])
+  @@index([congregationId, status])
+  @@map("vow_pledges")
+}
+
+/// Diezmo, ofrenda, primicia o pago de voto. Dato muy sensible: exige permiso específico.
+/// `personId` nulo representa un aporte anónimo o una colecta agregada.
+/// Varios aportes pueden consolidarse en un mismo movimiento de caja.
+/// El pago de un voto debe ser de la misma persona y el mismo tipo que el compromiso.
+model Contribution {
+  id                 Int                @id @default(autoincrement())
+  denominationId     Int                @map("denomination_id")
+  congregationId     Int                @map("congregation_id")
+  contributionTypeId Int                @map("contribution_type_id")
+  personId           Int?               @map("person_id")
+  vowPledgeId        Int?               @map("vow_pledge_id")
+  cashTransactionId  Int?               @map("cash_transaction_id")
+  voucherId          Int?               @map("voucher_id")
+  titheSettlementId  Int?               @map("tithe_settlement_id")
+  receivedOn         DateTime           @map("received_on") @db.Date
+  amount             Decimal            @db.Decimal(14, 2)
+  paymentMethod      PaymentMethod      @default(CASH) @map("payment_method")
+  paymentReference   String?            @map("payment_reference") @db.VarChar(80)
+  notes              String?            @db.VarChar(255)
+  status             ContributionStatus @default(RECORDED)
+  recordedById       Int                @map("recorded_by_id")
+  voidedById         Int?               @map("voided_by_id")
+  voidedAt           DateTime?          @map("voided_at")
+  voidReason         String?            @map("void_reason") @db.VarChar(255)
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  congregation     Congregation     @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributionType ContributionType @relation(fields: [denominationId, contributionTypeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  person           Person?          @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  vowPledge        VowPledge?       @relation(fields: [denominationId, personId, contributionTypeId, vowPledgeId], references: [denominationId, personId, contributionTypeId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransaction  CashTransaction? @relation(fields: [denominationId, congregationId, cashTransactionId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher          Voucher?         @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  titheSettlement  TitheSettlement? @relation(fields: [denominationId, congregationId, titheSettlementId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  recordedBy       User             @relation("ContributionRecorder", fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  voidedBy         User?            @relation("ContributionVoider", fields: [voidedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([congregationId, receivedOn])
+  @@index([congregationId, contributionTypeId, receivedOn])
+  @@index([denominationId, receivedOn])
+  @@index([personId, receivedOn])
+  @@index([vowPledgeId])
+  @@index([cashTransactionId])
+  @@index([titheSettlementId])
+  @@map("contributions")
+}
+
+/// Porcentajes de liquidación del diezmo por vigencia (en las fuentes, 21 % nacional y 3 % fondo local).
+/// nationalShare = bruto × nationalShareRate
+/// localFundShare = (bruto − nationalShare) × localFundRate
+/// pastorNet = bruto − nationalShare − localFundShare
+model TitheSettlementRule {
+  id                Int          @id @default(autoincrement())
+  denominationId    Int          @map("denomination_id")
+  effectiveFrom     DateTime     @map("effective_from") @db.Date
+  nationalShareRate Decimal      @map("national_share_rate") @db.Decimal(5, 4)
+  localFundRate     Decimal      @map("local_fund_rate") @db.Decimal(5, 4)
+  denomination      Denomination @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([denominationId, effectiveFrom])
+  @@map("tithe_settlement_rules")
+}
+
+/// Documento emitido: copia porcentajes e importes para que un cambio futuro no altere el pasado.
+/// Los aportes liquidados apuntan aquí. Que los rangos no se solapen se valida en la aplicación.
+model TitheSettlement {
+  id                Int                   @id @default(autoincrement())
+  denominationId    Int                   @map("denomination_id")
+  congregationId    Int                   @map("congregation_id")
+  voucherId         Int?                  @map("voucher_id")
+  pastorId          Int?                  @map("pastor_id")
+  settledOn         DateTime              @map("settled_on") @db.Date
+  coveredFrom       DateTime              @map("covered_from") @db.Date
+  coveredTo         DateTime              @map("covered_to") @db.Date
+  grossTithe        Decimal               @map("gross_tithe") @db.Decimal(14, 2)
+  nationalShareRate Decimal               @map("national_share_rate") @db.Decimal(5, 4)
+  localFundRate     Decimal               @map("local_fund_rate") @db.Decimal(5, 4)
+  nationalShare     Decimal               @map("national_share") @db.Decimal(14, 2)
+  localFundShare    Decimal               @map("local_fund_share") @db.Decimal(14, 2)
+  pastorNet         Decimal               @map("pastor_net") @db.Decimal(14, 2)
+  status            TitheSettlementStatus @default(ISSUED)
+  voidedById        Int?                  @map("voided_by_id")
+  voidedAt          DateTime?             @map("voided_at")
+  voidReason        String?               @map("void_reason") @db.VarChar(255)
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  congregation  Congregation   @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher       Voucher?       @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  pastor        Person?        @relation(fields: [denominationId, pastorId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voidedBy      User?          @relation(fields: [voidedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  contributions Contribution[]
+
+  @@unique([denominationId, congregationId, id])
+  @@unique([denominationId, congregationId, voucherId])
+  @@index([congregationId, settledOn])
+  @@index([congregationId, coveredFrom, coveredTo])
+  @@map("tithe_settlements")
+}
+
+/// Presupuesto fijo y presupuesto por comités, como en los Excel.
+model Budget {
+  id                 Int          @id @default(autoincrement())
+  denominationId     Int          @map("denomination_id")
+  congregationId     Int          @map("congregation_id")
+  year               Int
+  type               BudgetType
+  incomeIncreaseRate Decimal?     @map("income_increase_rate") @db.Decimal(5, 4)
+  status             BudgetStatus @default(DRAFT)
+  congregation       Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  budgetLines        BudgetLine[]
+
+  @@unique([congregationId, year, type])
+  @@unique([denominationId, id])
+  @@map("budgets")
+}
+
+/// `monthlyAmount` es opcional: algunos conceptos de los Excel no son 12 veces el valor mensual.
+model BudgetLine {
+  id             Int      @id @default(autoincrement())
+  denominationId Int      @map("denomination_id")
+  budgetId       Int      @map("budget_id")
+  accountId      Int      @map("account_id")
+  fundId         Int      @map("fund_id")
+  monthlyAmount  Decimal? @map("monthly_amount") @db.Decimal(14, 2)
+  annualAmount   Decimal  @map("annual_amount") @db.Decimal(14, 2)
+  budget         Budget   @relation(fields: [denominationId, budgetId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  account        Account  @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund           Fund     @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([budgetId, accountId, fundId])
+  @@map("budget_lines")
+}

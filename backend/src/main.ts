@@ -1,75 +1,44 @@
+import './config/load-environment.js';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import helmet from '@fastify/helmet';
-import compression from '@fastify/compress';
+import { AppModule } from './app.module.js';
+import { API_PREFIX, configureApp } from './bootstrap/configure-app.js';
+import { SmartLogger } from './common/logging/smart-logger.service.js';
+import { Environment, validateEnvironment } from './config/environment.js';
 
-async function bootstrap() {
-  // Crear aplicación con Fastify adapter
+async function bootstrap(): Promise<void> {
+  // The adapter is created before the DI container exists, so the environment is read here.
+  const environment = validateEnvironment(process.env);
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: true }),
-  );
-
-  // Configurar Helmet para seguridad (headers HTTP)
-  await app.register(helmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: [`'self'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-        scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
-      },
-    },
-  });
-
-  // Configurar compresión de respuestas
-  await app.register(compression, { encodings: ['gzip', 'deflate'] });
-
-  // Configurar CORS
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
-    credentials: true,
-  });
-
-  // Configurar prefijo global para API
-  app.setGlobalPrefix('api');
-
-  // Configurar validación global
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
+    new FastifyAdapter({
+      bodyLimit: environment.BODY_LIMIT_BYTES,
+      trustProxy: environment.TRUST_PROXY,
     }),
+    { bufferLogs: true },
   );
 
-  // Configurar Swagger
-  const config = new DocumentBuilder()
-    .setTitle('FullStack API')
-    .setDescription('API Documentation - NestJS + Fastify + Prisma')
-    .setVersion('1.0')
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('users', 'User management endpoints')
-    .addBearerAuth()
-    .build();
+  const logger = app.get(SmartLogger);
+  app.useLogger(logger);
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  await configureApp(app);
 
-  // Iniciar servidor
-  const port = process.env.PORT || 3000;
+  const port = app
+    .get<ConfigService<Environment, true>>(ConfigService)
+    .get('PORT', { infer: true });
   await app.listen(port, '0.0.0.0');
-
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  logger.log(`API listening on port ${port} under /${API_PREFIX}`, 'Bootstrap');
 }
-bootstrap();
+
+bootstrap().catch((error: unknown) => {
+  // The logger may not exist yet, and a failed start must be visible and exit with an error.
+  process.stderr.write(
+    `Failed to start: ${error instanceof Error ? error.message : String(error)}\n`,
+  );
+  process.exit(1);
+});

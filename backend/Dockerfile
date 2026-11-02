@@ -1,93 +1,33 @@
-# ==========================================
-# Multi-Stage Dockerfile - Backend NestJS
-# Optimizado para Producción con Fastify
-# ==========================================
+# Multi-stage: builder -> migrator (migraciones + catálogos) / production (API)
 
-# ==========================================
-# STAGE 1: Build
-# ==========================================
-FROM node:20-alpine AS builder
-
-# Metadata
-LABEL maintainer="Arquitecto de Software Senior"
-LABEL description="Backend NestJS con Fastify y Prisma - Build Stage"
-
-# Instalar dependencias del sistema necesarias para Prisma
-RUN apk add --no-cache openssl libc6-compat
-
-# Establecer directorio de trabajo
+FROM node:22.23-alpine AS builder
 WORKDIR /app
-
-# Copiar archivos de dependencias
 COPY package*.json ./
-COPY tsconfig*.json ./
-
-# Instalar dependencias (incluidas devDependencies para el build)
-RUN npm ci --quiet
-
-# Copiar el esquema de Prisma
-COPY prisma ./prisma
-
-# Generar Prisma Client
-RUN npx prisma generate
-
-# Copiar el código fuente
+RUN npm ci --include=dev --quiet
 COPY . .
-
-# Compilar la aplicación NestJS
+RUN npx prisma generate
 RUN npm run build
 
-# Limpiar devDependencies para reducir tamaño
-RUN npm prune --production
+# Conserva el CLI de Prisma y tsx, que no se incluyen en la imagen de la API.
+# El seed es idempotente: solo crea o actualiza catálogos globales.
+FROM builder AS migrator
+RUN apk add --no-cache openssl
+USER node
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
 
-# ==========================================
-# STAGE 2: Production
-# ==========================================
-FROM node:20-alpine AS production
+FROM builder AS pruned
+RUN npm prune --omit=dev
 
-# Metadata
-LABEL maintainer="Arquitecto de Software Senior"
-LABEL description="Backend NestJS con Fastify y Prisma - Production Stage"
-
-# Instalar dependencias del sistema para runtime de Prisma
-RUN apk add --no-cache openssl libc6-compat dumb-init
-
-# Crear usuario no-root por seguridad
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
-
-# Establecer directorio de trabajo
+FROM node:22.23-alpine AS production
+RUN apk add --no-cache dumb-init
 WORKDIR /app
-
-# Copiar package.json para tener metadata
-COPY --chown=nestjs:nodejs package*.json ./
-
-# Copiar node_modules de producción del stage builder
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-
-# Copiar el código compilado
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-
-# Copiar el esquema de Prisma y archivos generados
-COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-
-# Cambiar a usuario no-root
-USER nestjs
-
-# Exponer puerto (Fastify por defecto usa 3000)
-EXPOSE 3000
-
-# Variables de entorno por defecto
 ENV NODE_ENV=production
-ENV PORT=3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Usar dumb-init para manejar señales correctamente
+COPY --from=pruned --chown=node:node /app/package*.json ./
+COPY --from=pruned --chown=node:node /app/node_modules ./node_modules
+COPY --from=pruned --chown=node:node /app/dist ./dist
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 ENTRYPOINT ["dumb-init", "--"]
-
-# Comando de inicio
 CMD ["node", "dist/main.js"]

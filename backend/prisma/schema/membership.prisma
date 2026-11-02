@@ -1,0 +1,530 @@
+// ==========================================
+// Membresía: personas, miembros y formulario público de inscripción
+// La persona pertenece a una denominación: los datos no se comparten entre denominaciones.
+// ==========================================
+
+enum Sex {
+  FEMALE
+  MALE
+}
+
+enum ContactType {
+  LANDLINE
+  MOBILE
+  EMAIL
+  WORK_PHONE
+}
+
+/// El cónyuge no está aquí: su única fuente de verdad es Marriage.
+enum FamilyRelationType {
+  FATHER
+  MOTHER
+  CHILD
+  GUARDIAN
+}
+
+enum StudyStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  DECEASED
+}
+
+enum TransferStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  DUPLICATE
+}
+
+enum ConsentChannel {
+  WEB_FORM
+  PAPER
+}
+
+// Catálogos globales: su valor no depende de la iglesia.
+
+model DocumentType {
+  id                     Int                     @id @default(autoincrement())
+  code                   String                  @unique @db.VarChar(10)
+  name                   String                  @db.VarChar(80)
+  people                 Person[]
+  membershipApplications MembershipApplication[]
+
+  @@map("document_types")
+}
+
+model MaritalStatus {
+  id     Int      @id @default(autoincrement())
+  code   String   @unique @db.VarChar(20)
+  name   String   @db.VarChar(80)
+  people Person[]
+
+  @@map("marital_statuses")
+}
+
+model EducationLevel {
+  id     Int      @id @default(autoincrement())
+  code   String   @unique @db.VarChar(20)
+  name   String   @db.VarChar(80)
+  people Person[]
+
+  @@map("education_levels")
+}
+
+/// Unifica las tablas del diccionario: cursos, técnicos, universitarios, iniciales,
+/// teológicos y educación cristiana (C 101 a C 401).
+model StudyType {
+  id      Int     @id @default(autoincrement())
+  code    String  @unique @db.VarChar(30)
+  name    String  @db.VarChar(80)
+  studies Study[]
+
+  @@map("study_types")
+}
+
+// Catálogos por denominación.
+
+/// Grado pastoral.
+model PastoralRank {
+  id             Int          @id @default(autoincrement())
+  denominationId Int          @map("denomination_id")
+  name           String       @db.VarChar(80)
+  isActive       Boolean      @default(true) @map("is_active")
+  denomination   Denomination @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  members        Member[]
+
+  @@unique([denominationId, name])
+  @@unique([denominationId, id])
+  @@map("pastoral_ranks")
+}
+
+model Study {
+  id             Int           @id @default(autoincrement())
+  denominationId Int           @map("denomination_id")
+  studyTypeId    Int           @map("study_type_id")
+  name           String        @db.VarChar(150)
+  isActive       Boolean       @default(true) @map("is_active")
+  denomination   Denomination  @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  studyType      StudyType     @relation(fields: [studyTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  personStudies  PersonStudy[]
+
+  @@unique([denominationId, studyTypeId, name])
+  @@unique([denominationId, id])
+  @@map("studies")
+}
+
+/// Cargo dentro de la iglesia.
+model ChurchPosition {
+  id              Int              @id @default(autoincrement())
+  denominationId  Int              @map("denomination_id")
+  name            String           @db.VarChar(120)
+  isActive        Boolean          @default(true) @map("is_active")
+  denomination    Denomination     @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  memberPositions MemberPosition[]
+
+  @@unique([denominationId, name])
+  @@unique([denominationId, id])
+  @@map("church_positions")
+}
+
+/// `fullName` admite parientes de los que las fuentes solo traen un nombre en una celda.
+/// Tipo y número de documento van juntos (sql/constraints.sql): sin tipo, el índice único no protege.
+/// Los campos `*Text` guardan lugares que no se pueden identificar en el catálogo.
+model Person {
+  id                     Int       @id @default(autoincrement())
+  denominationId         Int       @map("denomination_id")
+  userId                 Int?      @map("user_id")
+  documentTypeId         Int?      @map("document_type_id")
+  documentNumber         String?   @map("document_number") @db.VarChar(30)
+  documentIssuePlaceId   Int?      @map("document_issue_place_id")
+  documentIssuePlaceText String?   @map("document_issue_place_text") @db.VarChar(150)
+  fullName               String?   @map("full_name") @db.VarChar(200)
+  firstName              String?   @map("first_name") @db.VarChar(100)
+  lastName               String?   @map("last_name") @db.VarChar(80)
+  secondLastName         String?   @map("second_last_name") @db.VarChar(80)
+  sex                    Sex?
+  birthDate              DateTime? @map("birth_date") @db.Date
+  birthPlaceId           Int?      @map("birth_place_id")
+  birthPlaceText         String?   @map("birth_place_text") @db.VarChar(150)
+  maritalStatusId        Int?      @map("marital_status_id")
+  educationLevelId       Int?      @map("education_level_id")
+  lastGradeCompleted     Int?      @map("last_grade_completed")
+  profession             String?   @db.VarChar(120)
+  occupation             String?   @db.VarChar(120)
+  workplace              String?   @db.VarChar(150)
+  childrenCount          Int?      @map("children_count")
+  photoPath              String?   @map("photo_path") @db.VarChar(255)
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
+
+  denomination       Denomination    @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user               User?           @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  documentType       DocumentType?   @relation(fields: [documentTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  documentIssuePlace Municipality?   @relation("PersonDocumentIssuePlace", fields: [documentIssuePlaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  birthPlace         Municipality?   @relation("PersonBirthPlace", fields: [birthPlaceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  maritalStatus      MaritalStatus?  @relation(fields: [maritalStatusId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  educationLevel     EducationLevel? @relation(fields: [educationLevelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  socioeconomicProfile          SocioeconomicProfile?
+  familyRelations               FamilyRelation[]        @relation("FamilyRelationPerson")
+  relatedToFamilyRelations      FamilyRelation[]        @relation("FamilyRelationRelative")
+  member                        Member?                 @relation("MemberPerson")
+  baptismsPerformed             Member[]                @relation("MemberBaptizingPastor")
+  consents                      DataConsent[]           @relation("ConsentPerson")
+  consentsAsGuardian            DataConsent[]           @relation("ConsentGuardian")
+  marriagesAsSpouse1            Marriage[]              @relation("MarriageSpouse1")
+  marriagesAsSpouse2            Marriage[]              @relation("MarriageSpouse2")
+  dedications                   ChildDedication[]       @relation("DedicationChild")
+  dedicationsPerformed          ChildDedication[]       @relation("DedicationPastor")
+  certificatesSignedAsPastor    Certificate[]           @relation("CertificatePastorSigner")
+  certificatesSignedAsSecretary Certificate[]           @relation("CertificateSecretarySigner")
+  vouchers                      Voucher[]
+  vowPledges                    VowPledge[]
+  contributions                 Contribution[]
+  titheSettlements              TitheSettlement[]
+  personAddresses               PersonAddress[]
+  personContacts                PersonContact[]
+  personStudies                 PersonStudy[]
+  personAttachments             PersonAttachment[]
+  membershipApplications        MembershipApplication[]
+  pastoralTerms                 PastoralTerm[]
+
+  @@unique([denominationId, id])
+  @@unique([denominationId, documentTypeId, documentNumber])
+  @@unique([denominationId, userId])
+  @@index([denominationId, documentNumber])
+  @@index([denominationId, lastName, firstName])
+  @@index([denominationId, birthDate])
+  @@map("persons")
+}
+
+model PersonAddress {
+  id             Int           @id @default(autoincrement())
+  denominationId Int           @map("denomination_id")
+  personId       Int           @map("person_id")
+  municipalityId Int?          @map("municipality_id")
+  neighborhoodId Int?          @map("neighborhood_id")
+  address        String        @db.VarChar(200)
+  isCurrent      Boolean       @default(true) @map("is_current")
+  person         Person        @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  neighborhood   Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([personId, isCurrent])
+  @@map("person_addresses")
+}
+
+model PersonContact {
+  id             Int         @id @default(autoincrement())
+  denominationId Int         @map("denomination_id")
+  personId       Int         @map("person_id")
+  type           ContactType
+  value          String      @db.VarChar(191)
+  isPrimary      Boolean     @default(false) @map("is_primary")
+  person         Person      @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([personId, type])
+  @@index([denominationId, value])
+  @@map("person_contacts")
+}
+
+/// Separada de Person para exigir un permiso específico. Son afiliaciones SI/NO, no datos médicos.
+model SocioeconomicProfile {
+  personId                    Int      @id @map("person_id")
+  denominationId              Int      @map("denomination_id")
+  hasHealthCoverage           Boolean? @map("has_health_coverage")
+  hasPension                  Boolean? @map("has_pension")
+  hasOccupationalRiskCoverage Boolean? @map("has_occupational_risk_coverage")
+  isSubsidizedRegime          Boolean? @map("is_subsidized_regime")
+  hasFamilyCompensation       Boolean? @map("has_family_compensation")
+  /// Nivel SISBEN.
+  sisbenLevel                 Int?     @map("sisben_level")
+  isDisplaced                 Boolean? @map("is_displaced")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+  person                      Person   @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([denominationId, personId])
+  @@map("socioeconomic_profiles")
+}
+
+model FamilyRelation {
+  id             Int                @id @default(autoincrement())
+  denominationId Int                @map("denomination_id")
+  personId       Int                @map("person_id")
+  relativeId     Int                @map("relative_id")
+  type           FamilyRelationType
+  person         Person             @relation("FamilyRelationPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  relative       Person             @relation("FamilyRelationRelative", fields: [denominationId, relativeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([personId, relativeId, type])
+  @@map("family_relations")
+}
+
+model PersonStudy {
+  id             Int         @id @default(autoincrement())
+  denominationId Int         @map("denomination_id")
+  personId       Int         @map("person_id")
+  studyId        Int         @map("study_id")
+  status         StudyStatus @default(COMPLETED)
+  completedOn    DateTime?   @map("completed_on") @db.Date
+  person         Person      @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  study          Study       @relation(fields: [denominationId, studyId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([personId, studyId])
+  @@map("person_studies")
+}
+
+/// `congregationId` es la sede actual. El registro de cada sede vive en MemberRegistryEntry.
+model Member {
+  id                          Int          @id @default(autoincrement())
+  denominationId              Int          @map("denomination_id")
+  personId                    Int          @unique @map("person_id")
+  congregationId              Int          @map("congregation_id")
+  status                      MemberStatus @default(ACTIVE)
+  joinedOn                    DateTime?    @map("joined_on") @db.Date
+  convertedOn                 DateTime?    @map("converted_on") @db.Date
+  /// NULL significa desconocido: los formularios marcan el bautizo sin dar siempre la fecha.
+  isBaptized                  Boolean?     @map("is_baptized")
+  waterBaptismOn              DateTime?    @map("water_baptism_on") @db.Date
+  baptismPlace                String?      @map("baptism_place") @db.VarChar(150)
+  baptizingPastorId           Int?         @map("baptizing_pastor_id")
+  holySpiritBaptismOn         DateTime?    @map("holy_spirit_baptism_on") @db.Date
+  reconciledOn                DateTime?    @map("reconciled_on") @db.Date
+  previousCongregationName    String?      @map("previous_congregation_name") @db.VarChar(150)
+  pastoralRankId              Int?         @map("pastoral_rank_id")
+  isChristianEducationTeacher Boolean      @default(false) @map("is_christian_education_teacher")
+  /// Campos o áreas de servicio que desea, según el formulario.
+  desiredAreas                String?      @map("desired_areas") @db.VarChar(255)
+  /// Observaciones del pastor. Acceso restringido.
+  pastorNotes                 String?      @map("pastor_notes") @db.Text
+  createdAt                   DateTime     @default(now()) @map("created_at")
+  updatedAt                   DateTime     @updatedAt @map("updated_at")
+  deletedAt                   DateTime?    @map("deleted_at")
+
+  person                 Person                  @relation("MemberPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  congregation           Congregation            @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  baptizingPastor        Person?                 @relation("MemberBaptizingPastor", fields: [denominationId, baptizingPastorId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  pastoralRank           PastoralRank?           @relation(fields: [denominationId, pastoralRankId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  memberRegistryEntries  MemberRegistryEntry[]
+  memberStatusHistories  MemberStatusHistory[]
+  memberTransfers        MemberTransfer[]
+  memberPositions        MemberPosition[]
+  membershipApplications MembershipApplication[]
+  workTeamMembers        WorkTeamMember[]
+  scheduleTopics         ScheduleTopic[]
+  certificates           Certificate[]
+  membershipCards        MembershipCard[]
+
+  @@unique([denominationId, id])
+  @@unique([denominationId, personId])
+  @@index([congregationId, status])
+  @@map("members")
+}
+
+/// Registro del miembro en cada sede: número de carné, libro y folio. Un traslado crea una entrada nueva
+/// y conserva la anterior. Libro y folio no son únicos: los históricos se calculaban a partir de la cédula.
+model MemberRegistryEntry {
+  id             Int          @id @default(autoincrement())
+  denominationId Int          @map("denomination_id")
+  memberId       Int          @map("member_id")
+  congregationId Int          @map("congregation_id")
+  /// Asignado con DocumentSequence de la sede.
+  memberNumber   Int          @map("member_number")
+  /// Columna CÓDIGO de los Excel de origen.
+  legacyCode     Int?         @map("legacy_code")
+  registryBook   String?      @map("registry_book") @db.VarChar(20)
+  registryFolio  String?      @map("registry_folio") @db.VarChar(20)
+  startedOn      DateTime     @map("started_on") @db.Date
+  endedOn        DateTime?    @map("ended_on") @db.Date
+  member         Member       @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  congregation   Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([congregationId, memberNumber])
+  @@unique([congregationId, legacyCode])
+  @@index([memberId])
+  @@index([congregationId, registryBook, registryFolio])
+  @@map("member_registry_entries")
+}
+
+model MemberStatusHistory {
+  id             Int          @id @default(autoincrement())
+  denominationId Int          @map("denomination_id")
+  memberId       Int          @map("member_id")
+  userId         Int?         @map("user_id")
+  status         MemberStatus
+  startedOn      DateTime     @map("started_on") @db.Date
+  reason         String?      @db.VarChar(255)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  member         Member       @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([memberId, startedOn])
+  @@map("member_status_history")
+}
+
+/// Traslado a otra sede de la denominación, o a una iglesia que no está en el sistema
+/// (`externalDestinationName`). Entre denominaciones del sistema se crea una persona nueva.
+model MemberTransfer {
+  id                        Int            @id @default(autoincrement())
+  denominationId            Int            @map("denomination_id")
+  memberId                  Int            @map("member_id")
+  originCongregationId      Int            @map("origin_congregation_id")
+  destinationCongregationId Int?           @map("destination_congregation_id")
+  externalDestinationName   String?        @map("external_destination_name") @db.VarChar(150)
+  status                    TransferStatus @default(REQUESTED)
+  transferDate              DateTime       @map("transfer_date") @db.Date
+  approvedById              Int?           @map("approved_by_id")
+  approvedAt                DateTime?      @map("approved_at")
+  /// Carta de traslado emitida.
+  certificateId             Int?           @map("certificate_id")
+  notes                     String?        @db.VarChar(255)
+  createdAt                 DateTime       @default(now()) @map("created_at")
+
+  member                  Member        @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  originCongregation      Congregation  @relation("TransferOrigin", fields: [denominationId, originCongregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  destinationCongregation Congregation? @relation("TransferDestination", fields: [denominationId, destinationCongregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  approvedBy              User?         @relation(fields: [approvedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  certificate             Certificate?  @relation(fields: [denominationId, certificateId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([memberId])
+  @@index([destinationCongregationId, status])
+  @@map("member_transfers")
+}
+
+model MemberPosition {
+  id             Int            @id @default(autoincrement())
+  denominationId Int            @map("denomination_id")
+  memberId       Int            @map("member_id")
+  positionId     Int            @map("position_id")
+  startedOn      DateTime?      @map("started_on") @db.Date
+  endedOn        DateTime?      @map("ended_on") @db.Date
+  member         Member         @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  position       ChurchPosition @relation(fields: [denominationId, positionId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([memberId])
+  @@map("member_positions")
+}
+
+/// Política de tratamiento de datos versionada.
+model PrivacyPolicy {
+  id                     Int                     @id @default(autoincrement())
+  denominationId         Int                     @map("denomination_id")
+  version                String                  @db.VarChar(20)
+  content                String                  @db.Text
+  effectiveFrom          DateTime                @map("effective_from") @db.Date
+  denomination           Denomination            @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  dataConsents           DataConsent[]
+  membershipApplications MembershipApplication[]
+
+  @@unique([denominationId, version])
+  @@unique([denominationId, id])
+  @@map("privacy_policies")
+}
+
+/// Autorización de datos. `guardianId` es obligatorio para menores (regla de aplicación).
+model DataConsent {
+  id             Int            @id @default(autoincrement())
+  denominationId Int            @map("denomination_id")
+  personId       Int            @map("person_id")
+  guardianId     Int?           @map("guardian_id")
+  policyId       Int            @map("policy_id")
+  channel        ConsentChannel
+  grantedAt      DateTime       @map("granted_at")
+  revokedAt      DateTime?      @map("revoked_at")
+  person         Person         @relation("ConsentPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  guardian       Person?        @relation("ConsentGuardian", fields: [denominationId, guardianId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  policy         PrivacyPolicy  @relation(fields: [denominationId, policyId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([personId])
+  @@map("data_consents")
+}
+
+model PersonAttachment {
+  id             Int      @id @default(autoincrement())
+  denominationId Int      @map("denomination_id")
+  personId       Int      @map("person_id")
+  type           String   @db.VarChar(40)
+  storagePath    String   @map("storage_path") @db.VarChar(255)
+  sha256         String   @db.Char(64)
+  createdAt      DateTime @default(now()) @map("created_at")
+  person         Person   @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([personId])
+  @@map("person_attachments")
+}
+
+/// Formulario público, sin cuenta de usuario: la persona elige su sede y la secretaría revisa.
+/// No crea Person ni Member hasta aprobarse. `formData` guarda el formulario validado.
+/// Una persona que se reintegra puede tener varias solicitudes.
+model MembershipApplication {
+  id               Int               @id @default(autoincrement())
+  denominationId   Int               @map("denomination_id")
+  congregationId   Int               @map("congregation_id")
+  policyId         Int               @map("policy_id")
+  /// Hash del código entregado al solicitante para consultar el estado.
+  trackingCodeHash String            @unique @map("tracking_code_hash") @db.VarChar(128)
+  status           ApplicationStatus @default(PENDING)
+  documentTypeId   Int?              @map("document_type_id")
+  documentNumber   String?           @map("document_number") @db.VarChar(30)
+  firstName        String            @map("first_name") @db.VarChar(100)
+  lastName         String            @map("last_name") @db.VarChar(160)
+  email            String?           @db.VarChar(191)
+  phone            String?           @db.VarChar(30)
+  birthDate        DateTime?         @map("birth_date") @db.Date
+  guardianName     String?           @map("guardian_name") @db.VarChar(200)
+  guardianDocument String?           @map("guardian_document") @db.VarChar(30)
+  formData         Json              @map("form_data")
+  consentedAt      DateTime          @map("consented_at")
+  reviewerId       Int?              @map("reviewer_id")
+  reviewedAt       DateTime?         @map("reviewed_at")
+  rejectionReason  String?           @map("rejection_reason") @db.VarChar(255)
+  /// Persona existente con la que coincide, cuando la solicitud es un duplicado.
+  matchedPersonId  Int?              @map("matched_person_id")
+  memberId         Int?              @map("member_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  congregation           Congregation            @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  policy                 PrivacyPolicy           @relation(fields: [denominationId, policyId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  documentType           DocumentType?           @relation(fields: [documentTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewer               User?                   @relation("ApplicationReviewer", fields: [reviewerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  matchedPerson          Person?                 @relation(fields: [denominationId, matchedPersonId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  member                 Member?                 @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  applicationAttachments ApplicationAttachment[]
+
+  @@unique([denominationId, id])
+  @@index([congregationId, status, createdAt])
+  @@index([denominationId, documentTypeId, documentNumber])
+  @@map("membership_applications")
+}
+
+/// Foto o soporte del formulario público. Se copia a la persona al aprobar la solicitud.
+model ApplicationAttachment {
+  id             Int                   @id @default(autoincrement())
+  denominationId Int                   @map("denomination_id")
+  applicationId  Int                   @map("application_id")
+  type           String                @db.VarChar(40)
+  storagePath    String                @map("storage_path") @db.VarChar(255)
+  sha256         String                @db.Char(64)
+  createdAt      DateTime              @default(now()) @map("created_at")
+  application    MembershipApplication @relation(fields: [denominationId, applicationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([applicationId])
+  @@map("application_attachments")
+}

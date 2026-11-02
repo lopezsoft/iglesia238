@@ -1,0 +1,12 @@
+// Punto de entrada del esquema. Cada contexto de negocio vive en su propio archivo.
+// La URL de conexión se define en prisma.config.ts y el cliente usa @prisma/adapter-mariadb.
+generator client {
+  provider            = "prisma-client"
+  output              = "../../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}

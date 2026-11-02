@@ -1,98 +1,98 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Church Management API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API multi-iglesia para membresía, secretaría y contabilidad. Construida con NestJS 12 (ESM) sobre Fastify 5, Prisma 7 y MariaDB 11.8, con Redis.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+El plan, las decisiones de arquitectura y el backlog están en [docs/2026-11-02-0215-plan-implementacion-scrum.md](../docs/2026-11-02-0215-plan-implementacion-scrum.md).
 
-## Description
+## Requisitos
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Node.js 22.22.3 o superior (ver `.nvmrc`).
+- Docker, solo para la base de datos y Redis.
 
-## Project setup
+## Puesta en marcha local
+
+En local, la base de datos y Redis corren en Docker, y la API corre en el equipo.
 
 ```bash
-$ npm install
+# 1. En la raíz del repositorio: copiar y completar las variables de Docker Compose
+cp .env.example .env
+docker compose up -d          # MariaDB en 127.0.0.1:3306 y Redis en 127.0.0.1:6379
+
+# 2. En backend/: copiar y completar las variables de la API, con las mismas credenciales
+cp .env.example .env
+npm install
+npm run prisma:generate
+
+# 3. Base de datos: ver «Migraciones» la primera vez
+npm run prisma:migrate:dev
+npm run prisma:seed
+
+# 4. API en modo desarrollo
+npm run start:dev             # http://localhost:3000/api  ·  Swagger en /api/docs
 ```
 
-## Compile and run the project
+> Si tu terminal tiene `NODE_ENV=production`, `npm install` omite las dependencias de desarrollo y la API valida el entorno como producción. Usa `NODE_ENV=development` en local.
+
+Si el puerto 3306 u 80 está ocupado (por ejemplo, por WAMP), cambia `DB_PORT` o `REDIS_PORT` en el `.env` de la raíz y la URL en `backend/.env`.
+
+## Migraciones
+
+El esquema está dividido por contexto en `prisma/schema/`. Algunas reglas no se pueden expresar en Prisma (`CHECK`), así que viven en `prisma/sql/constraints.sql` y se agregan a la migración inicial:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npx prisma migrate dev --create-only --name init
+cat prisma/sql/constraints.sql >> prisma/migrations/<fecha>_init/migration.sql
+npx prisma migrate dev
 ```
 
-## Run tests
+Las migraciones posteriores que añadan reglas `CHECK` deben incluirlas en su propio `migration.sql`. Una columna usada en un `CHECK` no admite `ON UPDATE CASCADE`: por eso todas las relaciones declaran `onUpdate: Restrict`.
 
-```bash
-# unit tests
-$ npm run test
+`prisma migrate dev` usa la base auxiliar `<base>_shadow`, que crea `docker/mariadb/init/01-shadow-database.sh` la primera vez que arranca el volumen.
 
-# e2e tests
-$ npm run test:e2e
+## Scripts
 
-# test coverage
-$ npm run test:cov
+| Script | Uso |
+|---|---|
+| `start:dev` | API con recarga |
+| `build` / `start:prod` | Compilar a `dist/` y ejecutar |
+| `test` / `test:cov` | Pruebas unitarias (Vitest) |
+| `test:e2e` | Pruebas de la API sobre Fastify, sin base de datos |
+| `lint` / `lint:check` | ESLint con corrección o solo verificación |
+| `typecheck` | TypeScript sin emitir archivos |
+| `prisma:*` | `generate`, `validate`, `format`, `migrate:dev`, `migrate:deploy`, `seed`, `studio` |
+
+## Estructura
+
+```text
+src/
+  main.ts                  arranque; carga .env antes que nada
+  app.module.ts            raíz de composición: conecta puertos con infraestructura
+  bootstrap/               seguridad, validación y Swagger, compartidos con las pruebas e2e
+  config/                  variables de entorno validadas
+  common/
+    errors/                filtro único de errores y puerto ErrorTranslator
+    logging/               SmartLogger con redacción de datos sensibles
+  infrastructure/          Prisma (adaptador MariaDB) y Redis
+  modules/
+    <módulo>/
+      application/         casos de uso y puertos
+      infrastructure/      adaptadores del módulo
+      presentation/        controladores y DTO
+  generated/prisma/        cliente generado (no se versiona)
+prisma/
+  schema/                  esquema por contexto: organization, identity, membership, secretariat, ministries, accounting
+  sql/constraints.sql      reglas CHECK
+  seed.ts                  catálogos globales; nunca crea usuarios
 ```
 
-## Deployment
+## Convenciones
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- **Idioma:** todo identificador de código y de esquema va en inglés. Documentación y comentarios descriptivos, en español.
+- **Dependencias:** los módulos dependen de puertos; solo los repositorios usan `PrismaService`. La raíz de composición es el único lugar que conoce las implementaciones.
+- **Multi-iglesia:** toda tabla de negocio lleva `denominationId`, y sus FK son compuestas, de modo que la base rechaza referencias entre denominaciones.
+- **Logs:** solo con `SmartLogger`, nunca `console.log`. No se registran contraseñas, tokens ni datos personales.
+- **Errores:** las respuestas tienen un formato único y nunca exponen detalles internos ni la query string.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Producción
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+`docker-compose.prod.yml` en la raíz levanta MariaDB, Redis, un migrador de una sola ejecución (migraciones y catálogos), la API y el frontend. La API se conecta con un usuario que solo tiene permisos de datos (`docker/mariadb/init-prod`).
