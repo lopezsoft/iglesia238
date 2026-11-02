@@ -1,0 +1,161 @@
+<app-page-header
+  title="Configuración contable"
+  breadcrumb="Inicio / Contabilidad / Configuración contable"
+  [description]="'Fondos, plan de cuentas y tipos de aporte que usa la tesorería de ' + (overview.value()?.scopeLabel ?? 'la sede') + '.'"
+>
+  @if (canManage()) {
+    <button type="button" class="btn btn--primary" (click)="openCreate()">
+      <app-icon name="plus" />
+      @switch (tab()) {
+        @case ('funds') { Nuevo fondo }
+        @case ('accounts') { Nueva cuenta }
+        @case ('types') { Nuevo tipo de aporte }
+      }
+    </button>
+  }
+</app-page-header>
+
+<div class="stack">
+  @if (canManage()) {
+    <div class="alert" role="note">
+      <app-icon name="shield" />
+      <span>
+        Tu rol tiene el permiso <code>budgets.manage</code>: puedes crear y editar fondos, cuentas y tipos de aporte.
+        Los cambios quedan registrados en la auditoría de la denominación.
+      </span>
+    </div>
+  } @else {
+    <app-read-only-notice permission="budgets.manage" />
+  }
+
+  <div role="status" aria-live="polite">
+    @if (flash(); as message) {
+      <div class="alert alert--success flash">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm flash__close" aria-label="Cerrar mensaje" (click)="flash.set(null)">
+          <app-icon name="x" [size]="16" />
+        </button>
+      </div>
+    }
+  </div>
+  @if (actionError() && !deleteOpen()) {
+    <div class="alert alert--danger" role="alert">{{ actionError() }}</div>
+  }
+
+  <div>
+    <div class="tabs" role="tablist" aria-label="Secciones de configuración contable">
+      @for (item of tabs(); track item.id; let index = $index) {
+        <button
+          type="button"
+          role="tab"
+          [id]="'tab-' + item.id"
+          [attr.aria-controls]="'panel-' + item.id"
+          [attr.aria-selected]="tab() === item.id"
+          [attr.tabindex]="tab() === item.id ? 0 : -1"
+          (click)="selectTab(item.id)"
+          (keydown)="onTabKey($event, index)"
+        >
+          {{ item.label }}
+          @if (item.count !== undefined) {
+            <span class="chip chip--mono tab-count">{{ item.count }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    @switch (tab()) {
+      @case ('funds') {
+        <div role="tabpanel" id="panel-funds" aria-labelledby="tab-funds">
+          @if (funds.error()) {
+            <app-error-banner [message]="'No fue posible cargar los fondos.'" (retry)="funds.reload()" />
+          } @else if (funds.isLoading() && !funds.value()) {
+            <app-loading label="Cargando fondos…" />
+          } @else {
+            <app-funds-panel
+              [funds]="funds.value() ?? []"
+              [overview]="overview.value()"
+              [canManage]="canManage()"
+              (edit)="editFund($event)"
+              (remove)="askDelete('fund', $event.id, 'Fondo «' + $event.name + '»')"
+            />
+          }
+        </div>
+      }
+      @case ('accounts') {
+        <div role="tabpanel" id="panel-accounts" aria-labelledby="tab-accounts">
+          @if (accounts.error()) {
+            <app-error-banner [message]="'No fue posible cargar el plan de cuentas.'" (retry)="accounts.reload()" />
+          } @else if (accounts.isLoading() && !accounts.value()) {
+            <app-loading label="Cargando el plan de cuentas…" />
+          } @else {
+            <app-accounts-tree
+              [accounts]="accounts.value() ?? []"
+              [canManage]="canManage()"
+              (edit)="editAccount($event, null)"
+              (addChild)="editAccount(null, $event.id)"
+              (remove)="askDelete('account', $event.id, 'Cuenta ' + $event.code)"
+            />
+          }
+        </div>
+      }
+      @case ('types') {
+        <div role="tabpanel" id="panel-types" aria-labelledby="tab-types">
+          @if (types.error()) {
+            <app-error-banner [message]="'No fue posible cargar los tipos de aporte.'" (retry)="types.reload()" />
+          } @else if (types.isLoading() && !types.value()) {
+            <app-loading label="Cargando tipos de aporte…" />
+          } @else {
+            <app-contribution-types-table
+              [types]="types.value() ?? []"
+              [canManage]="canManage()"
+              [busyId]="typeBusyId()"
+              (toggle)="toggleType($event)"
+              (edit)="editType($event)"
+            />
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<app-fund-form-dialog
+  [(open)]="fundDialogOpen"
+  [fund]="editingFund()"
+  [year]="overview.value()?.year ?? 2026"
+  [congregationScoped]="overview.value()?.congregationScoped ?? true"
+  (saved)="onFundSaved($event)"
+/>
+
+<app-account-form-dialog
+  [(open)]="accountDialogOpen"
+  [account]="editingAccount()"
+  [parentId]="accountParentId()"
+  [accounts]="accounts.value() ?? []"
+  [funds]="funds.value() ?? []"
+  (saved)="onAccountSaved($event)"
+/>
+
+<app-contribution-type-form-dialog
+  [(open)]="typeDialogOpen"
+  [type]="editingType()"
+  [accounts]="accounts.value() ?? []"
+  (saved)="onTypeSaved($event)"
+/>
+
+<app-dialog [(open)]="deleteOpen" title="Confirmar eliminación">
+  <p>
+    ¿Eliminar {{ pendingDelete()?.label }}? Solo se pueden eliminar registros sin movimientos; la acción queda en la
+    auditoría.
+  </p>
+  @if (actionError()) {
+    <div class="alert alert--danger" role="alert">{{ actionError() }}</div>
+  }
+  <div dialog-footer>
+    <button type="button" class="btn btn--secondary" (click)="deleteOpen.set(false)">Cancelar</button>
+    <button type="button" class="btn btn--danger" [disabled]="deleting()" (click)="confirmDelete()">
+      {{ deleting() ? 'Eliminando…' : 'Eliminar' }}
+    </button>
+  </div>
+</app-dialog>

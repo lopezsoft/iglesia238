@@ -1,0 +1,152 @@
+<app-dialog
+  [(open)]="open"
+  variant="wide"
+  [title]="isCreate() ? 'Nueva razón social' : 'Editar razón social'"
+>
+  <form id="legal-entity-form" class="stack" novalidate [formGroup]="form" (ngSubmit)="submit()">
+    <p class="text-muted">
+      Entidad legal registrada ante la DIAN. Los campos con * son obligatorios.
+    </p>
+
+    @if (formError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="legal-entity-name">Razón social *</label>
+        <input
+          id="legal-entity-name"
+          class="input"
+          type="text"
+          formControlName="legalName"
+          placeholder="Nombre como figura en el RUT"
+          autocomplete="off"
+          [attr.maxlength]="limits.legalName"
+        />
+        @if (showError('legalName', 'required')) {
+          <span class="field__error">La razón social es obligatoria.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-trade-name">Nombre comercial</label>
+        <input
+          id="legal-entity-trade-name"
+          class="input"
+          type="text"
+          formControlName="tradeName"
+          autocomplete="off"
+          [attr.maxlength]="limits.legalName"
+        />
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-tax-id">NIT *</label>
+        <input
+          id="legal-entity-tax-id"
+          class="input mono"
+          type="text"
+          inputmode="numeric"
+          formControlName="taxId"
+          placeholder="900.123.456-7"
+          autocomplete="off"
+          [attr.maxlength]="limits.taxId"
+          aria-describedby="legal-entity-tax-id-hint legal-entity-tax-id-error"
+        />
+        <span id="legal-entity-tax-id-hint" class="field__hint"
+          >Incluye el dígito de verificación.</span
+        >
+        <span id="legal-entity-tax-id-error" class="field__error" aria-live="polite">
+          @if (taxIdError(); as message) {
+            {{ message }}
+          } @else if (showError('taxId', 'required')) {
+            El NIT es obligatorio.
+          } @else if (showError('taxId', 'pattern')) {
+            El NIT debe tener el formato 900.123.456-7.
+          }
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-representative">Representante legal *</label>
+        <input
+          id="legal-entity-representative"
+          class="input"
+          type="text"
+          formControlName="legalRepresentative"
+          autocomplete="off"
+          [attr.maxlength]="limits.legalName"
+        />
+        @if (showError('legalRepresentative', 'required')) {
+          <span class="field__error">El representante legal es obligatorio.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-municipality">Municipio *</label>
+        <select id="legal-entity-municipality" class="select" formControlName="municipalityCode">
+          <option value="">Selecciona un municipio</option>
+          @for (group of municipalityGroups; track group.regionName) {
+            <optgroup [label]="group.regionName">
+              @for (municipality of group.municipalities; track municipality.code) {
+                <option [value]="municipality.code">{{ municipality.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+        @if (showError('municipalityCode', 'required')) {
+          <span class="field__error">Selecciona el municipio.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-address">Dirección</label>
+        <input
+          id="legal-entity-address"
+          class="input"
+          type="text"
+          formControlName="address"
+          [attr.maxlength]="limits.address"
+        />
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-phone">Teléfono</label>
+        <input
+          id="legal-entity-phone"
+          class="input"
+          type="tel"
+          formControlName="phone"
+          autocomplete="off"
+          [attr.maxlength]="limits.phone"
+        />
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-email">Correo</label>
+        <input
+          id="legal-entity-email"
+          class="input"
+          type="email"
+          formControlName="email"
+          autocomplete="off"
+          [attr.maxlength]="limits.email"
+        />
+        @if (showError('email', 'email')) {
+          <span class="field__error">Escribe un correo válido.</span>
+        }
+      </div>
+    </div>
+  </form>
+
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
+    <button type="submit" form="legal-entity-form" class="btn btn--primary" [disabled]="pending()">
+      {{ pending() ? 'Guardando…' : isCreate() ? 'Crear razón social' : 'Guardar cambios' }}
+    </button>
+  </div>
+</app-dialog>

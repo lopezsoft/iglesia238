@@ -1,0 +1,187 @@
+<app-dialog [(open)]="open" variant="wide" [title]="isCreate() ? 'Nueva sede' : 'Editar sede'">
+  <form id="congregation-form" class="stack" novalidate [formGroup]="form" (ngSubmit)="submit()">
+    <p class="text-muted">
+      @if (isCreate()) {
+        Se crea dentro de {{ denominationName() }}. Los campos con * son obligatorios.
+      } @else {
+        Los cambios quedan registrados en Auditoría. Los campos con * son obligatorios.
+      }
+    </p>
+
+    @if (formError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+    @if (options.error()) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>No fue posible cargar las razones sociales y los distritos.</span>
+      </div>
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="congregation-name">Nombre de la sede *</label>
+        <input
+          id="congregation-name"
+          class="input"
+          type="text"
+          formControlName="name"
+          placeholder="Ej.: Sede Chía"
+          autocomplete="off"
+          [attr.maxlength]="limits.congregationName"
+          aria-describedby="congregation-name-error"
+        />
+        <span id="congregation-name-error" class="field__error" aria-live="polite">
+          @if (nameError(); as message) {
+            {{ message }}
+          } @else if (showError('name', 'required')) {
+            El nombre es obligatorio.
+          }
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="congregation-legal-entity">Razón social *</label>
+        <select
+          id="congregation-legal-entity"
+          class="select"
+          formControlName="legalEntityId"
+          aria-describedby="congregation-legal-entity-hint"
+        >
+          <option value="">Selecciona una razón social</option>
+          @for (option of legalEntities(); track option.id) {
+            <option [value]="'' + option.id">
+              {{ option.label }}{{ option.isActive ? '' : ' (inactiva)' }}
+            </option>
+          }
+        </select>
+        <span id="congregation-legal-entity-hint" class="field__hint"
+          >Solo razones sociales activas de esta denominación.</span
+        >
+        @if (showError('legalEntityId', 'required')) {
+          <span class="field__error">Selecciona la razón social.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="congregation-district">Distrito</label>
+        <select id="congregation-district" class="select" formControlName="districtId">
+          <option value="">Sin distrito asignado</option>
+          @for (option of districts(); track option.id) {
+            <option [value]="'' + option.id">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="congregation-municipality">Municipio *</label>
+        <select
+          id="congregation-municipality"
+          class="select"
+          formControlName="municipalityCode"
+          aria-describedby="congregation-municipality-hint"
+        >
+          <option value="">Selecciona un municipio</option>
+          @for (group of municipalityGroups; track group.regionName) {
+            <optgroup [label]="group.regionName">
+              @for (municipality of group.municipalities; track municipality.code) {
+                <option [value]="municipality.code">{{ municipality.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+        <span id="congregation-municipality-hint" class="field__hint">{{
+          municipalityHint()
+        }}</span>
+        @if (showError('municipalityCode', 'required')) {
+          <span class="field__error">Selecciona el municipio.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="congregation-neighborhood">Barrio</label>
+        <input
+          id="congregation-neighborhood"
+          class="input"
+          type="text"
+          formControlName="neighborhood"
+          placeholder="Ej.: San Mateo"
+          [attr.maxlength]="limits.neighborhood"
+        />
+      </div>
+
+      <div class="field">
+        <label for="congregation-address">Dirección *</label>
+        <input
+          id="congregation-address"
+          class="input"
+          type="text"
+          formControlName="address"
+          placeholder="Ej.: Calle 30 # 7-45"
+          [attr.maxlength]="limits.address"
+        />
+        @if (showError('address', 'required')) {
+          <span class="field__error">La dirección es obligatoria.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="congregation-phone">Teléfono</label>
+        <input
+          id="congregation-phone"
+          class="input"
+          type="tel"
+          formControlName="phone"
+          placeholder="Ej.: 601 745 2210"
+          autocomplete="off"
+          [attr.maxlength]="limits.phone"
+        />
+      </div>
+
+      <div class="field">
+        <label for="congregation-email">Correo</label>
+        <input
+          id="congregation-email"
+          class="input"
+          type="email"
+          formControlName="email"
+          placeholder="sede@ejemplo.org"
+          autocomplete="off"
+          [attr.maxlength]="limits.email"
+        />
+        @if (showError('email', 'email')) {
+          <span class="field__error">Escribe un correo válido.</span>
+        }
+      </div>
+    </div>
+
+    <label class="checkbox" for="congregation-accepts">
+      <input id="congregation-accepts" type="checkbox" formControlName="acceptsApplications" />
+      <span>
+        <strong>Acepta inscripciones</strong>
+        <span class="field__hint">
+          @if (form.controls.acceptsApplications.disabled) {
+            La sede está inactiva: actívala antes de abrir inscripciones.
+          } @else {
+            La sede aparecerá en el formulario público de inscripción de miembros.
+          }
+        </span>
+      </span>
+    </label>
+  </form>
+
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="congregation-form"
+      class="btn btn--primary"
+      [disabled]="pending() || options.isLoading()"
+    >
+      {{ pending() ? 'Guardando…' : isCreate() ? 'Crear sede' : 'Guardar cambios' }}
+    </button>
+  </div>
+</app-dialog>

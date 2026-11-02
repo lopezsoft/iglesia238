@@ -1,0 +1,94 @@
+<app-page-header
+  title="Aportes"
+  breadcrumb="Inicio / Contabilidad / Aportes"
+  [description]="
+    'Diezmos, ofrendas, primicias y abonos a votos de ' +
+    (options.value()?.scopeLabel ?? 'la sede') +
+    '. Los aportes no se eliminan: se anulan con motivo.'
+  "
+>
+  @if (options.value(); as opts) {
+    <div class="field period-field">
+      <label for="period-select">Periodo</label>
+      <select id="period-select" class="select" [value]="selectedMonth()" (change)="onMonthChange($event)">
+        @for (period of opts.periods; track period.year + '-' + period.month) {
+          <option [value]="period.year + '-' + period.month" [selected]="selectedMonth() === period.year + '-' + period.month">
+            {{ period.label }}{{ opts.congregationScoped ? ' · ' + periodStatusLabels[period.status] : '' }}
+          </option>
+        }
+      </select>
+    </div>
+  }
+  <a class="btn btn--secondary" routerLink="/accounting/vows">
+    <app-icon name="gift" />
+    Ver votos y saldos
+  </a>
+</app-page-header>
+
+<div class="stack">
+  @if (options.value(); as opts) {
+    @if (!opts.congregationScoped) {
+      <div class="alert" role="note">
+        <app-icon name="info" />
+        <span>
+          Vista consolidada de todas las sedes, solo lectura. Selecciona una sede en el selector superior para registrar o
+          anular aportes.
+        </span>
+      </div>
+    }
+  }
+
+  @if (!canWrite()) {
+    <app-read-only-notice
+      permission="contributions.write"
+      detail="Puedes consultar los aportes y totales de la sede; el registro y la anulación los hace Tesorería."
+    />
+  }
+
+  <div role="status" aria-live="polite">
+    @if (flash(); as message) {
+      <div class="alert alert--success flash">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar mensaje" (click)="flash.set(null)">
+          <app-icon name="x" [size]="16" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (presetError()) {
+    <div class="alert alert--warning" role="alert">{{ presetError() }}</div>
+  }
+
+  @if (options.error()) {
+    <app-error-banner [message]="'No fue posible cargar los aportes.'" (retry)="options.reload()" />
+  } @else if (month.error()) {
+    <app-error-banner [message]="'No fue posible cargar los aportes del periodo.'" (retry)="month.reload()" />
+  } @else if (!month.value()) {
+    <app-loading label="Cargando aportes…" />
+  } @else {
+    <app-contribution-summary [month]="month.value()!" />
+
+    @if (showForm() && options.value(); as opts) {
+      <app-contribution-form [options]="opts" [preset]="preset.value() ?? null" (recorded)="onRecorded($event)" />
+    }
+
+    @if (month.value()!.periodStatus === 'CLOSED') {
+      <div class="alert alert--warning" role="note">
+        <app-icon name="lock" />
+        <span>El periodo de {{ month.value()!.label.toLowerCase() }} está cerrado: sus aportes se consultan. Anular un aporte con movimiento propio registra su reversa con fecha de hoy; uno consolidado se corrige desde el Libro de caja.</span>
+      </div>
+    }
+
+    <app-contributions-table
+      [rows]="month.value()!.rows"
+      [monthLabel]="month.value()!.label.toLowerCase()"
+      [canWrite]="showForm()"
+      [showCongregation]="!(options.value()?.congregationScoped ?? true)"
+      (voidRequested)="askVoid($event)"
+    />
+  }
+</div>
+
+<app-void-contribution-dialog [(open)]="voidOpen" [contribution]="voidTarget()" (voided)="onVoided($event)" />

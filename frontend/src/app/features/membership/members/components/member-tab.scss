@@ -1,0 +1,61 @@
+// Layout shared by the tabs of the member file (each tab uses this file as its styleUrl).
+@use 'tokens' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.tab__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.tab__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: $space-4;
+}
+
+.tab__box {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-card;
+  background: $color-surface-2;
+}
+
+.tab__box-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-ink-muted;
+}
+
+.tab__box-value {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.tab__table {
+  border: 1px solid $color-border;
+  border-radius: $radius-card;
+}
+
+.tab__inline-select {
+  flex: 1 1 10rem;
+  width: auto;
+}
+
+.tab__locked {
+  align-items: center;
+  gap: $space-2;
+  padding: $space-6 $space-5;
+  text-align: center;
+  color: $color-ink-muted;
+}

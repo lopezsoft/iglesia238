@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Fecha** | 2026-11-02 |
-| **Alcance** | Backend y modelo de datos. El frontend tiene su propia fase |
+| **Alcance** | Backend y modelo de datos. El frontend del MVP existe en modo demostración (sección 7) |
 | **Estado** | Sprint 0 terminado y verificado; listo para el Sprint 1 |
 | **Documentos relacionados** | [Auditoría inicial](2026-11-02-0058-auditoria-estado-proyecto.md) · [backend/README.md](../backend/README.md) |
 
@@ -322,7 +322,9 @@ Capacidad de referencia: 30 a 35 puntos por sprint. Se ajusta tras medir la velo
 | 7 | Migración y salida a producción | G-01, G-02, G-03, TEC-03, A-05 | 29 |
 | 8 | Cierre de alcance | D-04, D-05, C-07, F-01, TEC-04, TEC-05 | 18 |
 
-El frontend avanza en paralelo desde el Sprint 2, una vez existan la autenticación y los primeros endpoints. Su fase empieza corrigiendo los defectos de despliegue de la auditoría (`dist/frontend/browser`, proxy de Nginx, usuario no root).
+El frontend del MVP ya está construido en modo demostración (versión 0.3.0, ver [frontend/README.md](../frontend/README.md)): todas las pantallas por rol, con adaptadores en memoria detrás de un puerto por módulo. En cada sprint, la historia de backend incluye cambiar el adaptador de demostración de sus pantallas por el adaptador HTTP del endpoint entregado.
+
+Los defectos de despliegue del frontend señalados por la auditoría ya están corregidos: ruta `dist/frontend/browser`, proxy `/api/` en Nginx y `.dockerignore`. Queda pendiente el usuario no root de Nginx, que exige publicar el contenedor en un puerto mayor que 1024 desde `docker-compose.prod.yml`.
 
 ### Sprint 1 en detalle
 

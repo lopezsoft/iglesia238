@@ -1,0 +1,86 @@
+<fieldset class="step" [formGroup]="group()">
+  <legend class="step__legend">Autorización de tratamiento de datos</legend>
+  <p class="text-muted step__lead">Lee la política antes de enviar tu solicitud.</p>
+
+  @if (policyLoading()) {
+    <app-loading label="Cargando la política de tratamiento de datos…" />
+  } @else if (policyError(); as message) {
+    <app-error-banner [message]="message" (retry)="retryPolicy.emit()" />
+  } @else if (policy(); as current) {
+    <div class="policy" role="region" aria-labelledby="policy-title" tabindex="0">
+      <p id="policy-title" class="policy__title">
+        Política de tratamiento de datos personales · versión {{ current.version }}
+      </p>
+      <p class="policy__content">{{ current.content }}</p>
+      <p class="text-muted text-small">Vigente desde {{ current.effectiveFrom | date: 'dd/MM/yyyy' }}</p>
+    </div>
+
+    <div class="consent">
+      <label class="checkbox" for="consent-accepted">
+        <input id="consent-accepted" type="checkbox" formControlName="accepted" required
+          aria-describedby="consent-hint" />
+        <span>Acepto la política de tratamiento de datos (versión {{ current.version }}) *</span>
+      </label>
+      <p id="consent-hint" class="field__hint">
+        Registramos la fecha, la hora y la versión de la política que aceptas.
+      </p>
+      @if (consentMissing()) {
+        <p class="field__error" role="alert">
+          Debes aceptar la política de tratamiento de datos para enviar la solicitud.
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Honeypot: invisible to people and to assistive technology; bots fill it in. -->
+  <div class="visually-hidden" aria-hidden="true">
+    <label for="consent-website">Sitio web</label>
+    <input id="consent-website" type="text" formControlName="website" tabindex="-1" autocomplete="off" />
+  </div>
+
+  <div class="alert security text-small" role="note">
+    <app-icon name="shield" [size]="18" />
+    <span>
+      Este formulario está protegido contra envíos automáticos. Por seguridad, solo puedes enviar
+      {{ maxSubmissions }} solicitudes por sesión desde este navegador.
+    </span>
+  </div>
+
+  <h3 class="summary-title">Resumen de tu solicitud</h3>
+  <dl class="details summary">
+    <div>
+      <dt>Sede</dt>
+      <dd>{{ summary().congregationName }}</dd>
+    </div>
+    <div>
+      <dt>Solicitante</dt>
+      <dd>{{ summary().applicantName }}</dd>
+    </div>
+    <div>
+      <dt>Documento</dt>
+      <dd>{{ summary().document }}</dd>
+    </div>
+    <div>
+      <dt>Fecha de nacimiento</dt>
+      <dd>{{ summary().birthDate | date: 'dd/MM/yyyy' }}</dd>
+    </div>
+    <div>
+      <dt>Teléfono</dt>
+      <dd>{{ summary().phone }}</dd>
+    </div>
+    <div>
+      <dt>Correo electrónico</dt>
+      <dd>{{ summary().email ?? 'Sin correo' }}</dd>
+    </div>
+    <div>
+      <dt>Municipio</dt>
+      <dd>{{ summary().municipality }}</dd>
+    </div>
+    @if (summary().guardian; as guardian) {
+      <div>
+        <dt>Acudiente</dt>
+        <dd>{{ guardian }}</dd>
+      </div>
+    }
+  </dl>
+</fieldset>

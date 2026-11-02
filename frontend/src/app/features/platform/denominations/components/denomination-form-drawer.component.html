@@ -1,0 +1,91 @@
+<app-dialog
+  [(open)]="open"
+  variant="drawer"
+  [title]="isCreate() ? 'Nueva denominación' : 'Editar denominación'"
+>
+  <form id="denomination-form" class="stack" novalidate (ngSubmit)="submit()" [formGroup]="form">
+    <p class="text-muted">
+      {{
+        isCreate()
+          ? 'Registra un nuevo tenant en la plataforma.'
+          : 'Los cambios quedan registrados en Auditoría.'
+      }}
+    </p>
+
+    @if (formError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <div class="field">
+      <label for="denomination-name">Nombre de la denominación *</label>
+      <input
+        id="denomination-name"
+        class="input"
+        type="text"
+        formControlName="name"
+        autocomplete="off"
+        [attr.maxlength]="maxLength"
+        [attr.aria-invalid]="
+          nameError() !== null || (form.controls.name.invalid && form.controls.name.touched)
+        "
+        aria-describedby="denomination-name-hint denomination-name-error"
+      />
+      <span id="denomination-name-hint" class="field__hint">
+        Debe ser único en la plataforma. Así aparecerá en certificados, carnés y reportes.
+      </span>
+      <span id="denomination-name-error" class="field__error" aria-live="polite">
+        @if (nameError(); as message) {
+          {{ message }}
+        } @else if (form.controls.name.touched && form.controls.name.hasError('required')) {
+          El nombre es obligatorio
+        } @else if (form.controls.name.touched && form.controls.name.hasError('maxlength')) {
+          El nombre admite máximo {{ maxLength }} caracteres.
+        }
+      </span>
+    </div>
+
+    @if (isCreate()) {
+      <section class="alert" aria-labelledby="denomination-defaults-title">
+        <app-icon name="info" />
+        <div class="defaults">
+          <strong id="denomination-defaults-title">Se crea automáticamente</strong>
+          <ul>
+            <li>
+              Primera política de tratamiento de datos (Ley 1581 de 2012) en estado
+              <strong>borrador</strong>, para que el administrador de la denominación la revise y
+              publique. Mientras no la publique, sus sedes no reciben inscripciones públicas.
+            </li>
+          </ul>
+          <p class="text-small">
+            El fondo <strong>«Fondo Local»</strong> y los tipos de aporte
+            <span class="cluster">
+              @for (type of contributionTypes; track type) {
+                <span class="chip">{{ type }}</span>
+              }
+            </span>
+            se configuran después en Contabilidad.
+          </p>
+        </div>
+      </section>
+    }
+
+    <div class="alert alert--warning" role="note">
+      <app-icon name="lock" />
+      <span>
+        Aislamiento de datos: después de crearla no podrás ver sus miembros ni sus finanzas. Asigna
+        un administrador de denominación desde <a routerLink="/users">Usuarios y roles</a> para que
+        configure sedes y razones sociales.
+      </span>
+    </div>
+  </form>
+
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
+    <button type="submit" form="denomination-form" class="btn btn--primary" [disabled]="pending()">
+      {{ pending() ? 'Guardando…' : isCreate() ? 'Crear denominación' : 'Guardar cambios' }}
+    </button>
+  </div>
+</app-dialog>

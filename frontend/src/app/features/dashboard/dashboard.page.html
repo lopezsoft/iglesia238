@@ -1,0 +1,69 @@
+<app-page-header breadcrumb="Inicio" [title]="greeting()" [description]="subtitle()">
+  @for (action of headerActions(); track action.path) {
+    <a class="btn btn--secondary" [routerLink]="action.path">
+      <app-icon [name]="action.icon" />
+      {{ action.label }}
+    </a>
+  }
+</app-page-header>
+
+@if (loadError(); as message) {
+  <app-error-banner [message]="message" (retry)="summary.reload()" />
+} @else if (summary.isLoading() && !data()) {
+  <app-loading label="Cargando el resumen…" />
+}
+
+<div class="dashboard">
+  @if (data(); as data) {
+    @if (kpis().length > 0) {
+      <section aria-labelledby="kpi-title">
+        <h2 id="kpi-title" class="visually-hidden">Indicadores de {{ scopeLabel() }}</h2>
+        <p class="text-muted text-small dashboard__as-of">
+          Cifras al {{ data.asOf | date: 'dd/MM/yyyy' }}
+        </p>
+        <div class="grid-auto">
+          @for (kpi of kpis(); track kpi.key) {
+            <app-stat-card
+              [label]="kpi.label"
+              [value]="kpi.value"
+              [hint]="kpi.hint"
+              [icon]="kpi.icon"
+              [link]="kpi.link"
+            />
+          }
+        </div>
+      </section>
+    }
+  }
+
+  <div class="dashboard__grid">
+    <div class="dashboard__main">
+      @if (data(); as data) {
+        @if (data.pendingApplications; as applications) {
+          <app-pending-applications-widget [overview]="applications" [scopeLabel]="scopeLabel()" />
+        }
+        @if (data.monthlyIncome; as income) {
+          <app-monthly-income-widget
+            [overview]="income"
+            [scopeLabel]="scopeLabel()"
+            [readOnly]="!auth.can('contributions.write')"
+            [canOpenReports]="auth.can('reports.read')"
+          />
+        }
+        @if (data.cashBook; as cashBook) {
+          <app-cash-book-widget [overview]="cashBook" />
+        }
+        @if (data.congregations; as congregations) {
+          <app-congregations-widget [congregations]="congregations" />
+        }
+        @if (data.recentAudit; as entries) {
+          <app-recent-audit-widget [entries]="entries" />
+        }
+      }
+      <app-quick-access />
+    </div>
+    <div class="dashboard__side">
+      <app-role-summary [denominationName]="data()?.denominationName ?? null" />
+    </div>
+  </div>
+</div>

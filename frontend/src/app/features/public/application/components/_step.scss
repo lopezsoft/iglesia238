@@ -1,0 +1,26 @@
+@use 'tokens' as *;
+
+// Shared look of the fieldsets of the public form steps.
+@mixin step-fieldset {
+  .step {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    &__legend {
+      padding: 0;
+      margin-bottom: $space-1;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+    }
+
+    &__lead {
+      margin-bottom: $space-4;
+    }
+
+    &__error {
+      margin-top: $space-3;
+    }
+  }
+}

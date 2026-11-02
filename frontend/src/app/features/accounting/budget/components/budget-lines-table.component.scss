@@ -1,0 +1,43 @@
+@use 'tokens' as *;
+
+.account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+
+.shared {
+  color: $color-ink-muted;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 9rem;
+
+  &__track {
+    position: relative;
+    flex: 1;
+  }
+
+  // Expected execution at today's date, drawn over the bar.
+  &__expected {
+    position: absolute;
+    top: -0.125rem;
+    bottom: -0.125rem;
+    width: 2px;
+    margin-left: -1px;
+    background: $color-ink-muted;
+  }
+}
+
+.over {
+  color: $color-danger;
+}
+
+.actions {
+  flex-wrap: nowrap;
+  gap: $space-1;
+}

@@ -1,0 +1,59 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.auth-frame {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: $space-7 $space-4 $space-6;
+  background: $color-ground;
+
+  @include until($breakpoint-sm) {
+    padding-top: $space-5;
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    width: 100%;
+    max-width: 27.5rem;
+  }
+
+  &__card {
+    padding: $space-6;
+
+    @include until($breakpoint-sm) {
+      padding: $space-5;
+    }
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-5;
+  }
+
+  &__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: $radius-card;
+    background: $color-sidebar;
+    color: $color-brand-mark;
+  }
+
+  &__name {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    line-height: 1.3;
+  }
+
+  &__footer {
+    padding-top: $space-2;
+    text-align: center;
+  }
+}

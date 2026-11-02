@@ -1,0 +1,87 @@
+<app-page-header breadcrumb="Control / Reportes" title="Reportes" [description]="description()">
+  <div class="reports__export">
+    @if (canExportDetail()) {
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="exportingDetail() || !data()"
+        (click)="exportDetail()"
+      >
+        <app-icon name="download" />
+        {{ exportingDetail() ? 'Preparando detalle…' : 'Exportar detalle de aportes' }}
+      </button>
+    }
+    <p class="text-muted text-small">
+      La exportación depende de tu rol: el Pastor exporta resúmenes, Tesorería el detalle.
+    </p>
+  </div>
+</app-page-header>
+
+<div class="stack">
+  @if (reportOptions(); as reportOptions) {
+    @if (query(); as current) {
+      <app-report-filters
+        [options]="reportOptions"
+        [query]="current"
+        [pending]="report.isLoading()"
+        (apply)="applyFilters($event)"
+      />
+    }
+  }
+
+  <p class="text-muted text-small" role="status" aria-live="polite">
+    @if (report.isLoading()) {
+      Generando el reporte…
+    } @else {
+      {{ statusText() }}
+    }
+  </p>
+
+  <div role="status" aria-live="polite">
+    @if (exportMessage(); as message) {
+      <p class="alert alert--success">{{ message }}</p>
+    }
+  </div>
+  @if (exportError(); as message) {
+    <p class="alert alert--danger" role="alert">{{ message }}</p>
+  }
+
+  @if (loadError(); as message) {
+    <app-error-banner
+      [message]="message"
+      (retry)="options.error() ? options.reload() : report.reload()"
+    />
+  } @else if (!data() && (options.isLoading() || report.isLoading())) {
+    <app-loading label="Cargando el reporte…" />
+  }
+
+  @if (data(); as data) {
+    <section class="grid-auto" aria-label="Indicadores del periodo">
+      @for (card of cards(); track card.key) {
+        <app-stat-card [label]="card.label" [value]="card.value" [hint]="card.hint" />
+      }
+    </section>
+
+    <app-monthly-flow [report]="data" (exportCsv)="exportTable(data, 'months')" />
+
+    @if (data.congregations; as congregations) {
+      <app-congregation-breakdown
+        [report]="data"
+        [congregations]="congregations"
+        (exportCsv)="exportTable(data, 'congregations')"
+      />
+    }
+
+    <app-fund-balances
+      [report]="data"
+      [canOpenCashBook]="auth.can('cash-transactions.write')"
+      (exportCsv)="exportTable(data, 'funds')"
+    />
+
+    <app-contribution-types
+      [report]="data"
+      [canOpenContributions]="auth.can('contributions.read')"
+      (exportCsv)="exportTable(data, 'contribution-types')"
+    />
+  }
+</div>

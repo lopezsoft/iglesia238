@@ -1,0 +1,31 @@
+@use 'tokens' as *;
+
+.cards-header {
+  align-items: flex-end;
+  margin-bottom: 0;
+  padding: $space-5 $space-5 $space-4;
+}
+
+.cards-message {
+  padding: 0 $space-5;
+
+  &:not(:empty) {
+    padding-bottom: $space-4;
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.expiry-hint {
+  color: $color-warning;
+}
+
+.void-reason {
+  max-width: 16rem;
+  margin-top: $space-1;
+  white-space: normal;
+}

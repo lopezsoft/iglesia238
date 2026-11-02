@@ -1,0 +1,156 @@
+<section class="card card--flush" aria-labelledby="issued-title">
+  <div class="card__header table-header">
+    <div>
+      <h2 id="issued-title">Certificados emitidos</h2>
+      <p class="text-muted text-small">
+        Cada tipo lleva su consecutivo anual sin saltos. Anular no borra: el número queda
+        registrado.
+      </p>
+    </div>
+    <div class="toolbar">
+      @if (types().length > 0) {
+        <div class="field">
+          <label for="issued-filter-type">Filtrar por tipo</label>
+          <select
+            id="issued-filter-type"
+            class="select"
+            #typeSelect
+            (change)="onTypeFilter(typeSelect.value)"
+          >
+            <option value="">Todos los tipos</option>
+            @for (type of types(); track type.code) {
+              <option [value]="type.code" [selected]="typeFilter() === type.code">
+                {{ type.name }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+      <div class="field">
+        <label for="issued-filter-status">Filtrar por estado</label>
+        <select
+          id="issued-filter-status"
+          class="select"
+          #statusSelect
+          (change)="onStatusFilter(statusSelect.value)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="ISSUED">Vigente</option>
+          <option value="VOIDED">Anulado</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div role="status" aria-live="polite" class="table-message">
+    @if (message(); as text) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span>{{ text }}</span>
+      </div>
+    }
+  </div>
+
+  @if (certificates.error()) {
+    <div class="table-message">
+      <app-error-banner [message]="loadError()" (retry)="certificates.reload()" />
+    </div>
+  } @else if (certificates.isLoading() && !certificates.hasValue()) {
+    <div class="table-message"><app-loading label="Cargando certificados…" /></div>
+  } @else if (certificates.value(); as result) {
+    @if (result.total === 0) {
+      <app-empty-state
+        icon="certificate"
+        title="No hay certificados"
+        description="Ningún certificado coincide con los filtros seleccionados."
+      />
+    } @else {
+      <div class="table-wrap" [attr.aria-busy]="certificates.isLoading()">
+        <table class="table">
+          <caption class="visually-hidden">
+            Certificados emitidos
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Miembro</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Emitido por</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of result.items; track row.id) {
+              <tr>
+                <td class="code">{{ row.number }}</td>
+                <td>{{ row.typeName }}</td>
+                <td>
+                  <div>{{ row.memberName }}</div>
+                  <div class="text-muted text-small mono">{{ row.memberCode }}</div>
+                </td>
+                <td>{{ row.issuedOn | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ row.issuedByName }}</td>
+                <td>
+                  <app-status-badge
+                    [label]="statusLabels[row.status]"
+                    [tone]="badgeTone(row.status)"
+                  />
+                  @if (row.voidReason) {
+                    <div class="text-muted text-small void-reason">
+                      Motivo: {{ row.voidReason }}
+                    </div>
+                  }
+                </td>
+                <td>
+                  <div class="cluster row-actions">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Ver o imprimir ' + row.number"
+                      (click)="view(row)"
+                    >
+                      <app-icon name="printer" [size]="16" />
+                      Ver / Imprimir
+                    </button>
+                    @if (canIssue() && row.status === 'ISSUED') {
+                      <button
+                        type="button"
+                        class="btn btn--danger-ghost btn--sm"
+                        [attr.aria-label]="'Anular ' + row.number"
+                        (click)="askVoid(row)"
+                      >
+                        <app-icon name="ban" [size]="16" />
+                        Anular
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        [page]="result.page"
+        [pageSize]="result.pageSize"
+        [total]="result.total"
+        (pageChange)="page.set($event)"
+      />
+    }
+  }
+</section>
+
+<app-certificate-view-dialog [(open)]="viewOpen" [certificateId]="viewId()" />
+
+<app-void-dialog
+  [(open)]="voidOpen"
+  title="Anular certificado"
+  [subject]="voidSubject()"
+  description="Anular no borra: el número queda registrado con estado Anulado, junto con el motivo, la fecha y tu usuario. El consecutivo no se reutiliza."
+  confirmLabel="Anular certificado"
+  [pending]="voidPending()"
+  [error]="voidError()"
+  (confirmed)="confirmVoid($event)"
+/>

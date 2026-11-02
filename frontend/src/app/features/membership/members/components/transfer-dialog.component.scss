@@ -1,0 +1,36 @@
+@use 'tokens' as *;
+
+.transfer__destination {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.transfer__toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  padding: $space-1;
+  border-radius: $radius-control;
+  background: $color-surface-2;
+
+  button {
+    flex: 1 1 12rem;
+    min-height: 2.25rem;
+    border: 1px solid transparent;
+    border-radius: $radius-control - 2px;
+    background: transparent;
+    color: $color-ink-muted;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: $color-border;
+      background: $color-surface;
+      color: $color-primary;
+    }
+  }
+}

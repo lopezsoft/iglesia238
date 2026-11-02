@@ -1,0 +1,143 @@
+<fieldset class="step" [formGroup]="group()">
+  <legend class="step__legend">Datos personales</legend>
+  <p class="text-muted step__lead">
+    Los campos marcados con * son obligatorios. Usa los datos tal como aparecen en tu documento.
+  </p>
+
+  <div class="form-grid">
+    <div class="field">
+      <label for="firstName">Nombres *</label>
+      <input id="firstName" class="input" type="text" formControlName="firstName" autocomplete="given-name"
+        required [attr.aria-describedby]="errorId('firstName')" [attr.aria-invalid]="ariaInvalid('firstName')" />
+      @if (invalid('firstName')) {
+        <p id="firstName-error" class="field__error">Escribe tus nombres.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="lastName">Primer apellido *</label>
+      <input id="lastName" class="input" type="text" formControlName="lastName" autocomplete="family-name"
+        required [attr.aria-describedby]="errorId('lastName')" [attr.aria-invalid]="ariaInvalid('lastName')" />
+      @if (invalid('lastName')) {
+        <p id="lastName-error" class="field__error">Escribe tu primer apellido.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="secondLastName">Segundo apellido</label>
+      <input id="secondLastName" class="input" type="text" formControlName="secondLastName" autocomplete="additional-name"
+        [attr.aria-describedby]="errorId('secondLastName')" [attr.aria-invalid]="ariaInvalid('secondLastName')" />
+      @if (invalid('secondLastName')) {
+        <p id="secondLastName-error" class="field__error">Máximo 80 caracteres.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="documentTypeCode">Tipo de documento *</label>
+      <select id="documentTypeCode" class="select" formControlName="documentTypeCode" required>
+        @for (type of documentTypes; track type.code) {
+          <option [value]="type.code">{{ type.code }} · {{ type.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="documentNumber">Número de documento *</label>
+      <input id="documentNumber" class="input" type="text" formControlName="documentNumber" inputmode="text"
+        autocomplete="off" required [attr.aria-describedby]="describedBy('documentNumber', 'documentNumber-hint')"
+        [attr.aria-invalid]="ariaInvalid('documentNumber')" />
+      @if (invalid('documentNumber')) {
+        <p id="documentNumber-error" class="field__error">
+          {{ group().controls.documentNumber.hasError('required') ? 'Escribe el número de documento.' : 'Usa solo letras y números (3 a 20), sin puntos ni espacios.' }}
+        </p>
+      }
+      <p id="documentNumber-hint" class="field__hint">Sin puntos ni espacios.</p>
+    </div>
+
+    <div class="field">
+      <label for="birthDate">Fecha de nacimiento *</label>
+      <input id="birthDate" class="input" type="date" formControlName="birthDate" autocomplete="bday" required
+        [attr.aria-describedby]="describedBy('birthDate', 'birthDate-hint')" [attr.aria-invalid]="ariaInvalid('birthDate')" />
+      @if (invalid('birthDate')) {
+        <p id="birthDate-error" class="field__error">{{ birthDateMessage() }}</p>
+      }
+      <p id="birthDate-hint" class="field__hint" aria-live="polite">
+        @if (isMinor()) {
+          Tienes {{ age() }} años: en el siguiente paso te pediremos los datos de tu acudiente.
+        } @else {
+          Si eres menor de 18 años te pediremos los datos de tu acudiente.
+        }
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="sex">Sexo *</label>
+      <select id="sex" class="select" formControlName="sex" required [attr.aria-describedby]="errorId('sex')"
+        [attr.aria-invalid]="ariaInvalid('sex')">
+        <option value="" disabled>Selecciona…</option>
+        @for (option of sexOptions; track option.code) {
+          <option [value]="option.code">{{ option.name }}</option>
+        }
+      </select>
+      @if (invalid('sex')) {
+        <p id="sex-error" class="field__error">Selecciona una opción.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="maritalStatusCode">Estado civil *</label>
+      <select id="maritalStatusCode" class="select" formControlName="maritalStatusCode" required
+        [attr.aria-describedby]="errorId('maritalStatusCode')" [attr.aria-invalid]="ariaInvalid('maritalStatusCode')">
+        <option value="" disabled>Selecciona…</option>
+        @for (status of maritalStatuses; track status.code) {
+          <option [value]="status.code">{{ status.name }}</option>
+        }
+      </select>
+      @if (invalid('maritalStatusCode')) {
+        <p id="maritalStatusCode-error" class="field__error">Selecciona tu estado civil.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="phone">Teléfono celular *</label>
+      <input id="phone" class="input" type="tel" formControlName="phone" autocomplete="tel" required
+        [attr.aria-describedby]="errorId('phone')" [attr.aria-invalid]="ariaInvalid('phone')" />
+      @if (invalid('phone')) {
+        <p id="phone-error" class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="email">Correo electrónico</label>
+      <input id="email" class="input" type="email" formControlName="email" autocomplete="email"
+        [attr.aria-describedby]="describedBy('email', 'email-hint')" [attr.aria-invalid]="ariaInvalid('email')" />
+      @if (invalid('email')) {
+        <p id="email-error" class="field__error">Escribe un correo válido o déjalo vacío.</p>
+      }
+      <p id="email-hint" class="field__hint">Opcional. Lo usaremos para contactarte sobre tu solicitud.</p>
+    </div>
+
+    <div class="field">
+      <label for="address">Dirección de residencia *</label>
+      <input id="address" class="input" type="text" formControlName="address" autocomplete="street-address" required
+        [attr.aria-describedby]="errorId('address')" [attr.aria-invalid]="ariaInvalid('address')" />
+      @if (invalid('address')) {
+        <p id="address-error" class="field__error">Escribe tu dirección (máximo 120 caracteres).</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="municipalityCode">Municipio *</label>
+      <select id="municipalityCode" class="select" formControlName="municipalityCode" required
+        [attr.aria-describedby]="errorId('municipalityCode')" [attr.aria-invalid]="ariaInvalid('municipalityCode')">
+        <option value="" disabled>Selecciona…</option>
+        @for (municipality of municipalities; track municipality.code) {
+          <option [value]="municipality.code">{{ municipality.label }}</option>
+        }
+      </select>
+      @if (invalid('municipalityCode')) {
+        <p id="municipalityCode-error" class="field__error">Selecciona tu municipio.</p>
+      }
+    </div>
+  </div>
+</fieldset>

@@ -1,0 +1,72 @@
+@use 'tokens' as *;
+
+.year-field {
+  flex-direction: row;
+  align-items: center;
+  gap: $space-2;
+}
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+
+  .tabs {
+    margin-bottom: $space-4;
+  }
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0 0 $space-4;
+
+  &__mark {
+    width: 2px;
+    height: 0.875rem;
+    background: $color-ink-muted;
+  }
+}
+
+.committee {
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-2;
+
+    h3 {
+      margin: 0;
+      font-size: $font-size-md;
+    }
+  }
+}
+
+.committee-total {
+  padding: $space-4;
+  border-radius: $radius-control;
+  background: $color-surface-2;
+
+  p {
+    margin: 0 0 $space-3;
+  }
+}
+
+.notes p {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0 0 $space-2;
+}

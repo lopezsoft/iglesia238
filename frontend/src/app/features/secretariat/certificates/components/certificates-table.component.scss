@@ -1,0 +1,26 @@
+@use 'tokens' as *;
+
+.table-header {
+  align-items: flex-end;
+  margin-bottom: 0;
+  padding: $space-5 $space-5 $space-4;
+}
+
+.table-message {
+  padding: 0 $space-5;
+
+  &:not(:empty) {
+    padding-bottom: $space-4;
+  }
+}
+
+.void-reason {
+  max-width: 16rem;
+  margin-top: $space-1;
+  white-space: normal;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+  gap: $space-2;
+}

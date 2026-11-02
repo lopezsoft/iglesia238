@@ -1,0 +1,106 @@
+<app-page-header
+  breadcrumb="Inicio / Organización / Sedes y razones sociales"
+  title="Sedes y razones sociales"
+  [description]="description()"
+>
+  @if (canManage()) {
+    <button type="button" class="btn btn--primary" (click)="openCreate()">
+      <app-icon name="plus" />
+      <span>{{ createLabel() }}</span>
+    </button>
+  }
+</app-page-header>
+
+<div class="stack">
+  @if (canManage()) {
+    <div class="alert" role="note">
+      <app-icon name="info" />
+      <p>
+        Tu rol tiene <span class="chip chip--mono">congregations.manage</span>: puedes crear sedes,
+        razones sociales y distritos, y abrir o cerrar las inscripciones públicas.
+        @if (denominationName()) {
+          Solo ves datos de {{ denominationName() }}.
+        }
+      </p>
+    </div>
+  } @else {
+    <app-read-only-notice permission="congregations.manage" />
+  }
+
+  <div aria-live="polite">
+    @if (notice(); as message) {
+      <div class="alert alert--success notice" role="status">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button
+          type="button"
+          class="btn btn--ghost btn--icon btn--sm"
+          aria-label="Cerrar aviso"
+          (click)="notice.set(null)"
+        >
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (overview.error()) {
+    <div class="alert alert--danger" role="alert">
+      <app-icon name="alert" />
+      <span>No fue posible cargar el resumen de la denominación.</span>
+    </div>
+  }
+
+  <section class="grid-auto" aria-label="Resumen">
+    <app-stat-card
+      label="Sedes activas"
+      icon="building"
+      [value]="summary()?.activeCongregations ?? '—'"
+    />
+    <app-stat-card label="Aceptan inscripciones" icon="inbox" [value]="acceptingLabel()" />
+    <app-stat-card
+      label="Razones sociales"
+      icon="landmark"
+      [value]="summary()?.legalEntities ?? '—'"
+    />
+    <app-stat-card label="Distritos" icon="church" [value]="summary()?.districts ?? '—'" />
+  </section>
+
+  <div>
+    <div class="tabs" role="tablist" aria-label="Secciones de organización">
+      @for (tab of tabs; track tab.value; let index = $index) {
+        <button
+          #tabButton
+          type="button"
+          role="tab"
+          [id]="tabId(tab.value)"
+          [attr.aria-selected]="activeTab() === tab.value"
+          [attr.tabindex]="activeTab() === tab.value ? 0 : -1"
+          aria-controls="organization-panel"
+          (click)="selectTab(tab.value)"
+          (keydown)="onTabKeydown($event, index)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
+    <section id="organization-panel" role="tabpanel" [attr.aria-labelledby]="tabId(activeTab())">
+      @switch (activeTab()) {
+        @case ('sedes') {
+          <app-congregations-panel
+            [canManage]="canManage()"
+            [denominationName]="denominationName()"
+            (changed)="onChanged($event)"
+          />
+        }
+        @case ('razones') {
+          <app-legal-entities-panel [canManage]="canManage()" (changed)="onChanged($event)" />
+        }
+        @case ('distritos') {
+          <app-districts-panel [canManage]="canManage()" (changed)="onChanged($event)" />
+        }
+      }
+    </section>
+  </div>
+</div>

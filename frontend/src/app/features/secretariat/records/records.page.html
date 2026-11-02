@@ -1,0 +1,131 @@
+<div class="stack">
+  <app-page-header
+    breadcrumb="Inicio / Secretaría"
+    title="Registros de secretaría"
+    [description]="'Presentaciones de niños, matrimonios y periodos pastorales de ' + scopeName() + '.'"
+  >
+    <span class="chip chip--mono"><app-icon name="shield" [size]="14" /> Permiso members.write</span>
+    @if (canWrite()) {
+      <button type="button" class="btn btn--primary" [disabled]="!context.hasValue()" (click)="openNew()">
+        <app-icon name="plus" />
+        {{ activeTab().newLabel }}
+      </button>
+    }
+  </app-page-header>
+
+  @if (!canWrite()) {
+    <app-read-only-notice permission="members.write" />
+  }
+
+  <div role="status" aria-live="polite">
+    @if (toast(); as message) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span class="grow">{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="toast.set(null)">
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (loadError()) {
+    <app-error-banner message="No fue posible cargar los registros de secretaría." (retry)="reloadAll()" />
+  } @else if (loading() && !context.hasValue()) {
+    <app-loading label="Cargando registros…" />
+  } @else {
+    <div class="grid-auto">
+      <app-stat-card
+        [label]="'Presentaciones en ' + stats().year"
+        [value]="stats().dedicationsThisYear"
+        [hint]="'Total histórico: ' + stats().dedicationsTotal"
+        icon="book"
+      />
+      <app-stat-card
+        label="Matrimonios vigentes"
+        [value]="stats().marriagesActive"
+        [hint]="stats().marriagesDissolved + ' disueltos registrados'"
+        icon="users"
+      />
+      <app-stat-card [label]="stats().pastorLabel" [value]="stats().pastorValue" [hint]="stats().pastorHint" icon="church" />
+    </div>
+
+    <div>
+      <div class="tabs" role="tablist" aria-label="Tipo de registro">
+        @for (tab of tabs; track tab.key; let index = $index) {
+          <button
+            type="button"
+            role="tab"
+            [id]="'records-tab-' + tab.key"
+            [attr.aria-controls]="'records-panel-' + tab.key"
+            [attr.aria-selected]="tab.key === activeTab().key"
+            [attr.tabindex]="tab.key === activeTab().key ? 0 : -1"
+            (click)="selectTab(tab.key)"
+            (keydown)="onTabKeydown($event, index)"
+          >
+            {{ tab.label }}
+            <span class="badge">{{ counts()[tab.key] }}</span>
+          </button>
+        }
+      </div>
+
+      <section
+        role="tabpanel"
+        [id]="'records-panel-' + activeTab().key"
+        [attr.aria-labelledby]="'records-tab-' + activeTab().key"
+      >
+        @switch (activeTab().key) {
+          @case ('dedications') {
+            @if (dedications.hasValue()) {
+              <app-dedications-panel [rows]="dedications.value()" [scopeName]="scopeName()" />
+            } @else {
+              <app-loading label="Cargando presentaciones…" />
+            }
+          }
+          @case ('marriages') {
+            @if (marriages.hasValue()) {
+              <app-marriages-panel
+                [rows]="marriages.value()"
+                [scopeName]="scopeName()"
+                [canWrite]="canWrite()"
+                (dissolve)="openDissolution($event)"
+              />
+            } @else {
+              <app-loading label="Cargando matrimonios…" />
+            }
+          }
+          @case ('pastoral') {
+            @if (terms.hasValue()) {
+              <app-pastoral-terms-panel [terms]="termRows()" [congregations]="congregations()" />
+            } @else {
+              <app-loading label="Cargando periodos pastorales…" />
+            }
+          }
+        }
+      </section>
+    </div>
+  }
+</div>
+
+@if (context.hasValue() && canWrite()) {
+  <app-dedication-dialog
+    [(open)]="dedicationOpen"
+    [context]="context.value()"
+    [currentPastors]="currentPastors()"
+    (saved)="onSaved($event, 'dedications')"
+  />
+  <app-marriage-dialog
+    [(open)]="marriageOpen"
+    [context]="context.value()"
+    [marriedPersonIds]="marriedPersonIds()"
+    [defaultOfficiantId]="defaultOfficiantId()"
+    (saved)="onSaved($event, 'marriages')"
+  />
+  <app-dissolution-dialog [(open)]="dissolutionOpen" [marriage]="dissolving()" (saved)="onSaved($event, 'marriages')" />
+  <app-pastoral-term-dialog
+    [(open)]="termOpen"
+    [context]="context.value()"
+    [terms]="termRows()"
+    (saved)="onSaved($event, 'terms')"
+  />
+}

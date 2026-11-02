@@ -1,0 +1,44 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.table-header {
+  padding: $space-5 $space-5 0;
+}
+
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 8rem;
+
+  .progress {
+    flex: 1;
+  }
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-primary-hover;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}

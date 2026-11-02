@@ -1,0 +1,119 @@
+<app-page-header
+  breadcrumb="Organización"
+  title="Usuarios y roles"
+  description="Asigna y revoca roles por alcance: toda la denominación o una sede específica."
+>
+  @if (canReadAudit()) {
+    <a class="btn btn--secondary" routerLink="/audit">
+      <app-icon name="shield" />
+      <span>Ver auditoría de accesos</span>
+    </a>
+  }
+  <button type="button" class="btn btn--primary" [disabled]="!grantContext()" (click)="inviteOpen.set(true)">
+    <app-icon name="plus" />
+    <span>Invitar usuario</span>
+  </button>
+</app-page-header>
+
+<div class="stack">
+  @if (grantContext(); as grant) {
+    <p class="alert" role="note">
+      <app-icon name="info" />
+      @if (grant.isPlatformAdmin) {
+        <span>
+          Tu rol tiene el permiso <code>users.manage</code> en toda la plataforma. Puedes otorgar cualquier rol en
+          cualquier denominación activa.
+        </span>
+      } @else {
+        <span>
+          Tu rol tiene el permiso <code>users.manage</code> dentro de {{ grant.audienceLabel }}. Puedes otorgar
+          {{ grantableRoleNames().join(', ') }}. El rol Administrador de plataforma solo lo asigna el equipo de
+          plataforma.
+        </span>
+      }
+    </p>
+  }
+
+  <div role="status" aria-live="polite">
+    @if (notice(); as message) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span class="notice__text">{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--sm" aria-label="Cerrar aviso" (click)="notice.set(null)">
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (loadError(); as message) {
+    <app-error-banner [message]="message" (retry)="retry()" />
+  }
+
+  <div class="users-layout" [class.users-layout--detail]="selected() && grantContext()">
+    <section class="card card--flush" aria-labelledby="users-title">
+      <div class="users-toolbar">
+        <h2 id="users-title">
+          {{ grantContext()?.isPlatformAdmin ? 'Usuarios de la plataforma' : 'Usuarios de la denominación' }}
+        </h2>
+        <div class="toolbar">
+          <div class="field">
+            <label for="user-search">Buscar</label>
+            <input
+              id="user-search"
+              class="input"
+              type="search"
+              placeholder="Nombre o correo"
+              [value]="search()"
+              (input)="onSearch($event)"
+            />
+          </div>
+          <div class="field">
+            <label for="role-filter">Rol</label>
+            <select id="role-filter" class="select" [value]="roleFilter()" (change)="onRoleFilter($event)">
+              <option value="">Todos los roles</option>
+              @for (option of grantContext()?.roles ?? []; track option.role) {
+                <option [value]="option.role">{{ roleNames[option.role] }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      @if (users.isLoading() && !users.hasValue()) {
+        <app-loading label="Cargando usuarios…" />
+      } @else if (userList()) {
+        @if (pageResult().total > 0) {
+          <app-user-table [users]="pageResult().items" [selectedId]="selectedId()" (selectUser)="select($event)" />
+        } @else {
+          <app-empty-state
+            icon="users"
+            title="Sin resultados"
+            description="No hay usuarios que coincidan con la búsqueda o el filtro de rol."
+          />
+        }
+        <app-pagination
+          [page]="page()"
+          [pageSize]="pageSize"
+          [total]="pageResult().total"
+          (pageChange)="page.set($event)"
+        />
+      }
+    </section>
+
+    @if (grantContext(); as grant) {
+      @if (selected(); as user) {
+        <app-user-role-panel
+          [user]="user"
+          [context]="grant"
+          (changed)="onChanged($event)"
+          (closed)="selectedId.set(null)"
+        />
+      }
+    }
+  </div>
+</div>
+
+@if (grantContext(); as grant) {
+  <app-invite-user-dialog [(open)]="inviteOpen" [context]="grant" (invited)="onInvited($event)" />
+}

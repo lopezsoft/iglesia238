@@ -1,3 +1,137 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
+import { ACCESS } from './core/navigation/navigation';
+import { PublicLayoutComponent } from './layout/public-layout.component';
+import { ShellComponent } from './layout/shell.component';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  {
+    path: 'login',
+    canMatch: [guestGuard],
+    loadChildren: () => import('./features/auth/auth.routes'),
+  },
+  {
+    path: 'apply',
+    component: PublicLayoutComponent,
+    loadChildren: () => import('./features/public/public.routes'),
+  },
+  {
+    path: '',
+    component: ShellComponent,
+    canMatch: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      {
+        path: 'dashboard',
+        title: 'Inicio',
+        loadChildren: () => import('./features/dashboard/dashboard.routes'),
+      },
+      {
+        path: 'denominations',
+        title: 'Denominaciones',
+        canMatch: [permissionGuard(...ACCESS.denominations)],
+        loadChildren: () => import('./features/platform/denominations.routes'),
+      },
+      {
+        path: 'organization',
+        title: 'Sedes y razones sociales',
+        canMatch: [permissionGuard(...ACCESS.organization)],
+        loadChildren: () => import('./features/organization/organization.routes'),
+      },
+      {
+        path: 'users',
+        title: 'Usuarios y roles',
+        canMatch: [permissionGuard(...ACCESS.users)],
+        loadChildren: () => import('./features/users/users.routes'),
+      },
+      {
+        path: 'applications',
+        title: 'Solicitudes',
+        canMatch: [permissionGuard(...ACCESS.applications)],
+        loadChildren: () => import('./features/membership/applications.routes'),
+      },
+      {
+        path: 'members',
+        title: 'Miembros',
+        canMatch: [permissionGuard(...ACCESS.members)],
+        loadChildren: () => import('./features/membership/members.routes'),
+      },
+      {
+        path: 'certificates',
+        title: 'Certificados y carnés',
+        canMatch: [permissionGuard(...ACCESS.certificates)],
+        loadChildren: () => import('./features/secretariat/certificates.routes'),
+      },
+      {
+        path: 'attendance',
+        title: 'Asistencia',
+        canMatch: [permissionGuard(...ACCESS.attendance)],
+        loadChildren: () => import('./features/secretariat/attendance.routes'),
+      },
+      {
+        path: 'secretariat-records',
+        title: 'Registros de secretaría',
+        canMatch: [permissionGuard(...ACCESS.secretariatRecords)],
+        loadChildren: () => import('./features/secretariat/records.routes'),
+      },
+      {
+        path: 'accounting/contributions',
+        title: 'Aportes',
+        canMatch: [permissionGuard(...ACCESS.contributions)],
+        loadChildren: () => import('./features/accounting/contributions.routes'),
+      },
+      {
+        path: 'accounting/vows',
+        title: 'Votos',
+        canMatch: [permissionGuard(...ACCESS.vows)],
+        loadChildren: () => import('./features/accounting/vows.routes'),
+      },
+      {
+        path: 'accounting/cash-book',
+        title: 'Libro de caja',
+        canMatch: [permissionGuard(...ACCESS.cashBook)],
+        loadChildren: () => import('./features/accounting/cash-book.routes'),
+      },
+      {
+        path: 'accounting/tithe-settlements',
+        title: 'Liquidación del diezmo',
+        canMatch: [permissionGuard(...ACCESS.titheSettlements)],
+        loadChildren: () => import('./features/accounting/tithe-settlements.routes'),
+      },
+      {
+        path: 'accounting/budget',
+        title: 'Presupuesto',
+        canMatch: [permissionGuard(...ACCESS.budget)],
+        loadChildren: () => import('./features/accounting/budget.routes'),
+      },
+      {
+        path: 'accounting/setup',
+        title: 'Configuración contable',
+        canMatch: [permissionGuard(...ACCESS.accountingSetup)],
+        loadChildren: () => import('./features/accounting/setup.routes'),
+      },
+      {
+        path: 'reports',
+        title: 'Reportes',
+        canMatch: [permissionGuard(...ACCESS.reports)],
+        loadChildren: () => import('./features/reports/reports.routes'),
+      },
+      {
+        path: 'audit',
+        title: 'Auditoría',
+        canMatch: [permissionGuard(...ACCESS.audit)],
+        loadChildren: () => import('./features/audit/audit.routes'),
+      },
+      {
+        path: 'forbidden',
+        title: 'Sin acceso',
+        loadComponent: () => import('./features/errors/forbidden.page'),
+      },
+    ],
+  },
+  {
+    path: '**',
+    title: 'Página no encontrada',
+    loadComponent: () => import('./features/errors/not-found.page'),
+  },
+];

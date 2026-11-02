@@ -1,0 +1,65 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.filters {
+  .field {
+    flex: 1 1 12rem;
+    max-width: 18rem;
+  }
+
+  &__status {
+    align-self: center;
+  }
+
+  &__actions {
+    margin-left: auto;
+  }
+
+  &__hint {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}
+
+.closed-banner {
+  align-items: center;
+  flex-wrap: wrap;
+
+  > div {
+    flex: 1 1 16rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.consolidate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-4;
+  color: $color-primary;
+
+  &__text {
+    flex: 1 1 18rem;
+    color: $color-ink;
+
+    h2 {
+      margin: 0 0 $space-1;
+      font-size: $font-size-md;
+    }
+
+    p {
+      margin: 0 0 $space-1;
+    }
+  }
+}

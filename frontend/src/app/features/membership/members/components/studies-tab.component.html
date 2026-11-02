@@ -1,0 +1,178 @@
+<div class="tab__header">
+  <div>
+    <h2>Estudios</h2>
+    <p class="text-muted text-small">
+      Agrupados por tipo: cursos, técnicos, universitarios, iniciales, teológicos y educación
+      cristiana.
+    </p>
+  </div>
+  @if (canWrite()) {
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      aria-haspopup="dialog"
+      (click)="openAdd()"
+    >
+      <app-icon name="plus" />
+      Agregar estudio
+    </button>
+  }
+</div>
+
+<div aria-live="polite">
+  @if (command.message(); as text) {
+    <p class="alert alert--success" role="status">{{ text }}</p>
+  }
+  @if (!addOpen() && command.error(); as text) {
+    <p class="alert alert--danger" role="alert">{{ text }}</p>
+  }
+</div>
+
+@if (loadError(); as text) {
+  <app-error-banner [message]="text" (retry)="studies.reload()" />
+} @else if (studies.isLoading() && !studies.hasValue()) {
+  <app-loading label="Cargando estudios…" />
+} @else if (rows().length === 0) {
+  <app-empty-state icon="book" title="Sin estudios registrados" />
+} @else {
+  <div class="table-wrap tab__table">
+    <table class="table">
+      <caption class="visually-hidden">
+        Estudios registrados
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Tipo</th>
+          <th scope="col">Programa o título</th>
+          <th scope="col">Institución</th>
+          <th scope="col" class="text-right">Año</th>
+          <th scope="col">Estado</th>
+          @if (canWrite()) {
+            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>
+              <span class="chip">{{ typeName(row.studyTypeCode) }}</span>
+            </td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.institution ?? '—' }}</td>
+            <td class="num">{{ row.year ?? '—' }}</td>
+            <td>
+              <app-status-badge
+                [label]="statusLabels[row.status]"
+                [tone]="row.status === 'COMPLETED' ? 'success' : 'info'"
+              />
+            </td>
+            @if (canWrite()) {
+              <td class="text-right">
+                @if (confirmingId() === row.id) {
+                  <span class="cluster">
+                    <span class="text-small">¿Eliminar?</span>
+                    <button
+                      type="button"
+                      class="btn btn--danger btn--sm"
+                      [disabled]="command.pending()"
+                      (click)="remove(row.id)"
+                    >
+                      Sí, eliminar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      (click)="confirmingId.set(null)"
+                    >
+                      No
+                    </button>
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn--danger-ghost btn--sm"
+                    [attr.aria-label]="'Eliminar estudio ' + row.name"
+                    (click)="confirmingId.set(row.id)"
+                  >
+                    Eliminar
+                  </button>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<app-dialog [(open)]="addOpen" title="Agregar estudio">
+  <form id="study-add-form" class="stack" [formGroup]="form" (ngSubmit)="add()" novalidate>
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <div class="form-grid">
+      <div class="field">
+        <label for="study-type">Tipo de estudio *</label>
+        <select id="study-type" class="select" formControlName="studyTypeCode">
+          @for (type of studyTypes; track type.code) {
+            <option [value]="type.code">{{ type.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="study-status">Estado *</label>
+        <select id="study-status" class="select" formControlName="status">
+          <option value="COMPLETED">{{ statusLabels.COMPLETED }}</option>
+          <option value="IN_PROGRESS">{{ statusLabels.IN_PROGRESS }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="study-name">Programa o título *</label>
+      <input id="study-name" class="input" formControlName="name" />
+      @if (showError('name')) {
+        <span class="field__error">Escribe el programa o título (entre 3 y 150 caracteres).</span>
+      }
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="study-institution">Institución</label>
+        <input id="study-institution" class="input" formControlName="institution" />
+        @if (showError('institution')) {
+          <span class="field__error">Máximo 150 caracteres.</span>
+        }
+      </div>
+      <div class="field">
+        <label for="study-year">Año</label>
+        <input
+          id="study-year"
+          class="input"
+          type="number"
+          min="1940"
+          [max]="currentYear"
+          formControlName="year"
+          aria-describedby="study-year-hint"
+        />
+        <span id="study-year-hint" class="field__hint"
+          >Año de finalización, o de inicio si está en curso.</span
+        >
+        @if (showError('year')) {
+          <span class="field__error">El año debe estar entre 1940 y {{ currentYear }}.</span>
+        }
+      </div>
+    </div>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="addOpen.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="study-add-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Agregar' }}
+    </button>
+  </div>
+</app-dialog>

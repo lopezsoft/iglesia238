@@ -1,0 +1,432 @@
+// Vocabulario visual compartido. Las funcionalidades usan estas clases en sus plantillas
+// y reservan los estilos de componente para la disposición propia de cada pantalla.
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// Botones
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  min-height: $control-height;
+  padding: 0 $space-4;
+  border: 1px solid transparent;
+  border-radius: $radius-control;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: $color-primary;
+    color: $color-on-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-primary-hover;
+      color: $color-on-primary;
+    }
+  }
+
+  &--secondary {
+    background: $color-surface;
+    border-color: $color-border;
+    color: $color-ink;
+
+    &:hover:not(:disabled) {
+      background: $color-surface-2;
+      color: $color-ink;
+    }
+  }
+
+  &--danger {
+    background: $color-danger;
+    color: $color-on-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-danger-hover;
+      color: $color-on-primary;
+    }
+  }
+
+  &--danger-ghost {
+    background: $color-surface;
+    border-color: $color-danger-border;
+    color: $color-danger;
+
+    &:hover:not(:disabled) {
+      background: $color-danger-soft;
+      color: $color-danger;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-primary-soft;
+    }
+  }
+
+  &--sm {
+    min-height: 2rem;
+    padding: 0 $space-3;
+    font-size: $font-size-xs;
+  }
+
+  &--icon {
+    width: $control-height;
+    padding: 0;
+  }
+}
+
+// Tarjetas y secciones
+.card {
+  @include card;
+  padding: $space-5;
+
+  &--flush {
+    padding: 0;
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    margin-bottom: $space-4;
+  }
+
+  &__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: $space-3;
+    margin-top: $space-5;
+  }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
+  gap: $space-4;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: $space-3;
+}
+
+.text-muted {
+  color: $color-ink-muted;
+}
+
+.text-small {
+  font-size: $font-size-xs;
+}
+
+.text-right {
+  text-align: right;
+}
+
+// Formularios
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0;
+
+  > label,
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-ink-muted;
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  &__error {
+    font-size: $font-size-xs;
+    color: $color-danger;
+  }
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: $control-height;
+  padding: 0 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  color: $color-ink;
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: $color-primary;
+  }
+
+  &:disabled {
+    background: $color-surface-2;
+    color: $color-ink-muted;
+  }
+
+  &.ng-invalid.ng-touched {
+    border-color: $color-danger;
+  }
+}
+
+.textarea {
+  min-height: 6rem;
+  padding: $space-2 $space-3;
+  resize: vertical;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: $space-4;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: $space-2;
+  cursor: pointer;
+
+  input {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.15rem;
+    accent-color: $color-primary;
+  }
+}
+
+// Tablas
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: $space-2 + 0.125rem $space-3;
+    border-bottom: 1px solid $color-border;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: $color-surface-2;
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+  }
+
+  tbody tr:hover {
+    background: rgba($color-primary-soft, 0.5);
+  }
+
+  tr.is-selected {
+    background: $color-primary-soft;
+  }
+
+  .num {
+    font-family: $font-mono;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .code {
+    font-family: $font-mono;
+    white-space: nowrap;
+  }
+
+  tfoot td {
+    font-weight: $font-weight-semibold;
+    background: $color-surface-2;
+  }
+}
+
+// Insignias de estado
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem $space-2;
+  border-radius: $radius-pill;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  background: $color-surface-2;
+  color: $color-ink-muted;
+
+  &--success {
+    background: $color-success-soft;
+    color: $color-success;
+  }
+
+  &--warning {
+    background: $color-warning-soft;
+    color: $color-warning;
+  }
+
+  &--danger {
+    background: $color-danger-soft;
+    color: $color-danger;
+  }
+
+  &--info {
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0.125rem $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-pill;
+  background: $color-surface;
+  font-size: $font-size-xs;
+
+  &--mono {
+    font-family: $font-mono;
+  }
+}
+
+// Avisos
+.alert {
+  display: flex;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-control;
+  background: $color-primary-soft;
+  color: $color-ink;
+
+  &--warning {
+    background: $color-warning-soft;
+  }
+
+  &--danger {
+    background: $color-danger-soft;
+  }
+
+  &--success {
+    background: $color-success-soft;
+  }
+
+  strong {
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// Pestañas: role="tablist" con botones role="tab"
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  padding: $space-1;
+  margin-bottom: $space-5;
+  background: $color-surface-2;
+  border-radius: $radius-control;
+  width: fit-content;
+  max-width: 100%;
+
+  [role='tab'] {
+    min-height: 2.25rem;
+    padding: 0 $space-4;
+    border: 0;
+    border-radius: $radius-control - 2px;
+    background: transparent;
+    color: $color-ink-muted;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      background: $color-surface;
+      color: $color-ink;
+      box-shadow: $shadow-card;
+    }
+  }
+}
+
+// Listas de definición (fichas)
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: $space-4 $space-5;
+  margin: 0;
+
+  dt {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-ink-muted;
+  }
+
+  dd {
+    margin: $space-1 0 0;
+  }
+}
+
+// Barras de progreso y gráficos simples
+.progress {
+  height: 0.5rem;
+  border-radius: $radius-pill;
+  background: $color-surface-2;
+  overflow: hidden;
+
+  &__bar {
+    height: 100%;
+    background: $color-primary;
+    border-radius: $radius-pill;
+
+    &--danger {
+      background: $color-danger;
+    }
+
+    &--success {
+      background: $color-success;
+    }
+  }
+}
+
+.amount {
+  font-family: $font-mono;
+  white-space: nowrap;
+}

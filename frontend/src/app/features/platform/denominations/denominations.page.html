@@ -1,0 +1,198 @@
+<app-page-header
+  breadcrumb="Inicio / Plataforma / Denominaciones"
+  title="Denominaciones"
+  description="Alta, edición y estado de las denominaciones (tenants) que usan la plataforma."
+>
+  @if (canReadAudit()) {
+    <a class="btn btn--secondary" routerLink="/audit">
+      <app-icon name="shield" />
+      <span>Ver auditoría</span>
+    </a>
+  }
+  @if (canManage()) {
+    <button type="button" class="btn btn--primary" (click)="openCreate()">
+      <app-icon name="plus" />
+      <span>Nueva denominación</span>
+    </button>
+  }
+</app-page-header>
+
+<div class="stack">
+  <div aria-live="polite">
+    @if (notice(); as message) {
+      <div class="alert alert--success notice" role="status">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button
+          type="button"
+          class="btn btn--ghost btn--icon btn--sm"
+          aria-label="Cerrar aviso"
+          (click)="notice.set(null)"
+        >
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  <section class="grid-auto" aria-label="Resumen">
+    <app-stat-card
+      label="Denominaciones registradas"
+      icon="landmark"
+      [value]="summary()?.total ?? '—'"
+    />
+    <app-stat-card label="Activas" icon="check" [value]="summary()?.active ?? '—'" />
+    <app-stat-card
+      label="Sedes en total"
+      icon="building"
+      [value]="summary()?.congregations ?? '—'"
+    />
+  </section>
+
+  <div class="alert" role="note">
+    <app-icon name="lock" />
+    <div>
+      <strong>Aislamiento por denominación</strong>
+      <p class="text-small">
+        Como administrador de plataforma gestionas las denominaciones y sus administradores, pero no
+        puedes ver miembros, solicitudes ni información financiera de ninguna denominación. Esos
+        datos solo son visibles para los roles asignados dentro de cada una.
+      </p>
+    </div>
+  </div>
+
+  <section class="card card--flush" aria-labelledby="denominations-list-title">
+    <div class="card__header list-header">
+      <h2 id="denominations-list-title">Listado</h2>
+      <div class="toolbar">
+        <div class="field">
+          <label for="denomination-search">Buscar</label>
+          <input
+            id="denomination-search"
+            class="input"
+            type="search"
+            placeholder="Nombre de la denominación"
+            [value]="search()"
+            (input)="onSearch($event)"
+          />
+        </div>
+        <div class="field">
+          <label for="denomination-status">Estado</label>
+          <select
+            id="denomination-status"
+            class="select"
+            [value]="status()"
+            (change)="onStatus($event)"
+          >
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    @if (loadError(); as message) {
+      <div class="list-feedback">
+        <app-error-banner [message]="message" (retry)="denominations.reload()" />
+      </div>
+    } @else if (denominations.isLoading() && !denominations.hasValue()) {
+      <div class="list-feedback"><app-loading label="Cargando denominaciones…" /></div>
+    } @else if (denominations.value(); as result) {
+      @if (result.items.length === 0) {
+        <app-empty-state
+          icon="landmark"
+          title="No hay denominaciones"
+          description="Ninguna denominación coincide con la búsqueda o el filtro de estado."
+        />
+      } @else {
+        <div class="table-wrap">
+          <table class="table" [attr.aria-busy]="denominations.isLoading()">
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col" class="text-right">Razones sociales</th>
+                <th scope="col" class="text-right">Sedes</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Creada</th>
+                @if (canManage()) {
+                  <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of result.items; track row.id) {
+                <tr>
+                  <td>
+                    <div class="identity">
+                      <span class="identity__avatar" aria-hidden="true">{{
+                        initials(row.name)
+                      }}</span>
+                      <span class="identity__name">{{ row.name }}</span>
+                    </div>
+                  </td>
+                  <td class="num">{{ row.legalEntityCount }}</td>
+                  <td class="num">{{ row.congregationCount }}</td>
+                  <td>
+                    <app-status-badge
+                      [label]="row.isActive ? 'Activa' : 'Inactiva'"
+                      [tone]="row.isActive ? 'success' : 'neutral'"
+                    />
+                  </td>
+                  <td>{{ row.createdAt | date: 'dd/MM/yyyy' }}</td>
+                  @if (canManage()) {
+                    <td>
+                      <div class="row-actions">
+                        <button
+                          type="button"
+                          class="btn btn--secondary btn--sm"
+                          [attr.aria-label]="'Editar ' + row.name"
+                          (click)="openEdit(row)"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn--sm"
+                          [class.btn--danger-ghost]="row.isActive"
+                          [class.btn--secondary]="!row.isActive"
+                          [attr.aria-label]="(row.isActive ? 'Desactivar ' : 'Activar ') + row.name"
+                          (click)="openStatus(row)"
+                        >
+                          {{ row.isActive ? 'Desactivar' : 'Activar' }}
+                        </button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-pagination
+          [page]="page()"
+          [pageSize]="pageSize"
+          [total]="result.total"
+          (pageChange)="page.set($event)"
+        />
+      }
+    }
+  </section>
+
+  <p class="text-muted text-small">
+    Desactivar una denominación bloquea el acceso de sus usuarios; sus datos se conservan y la
+    acción queda registrada en Auditoría. Permiso requerido:
+    <span class="chip chip--mono">denominations.manage</span>.
+  </p>
+</div>
+
+<app-denomination-form-drawer
+  [(open)]="formOpen"
+  [denomination]="editing()"
+  (saved)="onSaved($event)"
+/>
+<app-denomination-status-dialog
+  [(open)]="statusOpen"
+  [denomination]="statusTarget()"
+  (changed)="onStatusChanged($event)"
+/>

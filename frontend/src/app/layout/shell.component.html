@@ -1,0 +1,105 @@
+<!-- <base href="/"> would turn a bare fragment into a reload of '/': focus <main> by script. -->
+<a class="skip-link" href="#main-content" (click)="skipToContent($event)">Saltar al contenido</a>
+<div class="shell" [class.shell--menu-open]="menuOpen()">
+  <nav #sidebar class="sidebar" aria-label="Navegación principal" id="main-navigation">
+    <div class="sidebar__brand">
+      <span class="sidebar__mark"><app-icon name="church" [size]="22" /></span>
+      <span>
+        <span class="sidebar__product">Iglesia 238</span>
+        <span class="sidebar__scope">{{ activeScope()?.label }}</span>
+      </span>
+    </div>
+
+    @for (group of navGroups(); track group.label) {
+      <div class="sidebar__group">
+        <p class="sidebar__heading">{{ group.label }}</p>
+        <ul>
+          @for (item of group.items; track item.path) {
+            <li>
+              <a
+                class="sidebar__link"
+                [routerLink]="item.path"
+                routerLinkActive="is-active"
+                ariaCurrentWhenActive="page"
+              >
+                <app-icon [name]="item.icon" />
+                {{ item.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="sidebar__user">
+      <span class="sidebar__avatar" aria-hidden="true">{{ initials() }}</span>
+      <span class="sidebar__who">
+        <span>{{ user()?.displayName }}</span>
+        <span class="sidebar__role">{{ roleNames().join(' · ') }}</span>
+      </span>
+      <button type="button" class="sidebar__logout" (click)="logout()">
+        <app-icon name="log-out" />
+        Cerrar sesión
+      </button>
+    </div>
+  </nav>
+
+  @if (menuOpen()) {
+    <!-- Mobile only: pointer users close the menu here; keyboard users press Escape. -->
+    <div class="shell__backdrop" aria-hidden="true" (click)="closeMenu()"></div>
+  }
+
+  <div class="workspace">
+    <header class="topbar">
+      <button
+        #menuToggle
+        type="button"
+        class="btn btn--ghost btn--icon topbar__menu"
+        aria-controls="main-navigation"
+        [attr.aria-expanded]="menuOpen()"
+        aria-label="Menú"
+        (click)="toggleMenu()"
+      >
+        <app-icon name="menu" />
+      </button>
+
+      @if (scopes().length > 1) {
+        <div class="topbar__scope">
+          <label for="scope-selector">Actuar en</label>
+          <select
+            id="scope-selector"
+            class="select"
+            [value]="activeScopeKey()"
+            (change)="changeScope($any($event.target).value)"
+          >
+            @for (option of scopes(); track option.key) {
+              <option [value]="option.key" [selected]="option.key === activeScopeKey()">{{ option.scope.label }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <p class="topbar__scope-fixed">
+          <app-icon name="building" />
+          {{ activeScope()?.label }}
+        </p>
+      }
+
+      <div class="topbar__roles">
+        @for (role of roleNames(); track role) {
+          <span class="badge badge--info">{{ role }}</span>
+        }
+      </div>
+    </header>
+
+    @if (demoMode) {
+      <p class="demo-banner" role="note">
+        <app-icon name="info" />
+        Modo demostración: los datos son ficticios y viven solo en esta pestaña hasta que la API esté disponible.
+      </p>
+    }
+
+    <main #mainContent id="main-content" class="content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>

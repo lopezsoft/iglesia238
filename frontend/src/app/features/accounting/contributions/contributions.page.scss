@@ -1,0 +1,13 @@
+@use 'tokens' as *;
+
+.period-field {
+  min-width: 12rem;
+}
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}

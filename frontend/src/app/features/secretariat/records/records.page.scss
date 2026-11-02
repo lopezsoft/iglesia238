@@ -1,0 +1,9 @@
+@use 'tokens' as *;
+
+.grow {
+  flex: 1;
+}
+
+[role='tab'] .badge {
+  margin-left: $space-1;
+}

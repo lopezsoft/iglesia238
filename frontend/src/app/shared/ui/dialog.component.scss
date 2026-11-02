@@ -1,0 +1,64 @@
+@use 'tokens' as *;
+
+.dialog {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 1px solid $color-border;
+  border-radius: $radius-card;
+  background: $color-surface;
+  color: $color-ink;
+  box-shadow: $shadow-overlay;
+
+  &::backdrop {
+    background: $color-backdrop;
+  }
+
+  &--wide {
+    width: min(56rem, calc(100vw - 2rem));
+  }
+
+  &--drawer {
+    margin: 0 0 0 auto;
+    width: min(32rem, 100vw);
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border-width: 0 0 0 1px;
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+    height: 100%;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: $space-5;
+  }
+
+  &__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-top: 1px solid $color-border;
+
+    &:empty {
+      display: none;
+    }
+  }
+}

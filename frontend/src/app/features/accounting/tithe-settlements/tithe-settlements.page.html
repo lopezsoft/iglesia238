@@ -1,0 +1,150 @@
+<app-page-header
+  title="Liquidación del diezmo"
+  breadcrumb="Inicio / Contabilidad / Liquidación del diezmo"
+  description="Distribuye los diezmos de un rango de fechas entre la denominación, el fondo local y la asignación pastoral."
+>
+  <span class="chip">
+    <app-icon name="shield" [size]="14" />
+    Permiso: <span class="mono">tithe-settlements.write</span>
+  </span>
+  <a class="btn btn--ghost" routerLink="/accounting/setup">Ver porcentajes vigentes</a>
+</app-page-header>
+
+<div class="stack">
+  <div role="status" aria-live="polite">
+    @if (notice(); as current) {
+      <div class="alert notice" [class.alert--success]="current.tone === 'success'">
+        <app-icon [name]="current.tone === 'success' ? 'check' : 'info'" />
+        <div>
+          @if (current.title) {
+            <p><strong>{{ current.title }}</strong></p>
+          }
+          <p class="text-small">{{ current.text }}</p>
+        </div>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="notice.set(null)">
+          <app-icon name="x" [size]="16" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (!canWrite()) {
+    <app-read-only-notice permission="tithe-settlements.write" />
+  }
+
+  @if (overview.error(); as error) {
+    <app-error-banner [message]="loadErrorMessage(error)" (retry)="overview.reload()" />
+  } @else if (!overview.value()) {
+    <app-loading label="Cargando liquidaciones…" />
+  } @else if (!overview.value()!.congregationScoped) {
+    <app-empty-state
+      icon="percent"
+      title="Selecciona una sede"
+      description="La liquidación del diezmo se hace por sede: elige una sede en el selector superior."
+    />
+  } @else {
+    @let data = overview.value()!;
+    <section class="card" aria-labelledby="wizard-title">
+      <div class="card__header">
+        <h2 id="wizard-title">Nueva liquidación</h2>
+        <ol class="steps" aria-label="Pasos de la liquidación">
+          @for (label of steps; track label; let index = $index) {
+            <li
+              class="steps__item"
+              [class.steps__item--active]="step() === index + 1"
+              [class.steps__item--done]="step() > index + 1 || (step() === 3 && index === 2)"
+              [attr.aria-current]="step() === index + 1 ? 'step' : null"
+            >
+              <span class="steps__number" aria-hidden="true">{{ index + 1 }}</span>
+              {{ label }}
+            </li>
+          }
+        </ol>
+      </div>
+      <div class="toolbar">
+        <div class="field">
+          <label for="range-from">Desde *</label>
+          <input
+            id="range-from"
+            class="input"
+            type="date"
+            required
+            [value]="from()"
+            [attr.max]="data.today"
+            [attr.aria-invalid]="rangeError() !== null"
+            aria-describedby="range-help"
+            (change)="onFrom($event)"
+          />
+        </div>
+        <div class="field">
+          <label for="range-to">Hasta *</label>
+          <input
+            id="range-to"
+            class="input"
+            type="date"
+            required
+            [value]="to()"
+            [attr.max]="data.today"
+            [attr.aria-invalid]="rangeError() !== null"
+            aria-describedby="range-help"
+            (change)="onTo($event)"
+          />
+        </div>
+        <button type="button" class="btn btn--primary" [disabled]="calculating() || !canWrite()" (click)="calculate()">
+          <app-icon name="percent" />
+          {{ calculating() ? 'Calculando…' : 'Calcular' }}
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="suggest()">Sugerir siguiente rango</button>
+      </div>
+      <p id="range-help" class="field__hint range-help">
+        No puede solaparse con liquidaciones confirmadas (última:
+        @if (data.lastIssued; as last) {
+          {{ last.from | date: 'dd/MM/yyyy' }} – {{ last.to | date: 'dd/MM/yyyy' }}
+        } @else {
+          ninguna
+        }). Solo se incluyen diezmos registrados y no liquidados; los aportes anulados se excluyen.
+      </p>
+      @if (rangeError(); as message) {
+        <div class="alert alert--danger" role="alert">
+          <app-icon name="alert" />
+          <span>{{ message }}</span>
+        </div>
+      }
+      @if (!data.rule) {
+        <div class="alert alert--warning" role="note">
+          <app-icon name="alert" />
+          <span>La denominación no tiene porcentajes de liquidación vigentes. Configúralos antes de liquidar.</span>
+        </div>
+      }
+    </section>
+
+    @if (preview(); as draft) {
+      <app-tithe-preview
+        [preview]="draft"
+        [canConfirm]="canWrite()"
+        [confirming]="confirming()"
+        [error]="confirmError()"
+        (confirm)="confirm()"
+        (discard)="discard()"
+      />
+    } @else {
+      <section class="card">
+        <app-empty-state
+          icon="percent"
+          title="Aún no hay un cálculo para revisar"
+          description="Define el rango y pulsa «Calcular» para ver los diezmos incluidos y su distribución."
+        />
+      </section>
+    }
+
+    <app-settlement-history
+      [rows]="data.settlements"
+      [congregationName]="data.congregationName"
+      [canVoid]="canWrite()"
+      [highlightId]="highlightId()"
+      (voidRequested)="askVoid($event)"
+    />
+
+    <app-void-settlement-dialog [(open)]="voidOpen" [settlement]="voidTarget()" (voided)="onVoided($event)" />
+  }
+</div>

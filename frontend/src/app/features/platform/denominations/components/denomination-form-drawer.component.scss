@@ -1,0 +1,21 @@
+@use 'tokens' as *;
+
+.defaults {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+
+  ul {
+    display: grid;
+    gap: $space-2;
+    margin: 0;
+    padding-left: $space-4;
+    font-size: $font-size-sm;
+  }
+
+  .cluster {
+    gap: $space-1;
+    margin-top: $space-1;
+  }
+}

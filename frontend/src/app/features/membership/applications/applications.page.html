@@ -1,0 +1,125 @@
+<app-page-header
+  title="Solicitudes de membresía"
+  breadcrumb="Inicio / Membresía / Solicitudes"
+  [description]="
+    'Revisa las inscripciones recibidas desde el formulario público de ' +
+    scopeLabel() +
+    ' y decide si se aprueban.'
+  "
+>
+  <span class="applications-page__permission text-small text-muted">
+    <app-icon name="shield" [size]="16" />
+    Permiso <span class="mono">applications.review</span>
+  </span>
+  <a class="btn btn--secondary" routerLink="/apply">Ver formulario público</a>
+</app-page-header>
+
+<app-application-status-filter
+  [active]="filter()"
+  [counts]="queue.hasValue() ? queue.value().counts : null"
+  (selected)="selectFilter($event)"
+/>
+
+<div class="applications-page__layout">
+  <section class="card card--flush applications-page__queue" aria-labelledby="queue-title">
+    <div class="applications-page__queue-header">
+      <h2 id="queue-title">{{ listTitle() }}</h2>
+      <span class="text-small text-muted">Más recientes primero</span>
+    </div>
+
+    @if (queue.error(); as error) {
+      <div class="applications-page__padded">
+        <app-error-banner [message]="userMessage(error)" (retry)="queue.reload()" />
+      </div>
+    } @else if (queue.isLoading() && !queue.hasValue()) {
+      <div class="applications-page__padded">
+        <app-loading label="Cargando solicitudes…" />
+      </div>
+    } @else if (items().length === 0) {
+      <app-empty-state
+        title="No hay solicitudes en este estado"
+        description="Cuando lleguen nuevas inscripciones aparecerán aquí."
+      />
+    } @else {
+      <app-application-list
+        [items]="pagedItems()"
+        [selectedId]="selectedId()"
+        [showCongregation]="denominationWide()"
+        (selected)="selectApplication($event)"
+      />
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize"
+        [total]="items().length"
+        (pageChange)="page.set($event)"
+      />
+    }
+  </section>
+
+  <section class="applications-page__detail" aria-label="Detalle de la solicitud">
+    <div role="status" aria-live="polite">
+      @if (notice(); as current) {
+        <div class="alert" [class.alert--success]="current.kind === 'approved'">
+          <app-icon [name]="current.kind === 'approved' ? 'check' : 'info'" [size]="20" />
+          <div class="applications-page__notice-text">
+            @if (current.kind === 'approved') {
+              <strong
+                >Miembro creado con el carné
+                <span class="mono">{{ current.memberCode }}</span></strong
+              >
+              <p>{{ current.text }}</p>
+              <a [routerLink]="['/members', current.memberId]">Ver ficha del miembro</a>
+            } @else {
+              <p>{{ current.text }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            class="btn btn--ghost btn--icon"
+            aria-label="Cerrar aviso"
+            (click)="dismissNotice()"
+          >
+            <app-icon name="x" />
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (commandError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    @if (detail.error(); as error) {
+      <app-error-banner [message]="userMessage(error)" (retry)="detail.reload()" />
+    } @else if (detail.hasValue()) {
+      @let application = detail.value();
+      <app-application-detail
+        [application]="application"
+        [canReview]="canReview()"
+        [pending]="pending()"
+        [duplicateDismissed]="duplicateDismissed()"
+        [reviewerName]="reviewerName()"
+        (startReview)="startReview(application)"
+        (reject)="reject(application, $event)"
+        (markDuplicate)="markDuplicate(application, $event)"
+        (dismissDuplicate)="dismissDuplicate(application)"
+        (approve)="approve(application)"
+      />
+    } @else if (detail.isLoading()) {
+      <div class="card">
+        <app-loading label="Cargando solicitud…" />
+      </div>
+    } @else if (queue.hasValue()) {
+      <div class="card">
+        <app-empty-state
+          title="Selecciona una solicitud"
+          description="El detalle de la solicitud aparecerá aquí."
+          icon="inbox"
+        />
+      </div>
+    }
+  </section>
+</div>

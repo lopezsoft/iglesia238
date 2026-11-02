@@ -1,0 +1,89 @@
+// Shared layout of the dashboard list widgets (header, rows, footer inside a flush card).
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.widget {
+  &__header,
+  &__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+  }
+
+  &__header {
+    border-bottom: 1px solid $color-border;
+
+    h2 {
+      font-size: $font-size-md;
+    }
+  }
+
+  &__footer {
+    border-top: 1px solid $color-border;
+  }
+
+  &__empty {
+    padding: $space-5;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-5;
+
+    & + & {
+      border-top: 1px solid $color-border;
+    }
+  }
+
+  &__avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: $radius-pill;
+    background: $color-primary-soft;
+    color: $color-primary;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__main {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: $font-weight-medium;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__more {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-size-sm;
+  }
+}

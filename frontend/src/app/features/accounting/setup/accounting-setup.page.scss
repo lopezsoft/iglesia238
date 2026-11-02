@@ -1,0 +1,13 @@
+@use 'tokens' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.tab-count {
+  margin-left: $space-1;
+}

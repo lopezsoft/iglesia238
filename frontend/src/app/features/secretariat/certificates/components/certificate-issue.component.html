@@ -1,0 +1,114 @@
+<div class="issue-grid">
+  <section class="card stack" aria-labelledby="issue-title">
+    <div>
+      <h2 id="issue-title">Emitir certificado</h2>
+      <p class="text-muted text-small">
+        El número se asigna al emitir y no se reutiliza, aunque el certificado se anule.
+      </p>
+    </div>
+
+    @if (!context().signers.pastorName) {
+      <div class="alert alert--warning" role="note">
+        <app-icon name="alert" />
+        <span
+          >La sede no tiene un pastor vigente que firme. Asígnalo en Usuarios y roles antes de
+          emitir.</span
+        >
+      </div>
+    }
+
+    <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <app-member-search
+        inputId="cert-member-search"
+        [hint]="
+          'Solo aparecen miembros activos de la ' + context().letterhead.congregationName + '.'
+        "
+        [selected]="member()"
+        [invalid]="memberMissing()"
+        [disabled]="pending()"
+        (selectedChange)="onMemberChange($event)"
+      />
+
+      <div class="field">
+        <label for="cert-type">Tipo de certificado *</label>
+        <select
+          id="cert-type"
+          class="select"
+          formControlName="certificateTypeId"
+          aria-describedby="cert-type-help"
+        >
+          @for (type of context().types; track type.id) {
+            <option [ngValue]="type.id">{{ type.name }}</option>
+          }
+        </select>
+        @if (selectedType(); as type) {
+          <p class="field__hint" id="cert-type-help">
+            Serie <span class="mono">{{ type.nextNumber.slice(0, -5) }}</span> · próximo número
+            <span class="mono">{{ type.nextNumber }}</span>
+          </p>
+        }
+        @if (baptismMissing()) {
+          <p class="field__error" role="alert">
+            El miembro no tiene bautismo registrado: no se puede emitir el certificado de bautismo.
+          </p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="cert-notes">Observaciones</label>
+        <textarea
+          id="cert-notes"
+          class="textarea"
+          rows="3"
+          formControlName="notes"
+          placeholder="Ej.: Se expide para trámite de visa ante el consulado."
+          aria-describedby="cert-notes-help"
+          [attr.maxlength]="notesMaxLength"
+        ></textarea>
+        @if (form.controls.notes.touched && form.controls.notes.hasError('maxlength')) {
+          <p class="field__error">Máximo {{ notesMaxLength }} caracteres.</p>
+        }
+        <p class="field__hint" id="cert-notes-help">
+          Opcional. Aparece en el documento impreso, máximo {{ notesMaxLength }} caracteres.
+        </p>
+      </div>
+
+      @if (error(); as message) {
+        <div class="alert alert--danger" role="alert">
+          <app-icon name="alert" />
+          <span>{{ message }}</span>
+        </div>
+      }
+      <div role="status" aria-live="polite">
+        @if (success(); as message) {
+          <div class="alert alert--success">
+            <app-icon name="check" />
+            <span>{{ message }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="cluster issue-actions">
+        <button type="button" class="btn btn--secondary" [disabled]="pending()" (click)="reset()">
+          Limpiar
+        </button>
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="pending() || !context().signers.pastorName"
+        >
+          <app-icon name="certificate" />
+          {{ pending() ? 'Emitiendo…' : 'Emitir certificado' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card stack" aria-labelledby="preview-title">
+    <div class="card__header preview-header">
+      <h2 id="preview-title">Vista previa</h2>
+      <span class="text-muted text-small">Formato carta vertical</span>
+    </div>
+    <app-certificate-document [snapshot]="preview()" label="Vista previa del certificado impreso" />
+  </section>
+</div>

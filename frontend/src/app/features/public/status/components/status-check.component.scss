@@ -1,0 +1,71 @@
+@use 'tokens' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.status-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-ink-muted;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+
+    .input {
+      flex: 1 1 10rem;
+      text-transform: uppercase;
+    }
+  }
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  background: $color-ground;
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
+  &__dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-2;
+    margin: 0;
+
+    dt {
+      font-size: $font-size-xs;
+      color: $color-ink-muted;
+    }
+
+    dd {
+      margin: 0;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  &__privacy {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-2;
+  }
+}

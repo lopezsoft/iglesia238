@@ -1,0 +1,75 @@
+<section class="card" aria-labelledby="attendance-trend-title">
+  <header class="card__header">
+    <div>
+      <h2 id="attendance-trend-title">Tendencia · {{ meetingTypeName() }}</h2>
+      <p class="text-muted text-small">Total de asistentes en las últimas {{ sessions().length }} sesiones registradas</p>
+    </div>
+    @if (draft()) {
+      <span class="badge badge--info">Borrador sin guardar</span>
+    }
+  </header>
+
+  @if (sessions().length === 0) {
+    <p class="text-muted">Aún no hay sesiones registradas para esta reunión.</p>
+  } @else {
+    <dl class="kpis">
+      <div>
+        <dt>Promedio</dt>
+        <dd class="mono">{{ average() }}</dd>
+      </div>
+      <div>
+        <dt>Máximo</dt>
+        <dd class="mono">{{ maximum().total }}</dd>
+        @if (maximum().sessionDate; as date) {
+          <dd class="text-muted text-small">{{ date | date: 'dd/MM/yyyy' }}</dd>
+        }
+      </div>
+      <div>
+        <dt>Borrador vs. anterior</dt>
+        @if (delta(); as delta) {
+          <dd
+            class="mono"
+            [class.is-up]="delta.value > 0"
+            [class.is-down]="delta.value < 0"
+          >
+            {{ delta.value > 0 ? '+' : delta.value < 0 ? '−' : '' }}{{ delta.value < 0 ? -delta.value : delta.value }}
+          </dd>
+          <dd class="text-muted text-small">Frente al {{ delta.against | date: 'dd/MM/yyyy' }}</dd>
+        } @else {
+          <dd class="mono">—</dd>
+          <dd class="text-muted text-small">Sin borrador válido</dd>
+        }
+      </div>
+    </dl>
+
+    <div class="chart" aria-hidden="true">
+      @for (point of points(); track point.sessionDate + point.isDraft) {
+        <div class="chart__column">
+          <div class="chart__track">
+            <span class="chart__value mono">{{ point.total }}</span>
+            <span class="chart__bar" [class.chart__bar--draft]="point.isDraft" [style.height.%]="point.height"></span>
+          </div>
+          <span class="chart__label">{{ point.sessionDate | date: 'd MMM' }}</span>
+        </div>
+      }
+    </div>
+
+    <table class="visually-hidden">
+      <caption>Total de asistentes por fecha · {{ meetingTypeName() }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Fecha</th>
+          <th scope="col">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (point of points(); track point.sessionDate + point.isDraft) {
+          <tr>
+            <td>{{ point.sessionDate | date: 'dd/MM/yyyy' }}{{ point.isDraft ? ' (borrador sin guardar)' : '' }}</td>
+            <td>{{ point.total }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

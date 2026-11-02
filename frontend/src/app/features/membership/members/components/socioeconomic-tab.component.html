@@ -1,0 +1,135 @@
+@if (!canRead()) {
+  <div class="tab__header">
+    <h2>Ficha socioeconómica</h2>
+  </div>
+  <div class="tab__box tab__locked" role="note">
+    <app-icon name="lock" [size]="28" />
+    <p class="tab__box-value">Información protegida</p>
+    <p class="text-muted">
+      La ficha socioeconómica contiene datos sensibles. Para consultarla se requiere el permiso
+      <code>socioeconomic-profiles.read</code>, y para editarla
+      <code>socioeconomic-profiles.write</code>. Tu rol en esta sede no tiene acceso; si lo
+      necesitas, solicítalo al administrador de la denominación.
+    </p>
+  </div>
+} @else {
+  <div class="alert alert--warning" role="note">
+    <app-icon name="shield" />
+    <div>
+      <p>
+        <strong>Información sensible</strong> · requiere <code>socioeconomic-profiles.read</code>;
+        editar requiere <code>socioeconomic-profiles.write</code>.
+      </p>
+      <p class="text-small">
+        Tu rol ({{ roleNames() }})
+        {{ canWrite() ? 'tiene ambos permisos' : 'solo puede consultarla' }}. Cada consulta y
+        modificación de esta ficha queda registrada en la auditoría.
+      </p>
+    </div>
+  </div>
+
+  <div class="tab__header">
+    <h2>Ficha socioeconómica</h2>
+    @if (canWrite() && current()) {
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        aria-haspopup="dialog"
+        (click)="openEdit()"
+      >
+        <app-icon name="edit" />
+        Editar ficha
+      </button>
+    }
+  </div>
+
+  @if (!canWrite()) {
+    <app-read-only-notice permission="socioeconomic-profiles.write" />
+  }
+
+  <div aria-live="polite">
+    @if (command.message(); as text) {
+      <p class="alert alert--success" role="status">{{ text }}</p>
+    }
+  </div>
+
+  @if (loadError(); as text) {
+    <app-error-banner [message]="text" (retry)="profile.reload()" />
+  } @else if (!loaded()) {
+    <app-loading label="Cargando ficha socioeconómica…" />
+  } @else if (current(); as profile) {
+    <dl class="details">
+      @for (flag of flags; track flag.key) {
+        <div>
+          <dt>{{ flag.label }}</dt>
+          <dd>{{ answerLabel(profile[flag.key]) }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Nivel del SISBÉN</dt>
+        <dd>{{ profile.sisbenLevel ?? 'Sin dato' }}</dd>
+      </div>
+    </dl>
+    <p class="text-muted text-small">
+      Última actualización: {{ profile.updatedAt | date: 'dd/MM/yyyy HH:mm' }}. Son afiliaciones
+      sí/no; la ficha nunca guarda datos médicos ni valores exactos de ingresos.
+    </p>
+  } @else {
+    <app-empty-state
+      icon="shield"
+      title="Sin ficha socioeconómica"
+      description="Aún no se ha diligenciado la ficha de esta persona."
+    >
+      @if (canWrite()) {
+        <button
+          type="button"
+          class="btn btn--primary btn--sm"
+          aria-haspopup="dialog"
+          (click)="openEdit()"
+        >
+          Diligenciar ficha
+        </button>
+      }
+    </app-empty-state>
+  }
+}
+
+<app-dialog [(open)]="editOpen" title="Ficha socioeconómica">
+  <form id="socioeconomic-form" class="stack" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <div class="form-grid">
+      @for (flag of flags; track flag.key) {
+        <div class="field">
+          <label [for]="'socio-' + flag.key">{{ flag.label }}</label>
+          <select class="select" [id]="'socio-' + flag.key" [formControlName]="flag.key">
+            <option value="">Sin dato</option>
+            <option value="yes">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      }
+      <div class="field">
+        <label for="socio-sisben">Nivel del SISBÉN</label>
+        <select id="socio-sisben" class="select" formControlName="sisbenLevel">
+          <option value="">Sin dato</option>
+          @for (level of sisbenLevels; track level) {
+            <option [value]="'' + level">{{ level }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="editOpen.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="socioeconomic-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Guardar ficha' }}
+    </button>
+  </div>
+</app-dialog>

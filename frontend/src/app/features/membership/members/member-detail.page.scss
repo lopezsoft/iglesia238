@@ -1,0 +1,66 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.member__notices:empty {
+  display: none;
+}
+
+.member__header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $space-4 $space-5;
+  align-items: start;
+
+  @include from($breakpoint-md) {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+.member__avatar {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: $radius-pill;
+  background: $color-primary-soft;
+  color: $color-primary;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.member__identity {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.member__facts {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.member__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  grid-column: 1 / -1;
+
+  @include from($breakpoint-md) {
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+}
+
+.member__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.member__tabs {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+
+  [role='tab'] {
+    white-space: nowrap;
+  }
+}

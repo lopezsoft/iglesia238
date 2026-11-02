@@ -1,0 +1,100 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.application-detail {
+  h2 {
+    font-size: $font-size-lg;
+  }
+
+  h3 {
+    margin-bottom: $space-3;
+    font-size: $font-size-md;
+  }
+
+  p {
+    margin: $space-1 0 0;
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-5;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__tracking {
+    display: flex;
+    flex-direction: column;
+    font-weight: $font-weight-medium;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    padding: $space-5;
+  }
+
+  &__section {
+    padding-top: $space-5;
+    border-top: 1px solid $color-border;
+  }
+
+  &__note {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-3;
+    border-radius: $radius-control;
+    background: $color-surface-2;
+    color: $color-ink-muted;
+  }
+
+  &__resolution {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__wrap {
+    overflow-wrap: anywhere;
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-top: 1px solid $color-border;
+    border-radius: 0 0 $radius-card $radius-card;
+    background: $color-ground;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  &__hint {
+    display: flex;
+    flex: 1 1 16rem;
+    align-items: flex-start;
+    gap: $space-2;
+    margin: 0;
+  }
+
+  &__blocked {
+    margin: 0;
+    color: $color-warning;
+    text-align: right;
+  }
+}

@@ -1,0 +1,110 @@
+<div class="stack">
+  <app-page-header
+    breadcrumb="Inicio / Secretaría"
+    title="Asistencia"
+    [description]="
+      'Registra cuántas personas asistieron a cada reunión de ' + (congregationName() ?? 'tu sede') + ', por categoría.'
+    "
+  >
+    <button
+      type="button"
+      class="btn btn--secondary"
+      [disabled]="!history.hasValue() || history.value().total === 0"
+      (click)="exportHistory()"
+    >
+      <app-icon name="download" />
+      Exportar historial
+    </button>
+  </app-page-header>
+
+  @if (!canWrite()) {
+    <app-read-only-notice permission="attendance.write" />
+  }
+
+  <div role="status" aria-live="polite">
+    @if (savedMessage(); as message) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span class="grow">{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="savedMessage.set(null)">
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (commandError(); as message) {
+    <div class="alert" [class.alert--warning]="duplicateKey()" [class.alert--danger]="!duplicateKey()" role="alert">
+      <app-icon name="alert" />
+      <div class="cluster grow">
+        <span>{{ message }}</span>
+        @if (duplicateKey()) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="loadDuplicate()">
+            <app-icon name="edit" />
+            Cargar y corregir la sesión existente
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (congregations.isLoading()) {
+    <app-loading label="Cargando sedes…" />
+  } @else if (congregations.error()) {
+    <app-error-banner message="No fue posible cargar las sedes." (retry)="congregations.reload()" />
+  } @else if (congregations.value(); as sedes) {
+    @if (sedes.length === 0) {
+      <div class="alert alert--warning" role="note">
+        <app-icon name="info" />
+        <span>Selecciona una sede de tu denominación en el selector superior para registrar asistencia.</span>
+      </div>
+    } @else {
+      <div class="layout">
+        <app-attendance-form
+          [form]="form"
+          [value]="value()"
+          [congregations]="sedes"
+          [total]="total()"
+          [editing]="editing()"
+          [pending]="pending()"
+          [dateWarning]="dateWarning()"
+          [blockedReason]="blockedReason()"
+          (submitted)="save()"
+          (cleared)="clearCounts()"
+          (editCancelled)="stopEditing()"
+        />
+
+        @if (history.hasValue()) {
+          <app-attendance-trend
+            [sessions]="history.value().sessions"
+            [draft]="draft()"
+            [meetingTypeName]="meetingTypeName()"
+          />
+        } @else {
+          <section class="card">
+            <h2>Tendencia · {{ meetingTypeName() }}</h2>
+            @if (history.isLoading()) {
+              <app-loading label="Cargando historial…" />
+            } @else {
+              <p class="text-muted">Selecciona una sede para ver la tendencia.</p>
+            }
+          </section>
+        }
+      </div>
+
+      @if (history.error()) {
+        <app-error-banner message="No fue posible cargar el historial de asistencia." (retry)="history.reload()" />
+      } @else if (history.hasValue()) {
+        <app-attendance-history
+          [sessions]="history.value().sessions"
+          [recordedCount]="history.value().total"
+          [meetingTypeName]="meetingTypeName()"
+          [congregationName]="congregationName() ?? ''"
+          [highlightedId]="highlightedId()"
+          [canEdit]="canWrite()"
+          (edit)="startEditing($event)"
+        />
+      }
+    }
+  }
+</div>

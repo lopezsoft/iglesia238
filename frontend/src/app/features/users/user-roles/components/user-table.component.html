@@ -1,0 +1,69 @@
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Nombre</th>
+        <th scope="col">Correo</th>
+        <th scope="col">Roles y alcance</th>
+        <th scope="col">Estado</th>
+        <th scope="col">Último acceso</th>
+        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (user of users(); track user.id) {
+        @let selected = user.id === selectedId();
+        <tr [class.is-selected]="selected">
+          <td>
+            <div class="user-cell">
+              <span class="user-cell__avatar" aria-hidden="true">{{ initials(user.displayName) }}</span>
+              <div>
+                <button
+                  type="button"
+                  class="user-cell__name"
+                  [attr.aria-pressed]="selected"
+                  (click)="selectUser.emit(user.id)"
+                >
+                  {{ user.displayName }}
+                </button>
+                @if (user.isSelf) {
+                  <p class="text-muted text-small">Tu cuenta</p>
+                }
+              </div>
+            </div>
+          </td>
+          <td class="text-small">{{ user.email }}</td>
+          <td>
+            <div class="role-chips">
+              @for (assignment of active(user); track assignment.id) {
+                <span class="chip">{{ label(assignment) }}</span>
+              } @empty {
+                <span class="text-muted text-small">Sin roles activos</span>
+              }
+            </div>
+          </td>
+          <td>
+            <app-status-badge [label]="statusLabels[user.status]" [tone]="statusTones[user.status]" />
+          </td>
+          <td class="code text-small">
+            @if (user.lastLoginAt; as lastLogin) {
+              {{ lastLogin | date: 'dd/MM/yyyy HH:mm' }}
+            } @else {
+              Nunca
+            }
+          </td>
+          <td>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-label]="'Gestionar roles de ' + user.displayName"
+              (click)="selectUser.emit(user.id)"
+            >
+              Roles
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

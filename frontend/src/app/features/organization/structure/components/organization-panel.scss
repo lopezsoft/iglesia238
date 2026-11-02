@@ -1,0 +1,82 @@
+// Layout shared by the three tabs of the organization page.
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-2 $space-3;
+}
+
+.panel-feedback {
+  padding: $space-4 $space-5;
+}
+
+.cell-title {
+  font-weight: $font-weight-medium;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+}
+
+// Public applications switch: a toggle button with aria-pressed.
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1;
+  border: 0;
+  border-radius: $radius-pill;
+  background: transparent;
+  color: $color-ink;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &__track {
+    position: relative;
+    width: 2.25rem;
+    height: 1.25rem;
+    border-radius: $radius-pill;
+    background: $color-border-strong;
+    transition: background-color 120ms ease;
+  }
+
+  &__knob {
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: $color-surface;
+    box-shadow: $shadow-card;
+    transition: transform 120ms ease;
+  }
+
+  &[aria-pressed='true'] &__track {
+    background: $color-primary;
+  }
+
+  &[aria-pressed='true'] &__knob {
+    transform: translateX(1rem);
+  }
+}

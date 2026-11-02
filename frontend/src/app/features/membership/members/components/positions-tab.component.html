@@ -1,0 +1,224 @@
+<div class="tab__header">
+  <h2>Cargos y grados</h2>
+  @if (canWrite()) {
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      aria-haspopup="dialog"
+      (click)="openAssign()"
+    >
+      <app-icon name="plus" />
+      Asignar cargo
+    </button>
+  }
+</div>
+
+<div aria-live="polite">
+  @if (command.message(); as text) {
+    <p class="alert alert--success" role="status">{{ text }}</p>
+  }
+  @if (!anyDialogOpen() && command.error(); as text) {
+    <p class="alert alert--danger" role="alert">{{ text }}</p>
+  }
+</div>
+
+@if (loadError(); as text) {
+  <app-error-banner [message]="text" (retry)="view.reload()" />
+} @else if (data(); as current) {
+  <div class="tab__summary">
+    <div class="tab__box">
+      <span class="tab__box-label" id="rank-label">Grado pastoral</span>
+      <span class="tab__box-value">{{ current.pastoralRankName ?? 'Sin grado' }}</span>
+      @if (canWrite()) {
+        <div class="cluster">
+          <label for="rank-select" class="visually-hidden">Cambiar grado pastoral</label>
+          <select
+            id="rank-select"
+            class="select tab__inline-select"
+            (change)="rankDraft.set($any($event.target).value)"
+          >
+            <option value="" [selected]="rankDraft() === ''">Sin grado</option>
+            @for (rank of activeRanks(); track rank.id) {
+              <option [value]="rank.id" [selected]="rankDraft() === '' + rank.id">
+                {{ rank.name }}
+              </option>
+            }
+          </select>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="!rankChanged() || command.pending()"
+            (click)="saveRank()"
+          >
+            Guardar grado
+          </button>
+        </div>
+      }
+    </div>
+    <div class="tab__box">
+      <span class="tab__box-label">Cargos vigentes</span>
+      <span class="tab__box-value">
+        {{ openPositions().length === 1 ? '1 cargo' : openPositions().length + ' cargos' }}
+      </span>
+      <span class="text-muted text-small">
+        @for (row of openPositions(); track row.id; let last = $last) {
+          {{ row.positionName }}{{ last ? '' : ' · ' }}
+        } @empty {
+          Sin cargos vigentes
+        }
+      </span>
+    </div>
+  </div>
+
+  @if (current.positions.length === 0) {
+    <app-empty-state icon="id-card" title="Sin cargos registrados" />
+  } @else {
+    <div class="table-wrap tab__table">
+      <table class="table">
+        <caption class="visually-hidden">
+          Historial de cargos
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Cargo</th>
+            <th scope="col">Desde</th>
+            <th scope="col">Hasta</th>
+            <th scope="col">Estado</th>
+            @if (canWrite()) {
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of current.positions; track row.id) {
+            <tr>
+              <td>{{ row.positionName }}</td>
+              <td>{{ row.startedOn ? (row.startedOn | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ row.endedOn ? (row.endedOn | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <app-status-badge
+                  [label]="row.endedOn ? 'Finalizado' : 'Vigente'"
+                  [tone]="row.endedOn ? 'neutral' : 'success'"
+                />
+              </td>
+              @if (canWrite()) {
+                <td class="text-right">
+                  @if (!row.endedOn) {
+                    <button
+                      type="button"
+                      class="btn btn--ghost btn--sm"
+                      aria-haspopup="dialog"
+                      [attr.aria-label]="'Cerrar cargo ' + row.positionName"
+                      (click)="openClose(row)"
+                    >
+                      Cerrar cargo
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+} @else {
+  <app-loading label="Cargando cargos y grados…" />
+}
+
+<app-dialog [(open)]="assignOpen" title="Asignar cargo">
+  <form
+    id="position-assign-form"
+    class="stack"
+    [formGroup]="assignForm"
+    (ngSubmit)="assign()"
+    novalidate
+  >
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <div class="field">
+      <label for="position-select">Cargo *</label>
+      <select id="position-select" class="select" formControlName="positionId">
+        <option [ngValue]="0">Selecciona un cargo</option>
+        @for (position of activeCatalog(); track position.id) {
+          <option [ngValue]="position.id">{{ position.name }}</option>
+        }
+      </select>
+      @if (assignForm.controls.positionId.touched && assignForm.controls.positionId.invalid) {
+        <span class="field__error">Selecciona el cargo.</span>
+      }
+    </div>
+    <div class="field">
+      <label for="position-start">Desde *</label>
+      <input
+        id="position-start"
+        class="input"
+        type="date"
+        formControlName="startedOn"
+        [max]="today"
+      />
+      @if (assignForm.controls.startedOn.touched && assignForm.controls.startedOn.invalid) {
+        <span class="field__error">Indica la fecha de inicio.</span>
+      }
+    </div>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="assignOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="position-assign-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Asignar' }}
+    </button>
+  </div>
+</app-dialog>
+
+<app-dialog [(open)]="closeOpen" title="Cerrar cargo">
+  <form
+    id="position-close-form"
+    class="stack"
+    [formGroup]="closeForm"
+    (ngSubmit)="close()"
+    novalidate
+  >
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <p>
+      El cargo <strong>{{ closing()?.positionName }}</strong> quedará en el historial como
+      finalizado.
+    </p>
+    <div class="field">
+      <label for="position-end">Hasta *</label>
+      <input
+        id="position-end"
+        class="input"
+        type="date"
+        formControlName="endedOn"
+        [min]="closing()?.startedOn ?? ''"
+        [max]="today"
+      />
+      @if (closeForm.controls.endedOn.touched && closeForm.controls.endedOn.invalid) {
+        <span class="field__error">Indica la fecha de cierre.</span>
+      }
+    </div>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="closeOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="position-close-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Cerrar cargo' }}
+    </button>
+  </div>
+</app-dialog>

@@ -1,0 +1,149 @@
+<app-dialog
+  [(open)]="open"
+  [title]="'Trasladar a ' + member().person.firstName + ' ' + member().person.lastName"
+>
+  <form id="transfer-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <p class="text-muted text-small">
+      Origen: {{ member().congregationName }} · <span class="mono">{{ member().code }}</span>
+    </p>
+
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+
+    <fieldset class="transfer__destination">
+      <legend class="field__label">Destino *</legend>
+      <div class="transfer__toggle">
+        <button
+          type="button"
+          [attr.aria-pressed]="destination() === 'INTERNAL'"
+          (click)="chooseDestination('INTERNAL')"
+        >
+          Otra sede de la denominación
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="destination() === 'EXTERNAL'"
+          (click)="chooseDestination('EXTERNAL')"
+        >
+          Iglesia externa
+        </button>
+      </div>
+    </fieldset>
+
+    @if (destination() === 'INTERNAL') {
+      <div class="field">
+        <label for="transfer-destination">Sede destino *</label>
+        <select
+          id="transfer-destination"
+          class="select"
+          formControlName="destinationCongregationId"
+          aria-describedby="transfer-destination-hint"
+          [attr.aria-busy]="destinations.isLoading()"
+        >
+          <option [ngValue]="0">
+            {{ destinations.isLoading() ? 'Cargando sedes…' : 'Selecciona la sede' }}
+          </option>
+          @for (option of options(); track option.id) {
+            <option [ngValue]="option.id">
+              {{ option.name }} · {{ municipalityLabel(option.municipalityCode) }}
+            </option>
+          }
+        </select>
+        <span id="transfer-destination-hint" class="field__hint">
+          La sede destino recibe la ficha completa y asigna un nuevo número de miembro. El historial
+          de registro se conserva.
+        </span>
+        @if (destinationsError(); as text) {
+          <div class="cluster" role="alert">
+            <span class="field__error">No se pudieron cargar las sedes: {{ text }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="destinations.reload()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (!destinations.isLoading() && options().length === 0) {
+          <span class="field__hint">No hay otras sedes activas en la denominación.</span>
+        } @else if (showError('destinationCongregationId')) {
+          <span class="field__error">Selecciona la sede destino.</span>
+        }
+      </div>
+    } @else {
+      <div class="form-grid">
+        <div class="field">
+          <label for="transfer-church">Nombre de la iglesia *</label>
+          <input
+            id="transfer-church"
+            class="input"
+            formControlName="externalName"
+            placeholder="Ej.: Iglesia Bautista El Redil"
+          />
+          @if (showError('externalName')) {
+            <span class="field__error"
+              >Escribe el nombre de la iglesia (entre 3 y 85 caracteres).</span
+            >
+          }
+        </div>
+        <div class="field">
+          <label for="transfer-city">Ciudad</label>
+          <input
+            id="transfer-city"
+            class="input"
+            formControlName="externalCity"
+            placeholder="Ej.: Medellín, Antioquia"
+          />
+          @if (showError('externalCity')) {
+            <span class="field__error">Máximo 60 caracteres.</span>
+          }
+        </div>
+      </div>
+      <p class="alert alert--warning text-small" role="note">
+        La persona pasará a estado «Trasladado» y dejará de contarse como miembro activo de la
+        denominación.
+      </p>
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="transfer-date">Fecha del traslado *</label>
+        <input
+          id="transfer-date"
+          class="input"
+          type="date"
+          formControlName="transferDate"
+          [max]="today"
+        />
+        @if (showError('transferDate')) {
+          <span class="field__error">Indica la fecha del traslado.</span>
+        }
+      </div>
+      <div class="field">
+        <label for="transfer-reason">Motivo *</label>
+        <select id="transfer-reason" class="select" formControlName="reason">
+          @for (reason of reasons; track reason) {
+            <option [value]="reason">{{ reason }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="transfer-notes">Observaciones</label>
+      <textarea id="transfer-notes" class="textarea" rows="3" formControlName="notes"></textarea>
+      @if (showError('notes')) {
+        <span class="field__error">Máximo 200 caracteres.</span>
+      }
+    </div>
+  </form>
+
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="transfer-form"
+      class="btn btn--primary"
+      [disabled]="command.pending() || submitBlocked()"
+    >
+      {{ command.pending() ? 'Registrando…' : 'Registrar traslado' }}
+    </button>
+  </div>
+</app-dialog>

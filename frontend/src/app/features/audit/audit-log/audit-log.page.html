@@ -1,0 +1,56 @@
+<app-page-header breadcrumb="Control" title="Registro de auditoría" [description]="description()" />
+
+<div class="stack">
+  <p class="text-muted text-small">
+    Solo lectura: tu rol tiene <code>audit-logs.read</code>. Los eventos no se pueden editar ni eliminar.
+  </p>
+
+  @if (entries.hasValue()) {
+    @let result = entries.value();
+    <section class="grid-auto" aria-label="Resumen del rango seleccionado">
+      <app-stat-card
+        label="Eventos en el rango"
+        icon="clock"
+        [value]="result.summary.total"
+        [hint]="rangeHint()"
+      />
+      <app-stat-card label="Cambios de rol" icon="users" [value]="result.summary.roleChanges" hint="Otorgados, revocados e invitaciones" />
+      <app-stat-card label="Anulaciones de aporte" icon="ban" [value]="result.summary.contributionVoids" />
+      <app-stat-card label="Cierres de periodo" icon="lock" [value]="result.summary.periodClosures" />
+    </section>
+  }
+
+  <app-audit-filters [options]="options.hasValue() ? options.value() : undefined" (apply)="applyFilters($event)" />
+
+  <section class="card card--flush" aria-labelledby="events-title">
+    <header class="events__header">
+      <div>
+        <h2 id="events-title">Eventos</h2>
+        <p class="text-muted text-small">
+          Ordenados del más reciente al más antiguo. Las direcciones IP se muestran parcialmente enmascaradas.
+        </p>
+      </div>
+      <span class="badge badge--info">Los cambios nunca incluyen datos personales</span>
+    </header>
+
+    @if (loadError(); as message) {
+      <div class="events__error">
+        <app-error-banner [message]="message" (retry)="entries.reload()" />
+      </div>
+    } @else if (entries.isLoading() && !entries.hasValue()) {
+      <app-loading label="Cargando eventos…" />
+    } @else if (entries.hasValue()) {
+      @let result = entries.value();
+      @if (result.total > 0) {
+        <app-audit-table [entries]="result.items" [page]="result.page" />
+      } @else {
+        <app-empty-state
+          icon="shield"
+          title="Sin eventos"
+          description="No hay eventos de auditoría con los filtros seleccionados."
+        />
+      }
+      <app-pagination [page]="page()" [pageSize]="pageSize" [total]="result.total" (pageChange)="page.set($event)" />
+    }
+  </section>
+</div>

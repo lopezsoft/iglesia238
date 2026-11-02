@@ -1,0 +1,7 @@
+@use 'tokens' as *;
+
+.checkbox > span {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}

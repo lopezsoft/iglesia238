@@ -1,0 +1,52 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: block;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-width: 12rem;
+
+  &__avatar {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: $radius-pill;
+    background: $color-primary-soft;
+    color: $color-primary;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__name {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+}
+
+.role-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  min-width: 12rem;
+}

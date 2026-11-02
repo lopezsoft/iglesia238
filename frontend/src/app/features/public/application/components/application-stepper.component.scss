@@ -1,0 +1,70 @@
+@use 'tokens' as *;
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    color: $color-ink-muted;
+  }
+
+  &__marker {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+    background: $color-surface;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__label {
+    font-weight: $font-weight-medium;
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  &__item--done {
+    color: $color-ink;
+
+    .stepper__marker {
+      border-color: $color-success-soft;
+      background: $color-success-soft;
+      color: $color-success;
+    }
+  }
+
+  &__item--current {
+    color: $color-ink;
+
+    .stepper__marker {
+      border-color: $color-primary;
+      background: $color-primary;
+      color: $color-on-primary;
+    }
+
+    .stepper__label {
+      font-weight: $font-weight-semibold;
+    }
+  }
+}

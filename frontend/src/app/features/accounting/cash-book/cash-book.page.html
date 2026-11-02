@@ -1,0 +1,207 @@
+<app-page-header
+  title="Libro de caja"
+  breadcrumb="Inicio / Contabilidad / Libro de caja"
+  [description]="
+    'Movimientos de entrada y salida por fondo y periodo contable de ' +
+    (options.value()?.congregationName ?? 'la sede') +
+    '. Las correcciones se hacen con reversas, nunca borrando.'
+  "
+>
+  <a class="btn btn--secondary" routerLink="/reports">
+    <app-icon name="bar-chart" />
+    Saldos por fondo
+  </a>
+</app-page-header>
+
+<div class="stack">
+  <div role="status" aria-live="polite">
+    @if (flash(); as message) {
+      <div class="alert alert--success flash">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="flash.set(null)">
+          <app-icon name="x" [size]="16" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (!canWrite()) {
+    <app-read-only-notice permission="cash-transactions.write" />
+  }
+
+  @if (options.error(); as error) {
+    <app-error-banner [message]="loadErrorMessage(error)" (retry)="options.reload()" />
+  } @else if (!options.value()) {
+    <app-loading label="Cargando el libro de caja…" />
+  } @else if (options.value()!.congregationId === null) {
+    <app-empty-state
+      icon="wallet"
+      title="Selecciona una sede"
+      description="El libro de caja se lleva por sede: elige una sede en el selector superior para ver sus movimientos."
+    />
+  } @else {
+    <section class="card toolbar filters" aria-label="Filtros del libro de caja">
+      <div class="field">
+        <label for="cash-fund">Fondo</label>
+        <select id="cash-fund" class="select" (change)="selectFund($event)">
+          @for (fund of options.value()!.funds; track fund.id) {
+            <option [value]="fund.id" [selected]="fund.id === fundId()">{{ fund.name }}{{ fund.isActive ? '' : ' (inactivo)' }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="cash-period">Periodo</label>
+        <select id="cash-period" class="select" (change)="selectPeriod($event)">
+          @for (period of options.value()!.periods; track period.id) {
+            <option [value]="period.id" [selected]="period.id === periodId()">
+              {{ period.label }} · {{ period.status === 'OPEN' ? 'Abierto' : 'Cerrado' }}
+            </option>
+          }
+        </select>
+      </div>
+      @if (view(); as data) {
+        <app-status-badge
+          class="filters__status"
+          [label]="isOpen() ? 'Periodo abierto' : 'Periodo cerrado'"
+          [tone]="isOpen() ? 'success' : 'neutral'"
+        />
+        <div class="cluster filters__actions">
+          @if (isOpen()) {
+            <button
+              type="button"
+              class="btn btn--secondary"
+              [disabled]="!canWrite() || data.closeBlockedReason !== null"
+              [attr.aria-describedby]="data.closeBlockedReason ? 'close-blocked' : null"
+              (click)="closeOpen.set(true)"
+            >
+              <app-icon name="lock" />
+              Cerrar periodo
+            </button>
+            <button type="button" class="btn btn--primary" [disabled]="!canWrite() || !data.fundIsActive" (click)="newOpen.set(true)">
+              <app-icon name="plus" />
+              Nuevo movimiento
+            </button>
+          } @else {
+            <button type="button" class="btn btn--secondary" disabled aria-describedby="closed-banner-title">
+              <app-icon name="lock" />
+              Periodo cerrado
+            </button>
+            <button type="button" class="btn btn--primary" disabled aria-describedby="closed-banner-title">
+              <app-icon name="plus" />
+              Nuevo movimiento
+            </button>
+          }
+        </div>
+        @if (isOpen() && data.closeBlockedReason; as reason) {
+          <p id="close-blocked" class="field__hint filters__hint">{{ reason }}</p>
+        }
+        @if (!data.fundIsActive) {
+          <p class="field__hint filters__hint">El fondo está inactivo: conserva su historial pero no recibe movimientos nuevos.</p>
+        }
+      }
+    </section>
+
+    @if (book.error(); as error) {
+      <app-error-banner [message]="loadErrorMessage(error)" (retry)="book.reload()" />
+    } @else if (!view()) {
+      <app-loading label="Cargando movimientos…" />
+    } @else {
+      @let data = view()!;
+      @if (!isOpen()) {
+        <div class="alert alert--warning closed-banner" role="status">
+          <app-icon name="lock" />
+          <div>
+            <p id="closed-banner-title"><strong>Periodo cerrado: no admite movimientos</strong></p>
+            <p class="text-small">
+              {{ data.period.label }} fue cerrado
+              @if (data.period.closedAt) {
+                el {{ data.period.closedAt | date: 'dd/MM/yyyy' }}.
+              }
+              Los ajustes se registran en un periodo abierto con su propio comprobante.
+            </p>
+          </div>
+          @if (openPeriod(); as target) {
+            <button type="button" class="btn btn--secondary btn--sm" (click)="goToPeriod(target)">Ir a {{ target.label }}</button>
+          }
+        </div>
+      }
+
+      <section class="grid-auto" aria-label="Saldos del periodo">
+        @for (card of cards(); track card.label) {
+          <app-stat-card [label]="card.label" [value]="card.value" [hint]="card.hint" />
+        }
+      </section>
+
+      <section class="card consolidate" aria-labelledby="consolidate-title">
+        <app-icon name="coins" [size]="24" />
+        <div class="consolidate__text">
+          <h2 id="consolidate-title">Consolidar aportes del día</h2>
+          <p class="text-muted text-small">
+            Consolida los aportes registrados sin movimiento de caja (diezmos, ofrendas, primicias y abonos a votos) en un
+            movimiento de entrada por cuenta, con su comprobante de ingreso. Los aportes individuales se conservan en
+            <a routerLink="/accounting/contributions">Aportes</a>.
+          </p>
+          <p class="text-small">
+            @if (data.pendingToday.count > 0) {
+              Hoy ({{ data.pendingToday.date | date: 'dd/MM/yyyy' }}): {{ data.pendingToday.count }}
+              {{ data.pendingToday.count === 1 ? 'aporte registrado' : 'aportes registrados' }} en {{ data.fundName }} por
+              <span class="amount">{{ data.pendingToday.amount | money }}</span>, pendientes de consolidar.
+            } @else {
+              Sin aportes pendientes de consolidar hoy ({{ data.pendingToday.date | date: 'dd/MM/yyyy' }}) en {{ data.fundName }}.
+            }
+          </p>
+        </div>
+        <button type="button" class="btn btn--secondary" [disabled]="!canWrite() || data.openRange === null" (click)="consolidateOpen.set(true)">
+          <app-icon name="transfer" />
+          Consolidar aportes
+        </button>
+      </section>
+
+      <app-cash-movements-table
+        [rows]="data.rows"
+        [opening]="data.opening"
+        [period]="data.period"
+        [fundName]="data.fundName"
+        [canReverse]="canWrite() && data.openRange !== null"
+        (reverse)="askReverse($event)"
+      />
+
+      <app-new-movement-dialog
+        [(open)]="newOpen"
+        [fundId]="data.fundId"
+        [fundName]="data.fundName"
+        [period]="data.period"
+        [accounts]="options.value()!.accounts"
+        [today]="options.value()!.today"
+        [nextCashIn]="data.nextCashIn"
+        [nextCashOut]="data.nextCashOut"
+        (recorded)="onRecorded($event)"
+      />
+      <app-reverse-movement-dialog
+        [(open)]="reverseOpen"
+        [row]="reverseTarget()"
+        [fundName]="data.fundName"
+        [today]="options.value()!.today"
+        [openRange]="data.openRange"
+        [nextCashIn]="data.nextCashIn"
+        [nextCashOut]="data.nextCashOut"
+        (reversed)="onReversed($event)"
+      />
+      <app-close-period-dialog
+        [(open)]="closeOpen"
+        [period]="data.period"
+        [congregationName]="options.value()!.congregationName"
+        [fundName]="data.fundName"
+        [closing]="data.closing"
+        (closed)="onClosed($event)"
+      />
+      <app-consolidate-dialog
+        [(open)]="consolidateOpen"
+        [today]="options.value()!.today"
+        [openRange]="data.openRange"
+        (consolidated)="onConsolidated($event)"
+      />
+    }
+  }
+</div>

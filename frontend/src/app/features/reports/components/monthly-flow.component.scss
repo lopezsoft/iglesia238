@@ -1,0 +1,96 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.section-title {
+  font-size: $font-size-md;
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  color: $color-ink-muted;
+  font-size: $font-size-xs;
+
+  &__swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 2px;
+
+    &--income {
+      background: $color-primary;
+    }
+
+    &--expense {
+      margin-left: $space-2;
+      background: $color-warning;
+    }
+  }
+}
+
+.chart {
+  display: flex;
+  gap: $space-2;
+  height: 14rem;
+  padding-bottom: $space-1;
+  border-bottom: 1px solid $color-border-strong;
+  overflow-x: auto;
+
+  &__group {
+    display: flex;
+    flex: 1 0 2.75rem;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__bars {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  &__track {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    max-width: 1.75rem;
+  }
+
+  &__value {
+    color: $color-ink-muted;
+    font-family: $font-mono;
+    font-size: 0.625rem;
+  }
+
+  &__bar {
+    width: 100%;
+    min-height: 2px;
+    border-radius: 3px 3px 0 0;
+
+    &--income {
+      background: $color-primary;
+    }
+
+    &--expense {
+      background: $color-warning;
+    }
+  }
+
+  &__label {
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    text-align: center;
+  }
+
+  &__note {
+    margin: $space-2 0 $space-4;
+  }
+}
