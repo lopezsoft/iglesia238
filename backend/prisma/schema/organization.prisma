@@ -4,11 +4,18 @@
 // Regla: toda tabla de negocio lleva denominationId y sus FK compuestas impiden cruzar denominaciones.
 // ==========================================
 
+/// País. Catálogo en prisma/seed-data/countries.json.
 model Country {
-  id      Int      @id @default(autoincrement())
-  isoCode String   @unique @map("iso_code") @db.VarChar(3)
-  name    String   @unique @db.VarChar(100)
-  regions Region[]
+  id        Int      @id @default(autoincrement())
+  /// Código ISO 3166-1 alfa-2 (CO).
+  isoAlpha2 String   @unique @map("iso_alpha2") @db.Char(2)
+  /// Código ISO 3166-1 alfa-3 (COL). Vacío si no tiene uno oficial, como Kosovo.
+  isoAlpha3 String?  @unique @map("iso_alpha3") @db.Char(3)
+  /// Nombre en español.
+  name      String   @unique @db.VarChar(100)
+  /// Indicativo telefónico internacional, sin el signo + (57).
+  phoneCode String?  @map("phone_code") @db.VarChar(4)
+  regions   Region[]
 
   @@map("countries")
 }
@@ -17,19 +24,25 @@ model Country {
 model Region {
   id             Int            @id @default(autoincrement())
   countryId      Int            @map("country_id")
+  /// Código oficial de la subdivisión. En Colombia, el código DANE del departamento (05).
+  code           String?        @db.VarChar(10)
   name           String         @db.VarChar(100)
   country        Country        @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   municipalities Municipality[]
 
+  @@unique([countryId, code])
   @@unique([countryId, name])
   @@map("regions")
 }
 
+/// Municipio o ciudad. Los de Colombia están en prisma/seed-data/colombia-divipola.json.
 model Municipality {
-  id       Int    @id @default(autoincrement())
-  regionId Int    @map("region_id")
-  name     String @db.VarChar(100)
-  region   Region @relation(fields: [regionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id       Int     @id @default(autoincrement())
+  regionId Int     @map("region_id")
+  /// Código oficial. En Colombia, el código DIVIPOLA del DANE (05001).
+  code     String? @db.VarChar(10)
+  name     String  @db.VarChar(100)
+  region   Region  @relation(fields: [regionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   documentIssuedPersons Person[]        @relation("PersonDocumentIssuePlace")
   bornPersons           Person[]        @relation("PersonBirthPlace")
@@ -38,6 +51,7 @@ model Municipality {
   legalEntities         LegalEntity[]
   congregations         Congregation[]
 
+  @@unique([regionId, code])
   @@unique([regionId, name])
   @@map("municipalities")
 }

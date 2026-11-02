@@ -53,6 +53,15 @@ Una columna usada en un `CHECK` no admite `ON UPDATE CASCADE`: por eso todas las
 
 `prisma migrate dev` usa la base auxiliar `<base>_shadow`, que crea `docker/mariadb/init/01-shadow-database.sh` la primera vez que arranca el volumen.
 
+## Datos de ubicación
+
+El seed carga 245 países y los 33 departamentos y 1122 municipios de Colombia desde `prisma/seed-data/`. Cada archivo indica su origen en el campo `source`:
+
+- `countries.json`: códigos ISO 3166-1 alfa-2 e indicativos de `libphonenumber-js`, nombres en español de CLDR y códigos alfa-3 de la base de ubicaciones de MatiasApp.
+- `colombia-divipola.json`: códigos DANE de departamentos (`05`) y municipios (`05001`), con nombres normalizados (sin espacios sobrantes y con conectores en minúscula: «Villa de Leyva»).
+
+Los municipios se identifican por su código, así que corregir un nombre en el JSON y volver a ejecutar el seed lo actualiza sin duplicar filas. Para otro país, se agrega un archivo con la misma estructura y una llamada a `seedAdministrativeDivisions`.
+
 ## Scripts
 
 | Script | Uso |
@@ -87,6 +96,7 @@ prisma/
   schema/                  esquema por contexto: organization, identity, membership, secretariat, ministries, accounting
   sql/constraints.sql      reglas CHECK
   seed.ts                  catálogos globales; nunca crea usuarios
+  seed-data/               países (ISO 3166-1, nombres en español) y DIVIPOLA de Colombia, en JSON
 ```
 
 ## Convenciones

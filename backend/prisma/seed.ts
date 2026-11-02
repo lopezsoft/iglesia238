@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { readFileSync } from 'node:fs';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { parseMariaDbUrl } from '../src/infrastructure/prisma/mariadb-connection.js';
@@ -8,6 +9,28 @@ import { parseMariaDbUrl } from '../src/infrastructure/prisma/mariadb-connection
 interface CatalogEntry {
   code: string;
   name: string;
+}
+
+interface CountrySeed {
+  isoAlpha2: string;
+  isoAlpha3: string | null;
+  name: string;
+  phoneCode: string | null;
+}
+
+interface RegionSeed extends CatalogEntry {
+  municipalities: CatalogEntry[];
+}
+
+interface DivisionsSeed {
+  countryIsoAlpha2: string;
+  regions: RegionSeed[];
+}
+
+// Generated data files; each one documents its origin in its "source" field.
+function readSeedData<T>(fileName: string): T {
+  const url = new URL(`./seed-data/${fileName}`, import.meta.url);
+  return JSON.parse(readFileSync(url, 'utf8')) as T;
 }
 
 const DOCUMENT_TYPES: CatalogEntry[] = [
@@ -190,12 +213,61 @@ async function seedAccessControl(prisma: PrismaClient): Promise<void> {
   }
 }
 
-async function seed(prisma: PrismaClient): Promise<void> {
-  await prisma.country.upsert({
-    where: { isoCode: 'COL' },
-    create: { isoCode: 'COL', name: 'Colombia' },
-    update: {},
+async function seedCountries(prisma: PrismaClient): Promise<void> {
+  const { countries } = readSeedData<{ countries: CountrySeed[] }>(
+    'countries.json',
+  );
+  for (const { isoAlpha2, ...data } of countries) {
+    await prisma.country.upsert({
+      where: { isoAlpha2 },
+      create: { isoAlpha2, ...data },
+      update: data,
+    });
+  }
+}
+
+async function seedAdministrativeDivisions(
+  prisma: PrismaClient,
+  fileName: string,
+): Promise<void> {
+  const { countryIsoAlpha2, regions } = readSeedData<DivisionsSeed>(fileName);
+  const country = await prisma.country.findUniqueOrThrow({
+    where: { isoAlpha2: countryIsoAlpha2 },
   });
+
+  for (const { code, name, municipalities } of regions) {
+    const region = await prisma.region.upsert({
+      where: { countryId_code: { countryId: country.id, code } },
+      create: { countryId: country.id, code, name },
+      update: { name },
+    });
+    const existing = await prisma.municipality.findMany({
+      where: { regionId: region.id },
+      select: { code: true, name: true },
+    });
+    const currentNames = new Map(existing.map((m) => [m.code, m.name]));
+
+    // New municipalities go in one batch per region; existing ones are touched only if renamed.
+    await prisma.municipality.createMany({
+      data: municipalities
+        .filter((m) => !currentNames.has(m.code))
+        .map((m) => ({ regionId: region.id, ...m })),
+    });
+    const renamed = municipalities.filter(
+      (m) => currentNames.has(m.code) && currentNames.get(m.code) !== m.name,
+    );
+    for (const m of renamed) {
+      await prisma.municipality.update({
+        where: { regionId_code: { regionId: region.id, code: m.code } },
+        data: { name: m.name },
+      });
+    }
+  }
+}
+
+async function seed(prisma: PrismaClient): Promise<void> {
+  await seedCountries(prisma);
+  await seedAdministrativeDivisions(prisma, 'colombia-divipola.json');
 
   const updateName = ({ code, name }: CatalogEntry) => ({
     where: { code },
