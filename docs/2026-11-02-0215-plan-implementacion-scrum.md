@@ -212,11 +212,12 @@ No se pueden expresar en la base de datos sin sacrificar casos legítimos, así 
 | Seguridad base: Helmet con CSP estricta, CORS por lista, Swagger desactivado por defecto, sin query string en errores | Hecho | e2e |
 | Modelo de datos de 71 tablas, multi-iglesia, con reglas `CHECK` | Hecho | `prisma validate`; migración aplicada en MariaDB real sin desviaciones; pruebas de rechazo |
 | Seed idempotente de catálogos y roles | Hecho | Ejecutado dos veces sin errores |
+| Migración inicial `20261102141056_init`, con las 19 reglas `CHECK` | Hecho | Aplicada en la base local: 72 tablas, 135 FK con `ON UPDATE RESTRICT`, 22 `CHECK` (19 propias y 3 `json_valid` de MariaDB); `migrate dev` no genera cambios; rechazos de cruce entre denominaciones, documento sin tipo y cambio de ID |
 | Docker local (MariaDB y Redis) y de producción (migrador, API sin root, redes separadas) | Hecho | Imágenes construidas y ejecutadas; cierre ordenado con SIGTERM |
 | Defectos bloqueantes de la auditoría en el backend | Corregidos | Ruta `dist/main.js`, Fastify en producción, lockfile versionado, healthcheck de MariaDB, `.dockerignore`, migraciones versionables |
 
 **Pendiente del Sprint 0:**
-- **Migración inicial:** no se dejó en el repositorio. El README explica cómo crearla con las reglas `CHECK`.
+
 - **Imagen de la API (821 MB):** `@prisma/client` arrastra el CLI de Prisma y TypeScript como dependencias. Hay una historia para reducirla (TEC-04).
 - **Auditoría de dependencias:** `npm audit` reporta 5 avisos moderados en `glob` y `minimatch`, transitivos de `@fastify/static`, sin corrección compatible publicada.
 
@@ -350,7 +351,7 @@ El frontend avanza en paralelo desde el Sprint 2, una vez existan la autenticaci
 
 ## 9. Decisiones pendientes del Product Owner
 
-Se tomaron decisiones provisionales para no bloquear el modelo. Conviene confirmarlas antes de generar la migración inicial, porque cambiarlas después cuesta más.
+Se tomaron decisiones provisionales para no bloquear el modelo, y la migración inicial las aplica tal como están. Cambiar una exige una migración nueva, por lo que conviene confirmarlas antes de que haya datos reales.
 
 | # | Pregunta | Decisión provisional |
 |---|---|---|

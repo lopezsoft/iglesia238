@@ -37,15 +37,19 @@ Si el puerto 3306 u 80 está ocupado (por ejemplo, por WAMP), cambia `DB_PORT` o
 
 ## Migraciones
 
-El esquema está dividido por contexto en `prisma/schema/`. Algunas reglas no se pueden expresar en Prisma (`CHECK`), así que viven en `prisma/sql/constraints.sql` y se agregan a la migración inicial:
+El esquema está dividido por contexto en `prisma/schema/`. Algunas reglas no se pueden expresar en Prisma (`CHECK`), así que viven en `prisma/sql/constraints.sql`; la migración inicial (`prisma/migrations/<fecha>_init`) ya las incluye.
+
+Para un cambio de esquema:
 
 ```bash
-npx prisma migrate dev --create-only --name init
-cat prisma/sql/constraints.sql >> prisma/migrations/<fecha>_init/migration.sql
-npx prisma migrate dev
+npx prisma migrate dev --create-only --name <cambio>   # genera sin aplicar
+# revisar migration.sql y añadir a mano las reglas CHECK nuevas (y a prisma/sql/constraints.sql)
+npx prisma migrate dev                                  # aplica
 ```
 
-Las migraciones posteriores que añadan reglas `CHECK` deben incluirlas en su propio `migration.sql`. Una columna usada en un `CHECK` no admite `ON UPDATE CASCADE`: por eso todas las relaciones declaran `onUpdate: Restrict`.
+Una columna usada en un `CHECK` no admite `ON UPDATE CASCADE`: por eso todas las relaciones declaran `onUpdate: Restrict`.
+
+`prisma migrate diff --from-migrations` muestra `MODIFY ... JSON` en las tres columnas JSON aunque no haya cambios: MariaDB guarda JSON como `LONGTEXT` con un `CHECK (json_valid(...))`. Para detectar desviaciones, usar `migrate dev --create-only` o `migrate diff --from-config-datasource`.
 
 `prisma migrate dev` usa la base auxiliar `<base>_shadow`, que crea `docker/mariadb/init/01-shadow-database.sh` la primera vez que arranca el volumen.
 
