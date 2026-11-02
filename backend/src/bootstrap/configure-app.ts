@@ -4,7 +4,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { createRequire } from 'node:module';
 import { Environment } from '../config/environment.js';
+
+// package.json is the single source of the version; the production image ships it next to dist/.
+const { version: API_VERSION } = createRequire(import.meta.url)(
+  '../../package.json',
+) as { version: string };
 
 export const API_PREFIX = 'api';
 const SWAGGER_PATH = `${API_PREFIX}/docs`;
@@ -67,7 +73,7 @@ function configureSwagger(
     new DocumentBuilder()
       .setTitle('Church Management API')
       .setDescription('API multi-iglesia: membresía, secretaría y contabilidad')
-      .setVersion('0.1.0')
+      .setVersion(API_VERSION)
       .addBearerAuth()
       .build(),
   );

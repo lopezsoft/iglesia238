@@ -4,6 +4,8 @@ API multi-iglesia para membresía, secretaría y contabilidad. Construida con Ne
 
 El plan, las decisiones de arquitectura y el backlog están en [docs/2026-11-02-0215-plan-implementacion-scrum.md](../docs/2026-11-02-0215-plan-implementacion-scrum.md).
 
+La versión es la de `package.json`, compartida con el frontend, y Swagger la muestra. Los cambios están en el [CHANGELOG](../CHANGELOG.md) y la política de versionado en el [README raíz](../README.md#versionado).
+
 ## Requisitos
 
 - Node.js 22.22.3 o superior (ver `.nvmrc`).

@@ -64,7 +64,8 @@ Se sigue GitHub Flow: `main` siempre está desplegable y todo cambio entra por u
 | Nombre | `<tipo>/<id-historia>-<descripcion-corta>`, en inglés y en minúsculas: `feat/a-01-login`, `fix/c-04-duplicate-member`, `chore/tec-01-ci-pipeline` |
 | Tipos | Los de Conventional Commits: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci` |
 | Fusión | *Squash merge*: un commit por historia en `main`, con el mensaje en Conventional Commits. La rama se borra al fusionar |
-| Seguimiento del sprint | En el tablero (GitHub Projects o milestone por sprint), no en ramas. Al cerrar el sprint se etiqueta `main` (`v0.1.0`, `v0.2.0`…) si se despliega |
+| Seguimiento del sprint | En el tablero (GitHub Projects o milestone por sprint), no en ramas. Al cerrar el sprint se etiqueta `main` con la versión vigente (`v0.2.0`) si se despliega |
+| Versión y CHANGELOG | Todo commit que cambia una aplicación sube la versión única de backend y frontend y actualiza `CHANGELOG.md` y el README. Política en «Versionado» del README raíz |
 
 ## 3. Decisiones de arquitectura
 
