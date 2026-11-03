@@ -63,9 +63,14 @@ enum PolicyStatus {
 
 // Catálogos globales: su valor no depende de la iglesia.
 
+/// Catálogo global de tipos de documento de identidad (registro civil, tarjeta de identidad, cédula, pasaporte, etc.).
+/// Lo carga el seed y lo comparten todas las denominaciones.
 model DocumentType {
+  /// Identificador interno autoincremental.
   id                     Int                     @id @default(autoincrement())
+  /// Código único del tipo de documento: RC, TI, CC, CE, PAS, NUIP, o UNKNOWN para registros importados sin tipo conocido.
   code                   String                  @unique @db.VarChar(10)
+  /// Nombre del tipo de documento que se muestra al usuario.
   name                   String                  @db.VarChar(80)
   people                 Person[]
   membershipApplications MembershipApplication[]
@@ -73,29 +78,40 @@ model DocumentType {
   @@map("document_types")
 }
 
+/// Catálogo global de estados civiles de una persona. Lo carga el seed y es común a todas las denominaciones.
 model MaritalStatus {
+  /// Identificador interno autoincremental.
   id     Int      @id @default(autoincrement())
+  /// Código único del estado civil: SINGLE, MARRIED, COMMON_LAW, SEPARATED, DIVORCED o WIDOWED.
   code   String   @unique @db.VarChar(20)
+  /// Nombre del estado civil que se muestra al usuario.
   name   String   @db.VarChar(80)
   people Person[]
 
   @@map("marital_statuses")
 }
 
+/// Catálogo global de niveles educativos de una persona. Lo carga el seed y es común a todas las denominaciones.
 model EducationLevel {
+  /// Identificador interno autoincremental.
   id     Int      @id @default(autoincrement())
+  /// Código único del nivel: NONE, PRIMARY, SECONDARY, TECHNICAL, TECHNOLOGIST, UNIVERSITY o POSTGRADUATE.
   code   String   @unique @db.VarChar(20)
+  /// Nombre del nivel educativo que se muestra al usuario.
   name   String   @db.VarChar(80)
   people Person[]
 
   @@map("education_levels")
 }
 
-/// Unifica las tablas del diccionario: cursos, técnicos, universitarios, iniciales,
-/// teológicos y educación cristiana (C 101 a C 401).
+/// Catálogo global de tipos de estudio. Unifica las tablas del diccionario de origen: cursos, técnicos, universitarios,
+/// iniciales, teológicos y educación cristiana (C 101 a C 401). Lo carga el seed.
 model StudyType {
+  /// Identificador interno autoincremental.
   id      Int     @id @default(autoincrement())
+  /// Código único del tipo: COURSE, TECHNICAL, UNIVERSITY, INITIAL, THEOLOGICAL, CHRISTIAN_EDUCATION u OTHER.
   code    String  @unique @db.VarChar(30)
+  /// Nombre del tipo de estudio que se muestra al usuario.
   name    String  @db.VarChar(80)
   studies Study[]
 
@@ -104,11 +120,16 @@ model StudyType {
 
 // Catálogos por denominación.
 
-/// Grado pastoral.
+/// Grado pastoral que cada denominación define y asigna a los miembros que ejercen el ministerio.
+/// Ámbito: por denominación; el nombre es único dentro de ella.
 model PastoralRank {
+  /// Identificador interno autoincremental.
   id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int          @map("denomination_id")
+  /// Nombre del grado pastoral, único dentro de la denominación.
   name           String       @db.VarChar(80)
+  /// Indica si el grado está activo y disponible para asignarse a miembros.
   isActive       Boolean      @default(true) @map("is_active")
   denomination   Denomination @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   members        Member[]
@@ -118,11 +139,18 @@ model PastoralRank {
   @@map("pastoral_ranks")
 }
 
+/// Estudio concreto (curso, carrera o programa) del catálogo de cada denominación, clasificado por tipo de estudio.
+/// Ámbito: por denominación; el nombre es único por tipo.
 model Study {
+  /// Identificador interno autoincremental.
   id             Int           @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int           @map("denomination_id")
+  /// Tipo de estudio al que pertenece (FK a study_types.id).
   studyTypeId    Int           @map("study_type_id")
+  /// Nombre del estudio o programa, único por tipo dentro de la denominación.
   name           String        @db.VarChar(150)
+  /// Indica si el estudio está activo y disponible para registrarse en las personas.
   isActive       Boolean       @default(true) @map("is_active")
   denomination   Denomination  @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   studyType      StudyType     @relation(fields: [studyTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -133,11 +161,16 @@ model Study {
   @@map("studies")
 }
 
-/// Cargo dentro de la iglesia.
+/// Cargo dentro de la iglesia que cada denominación define; los miembros lo ocupan a través de member_positions.
+/// Ámbito: por denominación; el nombre es único dentro de ella.
 model ChurchPosition {
+  /// Identificador interno autoincremental.
   id              Int              @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId  Int              @map("denomination_id")
+  /// Nombre del cargo, único dentro de la denominación.
   name            String           @db.VarChar(120)
+  /// Indica si el cargo está activo y disponible para asignarse a miembros.
   isActive        Boolean          @default(true) @map("is_active")
   denomination    Denomination     @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   memberPositions MemberPosition[]
@@ -147,35 +180,61 @@ model ChurchPosition {
   @@map("church_positions")
 }
 
-/// `fullName` admite parientes de los que las fuentes solo traen un nombre en una celda.
-/// Tipo y número de documento van juntos (sql/constraints.sql): sin tipo, el índice único no protege.
-/// Los campos `*Text` guardan lugares que no se pueden identificar en el catálogo.
+/// Persona conocida por una denominación: miembro, pariente, acudiente, pastor o aportante. Ámbito: por denominación.
+/// Tipo y número de documento van juntos (CHECK chk_persons_document) y son únicos en la denominación.
+/// Los campos «Text» guardan lugares que no se pueden identificar en el catálogo de municipios.
 model Person {
+  /// Identificador interno autoincremental.
   id                     Int       @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId         Int       @map("denomination_id")
+  /// Cuenta de usuario vinculada si la persona accede al sistema; a lo sumo una persona por cuenta y denominación (FK a users.id).
   userId                 Int?      @map("user_id")
+  /// Tipo de documento de identidad; nulo solo si tampoco hay número (CHECK) (FK a document_types.id).
   documentTypeId         Int?      @map("document_type_id")
+  /// Número de documento normalizado: sin puntos, espacios ni guiones y en mayúsculas; único por tipo en la denominación.
   documentNumber         String?   @map("document_number") @db.VarChar(30)
+  /// Municipio de expedición del documento, cuando se identifica en el catálogo (FK a municipalities.id).
   documentIssuePlaceId   Int?      @map("document_issue_place_id")
+  /// Lugar de expedición del documento en texto libre, cuando no se pudo identificar en el catálogo de municipios.
   documentIssuePlaceText String?   @map("document_issue_place_text") @db.VarChar(150)
+  /// Nombre completo en una sola cadena, para parientes de los que las fuentes solo traen el nombre en una celda; si hay nombres y apellidos, prevalecen.
   fullName               String?   @map("full_name") @db.VarChar(200)
+  /// Nombres de pila de la persona.
   firstName              String?   @map("first_name") @db.VarChar(100)
+  /// Primer apellido de la persona.
   lastName               String?   @map("last_name") @db.VarChar(80)
+  /// Segundo apellido de la persona; opcional.
   secondLastName         String?   @map("second_last_name") @db.VarChar(80)
+  /// Sexo de la persona: FEMALE (femenino) o MALE (masculino); nulo si no se conoce.
   sex                    Sex?
+  /// Fecha de nacimiento (fecha ISO, sin hora); define la edad y si la persona es menor de 18 años.
   birthDate              DateTime? @map("birth_date") @db.Date
+  /// Municipio de nacimiento, cuando se identifica en el catálogo (FK a municipalities.id).
   birthPlaceId           Int?      @map("birth_place_id")
+  /// Lugar de nacimiento en texto libre, cuando no se pudo identificar en el catálogo de municipios.
   birthPlaceText         String?   @map("birth_place_text") @db.VarChar(150)
+  /// Estado civil de la persona (FK a marital_statuses.id).
   maritalStatusId        Int?      @map("marital_status_id")
+  /// Nivel educativo alcanzado por la persona (FK a education_levels.id).
   educationLevelId       Int?      @map("education_level_id")
+  /// Último grado escolar aprobado, como número entero; nulo si no se conoce.
   lastGradeCompleted     Int?      @map("last_grade_completed")
+  /// Profesión u oficio para el que se formó la persona, en texto libre.
   profession             String?   @db.VarChar(120)
+  /// Ocupación o actividad que la persona ejerce actualmente, en texto libre.
   occupation             String?   @db.VarChar(120)
+  /// Lugar o empresa donde trabaja la persona, en texto libre.
   workplace              String?   @db.VarChar(150)
+  /// Número de hijos declarado por la persona.
   childrenCount          Int?      @map("children_count")
+  /// Ruta de la foto de la persona en el almacenamiento de archivos; nula si no tiene foto.
   photoPath              String?   @map("photo_path") @db.VarChar(255)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt              DateTime  @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt              DateTime  @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt              DateTime? @map("deleted_at")
 
   denomination       Denomination    @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -220,13 +279,22 @@ model Person {
   @@map("persons")
 }
 
+/// Dirección de residencia de una persona; la vigente se marca con is_current. Se borra al anonimizar la persona.
+/// Ámbito: por denominación.
 model PersonAddress {
+  /// Identificador interno autoincremental.
   id             Int           @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int           @map("denomination_id")
+  /// Persona a la que pertenece la dirección (FK a persons.id).
   personId       Int           @map("person_id")
+  /// Municipio de la dirección (FK a municipalities.id).
   municipalityId Int?          @map("municipality_id")
+  /// Barrio de la dirección, cuando está en el catálogo (FK a neighborhoods.id).
   neighborhoodId Int?          @map("neighborhood_id")
+  /// Dirección escrita (calle, número y complemento); puede quedar vacía si solo se conoce el municipio.
   address        String        @db.VarChar(200)
+  /// Indica si es la dirección vigente de la persona; la aplicación consulta y edita solo la vigente.
   isCurrent      Boolean       @default(true) @map("is_current")
   person         Person        @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -236,12 +304,20 @@ model PersonAddress {
   @@map("person_addresses")
 }
 
+/// Medio de contacto de una persona (teléfono o correo); puede tener varios y uno marcado como principal.
+/// Se borra al anonimizar la persona. Ámbito: por denominación.
 model PersonContact {
+  /// Identificador interno autoincremental.
   id             Int         @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int         @map("denomination_id")
+  /// Persona a la que pertenece el contacto (FK a persons.id).
   personId       Int         @map("person_id")
+  /// Tipo de contacto: LANDLINE (teléfono fijo), MOBILE (celular), EMAIL (correo electrónico) o WORK_PHONE (teléfono del trabajo).
   type           ContactType
+  /// Número de teléfono o dirección de correo según el tipo; el correo se guarda en minúsculas.
   value          String      @db.VarChar(191)
+  /// Indica si es el contacto principal de la persona; se muestra primero.
   isPrimary      Boolean     @default(false) @map("is_primary")
   person         Person      @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -250,18 +326,28 @@ model PersonContact {
   @@map("person_contacts")
 }
 
-/// Separada de Person para exigir un permiso específico. Son afiliaciones SI/NO, no datos médicos.
+/// Ficha socioeconómica de una persona (una por persona), separada de persons para exigir un permiso específico.
+/// Son afiliaciones SÍ/NO, no datos médicos; nulo significa sin respuesta. Se borra al anonimizar. Ámbito: por denominación.
 model SocioeconomicProfile {
+  /// Persona dueña de la ficha; es también la clave primaria (FK a persons.id).
   personId                    Int      @id @map("person_id")
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId              Int      @map("denomination_id")
+  /// Indica si la persona está afiliada al sistema de salud; nulo si no se sabe.
   hasHealthCoverage           Boolean? @map("has_health_coverage")
+  /// Indica si la persona está afiliada a un fondo de pensiones; nulo si no se sabe.
   hasPension                  Boolean? @map("has_pension")
+  /// Indica si la persona está afiliada a riesgos laborales; nulo si no se sabe.
   hasOccupationalRiskCoverage Boolean? @map("has_occupational_risk_coverage")
+  /// Indica si la persona pertenece al régimen subsidiado de salud; nulo si no se sabe.
   isSubsidizedRegime          Boolean? @map("is_subsidized_regime")
+  /// Indica si la persona está afiliada a una caja de compensación familiar; nulo si no se sabe.
   hasFamilyCompensation       Boolean? @map("has_family_compensation")
-  /// Nivel SISBEN.
+  /// Nivel del SISBÉN, entero de 1 a 6 validado por la aplicación; nulo si no se conoce.
   sisbenLevel                 Int?     @map("sisben_level")
+  /// Indica si la persona pertenece a población desplazada; nulo si no se sabe.
   isDisplaced                 Boolean? @map("is_displaced")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt                   DateTime @updatedAt @map("updated_at")
   person                      Person   @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -269,11 +355,18 @@ model SocioeconomicProfile {
   @@map("socioeconomic_profiles")
 }
 
+/// Parentesco entre dos personas de la misma denominación: type dice qué es el pariente para la persona.
+/// Padre o madre se guardan también en sentido inverso (CHILD); el acudiente no. El cónyuge vive en marriages.
 model FamilyRelation {
+  /// Identificador interno autoincremental.
   id             Int                @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int                @map("denomination_id")
+  /// Persona de la que se registra el parentesco (FK a persons.id).
   personId       Int                @map("person_id")
+  /// Pariente relacionado; distinto de person_id por la regla CHECK chk_family_relations_people (FK a persons.id).
   relativeId     Int                @map("relative_id")
+  /// Qué es el pariente para la persona: FATHER (padre), MOTHER (madre), CHILD (hijo o hija) o GUARDIAN (acudiente o tutor).
   type           FamilyRelationType
   person         Person             @relation("FamilyRelationPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   relative       Person             @relation("FamilyRelationRelative", fields: [denominationId, relativeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -282,15 +375,24 @@ model FamilyRelation {
   @@map("family_relations")
 }
 
+/// Estudio realizado o en curso de una persona, tomado del catálogo de estudios de su denominación.
+/// Cada estudio se registra una sola vez por persona. Ámbito: por denominación.
 model PersonStudy {
+  /// Identificador interno autoincremental.
   id             Int         @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int         @map("denomination_id")
+  /// Persona que realizó o cursa el estudio (FK a persons.id).
   personId       Int         @map("person_id")
+  /// Estudio del catálogo de la denominación (FK a studies.id).
   studyId        Int         @map("study_id")
+  /// Estado del estudio: IN_PROGRESS (en curso) o COMPLETED (terminado, valor por defecto).
   status         StudyStatus @default(COMPLETED)
+  /// Fecha de terminación del estudio (fecha ISO, sin hora); nula si sigue en curso o no se conoce.
   completedOn    DateTime?   @map("completed_on") @db.Date
+  /// Institución donde se cursó el estudio, en texto libre (hasta 150 caracteres).
   institution    String?     @db.VarChar(150)
-  /// Año de finalización o, si sigue en curso, año de inicio.
+  /// Año de finalización o, si sigue en curso, año de inicio; entre 1900 y 2200 (CHECK chk_person_studies_year).
   year           Int?
   person         Person      @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   study          Study       @relation(fields: [denominationId, studyId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -299,31 +401,51 @@ model PersonStudy {
   @@map("person_studies")
 }
 
-/// `congregationId` es la sede actual. El registro de cada sede vive en MemberRegistryEntry.
+/// Membresía de una persona en la denominación: estado, sede actual y datos espirituales. Una persona tiene a lo sumo un miembro.
+/// congregation_id es la sede actual; el registro de cada sede (número, libro y folio) vive en member_registry_entries.
+/// Ámbito: por denominación y sede.
 model Member {
+  /// Identificador interno autoincremental.
   id                          Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId              Int          @map("denomination_id")
+  /// Persona que es miembro; única, porque una persona tiene a lo sumo un registro de membresía (FK a persons.id).
   personId                    Int          @unique @map("person_id")
+  /// Sede actual del miembro; cambia con un traslado interno (FK a congregations.id).
   congregationId              Int          @map("congregation_id")
+  /// Estado: ACTIVE (activo), INACTIVE (inactivo), TRANSFERRED (trasladado a una iglesia fuera del sistema) o DECEASED (fallecido, definitivo).
   status                      MemberStatus @default(ACTIVE)
+  /// Fecha de ingreso como miembro (fecha ISO); al aprobar una solicitud es el día de la aprobación.
   joinedOn                    DateTime?    @map("joined_on") @db.Date
+  /// Fecha de conversión a la fe (fecha ISO); nula si no se conoce.
   convertedOn                 DateTime?    @map("converted_on") @db.Date
-  /// NULL significa desconocido: los formularios marcan el bautizo sin dar siempre la fecha.
+  /// Indica si fue bautizado en agua; nulo significa desconocido, porque los formularios marcan el bautizo sin dar siempre la fecha.
   isBaptized                  Boolean?     @map("is_baptized")
+  /// Fecha del bautismo en agua (fecha ISO); nula si no se conoce.
   waterBaptismOn              DateTime?    @map("water_baptism_on") @db.Date
+  /// Lugar o iglesia donde fue bautizado, en texto libre.
   baptismPlace                String?      @map("baptism_place") @db.VarChar(150)
+  /// Pastor que realizó el bautismo, registrado como persona (FK a persons.id).
   baptizingPastorId           Int?         @map("baptizing_pastor_id")
+  /// Fecha del bautismo en el Espíritu Santo (fecha ISO); nula si no se conoce.
   holySpiritBaptismOn         DateTime?    @map("holy_spirit_baptism_on") @db.Date
+  /// Fecha de reconciliación con la iglesia tras haberse apartado (fecha ISO); nula si no aplica.
   reconciledOn                DateTime?    @map("reconciled_on") @db.Date
+  /// Nombre de la iglesia de procedencia en texto libre, si el miembro venía de otra congregación.
   previousCongregationName    String?      @map("previous_congregation_name") @db.VarChar(150)
+  /// Grado pastoral del miembro, si ejerce el ministerio (FK a pastoral_ranks.id).
   pastoralRankId              Int?         @map("pastoral_rank_id")
+  /// Indica si el miembro es maestro de educación cristiana.
   isChristianEducationTeacher Boolean      @default(false) @map("is_christian_education_teacher")
-  /// Campos o áreas de servicio que desea, según el formulario.
+  /// Campos o áreas de servicio en los que desea participar, según el formulario; se borra al anonimizar.
   desiredAreas                String?      @map("desired_areas") @db.VarChar(255)
-  /// Observaciones del pastor. Acceso restringido.
+  /// Observaciones confidenciales del pastor; acceso restringido y se borran al anonimizar.
   pastorNotes                 String?      @map("pastor_notes") @db.Text
+  /// Fecha y hora de creación del registro (UTC).
   createdAt                   DateTime     @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt                   DateTime     @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt                   DateTime?    @map("deleted_at")
 
   person                 Person                  @relation("MemberPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -346,20 +468,29 @@ model Member {
   @@map("members")
 }
 
-/// Registro del miembro en cada sede: número de carné, libro y folio. Un traslado crea una entrada nueva
-/// y conserva la anterior. Libro y folio no son únicos: los históricos se calculaban a partir de la cédula.
+/// Registro del miembro en una sede: número de carné, libro y folio. Un traslado interno cierra la entrada vigente y abre
+/// otra en la sede destino; la reactivación sin entrada abierta abre una nueva. Libro y folio no son únicos: los históricos
+/// se calculaban con la cédula. Ámbito: por sede.
 model MemberRegistryEntry {
+  /// Identificador interno autoincremental.
   id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int          @map("denomination_id")
+  /// Miembro registrado (FK a members.id).
   memberId       Int          @map("member_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
   congregationId Int          @map("congregation_id")
-  /// Asignado con DocumentSequence de la sede.
+  /// Número de miembro consecutivo de la sede, asignado con document_sequences; único por sede y se muestra como código de sede y número (SC-0130).
   memberNumber   Int          @map("member_number")
-  /// Columna CÓDIGO de los Excel de origen.
+  /// Código del miembro en la columna CÓDIGO de los Excel de origen; único por sede y nulo en registros creados en el sistema.
   legacyCode     Int?         @map("legacy_code")
+  /// Libro físico de registro de la secretaría; al aprobar una solicitud se sugiere a razón de 100 miembros por libro y es editable; nulo en entradas abiertas por traslado o reactivación.
   registryBook   String?      @map("registry_book") @db.VarChar(20)
+  /// Folio dentro del libro de registro; se sugiere a partir del número de miembro y es editable; nulo en entradas abiertas por traslado o reactivación.
   registryFolio  String?      @map("registry_folio") @db.VarChar(20)
+  /// Fecha de inicio del registro en la sede (fecha ISO): ingreso, traslado interno o reactivación del miembro.
   startedOn      DateTime     @map("started_on") @db.Date
+  /// Fecha de cierre del registro en la sede (fecha ISO): por traslado interno o externo o por fallecimiento; nula en la entrada vigente.
   endedOn        DateTime?    @map("ended_on") @db.Date
   member         Member       @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   congregation   Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -371,14 +502,24 @@ model MemberRegistryEntry {
   @@map("member_registry_entries")
 }
 
+/// Historial de estados de un miembro: una fila por cada estado que tomó, con la fecha desde la que rige y el motivo.
+/// Ámbito: por denominación.
 model MemberStatusHistory {
+  /// Identificador interno autoincremental.
   id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int          @map("denomination_id")
+  /// Miembro cuyo estado cambió (FK a members.id).
   memberId       Int          @map("member_id")
+  /// Usuario que registró el cambio de estado; nulo si no se conoce (FK a users.id).
   userId         Int?         @map("user_id")
+  /// Estado que tomó el miembro: ACTIVE (activo), INACTIVE (inactivo), TRANSFERRED (trasladado) o DECEASED (fallecido).
   status         MemberStatus
+  /// Fecha desde la que rige el estado (fecha ISO).
   startedOn      DateTime     @map("started_on") @db.Date
+  /// Motivo del cambio de estado en texto libre, por ejemplo el ingreso por solicitud o el traslado a otra iglesia.
   reason         String?      @db.VarChar(255)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt      DateTime     @default(now()) @map("created_at")
   member         Member       @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   user           User?        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -387,22 +528,34 @@ model MemberStatusHistory {
   @@map("member_status_history")
 }
 
-/// Traslado a otra sede de la denominación, o a una iglesia que no está en el sistema
-/// (`externalDestinationName`). Entre denominaciones del sistema se crea una persona nueva.
+/// Traslado de un miembro a otra sede de la denominación o a una iglesia fuera del sistema (external_destination_name).
+/// Entre denominaciones del sistema se crea una persona nueva. La aplicación lo registra ya completado. Ámbito: por denominación.
 model MemberTransfer {
+  /// Identificador interno autoincremental.
   id                        Int            @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId            Int            @map("denomination_id")
+  /// Miembro trasladado (FK a members.id).
   memberId                  Int            @map("member_id")
+  /// Sede de la que sale el miembro (FK a congregations.id).
   originCongregationId      Int            @map("origin_congregation_id")
+  /// Sede destino de un traslado interno, distinta del origen (CHECK); nula si el destino es externo (FK a congregations.id).
   destinationCongregationId Int?           @map("destination_congregation_id")
+  /// Nombre de la iglesia destino fuera del sistema (3 a 150 caracteres); obligatorio si no hay sede destino (CHECK).
   externalDestinationName   String?        @map("external_destination_name") @db.VarChar(150)
+  /// Estado: REQUESTED (solicitado), APPROVED (aprobado), REJECTED (rechazado), COMPLETED (realizado) o CANCELLED (cancelado); hoy se guarda COMPLETED.
   status                    TransferStatus @default(REQUESTED)
+  /// Fecha efectiva del traslado (fecha ISO); no puede ser futura ni anterior al registro vigente en la sede de origen.
   transferDate              DateTime       @map("transfer_date") @db.Date
+  /// Usuario que aprobó y registró el traslado (FK a users.id).
   approvedById              Int?           @map("approved_by_id")
+  /// Fecha y hora de aprobación del traslado (UTC).
   approvedAt                DateTime?      @map("approved_at")
-  /// Carta de traslado emitida.
+  /// Carta de traslado emitida para este traslado, si existe (FK a certificates.id).
   certificateId             Int?           @map("certificate_id")
+  /// Motivo del traslado indicado por quien lo registra.
   notes                     String?        @db.VarChar(255)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt                 DateTime       @default(now()) @map("created_at")
 
   member                  Member        @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -416,12 +569,20 @@ model MemberTransfer {
   @@map("member_transfers")
 }
 
+/// Cargo que ocupa u ocupó un miembro en la iglesia, con su periodo; un cargo sin fecha de fin está vigente.
+/// Ámbito: por denominación.
 model MemberPosition {
+  /// Identificador interno autoincremental.
   id             Int            @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int            @map("denomination_id")
+  /// Miembro que ocupa el cargo (FK a members.id).
   memberId       Int            @map("member_id")
+  /// Cargo ocupado (FK a church_positions.id).
   positionId     Int            @map("position_id")
+  /// Fecha de inicio en el cargo (fecha ISO); nula si no se conoce.
   startedOn      DateTime?      @map("started_on") @db.Date
+  /// Fecha de fin en el cargo (fecha ISO); nula si sigue vigente. Se cierra sola cuando el miembro pasa a inactivo o fallecido o se traslada a otra iglesia.
   endedOn        DateTime?      @map("ended_on") @db.Date
   member         Member         @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   position       ChurchPosition @relation(fields: [denominationId, positionId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -430,14 +591,22 @@ model MemberPosition {
   @@map("member_positions")
 }
 
-/// Política de tratamiento de datos versionada. Solo una política publicada rige; el borrador no se muestra al público.
+/// Política de tratamiento de datos versionada por denominación. Rige la publicada con la fecha de vigencia más reciente ya
+/// alcanzada; el borrador no se muestra al público y, sin política vigente, el formulario público se cierra.
 model PrivacyPolicy {
+  /// Identificador interno autoincremental.
   id                     Int                     @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId         Int                     @map("denomination_id")
+  /// Etiqueta de versión de la política (hasta 20 caracteres), única dentro de la denominación.
   version                String                  @db.VarChar(20)
+  /// Texto completo de la política que acepta el solicitante (50 a 30000 caracteres).
   content                String                  @db.Text
+  /// Fecha desde la que rige la política (fecha ISO); una política publicada con fecha futura queda programada.
   effectiveFrom          DateTime                @map("effective_from") @db.Date
+  /// Estado: DRAFT (borrador, editable y no visible al público) o PUBLISHED (publicada).
   status                 PolicyStatus            @default(DRAFT)
+  /// Fecha y hora de publicación (UTC); presente solo si el estado es PUBLISHED (CHECK chk_privacy_policies_published).
   publishedAt            DateTime?               @map("published_at")
   denomination           Denomination            @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   dataConsents           DataConsent[]
@@ -448,15 +617,24 @@ model PrivacyPolicy {
   @@map("privacy_policies")
 }
 
-/// Autorización de datos. `guardianId` es obligatorio para menores (regla de aplicación).
+/// Autorización de tratamiento de datos que una persona otorga sobre una versión de la política.
+/// guardian_id es obligatorio para menores (regla de aplicación). Se revoca marcando revoked_at. Ámbito: por denominación.
 model DataConsent {
+  /// Identificador interno autoincremental.
   id             Int            @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int            @map("denomination_id")
+  /// Titular de los datos que otorga la autorización (FK a persons.id).
   personId       Int            @map("person_id")
+  /// Acudiente que autoriza en nombre de un menor de 18 años; nulo para adultos (FK a persons.id).
   guardianId     Int?           @map("guardian_id")
+  /// Versión de la política de tratamiento aceptada (FK a privacy_policies.id).
   policyId       Int            @map("policy_id")
+  /// Canal de la autorización: WEB_FORM (formulario público de inscripción) o PAPER (formato en papel registrado por la secretaría).
   channel        ConsentChannel
+  /// Fecha y hora en que se otorgó la autorización (UTC).
   grantedAt      DateTime       @map("granted_at")
+  /// Fecha y hora de la revocación por el titular (UTC); nula si la autorización sigue vigente.
   revokedAt      DateTime?      @map("revoked_at")
   person         Person         @relation("ConsentPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   guardian       Person?        @relation("ConsentGuardian", fields: [denominationId, guardianId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -466,13 +644,22 @@ model DataConsent {
   @@map("data_consents")
 }
 
+/// Archivo adjunto de una persona (foto o soporte), guardado fuera de la base con su huella SHA-256.
+/// Se borra al anonimizar la persona. Ámbito: por denominación.
 model PersonAttachment {
+  /// Identificador interno autoincremental.
   id             Int      @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int      @map("denomination_id")
+  /// Persona a la que pertenece el adjunto (FK a persons.id).
   personId       Int      @map("person_id")
+  /// Clase de adjunto en texto libre (hasta 40 caracteres), por ejemplo foto o soporte de documento.
   type           String   @db.VarChar(40)
+  /// Ruta del archivo en el almacenamiento de archivos.
   storagePath    String   @map("storage_path") @db.VarChar(255)
+  /// Huella SHA-256 del contenido del archivo en hexadecimal (64 caracteres), para verificar su integridad.
   sha256         String   @db.Char(64)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt      DateTime @default(now()) @map("created_at")
   person         Person   @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -480,35 +667,57 @@ model PersonAttachment {
   @@map("person_attachments")
 }
 
-/// Formulario público, sin cuenta de usuario: la persona elige su sede y la secretaría revisa.
-/// No crea Person ni Member hasta aprobarse. `formData` guarda el formulario validado.
-/// Una persona que se reintegra puede tener varias solicitudes.
+/// Formulario público de inscripción, sin cuenta de usuario: la persona elige su sede y la secretaría revisa. No crea persona
+/// ni miembro hasta aprobarse; form_data guarda el resto del formulario validado. Una persona que se reintegra puede tener
+/// varias solicitudes. Ámbito: por sede.
 model MembershipApplication {
+  /// Identificador interno autoincremental.
   id               Int               @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId   Int               @map("denomination_id")
+  /// Sede elegida por el solicitante, que revisa la solicitud (FK a congregations.id).
   congregationId   Int               @map("congregation_id")
+  /// Política de tratamiento vigente que aceptó el solicitante (FK a privacy_policies.id).
   policyId         Int               @map("policy_id")
-  /// Hash del código entregado al solicitante para consultar el estado.
+  /// Huella SHA-256 en hexadecimal del código de seguimiento entregado al solicitante para consultar el estado; el código no se guarda.
   trackingCodeHash String            @unique @map("tracking_code_hash") @db.VarChar(128)
+  /// Estado: PENDING (pendiente), IN_REVIEW (en revisión), APPROVED (aprobada), REJECTED (rechazada) o DUPLICATE (duplicado de una persona existente).
   status           ApplicationStatus @default(PENDING)
+  /// Tipo de documento del solicitante (FK a document_types.id).
   documentTypeId   Int?              @map("document_type_id")
+  /// Número de documento del solicitante, normalizado; sirve para detectar personas ya registradas en la denominación.
   documentNumber   String?           @map("document_number") @db.VarChar(30)
+  /// Nombres del solicitante.
   firstName        String            @map("first_name") @db.VarChar(100)
+  /// Primer apellido del solicitante; el segundo apellido va en form_data.
   lastName         String            @map("last_name") @db.VarChar(160)
+  /// Correo electrónico de contacto del solicitante; opcional.
   email            String?           @db.VarChar(191)
+  /// Teléfono de contacto del solicitante (7 a 20 caracteres: dígitos, +, espacios o guiones), obligatorio en el formulario público.
   phone            String?           @db.VarChar(30)
+  /// Fecha de nacimiento del solicitante (fecha ISO); determina si es menor de edad y necesita acudiente.
   birthDate        DateTime?         @map("birth_date") @db.Date
+  /// Nombre completo del acudiente cuando el solicitante es menor de edad; el detalle va en form_data.
   guardianName     String?           @map("guardian_name") @db.VarChar(200)
+  /// Número de documento normalizado del acudiente de un menor; su tipo va en form_data.
   guardianDocument String?           @map("guardian_document") @db.VarChar(30)
+  /// Respuestas validadas sin columna propia (JSON): segundo apellido, sexo, estado civil, dirección, municipio, barrio, ocupación, iglesia de procedencia, bautismo y acudiente.
   formData         Json              @map("form_data")
+  /// Fecha y hora en que el solicitante aceptó la política de tratamiento (UTC); al aprobarse se copia a data_consents.
   consentedAt      DateTime          @map("consented_at")
+  /// Usuario de la secretaría que tomó la solicitud en revisión o la decidió (FK a users.id).
   reviewerId       Int?              @map("reviewer_id")
+  /// Fecha y hora de la decisión: aprobación, rechazo o duplicado (UTC); nula mientras está pendiente o en revisión.
   reviewedAt       DateTime?         @map("reviewed_at")
+  /// Motivo del rechazo (10 a 255 caracteres), que leen el siguiente revisor y la auditoría; nulo si no fue rechazada.
   rejectionReason  String?           @map("rejection_reason") @db.VarChar(255)
-  /// Persona existente con la que coincide, cuando la solicitud es un duplicado.
+  /// Persona existente con la que coincide, cuando la solicitud se marca como duplicado (FK a persons.id).
   matchedPersonId  Int?              @map("matched_person_id")
+  /// Miembro creado o reactivado al aprobar la solicitud (FK a members.id).
   memberId         Int?              @map("member_id")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt        DateTime          @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
   congregation           Congregation            @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -525,14 +734,22 @@ model MembershipApplication {
   @@map("membership_applications")
 }
 
-/// Foto o soporte del formulario público. Se copia a la persona al aprobar la solicitud.
+/// Foto o soporte adjunto al formulario público de inscripción, guardado fuera de la base con su huella SHA-256.
+/// Previsto: copiarse a person_attachments al aprobar la solicitud (aún no implementado). Ámbito: por denominación.
 model ApplicationAttachment {
+  /// Identificador interno autoincremental.
   id             Int                   @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int                   @map("denomination_id")
+  /// Solicitud a la que pertenece el adjunto (FK a membership_applications.id).
   applicationId  Int                   @map("application_id")
+  /// Clase de adjunto en texto libre (hasta 40 caracteres), por ejemplo foto o soporte de documento.
   type           String                @db.VarChar(40)
+  /// Ruta del archivo en el almacenamiento de archivos.
   storagePath    String                @map("storage_path") @db.VarChar(255)
+  /// Huella SHA-256 del contenido del archivo en hexadecimal (64 caracteres), para verificar su integridad.
   sha256         String                @db.Char(64)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt      DateTime              @default(now()) @map("created_at")
   application    MembershipApplication @relation(fields: [denominationId, applicationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
 

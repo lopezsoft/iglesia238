@@ -16,6 +16,7 @@ const session: SessionUser = {
   id: 1,
   displayName: 'Lucía Gómez',
   email: 'lucia@iglesia.example',
+  emailVerified: true,
   assignments: [
     {
       role: 'DENOMINATION_ADMIN',
@@ -49,6 +50,8 @@ class FakeAuthGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }
@@ -123,4 +126,54 @@ describe('ShellComponent', () => {
 
     TestBed.inject(HttpTestingController).expectOne('/api/health').flush({ status: 'ok' });
   });
+
+  describe('while the e-mail is not confirmed', () => {
+    async function renderLocked() {
+      sessionStorage.clear();
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: AuthGateway, useClass: LockedAuthGateway },
+        ],
+      });
+      await firstValueFrom(TestBed.inject(AuthService).login('lucia@iglesia.example', 'x'));
+      const fixture = TestBed.createComponent(ShellComponent);
+      await fixture.whenStable();
+      return { fixture, element: fixture.nativeElement as HTMLElement };
+    }
+
+    it('shows no module, only the "Confirma tu correo" entry', async () => {
+      const { element } = await renderLocked();
+
+      const links = Array.from(element.querySelectorAll<HTMLAnchorElement>('.rail__link'));
+      expect(links.map((link) => link.getAttribute('href'))).toEqual(['/confirm-email']);
+      expect(links[0].getAttribute('title')).toBe('Confirma tu correo');
+      expect(element.querySelector('a[href="/users"]')).toBeNull();
+      expect(element.querySelector('.rail__brand')?.getAttribute('href')).toBe('/confirm-email');
+    });
+
+    it('hides the quick actions, the scope switcher and the profile links', async () => {
+      const { element, fixture } = await renderLocked();
+
+      expect(element.querySelector('app-quick-create-menu')).toBeNull();
+      expect(element.querySelector('app-scope-switcher')).toBeNull();
+
+      element.querySelector<HTMLButtonElement>('app-user-menu button[aria-haspopup="menu"]')!.click();
+      await fixture.whenStable();
+
+      const items = Array.from(element.querySelectorAll('app-user-menu [role="menuitem"]')).map((item) => item.textContent?.trim());
+      expect(items).toEqual(['Cerrar sesión']);
+    });
+  });
 });
+
+class LockedAuthGateway extends FakeAuthGateway {
+  override login(): Observable<SessionUser> {
+    return of({ ...session, emailVerified: false });
+  }
+  override restore(): Observable<SessionUser | null> {
+    return of({ ...session, emailVerified: false });
+  }
+}

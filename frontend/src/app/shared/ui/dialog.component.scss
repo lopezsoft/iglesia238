@@ -39,7 +39,7 @@
     align-items: center;
     justify-content: space-between;
     gap: $space-3;
-    padding: $space-4 $space-5;
+    padding: $space-3 $space-4;
     border-bottom: 1px solid $color-border;
     background: $color-surface-tint;
   }
@@ -47,7 +47,7 @@
   &__body {
     flex: 1;
     overflow-y: auto;
-    padding: $space-5;
+    padding: $space-4;
   }
 
   &__footer {

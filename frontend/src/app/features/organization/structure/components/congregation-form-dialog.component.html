@@ -74,6 +74,7 @@
           class="select"
           formControlName="legalEntityId"
           aria-describedby="congregation-legal-entity-hint"
+          (change)="onLegalEntityChanged()"
         >
           <option value="">Selecciona una razón social</option>
           @for (option of legalEntities(); track option.id) {
@@ -106,13 +107,25 @@
           inputId="congregation-municipality"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
-          [invalid]="showError('municipalityCode', 'required')"
+          [countryId]="selectedLegalEntity()?.countryId ?? null"
+          [blockedText]="municipalityBlockedText()"
+          [invalid]="!!municipalityError() || showError('municipalityCode', 'required')"
           (picked)="onMunicipalityPicked($event)"
           (cleared)="onMunicipalityCleared()"
+          (availabilityChange)="municipalitiesAvailable.set($event)"
         />
-        <span class="field__hint">Busca por nombre; se guarda el código DIVIPOLA del DANE.</span>
-        @if (showError('municipalityCode', 'required')) {
-          <span class="field__error">Selecciona el municipio.</span>
+        @if (selectedLegalEntity()?.countryName; as countryName) {
+          <span class="field__hint">Municipios de {{ countryName }}, el país de la razón social.</span>
+        }
+        @if (municipalityError(); as message) {
+          <span class="field__error" role="alert">{{ message }}</span>
+        } @else if (!municipalitiesAvailable()) {
+          <span class="field__error" role="alert"
+            >El país de la razón social aún no tiene municipios cargados: la sede no se puede guardar sin
+            municipio. Pide a la plataforma que los cargue.</span
+          >
+        } @else if (showError('municipalityCode', 'required')) {
+          <span class="field__error" role="alert">Selecciona el municipio.</span>
         }
       </div>
 

@@ -12,6 +12,7 @@ export function toSessionResponse(session: SessionView): SessionResponseDto {
     id: session.id,
     displayName: session.displayName,
     email: session.email,
+    emailVerified: session.emailVerified,
     assignments: session.assignments.map((assignment) => ({
       role: assignment.role,
       roleName: assignment.roleName,

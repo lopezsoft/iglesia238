@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
 import {
   parseIsoDate,
   toIsoDate,
@@ -9,11 +10,15 @@ import type {
   CurrentPolicyRecord,
   OpenCongregationRecord,
   PublicDirectory,
+  PublicLegalEntityRecord,
 } from '../application/ports/public-directory.reader.js';
 
 @Injectable()
 export class PrismaPublicDirectory implements PublicDirectory {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(DEFAULT_COUNTRY_ISO) private readonly defaultCountryIso: string,
+  ) {}
 
   async listOpenCongregations(
     today: string,
@@ -58,11 +63,44 @@ export class PrismaPublicDirectory implements PublicDirectory {
       denominationId: row.denominationId,
       denominationName: row.denomination.name,
       name: row.name,
-      municipalityCode: row.municipality?.code ?? null,
-      municipalityName: row.municipality?.name ?? null,
-      regionName: row.municipality?.region.name ?? null,
+      municipalityCode: row.municipality.code,
+      municipalityName: row.municipality.name,
+      regionName: row.municipality.region.name,
       neighborhood: row.neighborhood?.name ?? null,
       address: row.address,
+    }));
+  }
+
+  async listLegalEntities(): Promise<readonly PublicLegalEntityRecord[]> {
+    const rows = await this.prisma.legalEntity.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        denomination: { isActive: true, deletedAt: null },
+        // A country the platform turned off is not offered.
+        country: { isActive: true },
+      },
+      orderBy: [{ denomination: { name: 'asc' } }, { legalName: 'asc' }],
+      select: {
+        id: true,
+        legalName: true,
+        tradeName: true,
+        taxId: true,
+        denominationId: true,
+        countryId: true,
+        denomination: { select: { name: true } },
+        country: { select: { name: true } },
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      legalName: row.legalName,
+      tradeName: row.tradeName,
+      taxId: row.taxId,
+      denominationId: row.denominationId,
+      denominationName: row.denomination.name,
+      countryId: row.countryId,
+      countryName: row.country.name,
     }));
   }
 
@@ -117,6 +155,13 @@ export class PrismaPublicDirectory implements PublicDirectory {
   }
 
   async municipalityExists(code: string): Promise<boolean> {
-    return (await this.prisma.municipality.count({ where: { code } })) > 0;
+    return (
+      (await this.prisma.municipality.count({
+        where: {
+          code,
+          region: { country: { isoAlpha2: this.defaultCountryIso } },
+        },
+      })) > 0
+    );
   }
 }

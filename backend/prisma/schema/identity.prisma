@@ -14,18 +14,32 @@ enum UserTokenType {
   PASSWORD_RESET
 }
 
+/// Cuenta de acceso de una persona al sistema: credenciales, verificación de correo y control de bloqueo.
+/// Ámbito global: una misma cuenta puede tener roles en varias denominaciones o sedes mediante user_roles. Admite borrado lógico.
 model User {
+  /// Identificador interno autoincremental.
   id                  Int       @id @default(autoincrement())
+  /// Correo electrónico de inicio de sesión, único en toda la plataforma; se guarda recortado y en minúsculas.
   email               String    @unique @db.VarChar(191)
+  /// Hash autodescriptivo de la contraseña (scrypt con coste y sal); un valor inutilizable marca una cuenta invitada sin contraseña aún.
   passwordHash        String    @map("password_hash") @db.VarChar(255)
+  /// Nombre visible de la cuenta en la interfaz; si es nulo se muestra el correo.
   displayName         String?   @map("display_name") @db.VarChar(150)
+  /// Indica si la cuenta está activa; si es falso no puede iniciar sesión ni aceptar invitaciones.
   isActive            Boolean   @default(true) @map("is_active")
+  /// Fecha y hora en que se confirmó el correo (UTC); nulo si aún no se ha verificado.
   emailVerifiedAt     DateTime? @map("email_verified_at")
+  /// Fecha y hora del último inicio de sesión exitoso (UTC); nulo si nunca ha ingresado.
   lastLoginAt         DateTime? @map("last_login_at")
+  /// Intentos fallidos consecutivos de inicio de sesión; al llegar a 5 bloquea la cuenta y vuelve a 0, igual que tras un ingreso exitoso o un cambio de contraseña.
   failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  /// Fecha y hora hasta la que la cuenta está bloqueada por intentos fallidos (UTC, 15 minutos); nulo si no está bloqueada.
   lockedUntil         DateTime? @map("locked_until")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt           DateTime  @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt           DateTime  @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt           DateTime? @map("deleted_at")
 
   roleAssignments       UserRole[]              @relation("UserRoleUser")
@@ -46,11 +60,18 @@ model User {
   @@map("users")
 }
 
+/// Catálogo global de roles: PLATFORM_ADMIN, DENOMINATION_ADMIN, PASTOR, SECRETARY y TREASURER.
+/// Cada rol agrupa permisos vía role_permissions y se asigna a usuarios con un alcance en user_roles. Lo siembra el seed.
 model Role {
+  /// Identificador interno autoincremental.
   id              Int              @id @default(autoincrement())
+  /// Código estable y único del rol que usa la aplicación, p. ej. PASTOR o TREASURER.
   code            String           @unique @db.VarChar(50)
+  /// Nombre legible del rol en español, p. ej. Tesorero(a).
   name            String           @db.VarChar(100)
+  /// Descripción opcional del rol.
   description     String?          @db.VarChar(255)
+  /// Indica si el rol es de sistema (lo crea el seed con valor verdadero); hoy no existe alta de roles desde la aplicación, por lo que todos son de sistema.
   isSystem        Boolean          @default(false) @map("is_system")
   rolePermissions RolePermission[]
   userRoles       UserRole[]
@@ -58,17 +79,26 @@ model Role {
   @@map("roles")
 }
 
+/// Catálogo global de permisos granulares en formato «recurso.acción», p. ej. members.read.
+/// Lo siembra el seed y se asocia a los roles mediante role_permissions.
 model Permission {
+  /// Identificador interno autoincremental.
   id              Int              @id @default(autoincrement())
+  /// Código único del permiso en formato «recurso.acción», p. ej. members.write o audit-logs.read.
   code            String           @unique @db.VarChar(80)
+  /// Descripción opcional del permiso.
   description     String?          @db.VarChar(255)
   rolePermissions RolePermission[]
 
   @@map("permissions")
 }
 
+/// Tabla puente que concede permisos a roles (muchos a muchos); la clave primaria es el par rol y permiso.
+/// Ámbito global; el seed la sincroniza con el código y retira los permisos que ya no tiene el rol.
 model RolePermission {
+  /// Rol que recibe el permiso (FK a roles.id).
   roleId       Int        @map("role_id")
+  /// Permiso concedido al rol (FK a permissions.id).
   permissionId Int        @map("permission_id")
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Restrict)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Restrict)
@@ -77,21 +107,30 @@ model RolePermission {
   @@map("role_permissions")
 }
 
-/// `scopeKey` garantiza la unicidad, porque un índice único admite varios NULL:
-/// "P" para plataforma, "D:<denominationId>" o "C:<congregationId>".
-/// `activeKey` vale 1 mientras el rol está vigente y NULL al revocarlo, para poder concederlo de nuevo.
-/// La coherencia de ambos campos se exige en sql/constraints.sql.
+/// Asignación de un rol a un usuario con su alcance: toda la plataforma, una denominación o una sede. Un usuario puede tener varias.
+/// La revocación es lógica (revoked_at). La coherencia entre alcance, scope_key y active_key se exige con CHECK en sql/constraints.sql.
 model UserRole {
+  /// Identificador interno autoincremental.
   id             Int       @id @default(autoincrement())
+  /// Usuario que recibe el rol (FK a users.id).
   userId         Int       @map("user_id")
+  /// Rol asignado (FK a roles.id).
   roleId         Int       @map("role_id")
+  /// Alcance del rol: PLATFORM (toda la plataforma), DENOMINATION (una denominación) o CONGREGATION (una sede).
   scope          RoleScope
+  /// Denominación dueña del registro; aísla los datos entre iglesias. Nula solo con alcance PLATFORM (FK a denominations.id).
   denominationId Int?      @map("denomination_id")
+  /// Sede a la que pertenece el registro; solo se informa con alcance CONGREGATION y debe ser de la misma denominación (FK compuesta a congregations.id).
   congregationId Int?      @map("congregation_id")
+  /// Clave de unicidad del alcance, porque un índice único admite varios NULL: «P», «D:<denominationId>» o «C:<congregationId>».
   scopeKey       String    @map("scope_key") @db.VarChar(40)
+  /// Marca de vigencia para la unicidad: 1 mientras el rol está vigente y nulo al revocarlo, para poder concederlo de nuevo.
   activeKey      Boolean?  @default(true) @map("active_key")
+  /// Usuario que concedió el rol; nulo si lo asignó el sistema (registro público de sede o consola) (FK a users.id).
   grantedById    Int?      @map("granted_by_id")
+  /// Fecha y hora de creación del registro (UTC); equivale a la fecha de concesión del rol.
   createdAt      DateTime  @default(now()) @map("created_at")
+  /// Fecha y hora de revocación del rol (UTC); nulo mientras está vigente.
   revokedAt      DateTime? @map("revoked_at")
 
   user         User          @relation("UserRoleUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -105,13 +144,22 @@ model UserRole {
   @@map("user_roles")
 }
 
+/// Token de renovación de sesión: una fila por cada rotación. Las filas con la misma family forman una sesión.
+/// Reusar un token ya rotado, pasados 10 s de gracia, revoca toda la familia; la sesión vence a los REFRESH_MAX_LIFETIME. Ámbito global por usuario; solo se guarda el hash.
 model RefreshToken {
+  /// Identificador interno autoincremental.
   id        Int       @id @default(autoincrement())
+  /// Usuario dueño de la sesión (FK a users.id).
   userId    Int       @map("user_id")
+  /// UUID de la sesión (sid del token de acceso) que agrupa todas las rotaciones del token de renovación.
   family    String    @db.VarChar(36)
+  /// Hash SHA-256 en hexadecimal (64 caracteres) del token opaco; el token en claro nunca se almacena.
   tokenHash String    @unique @map("token_hash") @db.VarChar(128)
+  /// Fecha y hora de vencimiento del token (UTC), según REFRESH_TTL (7 días por defecto).
   expiresAt DateTime  @map("expires_at")
+  /// Fecha y hora de revocación (UTC): rotación, cierre de sesión, reutilización, tope de duración, cambio de contraseña o cuenta sin acceso; nulo si sigue activo.
   revokedAt DateTime? @map("revoked_at")
+  /// Fecha y hora de creación del registro (UTC); la más antigua de la familia marca el inicio de la sesión.
   createdAt DateTime  @default(now()) @map("created_at")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
@@ -120,13 +168,22 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+/// Token de un solo uso de un enlace para verificar el correo, aceptar una invitación o recuperar la contraseña; se envía por correo o lo entrega un administrador.
+/// Ámbito global por usuario; solo se guarda el hash del enlace.
 model UserToken {
+  /// Identificador interno autoincremental.
   id        Int           @id @default(autoincrement())
+  /// Usuario al que pertenece el token (FK a users.id).
   userId    Int           @map("user_id")
+  /// Propósito: EMAIL_VERIFICATION (confirmar correo o aceptar invitación) o PASSWORD_RESET (restablecer la contraseña).
   type      UserTokenType
+  /// Hash SHA-256 en hexadecimal (64 caracteres) del token del enlace; el token en claro nunca se almacena.
   tokenHash String        @unique @map("token_hash") @db.VarChar(128)
+  /// Vencimiento del enlace (UTC): 72 h verificación o invitación; restablecimiento 30 min si lo pide el usuario o 24 h si lo emite un administrador.
   expiresAt DateTime      @map("expires_at")
+  /// Fecha y hora en que el token dejó de ser válido (UTC): se usó o fue invalidado al emitirse uno nuevo o completarse el flujo; nulo si sigue pendiente.
   usedAt    DateTime?     @map("used_at")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt DateTime      @default(now()) @map("created_at")
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
@@ -134,18 +191,28 @@ model UserToken {
   @@map("user_tokens")
 }
 
-/// Registro de solo inserción. Sin FK para que sobreviva a cambios en usuarios, denominaciones o sedes.
-/// `changes` nunca debe contener datos sensibles en claro.
+/// Bitácora de auditoría de solo inserción: una fila por acción relevante (quién, sobre qué entidad y qué cambió).
+/// Se filtra por denominación y sede. Sin FK para que sobreviva a cambios en usuarios, denominaciones o sedes. changes nunca guarda datos personales.
 model AuditLog {
+  /// Identificador interno autoincremental.
   id             BigInt   @id @default(autoincrement())
+  /// Usuario que realizó la acción; nulo si fue anónima o del sistema. Referencia lógica a users.id, sin FK.
   userId         Int?     @map("user_id")
+  /// Denominación dueña del registro; aísla los datos entre iglesias. Nula en acciones sin denominación. Referencia lógica a denominations.id, sin FK.
   denominationId Int?     @map("denomination_id")
+  /// Sede a la que pertenece el registro; nula si la acción no es de una sede. Referencia lógica a congregations.id, sin FK.
   congregationId Int?     @map("congregation_id")
+  /// Nombre del modelo afectado, p. ej. User, Congregation o Certificate.
   entity         String   @db.VarChar(80)
+  /// Identificador de la fila afectada, guardado como texto.
   entityId       String   @map("entity_id") @db.VarChar(40)
+  /// Verbo de la acción en mayúsculas con guion bajo, p. ej. LOGIN, FUND_CREATED o CERTIFICATE_ISSUED.
   action         String   @db.VarChar(40)
+  /// Diferencias en JSON con forma {campo: {from, to}}, solo de campos no sensibles; nulo si la acción no cambia datos.
   changes        Json?
+  /// Dirección IPv4 o IPv6 desde la que se hizo la petición; nula si no se conoce.
   ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  /// Fecha y hora de creación del registro (UTC).
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([denominationId, entity, entityId])

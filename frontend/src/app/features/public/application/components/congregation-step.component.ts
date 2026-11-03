@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { OpenCongregation } from '../data/public-application.models';
 import { showsError } from '../application-form';
@@ -8,7 +9,7 @@ import { showsError } from '../application-form';
 @Component({
   selector: 'app-congregation-step',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent],
   styleUrl: './congregation-step.component.scss',
   template: `
     <fieldset class="step">
@@ -37,6 +38,11 @@ import { showsError } from '../application-form';
               <span class="badge badge--success sede__badge">Recibe solicitudes</span>
             </span>
           </label>
+        } @empty {
+          <p class="text-muted step__empty" role="status">
+            Todavía no hay sedes recibiendo solicitudes. Pide a la secretaría de tu iglesia que abra las inscripciones de su
+            sede o, si tu iglesia aún no está en el sistema, <a routerLink="/register-congregation">registra tu sede</a>.
+          </p>
         }
       </div>
       @if (hasError()) {

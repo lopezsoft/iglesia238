@@ -4,6 +4,10 @@ import type { Principal } from '../../../../common/security/request-context.js';
 import type { AuthSettings } from '../auth.settings.js';
 import { ChangePasswordUseCase } from '../change-password.use-case.js';
 import { ConfirmPasswordResetUseCase } from '../confirm-password-reset.use-case.js';
+import {
+  ConfirmEmailVerificationUseCase,
+  ResendEmailVerificationUseCase,
+} from '../email-verification.use-cases.js';
 import { GetSessionUseCase } from '../get-session.use-case.js';
 import {
   AcceptInvitationUseCase,
@@ -46,7 +50,7 @@ class FakeAccessTokens {
 }
 
 /** All the use cases of the module wired to in-memory ports. */
-export function buildAuthHarness() {
+export function buildAuthHarness(options: { exposeDevLinks?: boolean } = {}) {
   const accounts = new FakeAccounts();
   const clock = new MutableClock();
   const refreshTokens = new FakeRefreshTokens(clock);
@@ -125,6 +129,24 @@ export function buildAuthHarness() {
       hasher,
       transactions,
       audit,
+      clock,
+    ),
+    confirmEmail: new ConfirmEmailVerificationUseCase(
+      accounts,
+      userTokens,
+      transactions,
+      audit,
+      clock,
+    ),
+    resendEmail: new ResendEmailVerificationUseCase(
+      accounts,
+      userTokens,
+      transactions,
+      audit,
+      mailer,
+      SETTINGS,
+      options.exposeDevLinks ?? true,
+      limiter,
       clock,
     ),
     changePassword: new ChangePasswordUseCase(

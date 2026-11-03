@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
 import {
   parseIsoDate,
   toIsoDateOrNull,
@@ -20,7 +21,6 @@ import type {
   PersonRepository,
 } from '../application/ports/person.repository.js';
 
-const COLOMBIA = 'CO';
 const PHONE_TYPES: ContactType[] = ['MOBILE', 'LANDLINE'];
 
 const existingSelect = {
@@ -285,7 +285,11 @@ export class PrismaPersonRepository implements PersonRepository {
 /** Resolves the codes of the global catalogs (document types, marital statuses, municipalities...). */
 @Injectable()
 export class PrismaCatalogResolver implements CatalogResolver {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /** Person addresses arrive as a bare municipality code: it is resolved inside this country. */
+    @Inject(DEFAULT_COUNTRY_ISO) private readonly defaultCountryIso: string,
+  ) {}
 
   async resolve(codes: CatalogCodes): Promise<CatalogResolution> {
     const [documentType, maritalStatus, educationLevel, municipality] =
@@ -313,7 +317,7 @@ export class PrismaCatalogResolver implements CatalogResolver {
           : this.prisma.municipality.findFirst({
               where: {
                 code: codes.municipalityCode,
-                region: { country: { isoAlpha2: COLOMBIA } },
+                region: { country: { isoAlpha2: this.defaultCountryIso } },
               },
               select: { id: true },
             }),

@@ -35,6 +35,8 @@ class FakeGateway extends AuthGateway {
     this.accepted.push({ token, password });
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }

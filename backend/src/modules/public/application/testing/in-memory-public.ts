@@ -9,6 +9,7 @@ import type {
   CurrentPolicyRecord,
   OpenCongregationRecord,
   PublicDirectory,
+  PublicLegalEntityRecord,
 } from '../ports/public-directory.reader.js';
 
 export interface StoredApplication extends NewApplication {
@@ -76,6 +77,12 @@ export class InMemoryPublicWorld
           address: null,
         })),
     );
+  }
+
+  legalEntities: PublicLegalEntityRecord[] = [];
+
+  listLegalEntities(): Promise<readonly PublicLegalEntityRecord[]> {
+    return Promise.resolve(this.legalEntities);
   }
 
   findOpenCongregation(id: number): Promise<CongregationTarget | null> {

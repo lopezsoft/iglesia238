@@ -1,8 +1,21 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { startWith, switchMap, timer } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
+import { NO_MUNICIPALITIES_MESSAGE } from '../../../../core/models/catalogs';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { MunicipalityOption, municipalityOptionLabel } from '../data/public-application.models';
 import { PublicApplicationRepository } from '../data/public-application.repository';
@@ -11,8 +24,9 @@ const MIN_SEARCH_LENGTH = 2;
 const DEBOUNCE_MS = 250;
 
 /**
- * Searchable municipality (DIVIPOLA) field: the applicant types a few letters and picks one result.
- * The form keeps the code; the label travels in a second control so the summary can show it.
+ * Searchable municipality field: the applicant types a few letters and picks one result. The form keeps
+ * the code; the label travels in a second control so the summary can show it. With `countryId` the search
+ * only covers that country, and a country without municipalities shows a note instead of the search.
  */
 @Component({
   selector: 'app-municipality-picker',
@@ -25,6 +39,18 @@ const DEBOUNCE_MS = 250;
         <app-icon name="home" [size]="16" />
         <span class="picked__label">{{ selectedLabel() }}</span>
         <button type="button" class="btn btn--ghost btn--sm" (click)="clear()">Cambiar</button>
+      </div>
+    } @else if (unavailable()) {
+      <div class="unavailable">
+        <input
+          class="input"
+          type="text"
+          disabled
+          placeholder="Escribe el nombre de tu municipio"
+          [id]="inputId()"
+          [attr.aria-describedby]="noteId"
+        />
+        <span class="field__hint" role="status" [id]="noteId">{{ noMunicipalities }}</span>
       </div>
     } @else {
       <div class="search">
@@ -85,11 +111,18 @@ export class MunicipalityPickerComponent {
   readonly inputId = input('municipality-search');
   readonly invalid = input(false);
   readonly describedBy = input<string | null>(null);
+  /** Country the search is limited to; `null` (the member application) searches every country. */
+  readonly countryId = input<number | null>(null);
+  /** False once it is known that the country has no municipality to pick. */
+  readonly availabilityChange = output<boolean>();
 
   private readonly repository = inject(PublicApplicationRepository);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-  protected readonly listId = `${Math.random().toString(36).slice(2, 8)}-municipality-list`;
+  private readonly instance = Math.random().toString(36).slice(2, 8);
+  protected readonly listId = `${this.instance}-municipality-list`;
+  protected readonly noteId = `${this.instance}-municipality-note`;
+  protected readonly noMunicipalities = NO_MUNICIPALITIES_MESSAGE;
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly activeIndex = signal(0);
@@ -103,11 +136,38 @@ export class MunicipalityPickerComponent {
     { initialValue: '' },
   );
 
-  protected readonly results = rxResource({
-    params: () => (this.query().trim().length >= MIN_SEARCH_LENGTH ? { text: this.query().trim() } : undefined),
-    // A new query unsubscribes the previous one, so the timer debounces the typing.
-    stream: ({ params }) => timer(DEBOUNCE_MS).pipe(switchMap(() => this.repository.searchMunicipalities(params.text))),
+  /** One-result search that tells whether the country has municipalities at all. */
+  private readonly probe = rxResource({
+    params: () => {
+      const countryId = this.countryId();
+      return countryId === null ? undefined : { countryId };
+    },
+    stream: ({ params }) => this.repository.searchMunicipalities('', { limit: 1, countryId: params.countryId }),
   });
+  protected readonly unavailable = computed(() => this.probe.hasValue() && this.probe.value().length === 0);
+
+  protected readonly results = rxResource({
+    params: () =>
+      this.query().trim().length >= MIN_SEARCH_LENGTH
+        ? { text: this.query().trim(), countryId: this.countryId() }
+        : undefined,
+    // A new query unsubscribes the previous one, so the timer debounces the typing.
+    stream: ({ params }) =>
+      timer(DEBOUNCE_MS).pipe(
+        switchMap(() =>
+          params.countryId === null
+            ? this.repository.searchMunicipalities(params.text)
+            : this.repository.searchMunicipalities(params.text, { countryId: params.countryId }),
+        ),
+      ),
+  });
+
+  constructor() {
+    effect(() => {
+      const available = !this.unavailable();
+      untracked(() => this.availabilityChange.emit(available));
+    });
+  }
 
   protected readonly options = computed<readonly MunicipalityOption[]>(() =>
     this.results.hasValue() ? this.results.value() : [],

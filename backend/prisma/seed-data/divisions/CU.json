@@ -1,0 +1,270 @@
+{
+  "source": "ONEI (Oficina Nacional de Estadística e Información, República de Cuba): Codificador de la División Político-Administrativa (CoDPA), aprobado por la Resolución 29/2010 de 25 de octubre de 2010 (vigente desde 2011-01-01; Ley No. 110 modificativa de la Ley No. 1304), \"Provincias y municipios de la República de Cuba ordenados por su correspondiente código de identificación\", https://www.onei.gob.cu/sites/default/files/servicios/2022-02/codificador_codpa_provincias_y_municipios_de_la_republica_de_cuba.pdf (archivo oficial obtenido de la captura de Wayback Machine del 2025-06-06 porque el servidor de la ONEI rechazó las conexiones; consultado 2026-11-03). Código de municipio = código CoDPA sin el punto (21.01 -> 2101). Primer nivel: 15 provincias + Municipio Especial Isla de la Juventud (40). Totales oficiales: 15 provincias y 168 municipios incluido el municipio especial (ONEI, Anuario Estadístico de Cuba 2024, cap. 1 Territorio, edición 2025).",
+  "countryIsoAlpha2": "CU",
+  "regions": [
+    {
+      "code": "21",
+      "name": "Pinar del Río",
+      "municipalities": [
+        {"code":"2101","name":"Sandino"},
+        {"code":"2102","name":"Mantua"},
+        {"code":"2103","name":"Minas de Matahambre"},
+        {"code":"2104","name":"Viñales"},
+        {"code":"2105","name":"La Palma"},
+        {"code":"2106","name":"Los Palacios"},
+        {"code":"2107","name":"Consolación del Sur"},
+        {"code":"2108","name":"Pinar del Río"},
+        {"code":"2109","name":"San Luis"},
+        {"code":"2110","name":"San Juan y Martínez"},
+        {"code":"2111","name":"Guane"}
+      ]
+    },
+    {
+      "code": "22",
+      "name": "Artemisa",
+      "municipalities": [
+        {"code":"2201","name":"Bahía Honda"},
+        {"code":"2202","name":"Mariel"},
+        {"code":"2203","name":"Guanajay"},
+        {"code":"2204","name":"Caimito"},
+        {"code":"2205","name":"Bauta"},
+        {"code":"2206","name":"San Antonio de los Baños"},
+        {"code":"2207","name":"Güira de Melena"},
+        {"code":"2208","name":"Alquízar"},
+        {"code":"2209","name":"Artemisa"},
+        {"code":"2210","name":"Candelaria"},
+        {"code":"2211","name":"San Cristóbal"}
+      ]
+    },
+    {
+      "code": "23",
+      "name": "La Habana",
+      "municipalities": [
+        {"code":"2301","name":"Playa"},
+        {"code":"2302","name":"Plaza de la Revolución"},
+        {"code":"2303","name":"Centro Habana"},
+        {"code":"2304","name":"La Habana Vieja"},
+        {"code":"2305","name":"Regla"},
+        {"code":"2306","name":"La Habana del Este"},
+        {"code":"2307","name":"Guanabacoa"},
+        {"code":"2308","name":"San Miguel del Padrón"},
+        {"code":"2309","name":"Diez de Octubre"},
+        {"code":"2310","name":"Cerro"},
+        {"code":"2311","name":"Marianao"},
+        {"code":"2312","name":"La Lisa"},
+        {"code":"2313","name":"Boyeros"},
+        {"code":"2314","name":"Arroyo Naranjo"},
+        {"code":"2315","name":"Cotorro"}
+      ]
+    },
+    {
+      "code": "24",
+      "name": "Mayabeque",
+      "municipalities": [
+        {"code":"2401","name":"Bejucal"},
+        {"code":"2402","name":"San José de las Lajas"},
+        {"code":"2403","name":"Jaruco"},
+        {"code":"2404","name":"Santa Cruz del Norte"},
+        {"code":"2405","name":"Madruga"},
+        {"code":"2406","name":"Nueva Paz"},
+        {"code":"2407","name":"San Nicolás"},
+        {"code":"2408","name":"Güines"},
+        {"code":"2409","name":"Melena del Sur"},
+        {"code":"2410","name":"Batabanó"},
+        {"code":"2411","name":"Quivicán"}
+      ]
+    },
+    {
+      "code": "25",
+      "name": "Matanzas",
+      "municipalities": [
+        {"code":"2501","name":"Matanzas"},
+        {"code":"2502","name":"Cárdenas"},
+        {"code":"2503","name":"Martí"},
+        {"code":"2504","name":"Colón"},
+        {"code":"2505","name":"Perico"},
+        {"code":"2506","name":"Jovellanos"},
+        {"code":"2507","name":"Pedro Betancourt"},
+        {"code":"2508","name":"Limonar"},
+        {"code":"2509","name":"Unión de Reyes"},
+        {"code":"2510","name":"Ciénaga de Zapata"},
+        {"code":"2511","name":"Jagüey Grande"},
+        {"code":"2512","name":"Calimete"},
+        {"code":"2513","name":"Los Arabos"}
+      ]
+    },
+    {
+      "code": "26",
+      "name": "Villa Clara",
+      "municipalities": [
+        {"code":"2601","name":"Corralillo"},
+        {"code":"2602","name":"Quemado de Güines"},
+        {"code":"2603","name":"Sagua la Grande"},
+        {"code":"2604","name":"Encrucijada"},
+        {"code":"2605","name":"Camajuaní"},
+        {"code":"2606","name":"Caibarién"},
+        {"code":"2607","name":"Remedios"},
+        {"code":"2608","name":"Placetas"},
+        {"code":"2609","name":"Santa Clara"},
+        {"code":"2610","name":"Cifuentes"},
+        {"code":"2611","name":"Santo Domingo"},
+        {"code":"2612","name":"Ranchuelo"},
+        {"code":"2613","name":"Manicaragua"}
+      ]
+    },
+    {
+      "code": "27",
+      "name": "Cienfuegos",
+      "municipalities": [
+        {"code":"2701","name":"Aguada de Pasajeros"},
+        {"code":"2702","name":"Rodas"},
+        {"code":"2703","name":"Palmira"},
+        {"code":"2704","name":"Lajas"},
+        {"code":"2705","name":"Cruces"},
+        {"code":"2706","name":"Cumanayagua"},
+        {"code":"2707","name":"Cienfuegos"},
+        {"code":"2708","name":"Abreus"}
+      ]
+    },
+    {
+      "code": "28",
+      "name": "Sancti Spíritus",
+      "municipalities": [
+        {"code":"2801","name":"Yaguajay"},
+        {"code":"2802","name":"Jatibonico"},
+        {"code":"2803","name":"Taguasco"},
+        {"code":"2804","name":"Cabaiguán"},
+        {"code":"2805","name":"Fomento"},
+        {"code":"2806","name":"Trinidad"},
+        {"code":"2807","name":"Sancti Spíritus"},
+        {"code":"2808","name":"La Sierpe"}
+      ]
+    },
+    {
+      "code": "29",
+      "name": "Ciego de Ávila",
+      "municipalities": [
+        {"code":"2901","name":"Chambas"},
+        {"code":"2902","name":"Morón"},
+        {"code":"2903","name":"Bolivia"},
+        {"code":"2904","name":"Primero de Enero"},
+        {"code":"2905","name":"Ciro Redondo"},
+        {"code":"2906","name":"Florencia"},
+        {"code":"2907","name":"Majagua"},
+        {"code":"2908","name":"Ciego de Ávila"},
+        {"code":"2909","name":"Venezuela"},
+        {"code":"2910","name":"Baraguá"}
+      ]
+    },
+    {
+      "code": "30",
+      "name": "Camagüey",
+      "municipalities": [
+        {"code":"3001","name":"Carlos Manuel de Céspedes"},
+        {"code":"3002","name":"Esmeralda"},
+        {"code":"3003","name":"Sierra de Cubitas"},
+        {"code":"3004","name":"Minas"},
+        {"code":"3005","name":"Nuevitas"},
+        {"code":"3006","name":"Guáimaro"},
+        {"code":"3007","name":"Sibanicú"},
+        {"code":"3008","name":"Camagüey"},
+        {"code":"3009","name":"Florida"},
+        {"code":"3010","name":"Vertientes"},
+        {"code":"3011","name":"Jimaguayú"},
+        {"code":"3012","name":"Najasa"},
+        {"code":"3013","name":"Santa Cruz del Sur"}
+      ]
+    },
+    {
+      "code": "31",
+      "name": "Las Tunas",
+      "municipalities": [
+        {"code":"3101","name":"Manatí"},
+        {"code":"3102","name":"Puerto Padre"},
+        {"code":"3103","name":"Jesús Menéndez"},
+        {"code":"3104","name":"Majibacoa"},
+        {"code":"3105","name":"Las Tunas"},
+        {"code":"3106","name":"Jobabo"},
+        {"code":"3107","name":"Colombia"},
+        {"code":"3108","name":"Amancio"}
+      ]
+    },
+    {
+      "code": "32",
+      "name": "Holguín",
+      "municipalities": [
+        {"code":"3201","name":"Gibara"},
+        {"code":"3202","name":"Rafael Freyre"},
+        {"code":"3203","name":"Banes"},
+        {"code":"3204","name":"Antilla"},
+        {"code":"3205","name":"Báguanos"},
+        {"code":"3206","name":"Holguín"},
+        {"code":"3207","name":"Calixto García"},
+        {"code":"3208","name":"Cacocum"},
+        {"code":"3209","name":"Urbano Noris"},
+        {"code":"3210","name":"Cueto"},
+        {"code":"3211","name":"Mayarí"},
+        {"code":"3212","name":"Frank País"},
+        {"code":"3213","name":"Sagua de Tánamo"},
+        {"code":"3214","name":"Moa"}
+      ]
+    },
+    {
+      "code": "33",
+      "name": "Granma",
+      "municipalities": [
+        {"code":"3301","name":"Río Cauto"},
+        {"code":"3302","name":"Cauto Cristo"},
+        {"code":"3303","name":"Jiguaní"},
+        {"code":"3304","name":"Bayamo"},
+        {"code":"3305","name":"Yara"},
+        {"code":"3306","name":"Manzanillo"},
+        {"code":"3307","name":"Campechuela"},
+        {"code":"3308","name":"Media Luna"},
+        {"code":"3309","name":"Niquero"},
+        {"code":"3310","name":"Pilón"},
+        {"code":"3311","name":"Bartolomé Masó"},
+        {"code":"3312","name":"Buey Arriba"},
+        {"code":"3313","name":"Guisa"}
+      ]
+    },
+    {
+      "code": "34",
+      "name": "Santiago de Cuba",
+      "municipalities": [
+        {"code":"3401","name":"Contramaestre"},
+        {"code":"3402","name":"Mella"},
+        {"code":"3403","name":"San Luis"},
+        {"code":"3404","name":"Segundo Frente"},
+        {"code":"3405","name":"Songo - La Maya"},
+        {"code":"3406","name":"Santiago de Cuba"},
+        {"code":"3407","name":"Palma Soriano"},
+        {"code":"3408","name":"Tercer Frente"},
+        {"code":"3409","name":"Guamá"}
+      ]
+    },
+    {
+      "code": "35",
+      "name": "Guantánamo",
+      "municipalities": [
+        {"code":"3501","name":"El Salvador"},
+        {"code":"3502","name":"Manuel Tames"},
+        {"code":"3503","name":"Yateras"},
+        {"code":"3504","name":"Baracoa"},
+        {"code":"3505","name":"Maisí"},
+        {"code":"3506","name":"Imías"},
+        {"code":"3507","name":"San Antonio del Sur"},
+        {"code":"3508","name":"Caimanera"},
+        {"code":"3509","name":"Guantánamo"},
+        {"code":"3510","name":"Niceto Pérez"}
+      ]
+    },
+    {
+      "code": "40",
+      "name": "Isla de la Juventud",
+      "municipalities": [
+        {"code":"4001","name":"Isla de la Juventud"}
+      ]
+    }
+  ]
+}

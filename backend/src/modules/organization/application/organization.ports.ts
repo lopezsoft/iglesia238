@@ -4,14 +4,24 @@ import type { TenantScope } from '../../../common/tenancy/tenant-scope.js';
 export const CONGREGATION_REPOSITORY = Symbol('CONGREGATION_REPOSITORY');
 export const LEGAL_ENTITY_REPOSITORY = Symbol('LEGAL_ENTITY_REPOSITORY');
 export const DISTRICT_REPOSITORY = Symbol('DISTRICT_REPOSITORY');
+export const PLATFORM_LEGAL_ENTITY_READER = Symbol(
+  'PLATFORM_LEGAL_ENTITY_READER',
+);
 export const GEO_REPOSITORY = Symbol('GEO_REPOSITORY');
 export const ORGANIZATION_OVERVIEW_READER = Symbol(
   'ORGANIZATION_OVERVIEW_READER',
 );
 
+export interface CountryRef {
+  readonly id: number;
+  readonly name: string;
+  readonly isActive: boolean;
+}
+
 export interface MunicipalityRef {
   readonly id: number;
-  /** DIVIPOLA code. */
+  readonly countryId: number;
+  /** Official code, unique inside its region (in Colombia, the DIVIPOLA code of DANE). */
   readonly code: string;
   readonly name: string;
   readonly regionName: string;
@@ -36,6 +46,8 @@ export interface LegalEntityRecord {
   readonly email: string | null;
   readonly phone: string | null;
   readonly address: string | null;
+  readonly countryId: number;
+  readonly countryName: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
   readonly regionName: string | null;
@@ -103,7 +115,9 @@ export interface LegalEntityData {
   readonly tradeName: string | null;
   readonly taxId: string;
   readonly legalRepresentative: string;
-  readonly municipalityId: number;
+  readonly countryId: number;
+  /** Optional; when present it belongs to the country above. */
+  readonly municipalityId: number | null;
   readonly email: string | null;
   readonly phone: string | null;
   readonly address: string | null;
@@ -155,6 +169,8 @@ export interface LegalEntityRepository {
    */
   taxIdExists(taxId: string, exceptId: number | null): Promise<boolean>;
   countActiveCongregations(scope: TenantScope, id: number): Promise<number>;
+  /** Congregations of the legal entity that are not deleted, active or not. */
+  countCongregations(scope: TenantScope, id: number): Promise<number>;
   create(
     scope: TenantScope,
     data: LegalEntityData,
@@ -190,9 +206,16 @@ export interface DistrictRepository {
   ): Promise<void>;
 }
 
-/** Global geography catalog (not tenant data). */
+/**
+ * Global geography catalog (not tenant data). A municipality code is unique inside its region, not in
+ * the world, so it is always resolved inside a country.
+ */
 export interface GeoRepository {
-  findMunicipalityByCode(code: string): Promise<MunicipalityRef | null>;
+  findCountry(id: number): Promise<CountryRef | null>;
+  findMunicipality(
+    countryId: number,
+    code: string,
+  ): Promise<MunicipalityRef | null>;
   /** Neighborhoods are shared by every denomination: a name that exists is reused. */
   findOrCreateNeighborhood(
     municipalityId: number,
@@ -203,4 +226,30 @@ export interface GeoRepository {
 
 export interface OrganizationOverviewReader {
   read(scope: TenantScope): Promise<OrganizationCounts | null>;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Platform view of the legal entities. The platform administers the structure of every church, so
+// this reader is NOT tenant scoped: it is only reachable from routes that require denominations.manage
+// at platform scope. Writes still go through LegalEntityRepository with an explicit TenantScope.
+// ---------------------------------------------------------------------------------------------
+
+export interface PlatformLegalEntityRecord extends LegalEntityRecord {
+  readonly denominationName: string;
+  /** Congregations of the legal entity that are not deleted. */
+  readonly congregationCount: number;
+}
+
+export interface PlatformDenominationRef {
+  readonly id: number;
+  readonly name: string;
+  readonly isActive: boolean;
+}
+
+export interface PlatformLegalEntityReader {
+  /** Every legal entity, or those of one denomination; ordered by denomination name and legal name. */
+  list(denominationId: number | null): Promise<PlatformLegalEntityRecord[]>;
+  findById(id: number): Promise<PlatformLegalEntityRecord | null>;
+  /** A denomination that is not deleted (active or not). */
+  findDenomination(id: number): Promise<PlatformDenominationRef | null>;
 }

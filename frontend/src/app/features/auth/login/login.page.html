@@ -69,8 +69,12 @@
   </form>
 
   <p class="divider-text">¿Aún no tienes cuenta?</p>
-  <a class="btn btn--secondary btn--lg btn--block" routerLink="/apply">Inscríbete como miembro</a>
+  <div class="login__alternatives">
+    <a class="btn btn--secondary btn--lg btn--block" routerLink="/apply">Inscríbete como miembro</a>
+    <a class="btn btn--secondary btn--lg btn--block" routerLink="/register-congregation">Registrar mi sede</a>
+  </div>
   <p class="login__help text-small text-muted">
-    Si necesitas acceso al sistema, pídelo a la secretaría de tu sede o al administrador de tu denominación.
+    ¿Tu iglesia aún no está en el sistema? Registra tu sede y crea tu usuario de administración; si ya tiene
+    sede, pide tu acceso a quien la administra.
   </p>
 </app-auth-frame>

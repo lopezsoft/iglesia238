@@ -19,6 +19,7 @@ const SOCKET_TIMEOUT_MS = 15_000;
 
 /** SMTP adapter. A delivery failure is logged without recipient or content and reported, not thrown. */
 export class NodemailerMailer implements Mailer {
+  readonly isConfigured = true;
   private readonly transporter: Transporter;
 
   constructor(

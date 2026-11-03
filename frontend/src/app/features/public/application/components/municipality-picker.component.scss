@@ -8,6 +8,13 @@
   position: relative;
 }
 
+// País sin municipios cargados: el campo queda deshabilitado con la explicación debajo.
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
 .picked {
   display: flex;
   align-items: center;

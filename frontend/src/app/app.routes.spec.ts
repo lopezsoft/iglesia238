@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -10,6 +12,8 @@ async function navigateAsGuest(url: string) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(routes, withComponentInputBinding()),
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: AuthGateway, useValue: new ScriptedAuthGateway([]) },
     ],
   });
@@ -31,6 +35,27 @@ describe('app routes for guests', () => {
 
     expect(router.url).toBe('/login/typo');
     expect(harness.routeNativeElement?.textContent).toContain('Página no encontrada');
+  });
+
+  it('opens the sede registration for guests, without any account', async () => {
+    const { harness, router } = await navigateAsGuest('/register-congregation');
+    TestBed.inject(HttpTestingController).expectOne('/api/public/legal-entities').flush([]);
+    harness.detectChanges();
+
+    expect(router.url).toBe('/register-congregation');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Registrar mi sede');
+  });
+
+  it('opens the e-mail confirmation page for guests', async () => {
+    const { router } = await navigateAsGuest('/login/verify-email');
+
+    expect(router.url).toBe('/login/verify-email');
+  });
+
+  it('sends guests that ask for the locked page to the login', async () => {
+    const { router } = await navigateAsGuest('/confirm-email');
+
+    expect(router.url).toBe('/login?returnUrl=%2Fconfirm-email');
   });
 
   it('still sends guests to the login for staff pages', async () => {

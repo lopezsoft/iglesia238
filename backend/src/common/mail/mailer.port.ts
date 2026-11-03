@@ -22,5 +22,11 @@ export interface MailDeliveryResult {
 
 /** Port for outgoing mail. It never throws for a delivery problem: it reports delivered = false. */
 export interface Mailer {
+  /**
+   * False for the adapter that only logs (SMTP is not configured): nothing leaves the server, so a
+   * development environment may hand the one-time link to the caller (see devLinkFor).
+   */
+  readonly isConfigured: boolean;
+
   send(message: MailMessage): Promise<MailDeliveryResult>;
 }

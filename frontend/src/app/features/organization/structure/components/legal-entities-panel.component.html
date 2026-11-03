@@ -27,6 +27,7 @@
             <th scope="col">Nombre comercial</th>
             <th scope="col">NIT</th>
             <th scope="col">Representante legal</th>
+            <th scope="col">País</th>
             <th scope="col">Municipio</th>
             <th scope="col">Estado</th>
             @if (canManage()) {
@@ -41,6 +42,7 @@
               <td>{{ row.tradeName ?? '—' }}</td>
               <td class="code">{{ row.taxId }}</td>
               <td>{{ row.legalRepresentative ?? '—' }}</td>
+              <td>{{ row.countryName || '—' }}</td>
               <td>{{ place(row) }}</td>
               <td>
                 <app-status-badge

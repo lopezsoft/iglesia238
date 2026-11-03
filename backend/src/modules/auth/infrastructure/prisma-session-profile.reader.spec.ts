@@ -43,10 +43,12 @@ function readerWith(
 const userWith = (
   roleAssignments: unknown[],
   displayName: string | null = 'Laura Gómez',
+  emailVerifiedAt: Date | null = new Date('2026-01-01T00:00:00.000Z'),
 ) => ({
   id: 1,
   email: 'laura@iglesia.org',
   displayName,
+  emailVerifiedAt,
   roleAssignments,
 });
 
@@ -55,6 +57,14 @@ describe('PrismaSessionProfileReader', () => {
     const { reader } = readerWith(null);
 
     expect(await reader.load(99)).toBeNull();
+  });
+
+  it('tells whether the e-mail is confirmed', async () => {
+    const verified = readerWith(userWith([role({})]));
+    const unverified = readerWith(userWith([role({})], 'Laura Gómez', null));
+
+    expect((await verified.reader.load(1))?.emailVerified).toBe(true);
+    expect((await unverified.reader.load(1))?.emailVerified).toBe(false);
   });
 
   it('maps the roles with their sorted permissions and the scope label', async () => {

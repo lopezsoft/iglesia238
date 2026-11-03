@@ -21,12 +21,21 @@ export class PrismaPlatformPasswordStore implements PlatformPasswordStore {
     return user?.id ?? null;
   }
 
-  async replacePassword(userId: number, passwordHash: string): Promise<void> {
+  async replacePassword(
+    userId: number,
+    passwordHash: string,
+    verifiedAt: Date,
+  ): Promise<void> {
     const now = new Date();
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: userId },
         data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null },
+      }),
+      // Accounts created before the e-mail confirmation existed must not be locked out by it.
+      this.prisma.user.updateMany({
+        where: { id: userId, emailVerifiedAt: null },
+        data: { emailVerifiedAt: verifiedAt },
       }),
       this.prisma.refreshToken.updateMany({
         where: { userId, revokedAt: null },

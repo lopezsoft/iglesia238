@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { CanMatchFn, Route, Router, UrlSegment, UrlTree, provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthGateway } from './auth.gateway';
-import { authGuard, permissionGuard } from './auth.guards';
+import { authGuard, emailPendingGuard, emailVerifiedGuard, permissionGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 import { SCRIPTED_PASSWORD, ScriptedAuthGateway } from './testing/scripted-auth.gateway';
 import { SEDE_UNO, sessionOf, treasurer } from './testing/scripted-sessions';
@@ -10,7 +10,16 @@ import { SEDE_UNO, sessionOf, treasurer } from './testing/scripted-sessions';
 function setup(): { auth: AuthService; router: Router } {
   sessionStorage.clear();
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: AuthGateway, useValue: new ScriptedAuthGateway([sessionOf('tesorera@iglesia.example', 'Tesorera Uno', [treasurer(SEDE_UNO)], [SEDE_UNO])]) }],
+    providers: [
+      provideRouter([]),
+      {
+        provide: AuthGateway,
+        useValue: new ScriptedAuthGateway([
+          sessionOf('tesorera@iglesia.example', 'Tesorera Uno', [treasurer(SEDE_UNO)], [SEDE_UNO]),
+          sessionOf('nueva@iglesia.example', 'Gestora Nueva', [treasurer(SEDE_UNO)], [SEDE_UNO], false),
+        ]),
+      },
+    ],
   });
   return { auth: TestBed.inject(AuthService), router: TestBed.inject(Router) };
 }
@@ -39,5 +48,27 @@ describe('route guards', () => {
 
     expect(allowed).toBe(true);
     expect(router.serializeUrl(denied as UrlTree)).toBe('/forbidden');
+  });
+
+  it('locks every authenticated route for an account with an unconfirmed e-mail', async () => {
+    const { auth, router } = setup();
+    await firstValueFrom(auth.login('nueva@iglesia.example', SCRIPTED_PASSWORD));
+
+    const locked = await run(emailVerifiedGuard);
+    const lockedPage = await run(emailPendingGuard);
+
+    expect(router.serializeUrl(locked as UrlTree)).toBe('/confirm-email');
+    expect(lockedPage).toBe(true);
+  });
+
+  it('lets a confirmed account into the app and keeps it away from the locked page', async () => {
+    const { auth, router } = setup();
+    await firstValueFrom(auth.login('tesorera@iglesia.example', SCRIPTED_PASSWORD));
+
+    const app = await run(emailVerifiedGuard);
+    const lockedPage = await run(emailPendingGuard);
+
+    expect(app).toBe(true);
+    expect(router.serializeUrl(lockedPage as UrlTree)).toBe('/dashboard');
   });
 });

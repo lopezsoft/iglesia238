@@ -86,6 +86,20 @@ describe('HttpPublicApplicationRepository', () => {
     request.flush([{ code: '13001', name: 'Cartagena', regionCode: '13', regionName: 'Bolívar' }]);
 
     expect(await result).toEqual([{ code: '13001', name: 'Cartagena', regionName: 'Bolívar' }]);
+    expect(request.request.params.has('countryId')).toBe(false);
+  });
+
+  it('limits the municipality search to a country when it is given', async () => {
+    const { repository, backend } = setup();
+
+    const result = firstValueFrom(repository.searchMunicipalities('', { limit: 1, countryId: 3 }));
+    const request = backend.expectOne((req) => req.url === '/api/public/geo/municipalities');
+    expect(request.request.params.has('search')).toBe(false);
+    expect(request.request.params.get('limit')).toBe('1');
+    expect(request.request.params.get('countryId')).toBe('3');
+    request.flush([]);
+
+    expect(await result).toEqual([]);
   });
 
   it('submits the form as it is, without any denomination', async () => {

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsInt,
@@ -51,7 +51,8 @@ export class CongregationBodyDto {
   districtId?: number | null;
 
   @ApiProperty({
-    description: 'Código DIVIPOLA del municipio.',
+    description:
+      'Código del municipio (GET /geo/municipalities?countryId=), del país de la razón social. En Colombia, el código DIVIPOLA.',
     example: '13001',
   })
   @IsString({ message: 'Selecciona un municipio válido.' })
@@ -144,12 +145,24 @@ export class LegalEntityBodyDto {
   legalRepresentative!: string;
 
   @ApiProperty({
-    description: 'Código DIVIPOLA del municipio.',
+    description: 'País de la razón social (GET /geo/countries).',
+    example: 48,
+  })
+  @IsInt({ message: 'Elige el país de la razón social.' })
+  @Min(1, { message: 'Elige el país de la razón social.' })
+  countryId!: number;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'Código del municipio, del país de la razón social (GET /geo/municipalities?countryId=). Opcional; null lo quita. En Colombia, el código DIVIPOLA.',
     example: '13001',
   })
+  @NormalizedOptionalText()
+  @IsOptional()
   @IsString({ message: 'Selecciona un municipio válido.' })
   @Matches(/^\d{1,10}$/, { message: 'Selecciona un municipio válido.' })
-  municipalityCode!: string;
+  municipalityCode?: string | null;
 
   @ApiPropertyOptional({ nullable: true, maxLength: FIELD_LIMITS.email })
   @NormalizedOptionalText()
@@ -171,6 +184,21 @@ export class LegalEntityBodyDto {
   @IsString()
   @MaxLength(FIELD_LIMITS.address)
   address?: string | null;
+}
+
+/** The edit of the denomination sends the whole legal entity; without countryId the country stays. */
+export class LegalEntityUpdateBodyDto extends OmitType(LegalEntityBodyDto, [
+  'countryId',
+] as const) {
+  @ApiPropertyOptional({
+    description:
+      'País de la razón social. Si se omite, no cambia. No se puede cambiar si la razón social tiene sedes.',
+    example: 48,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Elige el país de la razón social.' })
+  @Min(1, { message: 'Elige el país de la razón social.' })
+  countryId?: number;
 }
 
 export class DistrictBodyDto {
@@ -226,6 +254,8 @@ export class LegalEntityDto {
   @ApiProperty({ nullable: true }) email!: string | null;
   @ApiProperty({ nullable: true }) phone!: string | null;
   @ApiProperty({ nullable: true }) address!: string | null;
+  @ApiProperty() countryId!: number;
+  @ApiProperty({ example: 'Colombia' }) countryName!: string;
   @ApiProperty({ nullable: true }) municipalityCode!: string | null;
   @ApiProperty({ nullable: true }) municipalityName!: string | null;
   @ApiProperty({ nullable: true }) regionName!: string | null;
@@ -256,7 +286,17 @@ export class SelectOptionDto {
   @ApiProperty() isActive!: boolean;
 }
 
+export class LegalEntityOptionDto extends SelectOptionDto {
+  @ApiProperty({
+    description:
+      'País de la razón social: el municipio de la sede se busca en él (GET /geo/municipalities?countryId=).',
+  })
+  countryId!: number;
+  @ApiProperty({ example: 'Colombia' }) countryName!: string;
+}
+
 export class CongregationFormOptionsDto {
-  @ApiProperty({ type: [SelectOptionDto] }) legalEntities!: SelectOptionDto[];
+  @ApiProperty({ type: [LegalEntityOptionDto] })
+  legalEntities!: LegalEntityOptionDto[];
   @ApiProperty({ type: [SelectOptionDto] }) districts!: SelectOptionDto[];
 }

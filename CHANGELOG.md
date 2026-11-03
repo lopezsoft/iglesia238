@@ -8,8 +8,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.5.0 - 2026-11-03
+
 ### Added
 
+- Registro público de sedes (`/register-congregation`): asistente de tres pasos (iglesia, sede y usuario) que crea la sede activa y el usuario responsable con los roles de Pastor, Secretario y Tesorero. Sin razones sociales cargadas, la página lo explica en lugar de mostrar el formulario.
+- Confirmación de correo: el usuario nuevo puede entrar, pero la API responde `403 EMAIL_NOT_VERIFIED` y la app solo muestra «Confirma tu correo» hasta que confirma (`/login/verify-email`, reenvío y enlace de desarrollo sin SMTP).
+- Razones sociales administradas por la plataforma (`/api/platform/legal-entities`), con país obligatorio; pestañas «Razones sociales» y «Países» en Denominaciones.
+- País en la razón social (`legal_entities.country_id`) y municipio obligatorio en la sede, que debe ser del país de su razón social (`MUNICIPALITY_COUNTRY_MISMATCH`).
+- Países activos (`countries.is_active`): los 18 hispanohablantes de Latinoamérica quedan activos; `GET /api/geo/countries` y `GET/PATCH /api/platform/countries`. La búsqueda de municipios acepta `countryId`.
+- Divisiones administrativas de 17 países más (AR, BO, CL, CR, CU, DO, EC, GT, HN, MX, NI, PA, PE, PY, SV, UY, VE): 363 regiones y 9229 municipios en total, tomados de fuentes oficiales y verificados; procedencia y advertencias en `backend/prisma/seed-data/divisions/SOURCES.md`.
+- Diccionario de datos: comentario en español en cada tabla y columna, guardado en MariaDB (`COMMENT`). Comandos `db:comments:check`, `db:comments:inject` y `db:dictionary`, y modelado en `docs/2026-11-02-2339-modelo-de-datos.md`.
+- Animaciones en el panel de marca del login (respetan «reducir movimiento»).
 - Descarga en PDF de recibos y comprobantes (`GET /api/accounting/vouchers/:id/pdf`), con botón en Aportes, en el aviso de registro y en Comprobantes. El aporte ahora trae `voucherId`.
 - El reporte financiero informa los aportes registrados que el libro de caja aún no consolida (`pendingConsolidation`) y la pantalla lo avisa.
 - Comando `npm run admin:reset-password` para el administrador de plataforma que olvidó su contraseña sin SMTP.
@@ -18,6 +28,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Changed
 
+- Las migraciones se unificaron en una sola, `20261103000000_init`, con las 24 reglas `CHECK` y los comentarios; la base de desarrollo se reconstruye desde cero.
+- Espaciado más compacto en tarjetas, formularios, diálogos y cabeceras de página.
+- El seed carga un archivo de divisiones por país (`seed-data/divisions/<ISO>.json`); `DEFAULT_COUNTRY_ISO` (por defecto `CO`) resuelve los códigos de municipio que llegan sin país.
 - Nadie puede otorgarse roles a sí mismo (`409 SELF_GRANT`). Invitar un correo que ya tiene cuenta responde `409 DUPLICATE_EMAIL` y no vincula la cuenta; invitar tiene límite por IP.
 - El enlace de recuperación de otra cuenta se niega si la cuenta tuvo roles fuera de la denominación o es de otro administrador, y avisa a la persona por correo sin enlace.
 - Cerrar sesión, cambiar la contraseña o detectar un refresh token robado invalida también el access token (`JwtAuthGuard` comprueba la sesión). El access token dura 30 minutos como máximo.

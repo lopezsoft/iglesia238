@@ -18,6 +18,7 @@ function sessionWith(permissions: Permission[]): SessionUser {
     id: 1,
     displayName: 'Jorge Ramírez',
     email: 'jorge@iglesia.example',
+    emailVerified: true,
     assignments: [{ role: 'TREASURER', roleName: 'Tesorero', permissions, scope: sede }],
     selectableScopes: [sede],
   };
@@ -46,6 +47,8 @@ class FakeAuthGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }

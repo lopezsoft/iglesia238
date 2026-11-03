@@ -7,4 +7,7 @@ export const SESSION_VALIDATOR = Symbol('SESSION_VALIDATOR');
  */
 export interface SessionValidator {
   isActive(userId: number, sessionId: string, now: Date): Promise<boolean>;
+
+  /** The user confirmed the mailbox. Read on every request, so a confirmation takes effect at once. */
+  isEmailVerified(userId: number): Promise<boolean>;
 }

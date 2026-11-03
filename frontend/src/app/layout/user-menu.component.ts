@@ -32,15 +32,17 @@ import { IconComponent } from '../shared/ui/icon.component';
         <p class="user-card__email">{{ user()?.email }}</p>
       </div>
       <div class="menu-divider"></div>
-      <a class="menu-item" role="menuitem" routerLink="/profile">
-        <app-icon name="user-circle" [size]="18" />
-        Mi perfil
-      </a>
-      <a class="menu-item" role="menuitem" routerLink="/profile/change-password">
-        <app-icon name="key" [size]="18" />
-        Cambiar contraseña
-      </a>
-      <div class="menu-divider"></div>
+      @if (verified()) {
+        <a class="menu-item" role="menuitem" routerLink="/profile">
+          <app-icon name="user-circle" [size]="18" />
+          Mi perfil
+        </a>
+        <a class="menu-item" role="menuitem" routerLink="/profile/change-password">
+          <app-icon name="key" [size]="18" />
+          Cambiar contraseña
+        </a>
+        <div class="menu-divider"></div>
+      }
       <button type="button" role="menuitem" class="menu-item menu-item--danger" (click)="logout()">
         <app-icon name="log-out" [size]="18" />
         Cerrar sesión
@@ -54,6 +56,8 @@ export class UserMenuComponent {
   private readonly debug = inject(DebugService);
 
   protected readonly user = this.auth.user;
+  /** Profile pages are part of the app: they stay closed until the e-mail is confirmed. */
+  protected readonly verified = this.auth.emailVerified;
   protected readonly roleNames = this.auth.activeRoleNames;
   protected readonly scopeLabel = computed(() => this.auth.activeScope()?.label ?? '');
   protected readonly initials = computed(() =>

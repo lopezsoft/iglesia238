@@ -18,6 +18,8 @@ export interface LegalEntity {
   readonly email: string | null;
   readonly phone: string | null;
   readonly address: string | null;
+  /** Country the legal entity belongs to; its sedes and its municipality must be of this country. */
+  readonly countryId: number;
   readonly municipalityCode: string | null;
   readonly isActive: boolean;
 }

@@ -179,7 +179,10 @@ export class ApplicationFormDataDto implements ApplicationFormDataView {
   @ApiProperty({ nullable: true, type: String }) maritalStatusName!:
     string | null;
   @ApiProperty() address!: string;
-  @ApiProperty({ description: 'Código DIVIPOLA.' }) municipalityCode!: string;
+  @ApiProperty({
+    description: 'Código del municipio (en Colombia, el código DIVIPOLA).',
+  })
+  municipalityCode!: string;
   @ApiProperty({ nullable: true, type: String }) municipalityName!:
     string | null;
   @ApiProperty({ nullable: true, type: String }) regionName!: string | null;

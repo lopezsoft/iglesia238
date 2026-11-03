@@ -153,7 +153,8 @@ export class SubmitApplicationDto implements SubmitApplicationInput {
 
   @ApiProperty({
     example: '13001',
-    description: 'Código DIVIPOLA del municipio.',
+    description:
+      'Código del municipio, del país por defecto (DEFAULT_COUNTRY_ISO). En Colombia, el código DIVIPOLA.',
   })
   @Matches(/^\d{1,10}$/, { message: 'Selecciona tu municipio.' })
   municipalityCode!: string;

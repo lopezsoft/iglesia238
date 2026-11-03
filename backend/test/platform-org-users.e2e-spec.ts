@@ -38,6 +38,9 @@ import {
   InMemoryGeoRepository,
   InMemoryLegalEntityRepository,
   InMemoryOrganization,
+  COLOMBIA,
+  INACTIVE_COUNTRY,
+  OTHER_COUNTRY,
 } from './support/in-memory-organization.js';
 import {
   InMemoryGrantScopeReader,
@@ -185,7 +188,10 @@ describe('Platform, organization and users over HTTP', () => {
       .overrideProvider(RedisService)
       .useValue({ client: { ping: vi.fn() } })
       .overrideProvider(SESSION_VALIDATOR)
-      .useValue({ isActive: () => Promise.resolve(true) })
+      .useValue({
+        isActive: () => Promise.resolve(true),
+        isEmailVerified: () => Promise.resolve(true),
+      })
       .overrideProvider(ASSIGNMENTS_READER)
       .useValue(reader)
       .overrideProvider(TRANSACTION_RUNNER)
@@ -344,6 +350,153 @@ describe('Platform, organization and users over HTTP', () => {
         organization.congregations.find((row) => row.id === ownSede.id)
           ?.isActive,
       ).toBe(true);
+    });
+
+    it('requires the municipality and validates it against the country of the legal entity', async () => {
+      const foreign = organization.addLegalEntity(1, {
+        legalName: 'Corporación Exterior',
+        countryId: OTHER_COUNTRY.id,
+        countryName: OTHER_COUNTRY.name,
+        municipalityCode: null,
+      });
+
+      const missing = await call('POST', '/api/organization/congregations', {
+        userId: adminOne.id,
+        scope: 'D:1',
+        body: sedeBody({
+          name: 'Sede Sin Municipio',
+          municipalityCode: undefined,
+        }),
+      });
+      expect(missing.statusCode).toBe(400);
+
+      const mismatch = await call('POST', '/api/organization/congregations', {
+        userId: adminOne.id,
+        scope: 'D:1',
+        body: sedeBody({ name: 'Sede Quito', municipalityCode: '1701' }),
+      });
+      expect(mismatch.statusCode).toBe(400);
+      expect(mismatch.json()).toMatchObject({
+        code: 'MUNICIPALITY_COUNTRY_MISMATCH',
+        message: 'El municipio no pertenece al país de la razón social.',
+      });
+
+      // Moving the sede to a legal entity of another country validates its municipality again.
+      const moved = await call(
+        'PUT',
+        `/api/organization/congregations/${ownSede.id}`,
+        {
+          userId: adminOne.id,
+          scope: 'D:1',
+          body: sedeBody({
+            name: 'Sede Central',
+            code: 'SC',
+            legalEntityId: foreign.id,
+            municipalityCode: '11001',
+          }),
+        },
+      );
+      expect(moved.statusCode).toBe(400);
+      expect(moved.json()).toMatchObject({
+        code: 'MUNICIPALITY_COUNTRY_MISMATCH',
+      });
+    });
+
+    it('creates legal entities in an active country and keeps it unless the PUT sends another', async () => {
+      const entityBody = (overrides: Record<string, unknown> = {}) => ({
+        legalName: 'Corporación Educativa',
+        taxId: '905111222-3',
+        legalRepresentative: 'Representante',
+        countryId: COLOMBIA.id,
+        municipalityCode: '11001',
+        ...overrides,
+      });
+
+      const withoutCountry = await call(
+        'POST',
+        '/api/organization/legal-entities',
+        {
+          userId: adminOne.id,
+          scope: 'D:1',
+          body: entityBody({ countryId: undefined }),
+        },
+      );
+      expect(withoutCountry.statusCode).toBe(400);
+
+      const unknown = await call('POST', '/api/organization/legal-entities', {
+        userId: adminOne.id,
+        scope: 'D:1',
+        body: entityBody({ countryId: 9999 }),
+      });
+      expect(unknown.statusCode).toBe(404);
+      expect(unknown.json()).toMatchObject({ code: 'COUNTRY_NOT_FOUND' });
+
+      const inactive = await call('POST', '/api/organization/legal-entities', {
+        userId: adminOne.id,
+        scope: 'D:1',
+        body: entityBody({
+          countryId: INACTIVE_COUNTRY.id,
+          municipalityCode: null,
+        }),
+      });
+      expect(inactive.statusCode).toBe(409);
+      expect(inactive.json()).toMatchObject({
+        code: 'COUNTRY_INACTIVE',
+        message: 'El país no está activo en el sistema.',
+      });
+
+      const created = await call('POST', '/api/organization/legal-entities', {
+        userId: adminOne.id,
+        scope: 'D:1',
+        body: entityBody(),
+      });
+      expect(created.statusCode).toBe(201);
+      expect(created.json()).toMatchObject({
+        countryId: COLOMBIA.id,
+        countryName: 'Colombia',
+        municipalityName: 'Bogotá, D.C.',
+      });
+
+      const kept = await call(
+        'PUT',
+        `/api/organization/legal-entities/${created.json<{ id: number }>().id}`,
+        {
+          userId: adminOne.id,
+          scope: 'D:1',
+          body: entityBody({
+            countryId: undefined,
+            legalName: 'Corporación Renombrada',
+          }),
+        },
+      );
+      expect(kept.statusCode).toBe(200);
+      expect(kept.json()).toMatchObject({
+        legalName: 'Corporación Renombrada',
+        countryId: COLOMBIA.id,
+      });
+    });
+
+    it('answers 409 LEGAL_ENTITY_HAS_CONGREGATIONS when a legal entity with sedes changes country', async () => {
+      const response = await call(
+        'PUT',
+        `/api/organization/legal-entities/${sede.id}`,
+        {
+          userId: adminOne.id,
+          scope: 'D:1',
+          body: {
+            legalName: sede.legalName,
+            taxId: sede.taxId,
+            legalRepresentative: 'Representante',
+            countryId: OTHER_COUNTRY.id,
+            municipalityCode: '1701',
+          },
+        },
+      );
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({
+        code: 'LEGAL_ENTITY_HAS_CONGREGATIONS',
+      });
     });
 
     it('answers 404 to an id that is not a positive integer', async () => {

@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
 import { toIsoDateOrNull } from '../../../common/mappers/value-mappers.js';
 import type { Transaction } from '../../../common/persistence/transaction.js';
 import type { TenantScope } from '../../../common/tenancy/tenant-scope.js';
@@ -71,7 +72,11 @@ export class PrismaApplicationsRepository
   extends TenantScopedRepository
   implements ApplicationsRepository
 {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    /** The application form sends a bare municipality code: it is resolved inside this country. */
+    @Inject(DEFAULT_COUNTRY_ISO) private readonly defaultCountryIso: string,
+  ) {
     super();
   }
 
@@ -182,7 +187,10 @@ export class PrismaApplicationsRepository
     const [municipality, maritalStatus, entry] = await Promise.all([
       formData.municipalityCode
         ? client.municipality.findFirst({
-            where: { code: formData.municipalityCode },
+            where: {
+              code: formData.municipalityCode,
+              region: { country: { isoAlpha2: this.defaultCountryIso } },
+            },
             select: { name: true, region: { select: { name: true } } },
           })
         : null,

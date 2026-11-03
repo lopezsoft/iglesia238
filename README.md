@@ -1,6 +1,6 @@
 # Iglesia 238: gestión multi-iglesia
 
-**Versión 0.4.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
+**Versión 0.5.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
 
 Plataforma para administrar varias denominaciones con sus sedes: membresía, secretaría y contabilidad. Cada denominación ve solo sus datos.
 
@@ -31,7 +31,7 @@ Los pasos de la API (dependencias, migraciones, seed y primer administrador con 
 - Se sigue [versionado semántico](https://semver.org/lang/es/). Mientras la versión sea `0.x`: un `feat` sube la versión menor (`0.2.0` → `0.3.0`) y un `fix`, `refactor` o `perf` sube el parche (`0.2.0` → `0.2.1`). Un cambio incompatible sube la menor hasta llegar a `1.0.0`.
 - Todo commit que cambia el código de una aplicación actualiza a la vez la versión de ambos `package.json` (y sus `package-lock.json`), el [CHANGELOG](CHANGELOG.md) y este README. Los commits que solo tocan documentación o CI registran su cambio en «Sin publicar» del CHANGELOG sin subir la versión.
 - Para subir la versión: `npm version <x.y.z> --no-git-tag-version` en `backend/` y en `frontend/`.
-- Mientras la API no tiene ramas fusionadas en `main`, el frontend se desarrolla en `feat/frontend-mvp`, creada desde `feat/backend-foundation`.
+- Mientras no haya ramas fusionadas en `main`, backend y frontend se desarrollan juntos en `feat/backend-frontend`.
 - La API publica su versión en Swagger (`/api/docs`), leída de `backend/package.json`.
 - Al cerrar un sprint que se despliega, se etiqueta `main` con la versión vigente (`v0.2.0`).
 

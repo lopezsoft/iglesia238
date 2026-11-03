@@ -1,11 +1,15 @@
+import { buildTenantContext } from '../../../../test/support/tenants.js';
 import {
+  ForbiddenDomainException,
   InvalidInputException,
   NotFoundDomainException,
 } from '../../../common/errors/domain.exception.js';
 import type {
   CatalogsReader,
+  CountryView,
   EnsuredNeighborhood,
   GlobalCatalogs,
+  MunicipalityKey,
   MunicipalityView,
   NeighborhoodView,
 } from './catalogs.reader.js';
@@ -13,12 +17,33 @@ import {
   EnsureNeighborhoodUseCase,
   GetCatalogsUseCase,
   GetMunicipalityUseCase,
+  ListCountriesUseCase,
   ListNeighborhoodsUseCase,
   MAX_MUNICIPALITY_LIMIT,
   SearchMunicipalitiesUseCase,
 } from './catalogs.use-cases.js';
 
+const COLOMBIA_ID = 48;
+
+const COUNTRIES: CountryView[] = [
+  {
+    id: COLOMBIA_ID,
+    isoAlpha2: 'CO',
+    name: 'Colombia',
+    isActive: true,
+    hasMunicipalities: true,
+  },
+  {
+    id: 75,
+    isoAlpha2: 'FR',
+    name: 'Francia',
+    isActive: false,
+    hasMunicipalities: false,
+  },
+];
+
 const MEDELLIN: MunicipalityView = {
+  countryId: COLOMBIA_ID,
   code: '05001',
   name: 'Medellín',
   regionCode: '05',
@@ -36,7 +61,12 @@ const CATALOGS: GlobalCatalogs = {
 
 /** In-memory reader. Catalogs are global: none of its methods receive a tenant. */
 class FakeCatalogsReader implements CatalogsReader {
-  readonly searches: { search: string | null; limit: number }[] = [];
+  readonly searches: {
+    search: string | null;
+    limit: number;
+    countryId: number | null;
+  }[] = [];
+  readonly keys: MunicipalityKey[] = [];
   neighborhoods: NeighborhoodView[] = [];
   private nextId = 100;
 
@@ -44,17 +74,36 @@ class FakeCatalogsReader implements CatalogsReader {
     return Promise.resolve(CATALOGS);
   }
 
-  searchMunicipalities(search: string | null, limit: number) {
-    this.searches.push({ search, limit });
+  listCountries(includeInactive: boolean) {
+    return Promise.resolve(
+      COUNTRIES.filter((country) => includeInactive || country.isActive),
+    );
+  }
+
+  searchMunicipalities(
+    search: string | null,
+    limit: number,
+    countryId: number | null,
+  ) {
+    this.searches.push({ search, limit, countryId });
     return Promise.resolve([MEDELLIN]);
   }
 
-  findMunicipality(code: string) {
-    return Promise.resolve(code === MEDELLIN.code ? MEDELLIN : null);
+  /** Null country = the default one (Colombia in these tests). */
+  private matches(key: MunicipalityKey): boolean {
+    this.keys.push(key);
+    return (
+      key.code === MEDELLIN.code &&
+      (key.countryId ?? COLOMBIA_ID) === MEDELLIN.countryId
+    );
   }
 
-  listNeighborhoods(code: string, search: string | null) {
-    if (code !== MEDELLIN.code) {
+  findMunicipality(key: MunicipalityKey) {
+    return Promise.resolve(this.matches(key) ? MEDELLIN : null);
+  }
+
+  listNeighborhoods(key: MunicipalityKey, search: string | null) {
+    if (!this.matches(key)) {
       return Promise.resolve(null);
     }
     const needle = search?.toLowerCase();
@@ -66,10 +115,10 @@ class FakeCatalogsReader implements CatalogsReader {
   }
 
   ensureNeighborhood(
-    code: string,
+    key: MunicipalityKey,
     name: string,
   ): Promise<EnsuredNeighborhood | null> {
-    if (code !== MEDELLIN.code) {
+    if (!this.matches(key)) {
       return Promise.resolve(null);
     }
     const existing = this.neighborhoods.find(
@@ -112,7 +161,25 @@ describe('catalog use cases', () => {
         undefined,
       );
 
-      expect(reader.searches[0]).toEqual({ search: 'Medel', limit: 20 });
+      expect(reader.searches[0]).toEqual({
+        search: 'Medel',
+        limit: 20,
+        countryId: null,
+      });
+    });
+
+    it('narrows the search to one country when it is given', async () => {
+      await new SearchMunicipalitiesUseCase(reader).execute(
+        'Medel',
+        5,
+        COLOMBIA_ID,
+      );
+
+      expect(reader.searches[0]).toEqual({
+        search: 'Medel',
+        limit: 5,
+        countryId: COLOMBIA_ID,
+      });
     });
 
     it('treats blank text as no filter and caps the limit', async () => {
@@ -124,16 +191,63 @@ describe('catalog use cases', () => {
       expect(reader.searches[0]).toEqual({
         search: null,
         limit: MAX_MUNICIPALITY_LIMIT,
+        countryId: null,
       });
       expect(reader.searches[1].limit).toBe(1);
     });
   });
 
+  describe('ListCountriesUseCase', () => {
+    const platformAdmin = buildTenantContext({
+      kind: 'PLATFORM',
+      permissions: ['denominations.manage'],
+    });
+
+    it('lists only the active countries to any session', async () => {
+      const countries = await new ListCountriesUseCase(reader).execute(
+        false,
+        null,
+      );
+
+      expect(countries).toEqual([COUNTRIES[0]]);
+    });
+
+    it('adds the inactive ones only for the platform team', async () => {
+      const list = new ListCountriesUseCase(reader);
+
+      await expect(list.execute(true, platformAdmin)).resolves.toHaveLength(2);
+      for (const tenant of [
+        null,
+        buildTenantContext({
+          kind: 'DENOMINATION',
+          permissions: ['congregations.manage'],
+        }),
+        buildTenantContext({ kind: 'PLATFORM', permissions: ['users.manage'] }),
+      ]) {
+        await expect(list.execute(true, tenant)).rejects.toBeInstanceOf(
+          ForbiddenDomainException,
+        );
+      }
+    });
+  });
+
   describe('GetMunicipalityUseCase', () => {
-    it('returns the municipality with its region', async () => {
+    it('returns the municipality with its region and country', async () => {
       await expect(
         new GetMunicipalityUseCase(reader).execute('05001'),
       ).resolves.toEqual(MEDELLIN);
+      expect(reader.keys[0]).toEqual({ code: '05001', countryId: null });
+    });
+
+    it('looks the code up inside the country it is given', async () => {
+      const get = new GetMunicipalityUseCase(reader);
+
+      await expect(get.execute('05001', COLOMBIA_ID)).resolves.toEqual(
+        MEDELLIN,
+      );
+      await expect(get.execute('05001', 75)).rejects.toBeInstanceOf(
+        NotFoundDomainException,
+      );
     });
 
     it('answers not found for an unknown code', async () => {

@@ -11,6 +11,7 @@ const session: SessionDto = {
   id: 7,
   displayName: 'Ana Pérez',
   email: 'ana@iglesia.example',
+  emailVerified: true,
   assignments: [
     {
       role: 'PLATFORM_ADMIN',
@@ -82,6 +83,41 @@ describe('HttpAuthGateway', () => {
 
     expect(await result).toBeNull();
     expect(tokens.token).toBeNull();
+  });
+
+  it('maps emailVerified of the session and locks only on an explicit false', async () => {
+    const { gateway, backend } = setup();
+
+    const locked = firstValueFrom(gateway.login('ana@iglesia.example', 'secreto-largo'));
+    backend
+      .expectOne('/api/auth/login')
+      .flush({ accessToken: 'abc', expiresIn: 900, session: { ...session, emailVerified: false } });
+    expect((await locked).emailVerified).toBe(false);
+
+    const verified = firstValueFrom(gateway.session());
+    backend.expectOne('/api/auth/me').flush(session);
+    expect((await verified)?.emailVerified).toBe(true);
+  });
+
+  it('confirms the e-mail with the token in the body and resends the confirmation', async () => {
+    const { gateway, backend } = setup();
+
+    const confirm = firstValueFrom(gateway.confirmEmail('tok-1'), { defaultValue: undefined });
+    const confirmRequest = backend.expectOne('/api/auth/email-verification/confirm');
+    expect(confirmRequest.request.method).toBe('POST');
+    expect(confirmRequest.request.body).toEqual({ token: 'tok-1' });
+    confirmRequest.flush(null, { status: 204, statusText: 'No Content' });
+    await confirm;
+
+    const dev = firstValueFrom(gateway.resendEmailVerification());
+    const resend = backend.expectOne('/api/auth/email-verification/resend');
+    expect(resend.request.method).toBe('POST');
+    resend.flush({ devVerificationLink: 'http://localhost:4200/login/verify-email?token=abc' }, { status: 202, statusText: 'Accepted' });
+    expect(await dev).toEqual({ devVerificationLink: 'http://localhost:4200/login/verify-email?token=abc' });
+
+    const plain = firstValueFrom(gateway.resendEmailVerification());
+    backend.expectOne('/api/auth/email-verification/resend').flush(null, { status: 202, statusText: 'Accepted' });
+    expect(await plain).toEqual({ devVerificationLink: null });
   });
 
   it('forgets the token on logout even when the server fails', async () => {

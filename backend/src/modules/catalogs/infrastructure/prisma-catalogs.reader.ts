@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
+import type { Prisma } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 import type {
   CatalogsReader,
+  CountryView,
   EnsuredNeighborhood,
   GlobalCatalogs,
+  MunicipalityKey,
   MunicipalityView,
   NeighborhoodView,
 } from '../application/catalogs.reader.js';
@@ -18,17 +22,18 @@ const BY_SEED_ORDER = { id: 'asc' } as const;
 const MUNICIPALITY_SELECT = {
   code: true,
   name: true,
-  region: { select: { code: true, name: true } },
+  region: { select: { code: true, name: true, countryId: true } },
 } as const;
 
 interface MunicipalityRow {
   code: string | null;
   name: string;
-  region: { code: string | null; name: string };
+  region: { code: string | null; name: string; countryId: number };
 }
 
 function toMunicipalityView(row: MunicipalityRow): MunicipalityView {
   return {
+    countryId: row.region.countryId,
     code: row.code as string,
     name: row.name,
     regionCode: row.region.code ?? '',
@@ -38,7 +43,17 @@ function toMunicipalityView(row: MunicipalityRow): MunicipalityView {
 
 @Injectable()
 export class PrismaCatalogsReader implements CatalogsReader {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(DEFAULT_COUNTRY_ISO) private readonly defaultCountryIso: string,
+  ) {}
+
+  /** The country part of a municipality lookup: never the code alone (codes repeat across countries). */
+  private countryOf(key: MunicipalityKey): Prisma.RegionWhereInput {
+    return key.countryId === null
+      ? { country: { isoAlpha2: this.defaultCountryIso } }
+      : { countryId: key.countryId };
+  }
 
   async listGlobalCatalogs(): Promise<GlobalCatalogs> {
     const [
@@ -85,13 +100,42 @@ export class PrismaCatalogsReader implements CatalogsReader {
     };
   }
 
+  async listCountries(includeInactive: boolean): Promise<CountryView[]> {
+    const rows = await this.prisma.country.findMany({
+      where: includeInactive ? {} : { isActive: true },
+      select: {
+        id: true,
+        isoAlpha2: true,
+        name: true,
+        isActive: true,
+        // One region with municipalities is enough to know the country has them.
+        regions: {
+          where: { municipalities: { some: {} } },
+          select: { id: true },
+          take: 1,
+        },
+      },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return rows.map(({ regions, ...country }) => ({
+      ...country,
+      hasMunicipalities: regions.length > 0,
+    }));
+  }
+
   async searchMunicipalities(
     search: string | null,
     limit: number,
+    countryId: number | null,
   ): Promise<MunicipalityView[]> {
     const rows = await this.prisma.municipality.findMany({
       where: {
         code: { not: null },
+        // Only the countries the platform offers.
+        region: {
+          country: { isActive: true },
+          ...(countryId === null ? {} : { countryId }),
+        },
         ...(search
           ? {
               OR: [
@@ -108,20 +152,22 @@ export class PrismaCatalogsReader implements CatalogsReader {
     return rows.map(toMunicipalityView);
   }
 
-  async findMunicipality(code: string): Promise<MunicipalityView | null> {
+  async findMunicipality(
+    key: MunicipalityKey,
+  ): Promise<MunicipalityView | null> {
     const row = await this.prisma.municipality.findFirst({
-      where: { code },
+      where: { code: key.code, region: this.countryOf(key) },
       select: MUNICIPALITY_SELECT,
     });
     return row ? toMunicipalityView(row) : null;
   }
 
   async listNeighborhoods(
-    municipalityCode: string,
+    key: MunicipalityKey,
     search: string | null,
     limit: number,
   ): Promise<NeighborhoodView[] | null> {
-    const municipalityId = await this.municipalityId(municipalityCode);
+    const municipalityId = await this.municipalityId(key);
     if (municipalityId === null) {
       return null;
     }
@@ -137,10 +183,10 @@ export class PrismaCatalogsReader implements CatalogsReader {
   }
 
   async ensureNeighborhood(
-    municipalityCode: string,
+    key: MunicipalityKey,
     name: string,
   ): Promise<EnsuredNeighborhood | null> {
-    const municipalityId = await this.municipalityId(municipalityCode);
+    const municipalityId = await this.municipalityId(key);
     if (municipalityId === null) {
       return null;
     }
@@ -175,9 +221,9 @@ export class PrismaCatalogsReader implements CatalogsReader {
     });
   }
 
-  private async municipalityId(code: string): Promise<number | null> {
+  private async municipalityId(key: MunicipalityKey): Promise<number | null> {
     const row = await this.prisma.municipality.findFirst({
-      where: { code },
+      where: { code: key.code, region: this.countryOf(key) },
       select: { id: true },
     });
     return row?.id ?? null;

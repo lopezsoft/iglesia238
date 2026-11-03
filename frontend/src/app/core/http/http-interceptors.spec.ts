@@ -177,3 +177,44 @@ describe('API interceptors', () => {
     backend.expectNone('/api/auth/refresh');
   });
 });
+
+describe('EMAIL_NOT_VERIFIED handling', () => {
+  function setupLocking() {
+    const handleEmailNotVerified = vi.fn().mockResolvedValue(undefined);
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([errorInterceptor, authInterceptor, scopeInterceptor])),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: { activeScope: () => congregation, handleEmailNotVerified } },
+      ],
+    });
+    return { http: TestBed.inject(HttpClient), backend: TestBed.inject(HttpTestingController), handleEmailNotVerified };
+  }
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('maps the 403 to a DomainError and locks the app through the session', async () => {
+    const { http, backend, handleEmailNotVerified } = setupLocking();
+
+    const result = firstValueFrom(http.get('/api/members')).catch((error: unknown) => error);
+    backend
+      .expectOne('/api/members')
+      .flush({ code: 'EMAIL_NOT_VERIFIED', message: 'Confirma tu correo.' }, { status: 403, statusText: 'Forbidden' });
+
+    const error = (await result) as DomainError;
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(error.status).toBe(403);
+    expect(handleEmailNotVerified).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not react to the same code on auth calls, so reading the session cannot loop', async () => {
+    const { http, backend, handleEmailNotVerified } = setupLocking();
+
+    const result = firstValueFrom(http.get('/api/auth/me')).catch((error: unknown) => error);
+    backend.expectOne('/api/auth/me').flush({ code: 'EMAIL_NOT_VERIFIED' }, { status: 403, statusText: 'Forbidden' });
+
+    expect(((await result) as DomainError).code).toBe('EMAIL_NOT_VERIFIED');
+    expect(handleEmailNotVerified).not.toHaveBeenCalled();
+  });
+});

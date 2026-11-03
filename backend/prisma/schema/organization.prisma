@@ -4,28 +4,37 @@
 // Regla: toda tabla de negocio lleva denominationId y sus FK compuestas impiden cruzar denominaciones.
 // ==========================================
 
-/// País. Catálogo en prisma/seed-data/countries.json.
+/// País. Catálogo global de geografía, compartido por todas las denominaciones y cargado desde prisma/seed-data/countries.json.
+/// Lo administra la plataforma: solo los países activos se ofrecen para razones sociales y búsquedas de municipios.
 model Country {
-  id        Int      @id @default(autoincrement())
-  /// Código ISO 3166-1 alfa-2 (CO).
-  isoAlpha2 String   @unique @map("iso_alpha2") @db.Char(2)
-  /// Código ISO 3166-1 alfa-3 (COL). Vacío si no tiene uno oficial, como Kosovo.
-  isoAlpha3 String?  @unique @map("iso_alpha3") @db.Char(3)
-  /// Nombre en español.
-  name      String   @unique @db.VarChar(100)
-  /// Indicativo telefónico internacional, sin el signo + (57).
-  phoneCode String?  @map("phone_code") @db.VarChar(4)
-  regions   Region[]
+  /// Identificador interno autoincremental.
+  id            Int           @id @default(autoincrement())
+  /// Código ISO 3166-1 alfa-2 del país en mayúsculas (CO); único y usado para nombrar su archivo de divisiones.
+  isoAlpha2     String        @unique @map("iso_alpha2") @db.Char(2)
+  /// Código ISO 3166-1 alfa-3 del país (COL); único, nulo si no tiene uno oficial, como Kosovo.
+  isoAlpha3     String?       @unique @map("iso_alpha3") @db.Char(3)
+  /// Nombre del país en español; único en el catálogo.
+  name          String        @unique @db.VarChar(100)
+  /// Indicativo telefónico internacional sin el signo + (57); nulo si no se conoce.
+  phoneCode     String?       @map("phone_code") @db.VarChar(4)
+  /// Indica si el país está activo en el sistema; lo cambia la plataforma, no se desactiva con razones sociales activas y el seed solo lo fija al crearlo.
+  isActive      Boolean       @default(false) @map("is_active")
+  regions       Region[]
+  legalEntities LegalEntity[]
 
   @@map("countries")
 }
 
-/// Departamento o estado.
+/// Departamento, estado o provincia de un país. Catálogo global de geografía, cargado desde prisma/seed-data/divisions/<ISO alfa-2>.json.
+/// El código y el nombre son únicos dentro del país.
 model Region {
+  /// Identificador interno autoincremental.
   id             Int            @id @default(autoincrement())
+  /// País al que pertenece la subdivisión (FK a countries.id).
   countryId      Int            @map("country_id")
-  /// Código oficial de la subdivisión. En Colombia, el código DANE del departamento (05).
+  /// Código oficial de la subdivisión, único en el país; en Colombia, el código DANE del departamento (05). Nulo si no tiene uno.
   code           String?        @db.VarChar(10)
+  /// Nombre oficial de la subdivisión, único dentro del país.
   name           String         @db.VarChar(100)
   country        Country        @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   municipalities Municipality[]
@@ -35,12 +44,16 @@ model Region {
   @@map("regions")
 }
 
-/// Municipio o ciudad. Los de Colombia están en prisma/seed-data/colombia-divipola.json.
+/// Municipio o ciudad. Catálogo global de geografía; cada país con municipios tiene su archivo en prisma/seed-data/divisions/<ISO alfa-2>.json.
+/// El código es único dentro del departamento, no en el mundo: se resuelve siempre junto con el país.
 model Municipality {
+  /// Identificador interno autoincremental.
   id       Int     @id @default(autoincrement())
+  /// Departamento o estado al que pertenece el municipio (FK a regions.id).
   regionId Int     @map("region_id")
-  /// Código oficial. En Colombia, el código DIVIPOLA del DANE (05001).
+  /// Código oficial, único en el departamento; en Colombia, el código DIVIPOLA del DANE (05001). Nulo si no tiene uno.
   code     String? @db.VarChar(10)
+  /// Nombre oficial del municipio, único dentro del departamento.
   name     String  @db.VarChar(100)
   region   Region  @relation(fields: [regionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -56,10 +69,14 @@ model Municipality {
   @@map("municipalities")
 }
 
-/// Barrio.
+/// Barrio de un municipio. Catálogo global compartido por todas las denominaciones: se crea al vuelo con el texto escrito en sedes,
+/// inscripciones y direcciones de personas, y se reutiliza si ya existe en el municipio sin distinguir mayúsculas ni tildes.
 model Neighborhood {
+  /// Identificador interno autoincremental.
   id              Int             @id @default(autoincrement())
+  /// Municipio al que pertenece el barrio (FK a municipalities.id).
   municipalityId  Int             @map("municipality_id")
+  /// Nombre del barrio tal como se escribió por primera vez; único por municipio sin distinguir mayúsculas ni tildes (intercalación).
   name            String          @db.VarChar(120)
   municipality    Municipality    @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   personAddresses PersonAddress[]
@@ -69,14 +86,22 @@ model Neighborhood {
   @@map("neighborhoods")
 }
 
-/// Denominación: unidad de aislamiento de los datos. La crea un administrador de plataforma.
+/// Denominación o iglesia cliente: unidad de aislamiento (tenant) de todos los datos de negocio. La crea un administrador de plataforma, que la provisiona
+/// con un fondo inicial, plan de cuentas, tipos de aporte y de certificado, rangos, cargos y un borrador de política de datos. Inactiva, sus roles no dan acceso.
 model Denomination {
+  /// Identificador interno autoincremental.
   id                   Int                   @id @default(autoincrement())
+  /// Nombre de la denominación; único en la plataforma.
   name                 String                @unique @db.VarChar(200)
+  /// Ruta del archivo del logo de la denominación; nulo si no tiene logo. Reservado: el código actual aún no la usa.
   logoPath             String?               @map("logo_path") @db.VarChar(255)
+  /// Indica si la denominación está activa; si es falso, sus roles no dan acceso y sus sedes salen del formulario público.
   isActive             Boolean               @default(true) @map("is_active")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt            DateTime              @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt            DateTime              @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt            DateTime?             @map("deleted_at")
   funds                Fund[]
   accounts             Account[]
@@ -97,35 +122,60 @@ model Denomination {
   @@map("denominations")
 }
 
-/// Razón social de una denominación. Una denominación puede tener una o varias.
+/// Razón social (persona jurídica) de una denominación; una denominación puede tener una o varias y cada sede elige la suya. Por denominación.
+/// Pertenece a un país: su municipio (opcional) y el de cada una de sus sedes deben ser de ese país.
+/// La regla cruza tablas, así que la validan los casos de uso.
 model LegalEntity {
+  /// Identificador interno autoincremental.
   id                  Int            @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId      Int            @map("denomination_id")
+  /// País de la razón social; no puede cambiar mientras tenga sedes (FK a countries.id).
+  countryId           Int            @map("country_id")
+  /// Razón social o nombre legal registrado de la entidad.
   legalName           String         @map("legal_name") @db.VarChar(200)
+  /// Nombre comercial o de uso común; nulo si no tiene uno distinto.
   tradeName           String?        @map("trade_name") @db.VarChar(200)
-  /// NIT o identificación tributaria.
+  /// NIT con dígito de verificación en forma canónica (900.123.456-7); único en toda la plataforma, incluso para filas borradas.
   taxId               String         @unique @map("tax_id") @db.VarChar(30)
+  /// Nombre completo del representante legal; los casos de uso lo exigen aunque la columna admita nulo.
   legalRepresentative String?        @map("legal_representative") @db.VarChar(200)
+  /// Correo electrónico de contacto de la razón social, guardado en minúsculas; nulo si no se registró.
   email               String?        @db.VarChar(191)
+  /// Teléfono de contacto de la razón social, en texto libre; nulo si no se registró.
   phone               String?        @db.VarChar(30)
+  /// Dirección postal de la razón social; nulo si no se registró.
   address             String?        @db.VarChar(200)
+  /// Municipio del domicilio, del mismo país de la razón social; nulo si no se indicó (FK a municipalities.id).
   municipalityId      Int?           @map("municipality_id")
+  /// Indica si la razón social está activa; una inactiva no se ofrece para nuevas sedes y solo se desactiva sin sedes activas.
   isActive            Boolean        @default(true) @map("is_active")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt           DateTime       @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt           DateTime       @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt           DateTime?      @map("deleted_at")
   denomination        Denomination   @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  country             Country        @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   municipality        Municipality?  @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   congregations       Congregation[]
 
   @@unique([denominationId, id])
+  @@index([countryId])
   @@map("legal_entities")
 }
 
+/// Distrito: agrupación administrativa de sedes dentro de una denominación. Por denominación; una sede pertenece a lo sumo a un distrito.
+/// El número es único en la denominación y no tiene borrado lógico ni estado activo.
 model District {
+  /// Identificador interno autoincremental.
   id             Int            @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId Int            @map("denomination_id")
+  /// Número o código del distrito, guardado como texto; único dentro de la denominación.
   number         String         @db.VarChar(20)
+  /// Nombre descriptivo del distrito; nulo si solo se identifica por su número.
   name           String?        @db.VarChar(150)
   denomination   Denomination   @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   congregations  Congregation[]
@@ -135,31 +185,46 @@ model District {
   @@map("districts")
 }
 
-/// Sede o congregación. Al crearse elige la razón social a la que pertenece.
+/// Sede o congregación local de una denominación, donde se registran miembros, aportes y secretaría. Por denominación.
+/// Al crearse elige su razón social (y opcionalmente su distrito) de la misma denominación; nombre y código son únicos en ella.
 model Congregation {
+  /// Identificador interno autoincremental.
   id                  Int       @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
   denominationId      Int       @map("denomination_id")
+  /// Razón social de la sede, de la misma denominación por FK compuesta con denomination_id (FK a legal_entities.id).
   legalEntityId       Int       @map("legal_entity_id")
+  /// Distrito de la sede, de la misma denominación por FK compuesta con denomination_id; nulo si no está en ningún distrito (FK a districts.id).
   districtId          Int?      @map("district_id")
-  municipalityId      Int?      @map("municipality_id")
+  /// Municipio de la sede, obligatorio y del país de la razón social según los casos de uso (FK a municipalities.id).
+  municipalityId      Int       @map("municipality_id")
+  /// Barrio de la sede dentro de su municipio; nulo si no se indicó (FK a neighborhoods.id).
   neighborhoodId      Int?      @map("neighborhood_id")
-  /// Abreviatura estable de la sede (SC). Prefijo del código de miembro y de carné: no cambia al renombrar la sede.
+  /// Abreviatura estable de 2 a 10 letras o números en mayúsculas (MSC); prefijo del código de miembro y de carné, no cambia al renombrar.
   code                String    @db.VarChar(10)
+  /// Nombre de la sede; único en la denominación sin distinguir mayúsculas ni tildes.
   name                String    @db.VarChar(150)
+  /// Dirección postal de la sede; la gestión de sedes del administrador la exige, pero el registro público de sede la deja opcional, así que puede ser nula.
   address             String?   @db.VarChar(200)
+  /// Teléfono de contacto de la sede, en texto libre; nulo si no se registró.
   phone               String?   @db.VarChar(30)
+  /// Correo electrónico de contacto de la sede, guardado en minúsculas; nulo si no se registró.
   email               String?   @db.VarChar(191)
-  /// Si es falso, la sede no aparece en el formulario público de inscripción.
+  /// Indica si la sede recibe inscripciones; si es falso no aparece en el formulario público. Una sede inactiva nunca las recibe.
   acceptsApplications Boolean   @default(true) @map("accepts_applications")
+  /// Indica si la sede está activa; al desactivarla se cierran sus inscripciones y los roles ligados a ella dejan de dar acceso.
   isActive            Boolean   @default(true) @map("is_active")
+  /// Fecha y hora de creación del registro (UTC).
   createdAt           DateTime  @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
   updatedAt           DateTime  @updatedAt @map("updated_at")
+  /// Fecha y hora del borrado lógico (UTC); nulo si el registro está vigente.
   deletedAt           DateTime? @map("deleted_at")
 
   denomination Denomination  @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   legalEntity  LegalEntity   @relation(fields: [denominationId, legalEntityId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   district     District?     @relation(fields: [denominationId, districtId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
-  municipality Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  municipality Municipality  @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   neighborhood Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   outgoingTransfers      MemberTransfer[]        @relation("TransferOrigin")

@@ -137,6 +137,26 @@ describe('PrismaSessionValidator', () => {
       take: 1,
     });
   });
+
+  it('reads whether the e-mail is confirmed from the user, ignoring deleted accounts', async () => {
+    const findFirst = vi
+      .fn()
+      .mockResolvedValueOnce({ emailVerifiedAt: new Date() })
+      .mockResolvedValueOnce({ emailVerifiedAt: null })
+      .mockResolvedValueOnce(null);
+    const validator = new PrismaSessionValidator(
+      asService({ user: { findFirst } }),
+    );
+
+    await expect(validator.isEmailVerified(5)).resolves.toBe(true);
+    await expect(validator.isEmailVerified(5)).resolves.toBe(false);
+    await expect(validator.isEmailVerified(5)).resolves.toBe(false);
+
+    expect(findFirst.mock.calls[0][0]).toEqual({
+      where: { id: 5, deletedAt: null },
+      select: { emailVerifiedAt: true },
+    });
+  });
 });
 
 describe('PrismaTransactionRunner and clientOf', () => {

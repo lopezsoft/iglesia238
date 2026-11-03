@@ -1,5 +1,5 @@
 // Structure of one denomination (B-02/B-03), mirroring LegalEntity, District and Congregation
-// in backend/prisma/schema/organization.prisma. Municipalities travel as DIVIPOLA codes.
+// in backend/prisma/schema/organization.prisma. Municipalities travel as their official codes.
 import { Congregation, District, LegalEntity } from '../../../../core/models/organization.model';
 
 export type OrganizationTab = 'sedes' | 'razones' | 'distritos';
@@ -40,6 +40,7 @@ export interface CongregationRow extends Congregation {
 }
 
 export interface LegalEntityRow extends LegalEntity {
+  readonly countryName: string;
   readonly municipalityName: string | null;
   readonly regionName: string | null;
   readonly createdAt: string;
@@ -79,7 +80,9 @@ export interface LegalEntityInput {
   readonly tradeName: string | null;
   readonly taxId: string;
   readonly legalRepresentative: string;
-  readonly municipalityCode: string;
+  readonly countryId: number;
+  /** Optional: `null` when the country has no municipalities loaded. Must belong to `countryId`. */
+  readonly municipalityCode: string | null;
   readonly email: string | null;
   readonly phone: string | null;
   readonly address: string | null;
@@ -96,9 +99,16 @@ export interface SelectOption {
   readonly isActive: boolean;
 }
 
+/** A legal entity offered in the sede form, with the country its sede's municipality must belong to. */
+export interface LegalEntityOption extends SelectOption {
+  /** `null` when the API did not say (the municipality search is then not limited to a country). */
+  readonly countryId: number | null;
+  readonly countryName: string | null;
+}
+
 /** Choices of the selects of the sede form, all of the tenant denomination. */
 export interface CongregationFormOptions {
-  readonly legalEntities: readonly SelectOption[];
+  readonly legalEntities: readonly LegalEntityOption[];
   readonly districts: readonly SelectOption[];
 }
 

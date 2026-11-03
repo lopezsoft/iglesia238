@@ -25,6 +25,11 @@ export interface SessionUser {
   readonly id: number;
   readonly displayName: string;
   readonly email: string;
+  /**
+   * False until the person confirms the address from the e-mailed link. The app stays locked on the
+   * "Confirma tu correo" page meanwhile; the API answers 403 EMAIL_NOT_VERIFIED to every domain call.
+   */
+  readonly emailVerified: boolean;
   readonly assignments: readonly RoleAssignment[];
   /**
    * Scopes the user can act on: the scope of each assignment plus, for denomination-wide

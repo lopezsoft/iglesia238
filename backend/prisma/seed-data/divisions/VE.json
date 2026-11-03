@@ -1,0 +1,485 @@
+{
+  "source": "INE Venezuela (Instituto Nacional de Estadística), Nomenclador de Centros Poblados, Censo 2011 (códigos de entidad y municipio), archivos publicados 2026-04 en https://ine.gob.ve/wp-content/uploads/2026/04/<Entidad>.xls; nombres actualizados con INE \"Nacimientos vivos registrados por municipio 2013-2017\" (https://ine.gob.ve/wp-content/uploads/2026/04/POR-MUNICIPIOS-nacimientos.xls) y INE \"Proyección de la población por entidad, municipio y parroquia 2000-2050\" (https://ine.gob.ve/wp-content/uploads/2026/09/PROYECCION-POBLACION-PARROQUIAS.xls). Consultado 2026-11-03.",
+  "countryIsoAlpha2": "VE",
+  "regions": [
+    {
+      "code": "01",
+      "name": "Distrito Capital",
+      "municipalities": [
+        {"code":"0101","name":"Libertador"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "Amazonas",
+      "municipalities": [
+        {"code":"0201","name":"Alto Orinoco"},
+        {"code":"0202","name":"Atabapo"},
+        {"code":"0203","name":"Atures"},
+        {"code":"0204","name":"Autana"},
+        {"code":"0205","name":"Maroa"},
+        {"code":"0206","name":"Manapiare"},
+        {"code":"0207","name":"Río Negro"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Anzoátegui",
+      "municipalities": [
+        {"code":"0301","name":"Anaco"},
+        {"code":"0302","name":"Aragua"},
+        {"code":"0303","name":"Fernando de Peñalver"},
+        {"code":"0304","name":"Francisco del Carmen Carvajal"},
+        {"code":"0305","name":"Francisco de Miranda"},
+        {"code":"0306","name":"Guanta"},
+        {"code":"0307","name":"Independencia"},
+        {"code":"0308","name":"Juan Antonio Sotillo"},
+        {"code":"0309","name":"Juan Manuel Cajigal"},
+        {"code":"0310","name":"José Gregorio Monagas"},
+        {"code":"0311","name":"Libertad"},
+        {"code":"0312","name":"Manuel Ezequiel Bruzual"},
+        {"code":"0313","name":"Pedro María Freites"},
+        {"code":"0314","name":"Píritu"},
+        {"code":"0315","name":"San José de Guanipa"},
+        {"code":"0316","name":"San Juan de Capistrano"},
+        {"code":"0317","name":"Santa Ana"},
+        {"code":"0318","name":"Simón Bolívar"},
+        {"code":"0319","name":"Simón Rodríguez"},
+        {"code":"0320","name":"Sir Arthur Mc Gregor"},
+        {"code":"0321","name":"Diego Bautista Urbaneja"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Apure",
+      "municipalities": [
+        {"code":"0401","name":"Achaguas"},
+        {"code":"0402","name":"Biruaca"},
+        {"code":"0403","name":"Muñoz"},
+        {"code":"0404","name":"Páez"},
+        {"code":"0405","name":"Pedro Camejo"},
+        {"code":"0406","name":"Rómulo Gallegos"},
+        {"code":"0407","name":"San Fernando"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Aragua",
+      "municipalities": [
+        {"code":"0501","name":"Bolívar"},
+        {"code":"0502","name":"Camatagua"},
+        {"code":"0503","name":"Girardot"},
+        {"code":"0504","name":"José Ángel Lamas"},
+        {"code":"0505","name":"José Félix Ribas"},
+        {"code":"0506","name":"José Rafael Revenga"},
+        {"code":"0507","name":"Libertador"},
+        {"code":"0508","name":"Mario Briceño Iragorry"},
+        {"code":"0509","name":"San Casimiro"},
+        {"code":"0510","name":"San Sebastián"},
+        {"code":"0511","name":"Santiago Mariño"},
+        {"code":"0512","name":"Santos Michelena"},
+        {"code":"0513","name":"Sucre"},
+        {"code":"0514","name":"Tovar"},
+        {"code":"0515","name":"Urdaneta"},
+        {"code":"0516","name":"Zamora"},
+        {"code":"0517","name":"Francisco Linares Alcántara"},
+        {"code":"0518","name":"Ocumare de la Costa de Oro"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Barinas",
+      "municipalities": [
+        {"code":"0601","name":"Alberto Arvelo Torrealba"},
+        {"code":"0602","name":"Antonio José de Sucre"},
+        {"code":"0603","name":"Arismendi"},
+        {"code":"0604","name":"Barinas"},
+        {"code":"0605","name":"Bolívar"},
+        {"code":"0606","name":"Cruz Paredes"},
+        {"code":"0607","name":"Ezequiel Zamora"},
+        {"code":"0608","name":"Obispos"},
+        {"code":"0609","name":"Pedraza"},
+        {"code":"0610","name":"Rojas"},
+        {"code":"0611","name":"Sosa"},
+        {"code":"0612","name":"Andrés Eloy Blanco"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "Bolívar",
+      "municipalities": [
+        {"code":"0701","name":"Caroní"},
+        {"code":"0702","name":"Cedeño"},
+        {"code":"0703","name":"El Callao"},
+        {"code":"0704","name":"Gran Sabana"},
+        {"code":"0705","name":"Heres"},
+        {"code":"0706","name":"Piar"},
+        {"code":"0707","name":"Angostura"},
+        {"code":"0708","name":"Roscio"},
+        {"code":"0709","name":"Sifontes"},
+        {"code":"0710","name":"Sucre"},
+        {"code":"0711","name":"Padre Pedro Chien"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "Carabobo",
+      "municipalities": [
+        {"code":"0801","name":"Bejuma"},
+        {"code":"0802","name":"Carlos Arvelo"},
+        {"code":"0803","name":"Diego Ibarra"},
+        {"code":"0804","name":"Guacara"},
+        {"code":"0805","name":"Juan José Mora"},
+        {"code":"0806","name":"Libertador"},
+        {"code":"0807","name":"Los Guayos"},
+        {"code":"0808","name":"Miranda"},
+        {"code":"0809","name":"Montalbán"},
+        {"code":"0810","name":"Naguanagua"},
+        {"code":"0811","name":"Puerto Cabello"},
+        {"code":"0812","name":"San Diego"},
+        {"code":"0813","name":"San Joaquín"},
+        {"code":"0814","name":"Valencia"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Cojedes",
+      "municipalities": [
+        {"code":"0901","name":"Anzoátegui"},
+        {"code":"0902","name":"Tinaquillo"},
+        {"code":"0903","name":"Girardot"},
+        {"code":"0904","name":"Lima Blanco"},
+        {"code":"0905","name":"Pao de San Juan Bautista"},
+        {"code":"0906","name":"Ricaurte"},
+        {"code":"0907","name":"Rómulo Gallegos"},
+        {"code":"0908","name":"Ezequiel Zamora"},
+        {"code":"0909","name":"Tinaco"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Delta Amacuro",
+      "municipalities": [
+        {"code":"1001","name":"Antonio Díaz"},
+        {"code":"1002","name":"Casacoima"},
+        {"code":"1003","name":"Pedernales"},
+        {"code":"1004","name":"Tucupita"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "Falcón",
+      "municipalities": [
+        {"code":"1101","name":"Acosta"},
+        {"code":"1102","name":"Bolívar"},
+        {"code":"1103","name":"Buchivacoa"},
+        {"code":"1104","name":"Cacique Manaure"},
+        {"code":"1105","name":"Carirubana"},
+        {"code":"1106","name":"Colina"},
+        {"code":"1107","name":"Dabajuro"},
+        {"code":"1108","name":"Democracia"},
+        {"code":"1109","name":"Falcón"},
+        {"code":"1110","name":"Federación"},
+        {"code":"1111","name":"Jacura"},
+        {"code":"1112","name":"Los Taques"},
+        {"code":"1113","name":"Mauroa"},
+        {"code":"1114","name":"Miranda"},
+        {"code":"1115","name":"Monseñor Iturriza"},
+        {"code":"1116","name":"Palmasola"},
+        {"code":"1117","name":"Petit"},
+        {"code":"1118","name":"Píritu"},
+        {"code":"1119","name":"San Francisco"},
+        {"code":"1120","name":"Silva"},
+        {"code":"1121","name":"Sucre"},
+        {"code":"1122","name":"Tocópero"},
+        {"code":"1123","name":"Unión"},
+        {"code":"1124","name":"Urumaco"},
+        {"code":"1125","name":"Zamora"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "Guárico",
+      "municipalities": [
+        {"code":"1201","name":"Camaguán"},
+        {"code":"1202","name":"Chaguaramas"},
+        {"code":"1203","name":"El Socorro"},
+        {"code":"1204","name":"San Gerónimo de Guayabal"},
+        {"code":"1205","name":"Leonardo Infante"},
+        {"code":"1206","name":"Las Mercedes"},
+        {"code":"1207","name":"Julián Mellado"},
+        {"code":"1208","name":"Francisco de Miranda"},
+        {"code":"1209","name":"José Tadeo Monagas"},
+        {"code":"1210","name":"Ortiz"},
+        {"code":"1211","name":"José Félix Ribas"},
+        {"code":"1212","name":"Juan Germán Roscio"},
+        {"code":"1213","name":"San José de Guaribe"},
+        {"code":"1214","name":"Santa María de Ipire"},
+        {"code":"1215","name":"Pedro Zaraza"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "Lara",
+      "municipalities": [
+        {"code":"1301","name":"Andrés Eloy Blanco"},
+        {"code":"1302","name":"Crespo"},
+        {"code":"1303","name":"Iribarren"},
+        {"code":"1304","name":"Jiménez"},
+        {"code":"1305","name":"Morán"},
+        {"code":"1306","name":"Palavecino"},
+        {"code":"1307","name":"Simón Planas"},
+        {"code":"1308","name":"Torres"},
+        {"code":"1309","name":"Urdaneta"}
+      ]
+    },
+    {
+      "code": "14",
+      "name": "Mérida",
+      "municipalities": [
+        {"code":"1401","name":"Alberto Adriani"},
+        {"code":"1402","name":"Andrés Bello"},
+        {"code":"1403","name":"Antonio Pinto Salinas"},
+        {"code":"1404","name":"Aricagua"},
+        {"code":"1405","name":"Arzobispo Chacón"},
+        {"code":"1406","name":"Campo Elías"},
+        {"code":"1407","name":"Caracciolo Parra Olmedo"},
+        {"code":"1408","name":"Cardenal Quintero"},
+        {"code":"1409","name":"Guaraque"},
+        {"code":"1410","name":"Julio César Salas"},
+        {"code":"1411","name":"Justo Briceño"},
+        {"code":"1412","name":"Libertador"},
+        {"code":"1413","name":"Miranda"},
+        {"code":"1414","name":"Obispo Ramos de Lora"},
+        {"code":"1415","name":"Padre Noguera"},
+        {"code":"1416","name":"Pueblo Llano"},
+        {"code":"1417","name":"Rangel"},
+        {"code":"1418","name":"Rivas Dávila"},
+        {"code":"1419","name":"Santos Marquina"},
+        {"code":"1420","name":"Sucre"},
+        {"code":"1421","name":"Tovar"},
+        {"code":"1422","name":"Tulio Febres Cordero"},
+        {"code":"1423","name":"Zea"}
+      ]
+    },
+    {
+      "code": "15",
+      "name": "Miranda",
+      "municipalities": [
+        {"code":"1501","name":"Acevedo"},
+        {"code":"1502","name":"Andrés Bello"},
+        {"code":"1503","name":"Baruta"},
+        {"code":"1504","name":"Brión"},
+        {"code":"1505","name":"Buroz"},
+        {"code":"1506","name":"Carrizal"},
+        {"code":"1507","name":"Chacao"},
+        {"code":"1508","name":"Cristóbal Rojas"},
+        {"code":"1509","name":"El Hatillo"},
+        {"code":"1510","name":"Guaicaipuro"},
+        {"code":"1511","name":"Independencia"},
+        {"code":"1512","name":"Lander"},
+        {"code":"1513","name":"Los Salias"},
+        {"code":"1514","name":"Páez"},
+        {"code":"1515","name":"Paz Castillo"},
+        {"code":"1516","name":"Pedro Gual"},
+        {"code":"1517","name":"Plaza"},
+        {"code":"1518","name":"Simón Bolívar"},
+        {"code":"1519","name":"Sucre"},
+        {"code":"1520","name":"Urdaneta"},
+        {"code":"1521","name":"Zamora"}
+      ]
+    },
+    {
+      "code": "16",
+      "name": "Monagas",
+      "municipalities": [
+        {"code":"1601","name":"Acosta"},
+        {"code":"1602","name":"Aguasay"},
+        {"code":"1603","name":"Bolívar"},
+        {"code":"1604","name":"Caripe"},
+        {"code":"1605","name":"Cedeño"},
+        {"code":"1606","name":"Ezequiel Zamora"},
+        {"code":"1607","name":"Libertador"},
+        {"code":"1608","name":"Maturín"},
+        {"code":"1609","name":"Piar"},
+        {"code":"1610","name":"Punceres"},
+        {"code":"1611","name":"Santa Bárbara"},
+        {"code":"1612","name":"Sotillo"},
+        {"code":"1613","name":"Uracoa"}
+      ]
+    },
+    {
+      "code": "17",
+      "name": "Nueva Esparta",
+      "municipalities": [
+        {"code":"1701","name":"Antolín del Campo"},
+        {"code":"1702","name":"Arismendi"},
+        {"code":"1703","name":"Díaz"},
+        {"code":"1704","name":"García"},
+        {"code":"1705","name":"Gómez"},
+        {"code":"1706","name":"Maneiro"},
+        {"code":"1707","name":"Marcano"},
+        {"code":"1708","name":"Mariño"},
+        {"code":"1709","name":"Península de Macanao"},
+        {"code":"1710","name":"Tubores"},
+        {"code":"1711","name":"Villalba"}
+      ]
+    },
+    {
+      "code": "18",
+      "name": "Portuguesa",
+      "municipalities": [
+        {"code":"1801","name":"Agua Blanca"},
+        {"code":"1802","name":"Araure"},
+        {"code":"1803","name":"Esteller"},
+        {"code":"1804","name":"Guanare"},
+        {"code":"1805","name":"Guanarito"},
+        {"code":"1806","name":"Monseñor José Vicente de Unda"},
+        {"code":"1807","name":"Ospino"},
+        {"code":"1808","name":"Páez"},
+        {"code":"1809","name":"Papelón"},
+        {"code":"1810","name":"San Genaro de Boconoito"},
+        {"code":"1811","name":"San Rafael de Onoto"},
+        {"code":"1812","name":"Santa Rosalía"},
+        {"code":"1813","name":"Sucre"},
+        {"code":"1814","name":"Turén"}
+      ]
+    },
+    {
+      "code": "19",
+      "name": "Sucre",
+      "municipalities": [
+        {"code":"1901","name":"Andrés Eloy Blanco"},
+        {"code":"1902","name":"Andrés Mata"},
+        {"code":"1903","name":"Arismendi"},
+        {"code":"1904","name":"Benítez"},
+        {"code":"1905","name":"Bermúdez"},
+        {"code":"1906","name":"Bolívar"},
+        {"code":"1907","name":"Cajigal"},
+        {"code":"1908","name":"Cruz Salmerón Acosta"},
+        {"code":"1909","name":"Libertador"},
+        {"code":"1910","name":"Mariño"},
+        {"code":"1911","name":"Mejía"},
+        {"code":"1912","name":"Montes"},
+        {"code":"1913","name":"Ribero"},
+        {"code":"1914","name":"Sucre"},
+        {"code":"1915","name":"Valdez"}
+      ]
+    },
+    {
+      "code": "20",
+      "name": "Táchira",
+      "municipalities": [
+        {"code":"2001","name":"Andrés Bello"},
+        {"code":"2002","name":"Antonio Rómulo Costa"},
+        {"code":"2003","name":"Ayacucho"},
+        {"code":"2004","name":"Bolívar"},
+        {"code":"2005","name":"Cárdenas"},
+        {"code":"2006","name":"Córdoba"},
+        {"code":"2007","name":"Fernández Feo"},
+        {"code":"2008","name":"Francisco de Miranda"},
+        {"code":"2009","name":"García de Hevia"},
+        {"code":"2010","name":"Guásimos"},
+        {"code":"2011","name":"Independencia"},
+        {"code":"2012","name":"Jáuregui"},
+        {"code":"2013","name":"José María Vargas"},
+        {"code":"2014","name":"Junín"},
+        {"code":"2015","name":"Libertad"},
+        {"code":"2016","name":"Libertador"},
+        {"code":"2017","name":"Lobatera"},
+        {"code":"2018","name":"Michelena"},
+        {"code":"2019","name":"Panamericano"},
+        {"code":"2020","name":"Pedro María Ureña"},
+        {"code":"2021","name":"Rafael Urdaneta"},
+        {"code":"2022","name":"Samuel Darío Maldonado"},
+        {"code":"2023","name":"San Cristóbal"},
+        {"code":"2024","name":"Seboruco"},
+        {"code":"2025","name":"Simón Rodríguez"},
+        {"code":"2026","name":"Sucre"},
+        {"code":"2027","name":"Torbes"},
+        {"code":"2028","name":"Uribante"},
+        {"code":"2029","name":"San Judas Tadeo"}
+      ]
+    },
+    {
+      "code": "21",
+      "name": "Trujillo",
+      "municipalities": [
+        {"code":"2101","name":"Andrés Bello"},
+        {"code":"2102","name":"Boconó"},
+        {"code":"2103","name":"Bolívar"},
+        {"code":"2104","name":"Candelaria"},
+        {"code":"2105","name":"Carache"},
+        {"code":"2106","name":"Escuque"},
+        {"code":"2107","name":"José Felipe Márquez Cañizales"},
+        {"code":"2108","name":"Juan Vicente Campo Elías"},
+        {"code":"2109","name":"La Ceiba"},
+        {"code":"2110","name":"Miranda"},
+        {"code":"2111","name":"Monte Carmelo"},
+        {"code":"2112","name":"Motatán"},
+        {"code":"2113","name":"Pampán"},
+        {"code":"2114","name":"Pampanito"},
+        {"code":"2115","name":"Rafael Rangel"},
+        {"code":"2116","name":"San Rafael de Carvajal"},
+        {"code":"2117","name":"Sucre"},
+        {"code":"2118","name":"Trujillo"},
+        {"code":"2119","name":"Urdaneta"},
+        {"code":"2120","name":"Valera"}
+      ]
+    },
+    {
+      "code": "22",
+      "name": "Yaracuy",
+      "municipalities": [
+        {"code":"2201","name":"Arístides Bastidas"},
+        {"code":"2202","name":"Bolívar"},
+        {"code":"2203","name":"Bruzual"},
+        {"code":"2204","name":"Cocorote"},
+        {"code":"2205","name":"Independencia"},
+        {"code":"2206","name":"José Antonio Páez"},
+        {"code":"2207","name":"La Trinidad"},
+        {"code":"2208","name":"Manuel Monge"},
+        {"code":"2209","name":"Nirgua"},
+        {"code":"2210","name":"Peña"},
+        {"code":"2211","name":"San Felipe"},
+        {"code":"2212","name":"Sucre"},
+        {"code":"2213","name":"Urachiche"},
+        {"code":"2214","name":"Veroes"}
+      ]
+    },
+    {
+      "code": "23",
+      "name": "Zulia",
+      "municipalities": [
+        {"code":"2301","name":"Almirante Padilla"},
+        {"code":"2302","name":"Baralt"},
+        {"code":"2303","name":"Cabimas"},
+        {"code":"2304","name":"Catatumbo"},
+        {"code":"2305","name":"Colón"},
+        {"code":"2306","name":"Francisco Javier Pulgar"},
+        {"code":"2307","name":"Jesús Enrique Lossada"},
+        {"code":"2308","name":"Jesús María Semprún"},
+        {"code":"2309","name":"La Cañada de Urdaneta"},
+        {"code":"2310","name":"Lagunillas"},
+        {"code":"2311","name":"Machiques de Perijá"},
+        {"code":"2312","name":"Mara"},
+        {"code":"2313","name":"Maracaibo"},
+        {"code":"2314","name":"Miranda"},
+        {"code":"2315","name":"Guajira"},
+        {"code":"2316","name":"Rosario de Perijá"},
+        {"code":"2317","name":"San Francisco"},
+        {"code":"2318","name":"Santa Rita"},
+        {"code":"2319","name":"Simón Bolívar"},
+        {"code":"2320","name":"Sucre"},
+        {"code":"2321","name":"Valmore Rodríguez"}
+      ]
+    },
+    {
+      "code": "24",
+      "name": "La Guaira",
+      "municipalities": [
+        {"code":"2401","name":"Vargas"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+@use 'tokens' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-2 $space-3;
+}
+
+.panel-feedback {
+  padding: $space-4 $space-5;
+}
+
+.list-header {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: $space-3;
+  margin-bottom: 0;
+  padding: $space-4 $space-5;
+  border-bottom: 1px solid $color-border;
+}
+
+.filter {
+  min-width: min(100%, 18rem);
+}
+
+.cell-title {
+  font-weight: $font-weight-medium;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+}

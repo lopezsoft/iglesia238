@@ -60,6 +60,29 @@ describe('HttpCatalogsRepository', () => {
     await anonymous;
   });
 
+  it('lists the countries and filters the municipalities by country', async () => {
+    const { repository, http } = setup();
+    const colombia = { id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true };
+
+    const countries = firstValueFrom(repository.countries());
+    const countriesRequest = http.expectOne('/api/geo/countries');
+    expect(countriesRequest.request.method).toBe('GET');
+    countriesRequest.flush([colombia]);
+    expect(await countries).toEqual([colombia]);
+
+    const filtered = firstValueFrom(repository.searchMunicipalities({ search: 'chi', countryId: 1 }));
+    const request = http.expectOne((req) => req.url === '/api/geo/municipalities');
+    expect(request.request.params.get('countryId')).toBe('1');
+    request.flush([]);
+    await filtered;
+
+    const unfiltered = firstValueFrom(repository.searchMunicipalities({ search: 'chi', countryId: null }));
+    const unfilteredRequest = http.expectOne((req) => req.url === '/api/geo/municipalities');
+    expect(unfilteredRequest.request.params.has('countryId')).toBe(false);
+    unfilteredRequest.flush([]);
+    await unfiltered;
+  });
+
   it('finds a municipality by code', async () => {
     const { repository, http } = setup();
 
@@ -116,6 +139,21 @@ describe('CatalogsStore', () => {
     expect(store.municipalityLabel(null)).toBe('—');
     await firstValueFrom(store.resolveMunicipality('05001'));
     http.expectNone('/api/geo/municipalities/05001');
+  });
+
+  it('asks for the countries once and again after a failure', async () => {
+    const { store, http } = setup();
+
+    const failed = firstValueFrom(store.loadCountries()).catch((error: unknown) => error);
+    http.expectOne('/api/geo/countries').flush({}, { status: 503, statusText: 'Service Unavailable' });
+    expect(await failed).toBeDefined();
+
+    const first = firstValueFrom(store.loadCountries());
+    http.expectOne('/api/geo/countries').flush([{ id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true }]);
+    expect((await first)[0].name).toBe('Colombia');
+
+    await firstValueFrom(store.loadCountries());
+    http.expectNone('/api/geo/countries');
   });
 
   it('forgets the catalogs on reset', async () => {

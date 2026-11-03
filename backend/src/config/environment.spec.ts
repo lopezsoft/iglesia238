@@ -32,6 +32,19 @@ describe('validateEnvironment', () => {
     expect(environment.TRUST_PROXY).toBe(false);
   });
 
+  it('defaults the country of bare municipality codes and accepts another ISO code', () => {
+    expect(validateEnvironment(validEnvironment).DEFAULT_COUNTRY_ISO).toBe(
+      'CO',
+    );
+    expect(
+      validateEnvironment({ ...validEnvironment, DEFAULT_COUNTRY_ISO: 'ec' })
+        .DEFAULT_COUNTRY_ISO,
+    ).toBe('EC');
+    expect(() =>
+      validateEnvironment({ ...validEnvironment, DEFAULT_COUNTRY_ISO: 'COL' }),
+    ).toThrow(/DEFAULT_COUNTRY_ISO/);
+  });
+
   it('rejects a missing database URL', () => {
     expect(() =>
       validateEnvironment({ REDIS_URL: validEnvironment.REDIS_URL }),

@@ -87,17 +87,55 @@
       </div>
 
       <div class="field">
-        <label for="legal-entity-municipality">Municipio *</label>
+        <label for="legal-entity-country">País *</label>
+        <select
+          id="legal-entity-country"
+          class="select"
+          formControlName="countryId"
+          [attr.aria-invalid]="countryError() || showError('countryId', 'min') ? 'true' : null"
+          aria-describedby="legal-entity-country-hint legal-entity-country-error"
+          (change)="onCountryChanged()"
+        >
+          <option [ngValue]="0" disabled>
+            {{ country.countries.isLoading() ? 'Cargando países…' : 'Selecciona el país' }}
+          </option>
+          @for (option of country.options(); track option.id) {
+            <option [ngValue]="option.id">{{ country.label(option) }}</option>
+          }
+        </select>
+        <span id="legal-entity-country-hint" class="field__hint"
+          >Las sedes de esta razón social deben estar en este país.</span
+        >
+        <span id="legal-entity-country-error" class="field__error" role="alert">
+          @if (country.loadError(); as message) {
+            {{ message }}
+          } @else if (countryError(); as message) {
+            {{ message }}
+          } @else if (showError('countryId', 'min')) {
+            Selecciona el país.
+          }
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="legal-entity-municipality"
+          >Municipio{{ country.hasMunicipalities() === false ? '' : ' *' }}</label
+        >
         <app-municipality-select
           inputId="legal-entity-municipality"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
-          [invalid]="showError('municipalityCode', 'required')"
+          [countryId]="country.selectedId() || null"
+          [available]="country.hasMunicipalities()"
+          [blockedText]="country.municipalityBlockedText()"
+          [invalid]="!!municipalityError() || showError('municipalityCode', 'required')"
           (picked)="onMunicipalityPicked($event)"
           (cleared)="onMunicipalityCleared()"
         />
-        @if (showError('municipalityCode', 'required')) {
-          <span class="field__error">Selecciona el municipio.</span>
+        @if (municipalityError(); as message) {
+          <span class="field__error" role="alert">{{ message }}</span>
+        } @else if (showError('municipalityCode', 'required')) {
+          <span class="field__error" role="alert">Selecciona el municipio.</span>
         }
       </div>
 

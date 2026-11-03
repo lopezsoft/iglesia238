@@ -36,6 +36,8 @@ export interface LegalEntityView {
   readonly email: string | null;
   readonly phone: string | null;
   readonly address: string | null;
+  readonly countryId: number;
+  readonly countryName: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
   readonly regionName: string | null;

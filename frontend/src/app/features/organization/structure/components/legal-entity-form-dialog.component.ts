@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomainError, userMessage } from '../../../../core/errors/domain-error';
+import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import {
@@ -24,12 +24,11 @@ import {
   placeLabel,
 } from '../data/organization.models';
 import { OrganizationRepository } from '../data/organization.repository';
+import { LegalEntityCountryField, legalEntityErrorTarget } from './legal-entity-country-field';
 import { MunicipalityPicked, MunicipalitySelectComponent } from './municipality-select.component';
 
 type LegalEntityField =
-  'legalName' | 'taxId' | 'legalRepresentative' | 'municipalityCode' | 'email';
-
-const TAX_ID_ERROR_CODES: ReadonlySet<string> = new Set(['DUPLICATE_TAX_ID', 'INVALID_TAX_ID']);
+  'legalName' | 'taxId' | 'legalRepresentative' | 'countryId' | 'municipalityCode' | 'email';
 
 export interface LegalEntitySaved {
   readonly legalEntity: LegalEntityRow;
@@ -57,6 +56,8 @@ export class LegalEntityFormDialogComponent {
   protected readonly isCreate = computed(() => this.legalEntity() === null);
   protected readonly pending = signal(false);
   protected readonly taxIdError = signal<string | null>(null);
+  protected readonly countryError = signal<string | null>(null);
+  protected readonly municipalityError = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
@@ -71,11 +72,17 @@ export class LegalEntityFormDialogComponent {
       ],
     ],
     legalRepresentative: ['', [Validators.required, Validators.maxLength(FIELD_LIMITS.legalName)]],
+    countryId: [0, [Validators.required, Validators.min(1)]],
     municipalityCode: ['', Validators.required],
     email: ['', [Validators.email, Validators.maxLength(FIELD_LIMITS.email)]],
     phone: ['', Validators.maxLength(FIELD_LIMITS.phone)],
     address: ['', Validators.maxLength(FIELD_LIMITS.address)],
   });
+
+  protected readonly country = new LegalEntityCountryField(
+    this.form.controls.countryId,
+    this.form.controls.municipalityCode,
+  );
 
   constructor() {
     effect(() => {
@@ -86,10 +93,17 @@ export class LegalEntityFormDialogComponent {
     });
   }
 
+  /** A municipality of the previous country cannot stay: the person picks one of the new country. */
+  protected onCountryChanged(): void {
+    this.countryError.set(null);
+    this.onMunicipalityCleared();
+  }
+
   protected onMunicipalityPicked(picked: MunicipalityPicked): void {
     this.form.controls.municipalityCode.setValue(picked.code);
     this.form.controls.municipalityCode.markAsTouched();
     this.municipalityText.set(picked.label);
+    this.municipalityError.set(null);
   }
 
   protected onMunicipalityCleared(): void {
@@ -103,8 +117,7 @@ export class LegalEntityFormDialogComponent {
   }
 
   protected submit(): void {
-    this.taxIdError.set(null);
-    this.formError.set(null);
+    this.clearApiErrors();
     if (this.form.invalid || this.pending()) {
       this.form.markAllAsTouched();
       return;
@@ -115,7 +128,8 @@ export class LegalEntityFormDialogComponent {
       tradeName: value.tradeName || null,
       taxId: value.taxId,
       legalRepresentative: value.legalRepresentative,
-      municipalityCode: value.municipalityCode,
+      countryId: value.countryId,
+      municipalityCode: value.municipalityCode || null,
       email: value.email || null,
       phone: value.phone || null,
       address: value.address || null,
@@ -133,8 +147,13 @@ export class LegalEntityFormDialogComponent {
       },
       error: (error: unknown) => {
         this.pending.set(false);
-        const onTaxId = error instanceof DomainError && TAX_ID_ERROR_CODES.has(error.code);
-        (onTaxId ? this.taxIdError : this.formError).set(userMessage(error));
+        const targets = {
+          taxId: this.taxIdError,
+          country: this.countryError,
+          municipality: this.municipalityError,
+          form: this.formError,
+        };
+        targets[legalEntityErrorTarget(error)].set(userMessage(error));
       },
     });
   }
@@ -145,13 +164,22 @@ export class LegalEntityFormDialogComponent {
       tradeName: current?.tradeName ?? '',
       taxId: current?.taxId ?? '',
       legalRepresentative: current?.legalRepresentative ?? '',
+      // 0 lets the country field preselect the default country.
+      countryId: current?.countryId ?? 0,
       municipalityCode: current?.municipalityCode ?? '',
       email: current?.email ?? '',
       phone: current?.phone ?? '',
       address: current?.address ?? '',
     });
     this.municipalityText.set(current ? placeLabel(current) : '');
+    this.country.keepCurrent(current);
+    this.clearApiErrors();
+  }
+
+  private clearApiErrors(): void {
     this.taxIdError.set(null);
+    this.countryError.set(null);
+    this.municipalityError.set(null);
     this.formError.set(null);
   }
 }

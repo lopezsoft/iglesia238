@@ -36,6 +36,15 @@ export const CurrentTenant = createParamDecorator(
   },
 );
 
+/**
+ * The tenant context when the client sent X-Scope (PermissionsGuard validated it), or null. For routes
+ * that need no scope but show more to some roles.
+ */
+export const OptionalTenant = createParamDecorator(
+  (_data: unknown, context: ExecutionContext): TenantContext | null =>
+    context.switchToHttp().getRequest<AuthenticatedRequest>().tenant ?? null,
+);
+
 /** Client IP as Fastify resolved it (it honors TRUST_PROXY). */
 export const ClientIp = createParamDecorator(
   (_data: unknown, context: ExecutionContext): string | null =>

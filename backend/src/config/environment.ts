@@ -34,6 +34,11 @@ const toBoolean = ({ value }: { value: unknown }): unknown =>
 const emptyToUndefined = ({ value }: { value: unknown }): unknown =>
   value === '' ? undefined : value;
 
+const toCountryIso = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' && value.trim() !== ''
+    ? value.trim().toUpperCase()
+    : value;
+
 const toOptionalNumber = ({ value }: { value: unknown }): unknown =>
   value === undefined || value === '' ? undefined : Number(value);
 
@@ -120,6 +125,17 @@ export class Environment {
     message: 'APP_BASE_URL must start with http:// or https://',
   })
   APP_BASE_URL: string = 'http://localhost:4200';
+
+  /**
+   * ISO 3166-1 alpha-2 country assumed only where a request carries a municipality code without its
+   * country (person addresses, the public application form, GET /geo/municipalities/:code without
+   * countryId). Legal entities and congregations always resolve municipalities with their own country.
+   */
+  @Transform(toCountryIso)
+  @Matches(/^[A-Z]{2}$/, {
+    message: 'DEFAULT_COUNTRY_ISO must be an ISO 3166-1 alpha-2 code',
+  })
+  DEFAULT_COUNTRY_ISO: string = 'CO';
 
   // Mail is optional: without SMTP_HOST the API logs that a message was not sent and the inviter
   // receives the one-time link in the response.

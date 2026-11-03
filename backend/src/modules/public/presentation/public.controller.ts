@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PositiveIntPipe } from '../../../common/http/positive-int.pipe.js';
+import { withMinimumDuration } from '../../../common/http/minimum-duration.js';
 import { RateLimit } from '../../../common/rate-limit/rate-limit.decorator.js';
 import { ClientIp } from '../../../common/security/current-user.decorators.js';
 import { Public } from '../../../common/security/public.decorator.js';
@@ -16,8 +17,15 @@ import {
   CheckApplicationStatusUseCase,
   GetCurrentPolicyUseCase,
   ListOpenCongregationsUseCase,
+  ListPublicLegalEntitiesUseCase,
 } from '../application/public-reads.use-cases.js';
+import { RegisterCongregationUseCase } from '../application/register-congregation.use-case.js';
 import { SubmitApplicationUseCase } from '../application/submit-application.use-case.js';
+import {
+  CongregationRegistrationReceiptDto,
+  PublicLegalEntityDto,
+  RegisterCongregationDto,
+} from './congregation-registration.dto.js';
 import {
   CurrentPolicyDto,
   OpenCongregationDto,
@@ -28,6 +36,11 @@ import {
 } from './public.dto.js';
 
 const READS = { name: 'public-reads', limit: 120, windowSeconds: 60 };
+/**
+ * Floor for the registration: a new account does more work (hash, several writes) than the answer for an
+ * address that already has one, and the time must not tell them apart.
+ */
+const REGISTRATION_MIN_RESPONSE_MS = 800;
 
 /**
  * Anonymous endpoints of the membership form. They are throttled per client IP; the catalogs and the
@@ -43,7 +56,77 @@ export class PublicController {
     private readonly getPolicy: GetCurrentPolicyUseCase,
     private readonly submitApplication: SubmitApplicationUseCase,
     private readonly checkStatus: CheckApplicationStatusUseCase,
+    private readonly listLegalEntities: ListPublicLegalEntitiesUseCase,
+    private readonly registerCongregation: RegisterCongregationUseCase,
   ) {}
+
+  @Get('legal-entities')
+  @RateLimit(READS)
+  @ApiOperation({
+    summary: 'Razones sociales entre las que se puede registrar una sede',
+    description:
+      'Razones sociales activas de denominaciones activas, ordenadas por denominación y razón social. El NIT va enmascarado (solo se ven sus últimos 3 caracteres).',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [PublicLegalEntityDto] })
+  async legalEntities(): Promise<PublicLegalEntityDto[]> {
+    return this.listLegalEntities.execute();
+  }
+
+  @Post('congregation-registrations')
+  @RateLimit({
+    name: 'public-congregation-registration',
+    limit: 5,
+    windowSeconds: 3600,
+    failure: 'closed',
+  })
+  @ApiOperation({
+    summary:
+      'Registra una sede nueva y crea al usuario que la administra, sin invitación',
+    description:
+      'Crea en una transacción la sede (activa y con inscripciones abiertas, con un código generado) y al usuario, con los roles Pastor, Secretario(a) y Tesorero(a) sobre esa sede. El usuario puede iniciar sesión de inmediato, pero hasta confirmar su correo las rutas de dominio responden 403 EMAIL_NOT_VERIFIED. Si el correo ya tiene cuenta la respuesta es idéntica y no se crea nada: se avisa por correo a su dueño. Máximo 5 por hora y por IP, y 3 por hora y por correo; si Redis falla, se cierra.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: CongregationRegistrationReceiptDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'WEAK_PASSWORD, INVALID_MUNICIPALITY, INVALID_NAME',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'LEGAL_ENTITY_NOT_FOUND: no existe o está inactiva.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description:
+      'DUPLICATE_NAME: la denominación ya tiene una sede con ese nombre.',
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'RATE_LIMITED',
+  })
+  register(
+    @Body() body: RegisterCongregationDto,
+    @ClientIp() ip: string | null,
+  ): Promise<CongregationRegistrationReceiptDto> {
+    return withMinimumDuration(REGISTRATION_MIN_RESPONSE_MS, () =>
+      this.registerCongregation.execute(
+        {
+          legalEntityId: body.legalEntityId,
+          congregation: {
+            name: body.congregation.name,
+            municipalityCode: body.congregation.municipalityCode,
+            address: body.congregation.address ?? null,
+            phone: body.congregation.phone ?? null,
+            email: body.congregation.email ?? null,
+          },
+          manager: body.manager,
+        },
+        ip,
+      ),
+    );
+  }
 
   @Get('congregations')
   @RateLimit(READS)

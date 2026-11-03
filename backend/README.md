@@ -39,40 +39,45 @@ Si el puerto 3306 u 80 está ocupado (por ejemplo, por WAMP), cambia `DB_PORT` o
 
 ## Migraciones
 
-El esquema está dividido por contexto en `prisma/schema/`. Algunas reglas no se pueden expresar en Prisma (`CHECK`), así que viven en `prisma/sql/constraints.sql`; la migración inicial (`prisma/migrations/<fecha>_init`) ya las incluye.
+El esquema está dividido por contexto en `prisma/schema/`. Algunas reglas no se pueden expresar en Prisma (`CHECK`), así que viven en `prisma/sql/constraints.sql`. Mientras el sistema no tenga datos reales hay **una sola migración**, `prisma/migrations/20261103000000_init`: el esquema completo, las 24 reglas `CHECK` y el comentario (`COMMENT`) de cada tabla y columna.
+
+**Diccionario de datos (obligatorio):** cada modelo y cada columna del esquema llevan un comentario `///` en español. Prisma no lleva esos comentarios a MariaDB, así que se inyectan en la migración:
+
+```bash
+npm run db:comments:check              # falla si un modelo o una columna no tiene ///
+npm run db:comments:check -- --db      # además compara con los COMMENT de la base
+npm run db:comments:inject -- <migration.sql>   # agrega COMMENT a CREATE TABLE, ADD COLUMN y MODIFY (idempotente)
+npm run db:dictionary                  # genera docs/<fecha>-modelo-de-datos.md (diagramas ER y diccionario)
+```
 
 Para un cambio de esquema:
 
 ```bash
 npx prisma migrate dev --create-only --name <cambio>   # genera sin aplicar
+npm run db:comments:inject -- prisma/migrations/<carpeta>/migration.sql
 # revisar migration.sql y añadir a mano las reglas CHECK nuevas (y a prisma/sql/constraints.sql)
 npx prisma migrate dev                                  # aplica
 ```
+
+Para rehacer desde cero la base de desarrollo (borra todos los datos): `docker compose --env-file .env stop db`, `docker compose --env-file .env rm -f db`, `docker volume rm church-dev_db_data`, `docker compose --env-file .env up -d db` (desde la raíz), y luego `npm run prisma:migrate:deploy` y `npm run prisma:seed`.
 
 Una columna usada en un `CHECK` no admite `ON UPDATE CASCADE`: por eso todas las relaciones declaran `onUpdate: Restrict`.
 
 `prisma migrate diff --from-migrations` muestra `MODIFY ... JSON` en las tres columnas JSON aunque no haya cambios: MariaDB guarda JSON como `LONGTEXT` con un `CHECK (json_valid(...))`. Para detectar desviaciones, usar `migrate dev --create-only` o `migrate diff --from-config-datasource`.
 
-**Migración pendiente de aplicar:** `20261102150000_api_support_fields` (código de sede, estado de la política de privacidad, sede y número del carné, emisor y motivo de anulación del certificado, lugar y oficiante del matrimonio, institución y año de estudios, autor de la asistencia e índice de caja). Está generada y revisada, pero **no aplicada**. Para aplicarla:
-
-```bash
-npm run prisma:migrate:deploy   # aplica las migraciones pendientes (en producción lo hace el servicio migrator)
-npm run prisma:generate         # regenera el cliente si aún no lo hiciste
-npm run prisma:seed             # agrega los tipos de reunión y mantiene los catálogos
-```
-
-La migración rellena las sedes existentes con el código provisional `S<id>`; corrígelo desde Sedes (campo «código»). Hasta aplicarla, la API compila pero las consultas que usan las columnas nuevas fallan.
-
 `prisma migrate dev` usa la base auxiliar `<base>_shadow`, que crea `docker/mariadb/init/01-shadow-database.sh` la primera vez que arranca el volumen.
 
 ## Datos de ubicación
 
-El seed carga 245 países y los 33 departamentos y 1122 municipios de Colombia desde `prisma/seed-data/`. Cada archivo indica su origen en el campo `source`:
+El seed carga 245 países y las divisiones de los 18 países hispanohablantes de Latinoamérica (363 regiones y 9229 municipios) desde `prisma/seed-data/`. Cada archivo indica su origen en el campo `source`; la fuente oficial, el corte y las advertencias de cada país están en [`prisma/seed-data/divisions/SOURCES.md`](prisma/seed-data/divisions/SOURCES.md):
 
-- `countries.json`: códigos ISO 3166-1 alfa-2 e indicativos de `libphonenumber-js`, nombres en español de CLDR y códigos alfa-3 de la base de ubicaciones de MatiasApp.
-- `colombia-divipola.json`: códigos DANE de departamentos (`05`) y municipios (`05001`), con nombres normalizados (sin espacios sobrantes y con conectores en minúscula: «Villa de Leyva»).
+- `countries.json`: códigos ISO 3166-1 alfa-2 e indicativos de `libphonenumber-js`, nombres en español de CLDR y códigos alfa-3 de la base de ubicaciones de MatiasApp. `"isActive": true` marca los países que quedan activos al crearse (los 18 hispanohablantes de Latinoamérica); el seed nunca cambia el estado de un país que ya existe: lo administra la plataforma.
+- `divisions/CO.json`: DIVIPOLA del DANE, códigos de departamentos (`05`) y municipios (`05001`), con nombres normalizados (sin espacios sobrantes y con conectores en minúscula: «Villa de Leyva»).
+- `divisions/<ISO>.json` (AR, BO, CL, CR, CU, DO, EC, GT, HN, MX, NI, PA, PE, PY, SV, UY, VE): misma estructura que Colombia. `regions` es la primera división del país y `municipalities` la unidad local equivalente al municipio (comuna, distrito, cantón, partido o municipio); el nivel intermedio no se guarda. Cada archivo sale de la fuente estadística oficial y lo verificaron dos revisiones independientes.
 
-Los municipios se identifican por su código, así que corregir un nombre en el JSON y volver a ejecutar el seed lo actualiza sin duplicar filas. Para otro país, se agrega un archivo con la misma estructura y una llamada a `seedAdministrativeDivisions`.
+Un código de municipio es único dentro de su departamento, no en el mundo: la API lo resuelve siempre junto con su país (el de la razón social, el `countryId` de la petición o `DEFAULT_COUNTRY_ISO`). Corregir un nombre en el JSON y volver a ejecutar el seed lo actualiza sin duplicar filas.
+
+**Agregar un país:** crear `prisma/seed-data/divisions/<ISO alfa-2>.json` (por ejemplo `EC.json`) con la estructura de `CO.json`: `countryIsoAlpha2` igual al nombre del archivo, `source` y `regions[]` con `code`, `name` y `municipalities[]` (`code`, `name`). Ejecutar `npm run prisma:seed`: carga todos los archivos de la carpeta y es idempotente. Si el país está inactivo, activarlo en `PATCH /api/platform/countries/:id/status`. No hace falta cambiar código.
 
 ## Variables de entorno
 
@@ -89,6 +94,7 @@ La API valida el entorno al arrancar (`src/config/environment.ts`) y no arranca 
 | `TRUST_PROXY` | No (`false`) | Proxies cuyo `X-Forwarded-For` se acepta para conocer la IP del cliente, de la que dependen los límites de intentos. Admite `false`, un número de saltos (`1` detrás de un solo proxy, el caso de Nginx en Docker), o direcciones/rangos CIDR separados por coma (`172.18.0.0/16`). Evita `true`: confía en todos los saltos y, si el proxy añade al encabezado en vez de reemplazarlo, el cliente puede inventar su IP y saltarse los límites. Con `false` detrás de un proxy, todos los visitantes comparten el mismo contador (por ejemplo, las 5 solicitudes por hora del formulario público serían para toda la iglesia). `frontend/nginx.conf` reenvía `X-Forwarded-For $remote_addr`, que reemplaza lo que envíe el cliente |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | No | Correo saliente. Sin `SMTP_HOST` la API no envía correos: lo registra sin destinatario ni enlace, y quien invita recibe el enlace de un solo uso para enviarlo por otro medio. Con `SMTP_HOST`, `SMTP_FROM` es obligatorio; usuario y contraseña van juntos |
 | `PLATFORM_ADMIN_EMAIL`, `PLATFORM_ADMIN_PASSWORD`, `PLATFORM_ADMIN_NAME` | No | Solo las lee `npm run admin:create` (ver más abajo). La API no las usa |
+| `DEFAULT_COUNTRY_ISO` | No (`CO`) | País (ISO alfa-2) en el que se busca un código de municipio que llega sin país: direcciones de personas, formulario público de inscripción y `GET /api/geo/municipalities/:code` sin `countryId`. Las razones sociales y las sedes usan siempre su propio país |
 
 `docker-compose.prod.yml` debe pasar `JWT_SECRET` (y, si se usa correo, `SMTP_*`) al servicio de la API. La cookie del refresh token lleva `Secure` en producción y en cualquier entorno cuyo `APP_BASE_URL` empiece por `https://`.
 
@@ -100,6 +106,10 @@ La API valida el entorno al arrancar (`src/config/environment.ts`) y no arranca 
 | `POST /api/public/membership-applications/status` | 30 cada 10 minutos |
 | `POST /api/auth/login` | 30 cada 15 minutos (y 10 por correo; cerrado si Redis falla) |
 | `POST /api/auth/password-reset/request` y `/confirm` | 20 por hora |
+| `POST /api/public/congregation-registrations` | 5 por hora por IP y 3 por hora por correo (cerrado si Redis falla) |
+| `GET /api/public/legal-entities` | 120 por minuto |
+| `POST /api/auth/email-verification/confirm` | 20 por hora |
+| `POST /api/auth/email-verification/resend` | 20 por hora por IP y 5 por hora por usuario (cerrado si Redis falla) |
 | `POST /api/users/invitations` | 20 por hora |
 | `POST /api/geo/municipalities/:code/neighborhoods` | 30 por hora |
 
@@ -110,7 +120,7 @@ Son por IP del cliente tal como la resuelve Fastify con `TRUST_PROXY`: si no est
 - **Token de acceso** (JWT HS256): lleva solo `sub` (usuario) y `sid` (sesión). Va en `Authorization: Bearer`, el frontend lo guarda solo en memoria. Los permisos **no** viajan en el token: se calculan en cada petición, así que revocar un rol surte efecto de inmediato. `JwtAuthGuard` además comprueba que la sesión (`sid`, la familia del refresh token) siga abierta: cerrar sesión, cambiar la contraseña o detectar un refresh token robado invalida también el access token en la petición siguiente, no cuando vence.
 - **Refresh token**: opaco, cookie `HttpOnly`, `SameSite=Strict`, `Path=/api/auth`, y la cabecera `X-Requested-With` es obligatoria en `/api/auth/refresh` y `/api/auth/logout`. `@fastify/cookie` está registrado en `configureApp`.
 - **Alcance activo**: toda petición de dominio lleva `X-Scope` con el formato de `UserRole.scopeKey`: `P` (plataforma), `D:<denominationId>` o `C:<congregationId>`. `PermissionsGuard` lo valida contra los `user_roles` vigentes: la plataforma solo cubre `P`, un rol de denominación cubre su denominación y sus sedes, un rol de sede solo su sede. Un alcance ajeno responde `403 SCOPE_FORBIDDEN` y la plataforma nunca llega a las tablas de negocio.
-- **Guardas globales** (`APP_GUARD`): `JwtAuthGuard` (todo requiere token salvo `@Public()`) y `PermissionsGuard`. Los permisos de una ruta se declaran con `@RequirePermissions(...todos)` o `@RequireAnyPermission(...alguno)`; el contexto llega al controlador con `@CurrentTenant()` y los repositorios reciben un `TenantScope`.
+- **Guardas globales** (`APP_GUARD`, en este orden): `JwtAuthGuard` (todo requiere token salvo `@Public()`), `EmailVerifiedGuard` (`403 EMAIL_NOT_VERIFIED` mientras el correo no esté confirmado, salvo `@Public()` y `@AllowUnverifiedEmail()`) y `PermissionsGuard`. Los permisos de una ruta se declaran con `@RequirePermissions(...todos)` o `@RequireAnyPermission(...alguno)`; el contexto llega al controlador con `@CurrentTenant()` y los repositorios reciben un `TenantScope`.
 - **Aislamiento**: los repositorios de tablas de negocio extienden `TenantScopedRepository` y reciben un `TenantScope` (no se puede construir sin denominación). Un recurso de otro inquilino responde `404`, nunca `403`. `test/support/cross-tenant.ts` ofrece `describeCrossTenantIsolation`, que cada caso de uso usa en sus pruebas.
 - **Contraseñas**: puerto `PasswordHasher` con `scrypt` de `node:crypto` (hash autodescriptivo `scrypt$logN$r$p$sal$clave`, se rehace al iniciar sesión si cambia el costo). El hash `!` marca una cuenta invitada sin contraseña.
 - **Límite de intentos**: `RateLimitService` sobre Redis (`INCR` con `EXPIRE` atómico). El inicio de sesión se cierra si Redis falla; los endpoints públicos se abren y lo registran. `@RateLimit({ name, limit, windowSeconds })` limita por IP en una ruta.
@@ -131,18 +141,41 @@ Son por IP del cliente tal como la resuelve Fastify con `TRUST_PROXY`: si no est
 | `POST /api/auth/invitations/lookup` | `{ token }`: valida un enlace de invitación (`UserToken` tipo `EMAIL_VERIFICATION`, 72 h) y devuelve `{ email, displayName, expiresAt }`. El token va en el cuerpo y no en la URL, para que no quede en los registros de acceso del proxy |
 | `POST /api/auth/invitations/accept` | `{ token, password }`: activa la cuenta y verifica el correo. Solo sirve para cuentas que aún no tienen contraseña (hash `!`), nunca para reescribir la de una cuenta activa |
 | `POST /api/auth/change-password` | `{ currentPassword, newPassword }`: cierra las demás sesiones |
+| `POST /api/auth/email-verification/confirm` | `{ token }`: confirma el correo y consume el token (un solo uso, 72 h). Responde `204`; un token desconocido, usado o vencido responde `400 TOKEN_INVALID_OR_EXPIRED`. No inicia sesión. Un enlace de invitación no sirve aquí |
+| `POST /api/auth/email-verification/resend` | Autenticada, permitida con el correo sin confirmar. Responde `202` siempre; el enlace anterior deja de servir. Devuelve `{ devVerificationLink? }` solo en el caso de desarrollo (ver más abajo) |
 
 **Para quien crea invitaciones y enlaces de recuperación (módulo `users`):** el token es `generateOpaqueToken()` de `common/security/opaque-token.ts` (32 bytes en base64url); en `user_tokens.token_hash` se guarda `hash` (SHA-256 en hexadecimal) y el `token` solo viaja en el enlace. `modules/auth/application/auth-mail.ts` construye los enlaces (`/login/accept-invitation?token=` y `/login/reset-password?token=`) a partir de `APP_BASE_URL`. Al crear una invitación, el usuario queda con `UNUSABLE_PASSWORD_HASH`.
+
+## Registro de sedes sin invitación (`modules/public`) y confirmación del correo
+
+Producto: la **plataforma** crea las razones sociales de cada iglesia (denominación) y **cualquiera** puede registrar una sede desde la pantalla de inicio de sesión, sin invitación y sin que exista un administrador de denominación.
+
+| Ruta | Descripción |
+|---|---|
+| `GET /api/public/legal-entities` | Pública. `[{ id, legalName, tradeName, taxIdMasked, denominationId, denominationName, countryId, countryName }]`: razones sociales activas de denominaciones activas y de países activos, por denominación y razón social. El NIT va enmascarado (solo los últimos 3 caracteres: `***.***.**6-7`) |
+| `POST /api/public/congregation-registrations` | Pública. `{ legalEntityId, congregation: { name, municipalityCode, address?, phone?, email? }, manager: { displayName, email, password } }` → `201 { emailVerificationRequired: true, congregationName, devVerificationLink? }`. El municipio es obligatorio y se busca dentro del país de la razón social: `400 MUNICIPALITY_COUNTRY_MISMATCH` si no es de ese país |
+| `GET/POST /api/platform/legal-entities`, `PATCH /api/platform/legal-entities/:id` y `/:id/status` | Alcance de plataforma (`X-Scope: P`, permiso `denominations.manage`). Lista (`?denominationId=`, con `denominationName`, `congregationCount`, `countryId` y `countryName`), alta (`denominationId` y `countryId` en el cuerpo más los campos de la razón social; `municipalityCode` opcional), edición parcial (solo cambian los campos enviados; `municipalityCode: null` quita el municipio) y estado. NIT repetido: `409 DUPLICATE_TAX_ID`; denominación inexistente: `404`, inactiva: `409 DENOMINATION_INACTIVE`; desactivar con sedes activas: `409 LEGAL_ENTITY_IN_USE`. Toda escritura queda en auditoría con la denominación afectada |
+
+**País de la razón social** (plataforma y `/api/organization/legal-entities`, que exige `countryId` al crear y lo conserva si el `PUT` no lo envía): país inexistente `404 COUNTRY_NOT_FOUND`, inactivo `409 COUNTRY_INACTIVE`; municipio de otro país `400 MUNICIPALITY_COUNTRY_MISMATCH` (también al cambiar el país sin enviar en la misma petición un `municipalityCode` nuevo o `null`); cambiar el país de una razón social con sedes, `409 LEGAL_ENTITY_HAS_CONGREGATIONS`. Las sedes (`/api/organization/congregations`) exigen municipio, del país de su razón social, y lo vuelven a validar si cambian de razón social. `form-options` trae `countryId` y `countryName` en cada razón social.
+
+Qué hace el registro, en una sola transacción: crea la sede (activa, con inscripciones abiertas y un **código generado** a partir de las iniciales del nombre con contador por denominación: `MSC`, `MSC2`, ...), el usuario (política de contraseñas y `scrypt`, `emailVerifiedAt = null`), le otorga los roles `PASTOR`, `SECRETARY` y `TREASURER` con alcance `C:<id de la sede>` (`UserRole.scope = CONGREGATION`, `denominationId` de la razón social, `scopeKey = C:<id>`, `grantedById = null`) y guarda un token `EMAIL_VERIFICATION` (solo su hash, 72 h). El correo de confirmación sale después del commit y se audita `CONGREGATION_REGISTERED`, `USER_REGISTERED` y un `ROLE_GRANTED` por rol, sin datos personales. La denominación sale de la razón social, nunca del cliente.
+
+- **Sin enumeración:** si el correo ya tiene cuenta, la respuesta es idéntica (mismo `201`, misma forma, tiempo nivelado a 800 ms como mínimo), no se crea nada y al dueño del correo le llega un aviso sin enlaces. Todas las validaciones que no dependen del correo (datos, razón social, municipio, nombre repetido) corren antes de esa rama. Razón social inexistente o inactiva: `404 LEGAL_ENTITY_NOT_FOUND`; nombre de sede repetido en la denominación: `409 DUPLICATE_NAME`.
+- **Correo sin confirmar:** el usuario puede iniciar sesión, pero `EmailVerifiedGuard` (global, entre la autenticación y los permisos) responde `403 EMAIL_NOT_VERIFIED` en toda ruta autenticada, tenga los permisos que tenga. Solo funcionan las rutas `@Public()` y las marcadas con `@AllowUnverifiedEmail()` (todo `/api/auth/*`: `me`, `logout`, `refresh`, `change-password`, `email-verification/resend`). La sesión (`login`, `refresh`, `me`) trae `emailVerified: boolean`.
+- **Quién queda verificado:** aceptar una invitación, confirmar la recuperación de contraseña y `npm run admin:create` ya marcaban el correo; `npm run admin:reset-password` ahora también lo marca si no lo estaba, para que ningún usuario anterior quede bloqueado. Las cuentas invitadas no pueden iniciar sesión hasta aceptar la invitación, así que no entran sin verificar.
+- **Enlace de desarrollo:** `devVerificationLink` solo se devuelve si el correo en uso es el adaptador que registra (sin `SMTP_HOST`) **y** `NODE_ENV` no es `production`. El enlace es `<APP_BASE_URL>/login/verify-email?token=<token>`. Nunca se registra el enlace ni el token. En ese modo de desarrollo, un correo ya registrado no devuelve enlace.
 
 ## Catálogos y geografía (`modules/catalogs`)
 
 | Ruta | Descripción |
 |---|---|
 | `GET /api/public/catalogs` | Sin sesión: tipos de documento y estados civiles (con `ETag`) |
-| `GET /api/public/geo/municipalities?search=&limit=` | Sin sesión: municipios por nombre o inicio del código DIVIPOLA |
+| `GET /api/public/geo/municipalities?search=&limit=&countryId=` | Sin sesión: municipios de países activos por nombre o inicio del código; `countryId` los limita a un país |
 | `GET /api/catalogs` | Con sesión: todos los catálogos globales (con `ETag`) |
-| `GET /api/geo/municipalities?search=&limit=` · `GET /api/geo/municipalities/:code` | Búsqueda y consulta por código DIVIPOLA (`{ code, name, regionCode, regionName }`) |
-| `GET/POST /api/geo/municipalities/:code/neighborhoods` | Lista y «busca o crea» barrios (el `POST` exige `congregations.manage`, `members.write` o `applications.review`) |
+| `GET /api/geo/countries?includeInactive=` | Con sesión: `[{ id, isoAlpha2, name, isActive, hasMunicipalities }]` por nombre, solo los activos. `includeInactive=true` agrega los inactivos y solo lo puede pedir la plataforma (`X-Scope: P` con `denominations.manage`); si no, `403` |
+| `GET /api/geo/municipalities?search=&limit=&countryId=` · `GET /api/geo/municipalities/:code?countryId=` | Búsqueda (solo países activos) y consulta por código (`{ countryId, code, name, regionCode, regionName }`). Sin `countryId`, el código se busca en `DEFAULT_COUNTRY_ISO` |
+| `GET/POST /api/geo/municipalities/:code/neighborhoods?countryId=` | Lista y «busca o crea» barrios (el `POST` exige `congregations.manage`, `members.write` o `applications.review`) |
+| `GET /api/platform/countries` · `PATCH /api/platform/countries/:id/status` | Plataforma (`X-Scope: P`, `denominations.manage`): todos los países con `isActive`, `hasMunicipalities`, `regionCount` y `municipalityCount`; activar o desactivar `{ isActive }` (auditado). Desactivar un país con razones sociales activas: `409 COUNTRY_IN_USE` |
 
 ## Dashboard (`modules/dashboard`)
 
@@ -213,11 +246,11 @@ Prefijos por módulo (el detalle de cada ruta, con su cuerpo y sus errores, est�
 |---|---|---|
 | `auth` | `/api/auth` | Inicio y cierre de sesión, refresh, recuperación, invitaciones, cambio de contraseña |
 | `denominations` | `/api/platform/denominations` | Alta, edición y estado de denominaciones; una denominación nueva se aprovisiona en una transacción (fondo, tipos de aporte con su cuenta, plan de cuentas mínimo, certificados, cargos y política de datos en borrador). **Los porcentajes del diezmo no se aprovisionan**: se ingresan en Contabilidad > Configuración |
-| `organization` | `/api/organization`, `/api/congregations/selectable` | Sedes (código obligatorio), razones sociales, distritos |
+| `organization` | `/api/organization`, `/api/congregations/selectable`, `/api/platform/legal-entities` | Sedes (código obligatorio), razones sociales (las crea la plataforma o la denominación), distritos |
 | `users` | `/api/users`, `/api/user-roles`, `/api/roles` | Usuarios, invitaciones (devuelven el enlace de un solo uso solo a quien invita), `POST /api/users/:id/reset-link`, asignación y revocación de roles. Reglas: nadie se otorga roles a sí mismo (`409 SELF_GRANT`); una invitación a un correo que ya tiene cuenta responde `409 DUPLICATE_EMAIL` y no vincula nada (el acceso de una cuenta existente lo otorga el equipo de plataforma); el enlace de recuperación de otra cuenta lo genera quien administra su denominación solo si la cuenta nunca tuvo roles fuera de ella ni es de otro administrador, y la persona recibe un aviso por correo sin enlace |
 | `audit-logs` | `/api/audit-logs` | Consulta paginada con filtros |
 | `catalogs` | `/api/catalogs`, `/api/geo`, `/api/public` | Catálogos globales, municipios DIVIPOLA y barrios |
-| `public`, `membership-applications`, `privacy-policies` | `/api/public/*`, `/api/membership-applications`, `/api/privacy-policies` | Formulario público y estado por código, revisión, duplicados, aprobación (también sobre una persona ya registrada), políticas con publicación |
+| `public`, `membership-applications`, `privacy-policies` | `/api/public/*`, `/api/membership-applications`, `/api/privacy-policies` | Formulario público y estado por código, registro de sedes sin invitación (ver arriba), revisión, duplicados, aprobación (también sobre una persona ya registrada), políticas con publicación |
 | `membership` | `/api/members`, `/api/church-positions`, `/api/pastoral-ranks` | Miembros (alta manual, estado, traslados), familia, estudios, cargos, ficha socioeconómica, consentimientos, anonimización, exportación. `SearchPeopleUseCase` es el único buscador de personas: certificados, aportes y secretaría lo usan con un propósito distinto |
 | `certificates` | `/api/certificates`, `/api/membership-cards`, `/api/certificate-types` | Emisión con consecutivo `CERT:<CÓDIGO>`, vista previa, anulación, carnés, PDF (`GET .../pdf`, pdfkit) y CSV |
 | `attendance`, `secretariat-records` | `/api/attendance-sessions`, `/api/secretariat`, `/api/marriages`, `/api/child-dedications`, `/api/pastoral-terms` | Asistencia por reunión y categoría; matrimonios, presentaciones y periodos pastorales |
@@ -250,7 +283,7 @@ npm run admin:reset-password
 # pide el correo y la contraseña nueva (oculta); o bien PLATFORM_ADMIN_EMAIL / PLATFORM_ADMIN_PASSWORD
 ```
 
-Solo sirve para un administrador de plataforma activo, quita el bloqueo por intentos y cierra sus sesiones abiertas. En Docker: `docker compose run --rm -it migrator npm run admin:reset-password`.
+Solo sirve para un administrador de plataforma activo, quita el bloqueo por intentos, confirma su correo si no lo estaba y cierra sus sesiones abiertas. En Docker: `docker compose run --rm -it migrator npm run admin:reset-password`.
 
 ## Scripts
 
@@ -298,7 +331,7 @@ prisma/
   schema/                  esquema por contexto: organization, identity, membership, secretariat, ministries, accounting
   sql/constraints.sql      reglas CHECK
   seed.ts                  catálogos globales; nunca crea usuarios
-  seed-data/               países (ISO 3166-1, nombres en español) y DIVIPOLA de Colombia, en JSON
+  seed-data/               países (ISO 3166-1, nombres en español) y divisions/<ISO>.json por país (CO: DIVIPOLA)
 ```
 
 ## Convenciones

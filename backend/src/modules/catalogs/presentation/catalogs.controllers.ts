@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -19,23 +20,45 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { NotFoundDomainException } from '../../../common/errors/domain.exception.js';
 import { RateLimit } from '../../../common/rate-limit/rate-limit.decorator.js';
-import { RequireAnyPermission } from '../../../common/security/permissions.decorator.js';
-import { Public } from '../../../common/security/public.decorator.js';
+import { PositiveIntPipe } from '../../../common/http/positive-int.pipe.js';
 import {
+  ClientIp,
+  CurrentTenant,
+  OptionalTenant,
+} from '../../../common/security/current-user.decorators.js';
+import {
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../../../common/security/permissions.decorator.js';
+import { Public } from '../../../common/security/public.decorator.js';
+import { ApiTenantScope } from '../../../common/tenancy/api-tenant-scope.decorator.js';
+import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
+import {
+  COUNTRIES_MANAGE_PERMISSION,
   EnsureNeighborhoodUseCase,
   GetCatalogsUseCase,
   GetMunicipalityUseCase,
+  ListCountriesUseCase,
   ListNeighborhoodsUseCase,
   SearchMunicipalitiesUseCase,
 } from '../application/catalogs.use-cases.js';
 import {
+  ListPlatformCountriesUseCase,
+  SetCountryActiveUseCase,
+} from '../application/platform-countries.use-cases.js';
+import {
   CatalogsResponseDto,
+  CountriesQueryDto,
+  CountryDto,
+  CountryQueryDto,
+  CountryStatusBodyDto,
   CreateNeighborhoodDto,
   EnsuredNeighborhoodDto,
   MunicipalityDto,
+  MunicipalitySearchQueryDto,
   NeighborhoodDto,
+  PlatformCountryDto,
   PublicCatalogsResponseDto,
-  SearchQueryDto,
 } from './catalogs.dto.js';
 import {
   PRIVATE_CACHE,
@@ -93,29 +116,63 @@ export class CatalogsController {
 @Controller('geo')
 export class GeoController {
   constructor(
+    private readonly listCountries: ListCountriesUseCase,
     private readonly searchMunicipalities: SearchMunicipalitiesUseCase,
     private readonly getMunicipality: GetMunicipalityUseCase,
     private readonly listNeighborhoods: ListNeighborhoodsUseCase,
     private readonly ensureNeighborhood: EnsureNeighborhoodUseCase,
   ) {}
 
+  @Get('countries')
+  @ApiOperation({
+    summary: 'Países activos, por nombre',
+    description:
+      'hasMunicipalities indica si el país tiene municipios cargados. includeInactive=true agrega los inactivos y solo lo puede pedir el equipo de plataforma (X-Scope: P con denominations.manage).',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [CountryDto] })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'includeInactive sin permiso',
+  })
+  countries(
+    @Query() query: CountriesQueryDto,
+    @OptionalTenant() tenant: TenantContext | null,
+  ): Promise<CountryDto[]> {
+    return this.listCountries.execute(query.includeInactive ?? false, tenant);
+  }
+
   @Get('municipalities')
   @ApiOperation({
-    summary: 'Busca municipios',
+    summary: 'Busca municipios de los países activos',
     description:
-      'Por nombre o por inicio del código DIVIPOLA. Devuelve hasta `limit` resultados.',
+      'Por nombre o por inicio del código. countryId limita la búsqueda a un país. Devuelve hasta limit resultados.',
   })
   @ApiResponse({ status: HttpStatus.OK, type: [MunicipalityDto] })
-  search(@Query() query: SearchQueryDto): Promise<MunicipalityDto[]> {
-    return this.searchMunicipalities.execute(query.search, query.limit);
+  search(
+    @Query() query: MunicipalitySearchQueryDto,
+  ): Promise<MunicipalityDto[]> {
+    return this.searchMunicipalities.execute(
+      query.search,
+      query.limit,
+      query.countryId,
+    );
   }
 
   @Get('municipalities/:code')
-  @ApiOperation({ summary: 'Un municipio por su código DIVIPOLA' })
+  @ApiOperation({
+    summary:
+      'Un municipio por su código, dentro de countryId (o del país por defecto)',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: MunicipalityDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND })
-  one(@Param('code') code: string): Promise<MunicipalityDto> {
-    return this.getMunicipality.execute(municipalityCode(code));
+  one(
+    @Param('code') code: string,
+    @Query() query: CountryQueryDto,
+  ): Promise<MunicipalityDto> {
+    return this.getMunicipality.execute(
+      municipalityCode(code),
+      query.countryId,
+    );
   }
 
   @Get('municipalities/:code/neighborhoods')
@@ -124,12 +181,13 @@ export class GeoController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND })
   neighborhoods(
     @Param('code') code: string,
-    @Query() query: SearchQueryDto,
+    @Query() query: MunicipalitySearchQueryDto,
   ): Promise<NeighborhoodDto[]> {
     return this.listNeighborhoods.execute(
       municipalityCode(code),
       query.search,
       query.limit,
+      query.countryId,
     );
   }
 
@@ -151,12 +209,14 @@ export class GeoController {
   })
   async ensure(
     @Param('code') code: string,
+    @Query() query: CountryQueryDto,
     @Body() body: CreateNeighborhoodDto,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<EnsuredNeighborhoodDto> {
     const neighborhood = await this.ensureNeighborhood.execute(
       municipalityCode(code),
       body.name,
+      query.countryId,
     );
     void reply.status(
       neighborhood.created ? HttpStatus.CREATED : HttpStatus.OK,
@@ -202,11 +262,66 @@ export class PublicCatalogsController {
   @Get('geo/municipalities')
   @HttpCode(HttpStatus.OK)
   @RateLimit({ name: 'public-geo', limit: 240, windowSeconds: FIFTEEN_MINUTES })
-  @ApiOperation({ summary: 'Busca municipios (formulario público)' })
+  @ApiOperation({
+    summary: 'Busca municipios de los países activos (formularios públicos)',
+    description: 'countryId limita la búsqueda a un país.',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: [MunicipalityDto] })
   publicMunicipalities(
-    @Query() query: SearchQueryDto,
+    @Query() query: MunicipalitySearchQueryDto,
   ): Promise<MunicipalityDto[]> {
-    return this.searchMunicipalities.execute(query.search, query.limit);
+    return this.searchMunicipalities.execute(
+      query.search,
+      query.limit,
+      query.countryId,
+    );
+  }
+}
+
+/** The platform team decides which countries the system offers. */
+@ApiTags('geo')
+@ApiTenantScope()
+@RequirePermissions(COUNTRIES_MANAGE_PERMISSION)
+@Controller('platform/countries')
+export class PlatformCountriesController {
+  constructor(
+    private readonly listCountries: ListPlatformCountriesUseCase,
+    private readonly setActive: SetCountryActiveUseCase,
+  ) {}
+
+  @Get()
+  @ApiOperation({
+    summary:
+      'Todos los países, activos o no, con sus departamentos y municipios cargados',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [PlatformCountryDto] })
+  list(@CurrentTenant() context: TenantContext): Promise<PlatformCountryDto[]> {
+    return this.listCountries.execute(context);
+  }
+
+  @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Activa o desactiva un país (no se puede desactivar con razones sociales activas)',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: PlatformCountryDto })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'COUNTRY_NOT_FOUND',
+  })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'COUNTRY_IN_USE' })
+  status(
+    @CurrentTenant() context: TenantContext,
+    @ClientIp() ipAddress: string | null,
+    @Param('id', PositiveIntPipe) id: number,
+    @Body() body: CountryStatusBodyDto,
+  ): Promise<PlatformCountryDto> {
+    return this.setActive.execute({
+      context,
+      ipAddress,
+      id,
+      isActive: body.isActive,
+    });
   }
 }

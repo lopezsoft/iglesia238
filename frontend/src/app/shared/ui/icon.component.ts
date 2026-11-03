@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 // Add the icons a screen needs here; never inline SVG markup in templates.
 const ICONS = {
   home: ['M3 10.5 12 3l9 7.5', 'M5 9.5V21h14V9.5', 'M10 21v-6h4v6'],
+  globe: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'],
   church: ['M12 2v4', 'M10 4h4', 'M5 21V11l7-5 7 5v10', 'M9 21v-5a3 3 0 0 1 6 0v5', 'M3 21h18'],
   landmark: ['M3 21h18', 'M4 10h16', 'M12 3 3 8h18z', 'M6 10v8', 'M10 10v8', 'M14 10v8', 'M18 10v8'],
   building: ['M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16', 'M16 9h2a2 2 0 0 1 2 2v10', 'M3 21h18', 'M8 7h4', 'M8 11h4', 'M8 15h4'],

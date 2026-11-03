@@ -4,10 +4,13 @@ import { Router } from '@angular/router';
 import { Observable, firstValueFrom, map, tap } from 'rxjs';
 import { DebugService } from '../debug/debug.service';
 import { AccessTokenStore } from '../http/access-token.store';
-import { AuthGateway, InvitationInfo } from './auth.gateway';
+import { AuthGateway, EmailVerificationResend, InvitationInfo } from './auth.gateway';
 import { Permission } from './permission';
 import { RoleCode } from './role';
 import { Scope, SessionUser, TenantContext, scopeCovers, scopeKey } from './session.model';
+
+/** Page that is the only thing an account with an unconfirmed e-mail can reach. */
+export const CONFIRM_EMAIL_PATH = '/confirm-email';
 
 /**
  * Session state: the signed-in user, the scope they act on (sede selector) and the
@@ -22,6 +25,7 @@ export class AuthService {
   private readonly userState = signal<SessionUser | null>(null);
   private readonly activeScopeKey = signal<string | null>(null);
   private restored: Promise<void> | null = null;
+  private lockingEmail = false;
 
   constructor() {
     // The refresh cookie was rejected (expired, revoked, signed out elsewhere): leave the app.
@@ -32,6 +36,8 @@ export class AuthService {
 
   readonly user = this.userState.asReadonly();
   readonly isAuthenticated = computed(() => this.userState() !== null);
+  /** False while the signed-in user has not confirmed their e-mail: the whole app is locked. */
+  readonly emailVerified = computed(() => this.userState()?.emailVerified === true);
 
   readonly activeScope = computed<Scope | null>(() => {
     const user = this.userState();
@@ -106,6 +112,39 @@ export class AuthService {
 
   changePassword(currentPassword: string, newPassword: string): Observable<void> {
     return this.gateway.changePassword(currentPassword, newPassword);
+  }
+
+  confirmEmail(token: string): Observable<void> {
+    return this.gateway.confirmEmail(token);
+  }
+
+  resendEmailVerification(): Observable<EmailVerificationResend> {
+    return this.gateway.resendEmailVerification();
+  }
+
+  /**
+   * The API refused a domain call with EMAIL_NOT_VERIFIED: the session this tab holds is out of date (or was
+   * never locked). Read it again and, if the server still sees the e-mail as unconfirmed, lock the app
+   * on the "Confirma tu correo" page.
+   */
+  async handleEmailNotVerified(): Promise<void> {
+    if (!this.userState() || this.lockingEmail) {
+      return;
+    }
+    this.lockingEmail = true;
+    try {
+      await this.refreshSession();
+      const user = this.userState();
+      if (user?.emailVerified) {
+        // The API is the authority: its answer wins over a session that claims the e-mail is confirmed.
+        this.userState.set({ ...user, emailVerified: false });
+      }
+      if (this.userState() && this.router.url.split('?')[0] !== CONFIRM_EMAIL_PATH) {
+        await this.router.navigateByUrl(CONFIRM_EMAIL_PATH, { replaceUrl: true });
+      }
+    } finally {
+      this.lockingEmail = false;
+    }
   }
 
   selectScope(scope: Scope): void {

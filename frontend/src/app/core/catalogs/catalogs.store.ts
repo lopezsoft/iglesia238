@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, finalize, of, shareReplay, tap } from 'rxjs';
-import { Municipality } from '../models/catalogs';
+import { Observable, catchError, finalize, of, shareReplay, tap, throwError } from 'rxjs';
+import { Country, Municipality } from '../models/catalogs';
 import { Catalogs, CatalogsRepository } from './catalogs.repository';
 
 const UNKNOWN_LABEL = '—';
@@ -16,6 +16,7 @@ export class CatalogsStore {
   private readonly loaded = signal<Catalogs | null>(null);
   private readonly municipalities = signal<ReadonlyMap<string, Municipality>>(new Map());
   private inFlight: Observable<Catalogs> | null = null;
+  private countriesRequest: Observable<readonly Country[]> | null = null;
 
   readonly isLoaded = computed(() => this.loaded() !== null);
   readonly documentTypes = computed(() => this.loaded()?.documentTypes ?? []);
@@ -39,11 +40,29 @@ export class CatalogsStore {
     return this.inFlight;
   }
 
+  /** Countries of the geography, asked once per session; a failed request is retried on the next call. */
+  loadCountries(): Observable<readonly Country[]> {
+    this.countriesRequest ??= this.repository.countries().pipe(
+      catchError((error: unknown) => {
+        this.countriesRequest = null;
+        return throwError(() => error);
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    return this.countriesRequest;
+  }
+
+  /** Asks the API again on the next `loadCountries()` (a country was activated or deactivated). */
+  forgetCountries(): void {
+    this.countriesRequest = null;
+  }
+
   /** Forgets everything (a new session may see different data). */
   reset(): void {
     this.loaded.set(null);
     this.municipalities.set(new Map());
     this.inFlight = null;
+    this.countriesRequest = null;
   }
 
   /** Keeps municipalities returned by a search so their labels can be printed later. */

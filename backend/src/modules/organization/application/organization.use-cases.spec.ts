@@ -9,11 +9,15 @@ import {
   RecordingAuditRecorder,
 } from '../../../../test/support/foundation-fakes.js';
 import {
+  COLOMBIA,
+  EMPTY_COUNTRY,
+  INACTIVE_COUNTRY,
   InMemoryCongregationRepository,
   InMemoryDistrictRepository,
   InMemoryGeoRepository,
   InMemoryLegalEntityRepository,
   InMemoryOrganization,
+  OTHER_COUNTRY,
 } from '../../../../test/support/in-memory-organization.js';
 import { buildTenantContext } from '../../../../test/support/tenants.js';
 import {
@@ -183,6 +187,7 @@ function entity(overrides: Partial<LegalEntityInput> = {}): LegalEntityInput {
     tradeName: null,
     taxId: '902111222-3',
     legalRepresentative: 'Representante',
+    countryId: COLOMBIA.id,
     municipalityCode: '11001',
     email: null,
     phone: null,
@@ -359,7 +364,7 @@ describe('CreateCongregationUseCase', () => {
     ).resolves.toMatchObject({ name: 'Sede Central' });
   });
 
-  it('refuses an inactive legal entity, an unknown municipality and a bad email', async () => {
+  it('refuses an inactive legal entity, a municipality outside its country and a bad email', async () => {
     const { createCongregation, world, entity1 } = build();
     const inactive = world.addLegalEntity(1, { isActive: false });
 
@@ -376,7 +381,10 @@ describe('CreateCongregationUseCase', () => {
         context: admin1,
         input: sede({ legalEntityId: entity1.id, municipalityCode: '99999' }),
       }),
-    ).rejects.toMatchObject({ code: 'INVALID_MUNICIPALITY' });
+    ).rejects.toMatchObject({
+      code: 'MUNICIPALITY_COUNTRY_MISMATCH',
+      message: 'El municipio no pertenece al país de la razón social.',
+    });
     await expect(
       createCongregation.execute({
         ...command,
@@ -384,6 +392,51 @@ describe('CreateCongregationUseCase', () => {
         input: sede({ legalEntityId: entity1.id, email: 'not-an-email' }),
       }),
     ).rejects.toMatchObject({ code: 'INVALID_EMAIL' });
+  });
+
+  it('requires the municipality', async () => {
+    const { createCongregation, entity1 } = build();
+
+    await expect(
+      createCongregation.execute({
+        ...command,
+        context: admin1,
+        input: sede({ legalEntityId: entity1.id, municipalityCode: '  ' }),
+      }),
+    ).rejects.toMatchObject({ code: 'MUNICIPALITY_REQUIRED' });
+  });
+
+  it('resolves the municipality code inside the country of the legal entity', async () => {
+    const { createCongregation, world, entity1 } = build();
+    const foreign = world.addLegalEntity(1, {
+      countryId: OTHER_COUNTRY.id,
+      countryName: OTHER_COUNTRY.name,
+      municipalityCode: null,
+    });
+
+    // 13001 exists in both countries: each legal entity gets the one of its own country.
+    await expect(
+      createCongregation.execute({
+        ...command,
+        context: admin1,
+        input: sede({ legalEntityId: foreign.id, name: 'Sede Exterior' }),
+      }),
+    ).resolves.toMatchObject({ municipalityName: 'Municipio extranjero' });
+    await expect(
+      createCongregation.execute({
+        ...command,
+        context: admin1,
+        input: sede({ legalEntityId: entity1.id, name: 'Sede Local' }),
+      }),
+    ).resolves.toMatchObject({ municipalityName: 'Cartagena de Indias' });
+    // 1701 is a municipality of the other country only.
+    await expect(
+      createCongregation.execute({
+        ...command,
+        context: admin1,
+        input: sede({ legalEntityId: entity1.id, municipalityCode: '1701' }),
+      }),
+    ).rejects.toMatchObject({ code: 'MUNICIPALITY_COUNTRY_MISMATCH' });
   });
 
   it('uses the requested code when it is free and rejects a taken or invalid one', async () => {
@@ -461,6 +514,43 @@ describe('UpdateCongregationUseCase', () => {
         input: sede({ legalEntityId: otherInactive.id, name: 'Sede Central' }),
       }),
     ).rejects.toMatchObject({ code: 'LEGAL_ENTITY_INACTIVE' });
+  });
+
+  it('validates the municipality again when the sede moves to a legal entity of another country', async () => {
+    const { updateCongregation, world, sede1 } = build();
+    const foreign = world.addLegalEntity(1, {
+      countryId: OTHER_COUNTRY.id,
+      countryName: OTHER_COUNTRY.name,
+      municipalityCode: null,
+    });
+
+    await expect(
+      updateCongregation.execute({
+        ...command,
+        context: admin1,
+        id: sede1.id,
+        input: sede({
+          legalEntityId: foreign.id,
+          name: 'Sede Central',
+          municipalityCode: '11001',
+        }),
+      }),
+    ).rejects.toMatchObject({ code: 'MUNICIPALITY_COUNTRY_MISMATCH' });
+    await expect(
+      updateCongregation.execute({
+        ...command,
+        context: admin1,
+        id: sede1.id,
+        input: sede({
+          legalEntityId: foreign.id,
+          name: 'Sede Central',
+          municipalityCode: '1701',
+        }),
+      }),
+    ).resolves.toMatchObject({
+      legalEntityId: foreign.id,
+      municipalityName: 'Quito',
+    });
   });
 
   it('does not reopen applications of an inactive sede through the form', async () => {
@@ -612,15 +702,131 @@ describe('legal entities', () => {
 
     expect(created).toMatchObject({
       taxId: '902.111.222-3',
+      countryId: COLOMBIA.id,
+      countryName: 'Colombia',
       municipalityName: 'Bogotá, D.C.',
       email: 'info@example.com',
       isActive: true,
     });
     expect(Object.keys(audit.entries[0].changes ?? {}).sort()).toEqual([
+      'countryId',
       'isActive',
       'legalName',
     ]);
     expect(JSON.stringify(audit.entries[0].changes)).not.toContain('902');
+  });
+
+  it('belongs to an existing country, with an optional municipality of that country', async () => {
+    const { createLegalEntity } = build();
+
+    await expect(
+      createLegalEntity.execute({
+        ...command,
+        context: admin1,
+        input: entity({ countryId: 9999 }),
+      }),
+    ).rejects.toMatchObject({ code: 'COUNTRY_NOT_FOUND' });
+    await expect(
+      createLegalEntity.execute({
+        ...command,
+        context: admin1,
+        input: entity({
+          countryId: INACTIVE_COUNTRY.id,
+          municipalityCode: null,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      code: 'COUNTRY_INACTIVE',
+      message: 'El país no está activo en el sistema.',
+    });
+    await expect(
+      createLegalEntity.execute({
+        ...command,
+        context: admin1,
+        input: entity({
+          countryId: OTHER_COUNTRY.id,
+          municipalityCode: '11001',
+        }),
+      }),
+    ).rejects.toMatchObject({ code: 'MUNICIPALITY_COUNTRY_MISMATCH' });
+    // A country without municipalities loaded: the legal entity simply has none.
+    await expect(
+      createLegalEntity.execute({
+        ...command,
+        context: admin1,
+        input: entity({ countryId: EMPTY_COUNTRY.id, municipalityCode: null }),
+      }),
+    ).resolves.toMatchObject({
+      countryId: EMPTY_COUNTRY.id,
+      countryName: EMPTY_COUNTRY.name,
+      municipalityCode: null,
+    });
+  });
+
+  it('keeps the country when the edit omits it and cannot move a legal entity with sedes to another country', async () => {
+    const { updateLegalEntity, entity1, world } = build();
+
+    await expect(
+      updateLegalEntity.execute({
+        ...command,
+        context: admin1,
+        id: entity1.id,
+        input: { ...entity({ taxId: entity1.taxId }), countryId: null },
+      }),
+    ).resolves.toMatchObject({ countryId: COLOMBIA.id });
+    await expect(
+      updateLegalEntity.execute({
+        ...command,
+        context: admin1,
+        id: entity1.id,
+        input: entity({
+          taxId: entity1.taxId,
+          countryId: OTHER_COUNTRY.id,
+          municipalityCode: '1701',
+        }),
+      }),
+    ).rejects.toMatchObject({ code: 'LEGAL_ENTITY_HAS_CONGREGATIONS' });
+    expect(
+      world.legalEntities.find((row) => row.id === entity1.id)?.countryId,
+    ).toBe(COLOMBIA.id);
+  });
+
+  it('changes the country of a legal entity without sedes, with a municipality of the new country', async () => {
+    const { updateLegalEntity, world, audit } = build();
+    const lonely = world.addLegalEntity(1);
+
+    await expect(
+      updateLegalEntity.execute({
+        ...command,
+        context: admin1,
+        id: lonely.id,
+        input: entity({
+          taxId: lonely.taxId,
+          countryId: OTHER_COUNTRY.id,
+          municipalityCode: '11001',
+        }),
+      }),
+    ).rejects.toMatchObject({ code: 'MUNICIPALITY_COUNTRY_MISMATCH' });
+
+    const updated = await updateLegalEntity.execute({
+      ...command,
+      context: admin1,
+      id: lonely.id,
+      input: entity({
+        taxId: lonely.taxId,
+        countryId: OTHER_COUNTRY.id,
+        municipalityCode: '1701',
+      }),
+    });
+
+    expect(updated).toMatchObject({
+      countryId: OTHER_COUNTRY.id,
+      countryName: OTHER_COUNTRY.name,
+      municipalityName: 'Quito',
+    });
+    expect(audit.entries.at(-1)?.changes).toMatchObject({
+      countryId: { from: COLOMBIA.id, to: OTHER_COUNTRY.id },
+    });
   });
 
   it('rejects an invalid NIT and a NIT that already exists in any denomination', async () => {
@@ -767,7 +973,15 @@ describe('form options', () => {
 
     const options = await formOptions.execute(admin1);
 
-    expect(options.legalEntities.map((row) => row.id)).toEqual([entity1.id]);
+    expect(options.legalEntities).toEqual([
+      {
+        id: entity1.id,
+        label: 'Corporación Monte de Sión',
+        isActive: true,
+        countryId: COLOMBIA.id,
+        countryName: 'Colombia',
+      },
+    ]);
     expect(options.districts).toEqual([
       { id: district1.id, label: 'Distrito 2', isActive: true },
     ]);

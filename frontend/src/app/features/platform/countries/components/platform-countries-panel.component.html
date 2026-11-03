@@ -1,0 +1,120 @@
+<div class="panel-header">
+  <h2>Países</h2>
+  <span class="text-muted text-small"
+    >Solo los países activos se pueden elegir para una razón social, y sus sedes deben estar en ese país.</span
+  >
+</div>
+
+<div class="card card--flush">
+  <div class="card__header list-header">
+    <div class="field filter">
+      <label for="country-search">Buscar</label>
+      <input
+        id="country-search"
+        class="input"
+        type="search"
+        placeholder="Nombre o código ISO"
+        autocomplete="off"
+        [value]="search()"
+        (input)="onSearch($event)"
+      />
+    </div>
+    <div class="field">
+      <label for="country-status">Estado</label>
+      <select id="country-status" class="select" [value]="status()" (change)="onStatus($event)">
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (loadError(); as message) {
+    <div class="panel-feedback">
+      <app-error-banner [message]="message" (retry)="countries.reload()" />
+    </div>
+  } @else if (countries.isLoading() && !countries.hasValue()) {
+    <div class="panel-feedback"><app-loading label="Cargando países…" /></div>
+  } @else if (visible().total === 0) {
+    <app-empty-state
+      icon="globe"
+      title="No hay países"
+      description="Ningún país coincide con la búsqueda o el filtro de estado."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table class="table" [attr.aria-busy]="countries.isLoading()">
+        <thead>
+          <tr>
+            <th scope="col">País</th>
+            <th scope="col">ISO</th>
+            <th scope="col" class="text-right">Departamentos / regiones</th>
+            <th scope="col" class="text-right">Municipios</th>
+            <th scope="col">Municipios cargados</th>
+            <th scope="col">Estado</th>
+            @if (canManage()) {
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visible().items; track row.id) {
+            <tr>
+              <td class="cell-title">{{ row.name }}</td>
+              <td class="code">{{ row.isoAlpha2 }}</td>
+              <td class="num">{{ row.regionCount }}</td>
+              <td class="num">{{ row.municipalityCount }}</td>
+              <td>
+                <app-status-badge
+                  [label]="row.hasMunicipalities ? 'Cargados' : 'Sin municipios'"
+                  [tone]="row.hasMunicipalities ? 'info' : 'warning'"
+                />
+              </td>
+              <td>
+                <app-status-badge
+                  [label]="row.isActive ? 'Activo' : 'Inactivo'"
+                  [tone]="row.isActive ? 'success' : 'neutral'"
+                />
+              </td>
+              @if (canManage()) {
+                <td>
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="btn btn--sm"
+                      [class.btn--danger-ghost]="row.isActive"
+                      [class.btn--secondary]="!row.isActive"
+                      [attr.aria-label]="(row.isActive ? 'Desactivar ' : 'Activar ') + row.name"
+                      (click)="openStatus(row)"
+                    >
+                      {{ row.isActive ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="page()" [pageSize]="pageSize" [total]="visible().total" (pageChange)="page.set($event)" />
+  }
+</div>
+
+@if (statusTarget(); as target) {
+  <app-confirm-dialog
+    [(open)]="confirmOpen"
+    [title]="target.isActive ? '¿Desactivar el país?' : '¿Activar el país?'"
+    [message]="
+      target.isActive
+        ? target.name +
+          ' dejará de ofrecerse al registrar razones sociales. No puede desactivarse mientras alguna razón social activa lo use.'
+        : target.name + ' volverá a ofrecerse al registrar razones sociales.'
+    "
+    [confirmLabel]="target.isActive ? 'Desactivar' : 'Activar'"
+    [danger]="target.isActive"
+    [pending]="pending()"
+    [error]="actionError()"
+    (confirmed)="confirmStatus()"
+  />
+}

@@ -21,6 +21,19 @@ export interface CurrentPolicyRecord {
   effectiveFrom: string;
 }
 
+/** A legal entity (razón social) a new congregation can register under. */
+export interface PublicLegalEntityRecord {
+  id: number;
+  legalName: string;
+  tradeName: string | null;
+  /** Canonical NIT. The use case masks it before it leaves the API. */
+  taxId: string;
+  denominationId: number;
+  denominationName: string;
+  countryId: number;
+  countryName: string;
+}
+
 export interface CongregationTarget {
   id: number;
   denominationId: number;
@@ -33,6 +46,12 @@ export interface PublicDirectory {
     today: string,
   ): Promise<readonly OpenCongregationRecord[]>;
 
+  /**
+   * Active legal entities of active denominations whose country is active, ordered by denomination name
+   * and then legal name. Deleted rows never appear.
+   */
+  listLegalEntities(): Promise<readonly PublicLegalEntityRecord[]>;
+
   /** The congregation only if it is open to applications right now. */
   findOpenCongregation(id: number): Promise<CongregationTarget | null>;
 
@@ -44,5 +63,6 @@ export interface PublicDirectory {
 
   documentTypeExists(code: string): Promise<boolean>;
   maritalStatusExists(code: string): Promise<boolean>;
+  /** Inside the default country (DEFAULT_COUNTRY_ISO): the form sends a bare code. */
   municipalityExists(code: string): Promise<boolean>;
 }

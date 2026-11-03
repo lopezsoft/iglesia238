@@ -6,6 +6,7 @@ import {
   ApplicationStatusCheck,
   ApplicationSubmission,
   CurrentPrivacyPolicy,
+  MunicipalityFilter,
   MunicipalityOption,
   OpenCongregation,
   PublicCatalogs,
@@ -41,8 +42,15 @@ export class HttpPublicApplicationRepository extends PublicApplicationRepository
     return this.http.get<PublicCatalogs>(apiUrl('/public/catalogs'));
   }
 
-  searchMunicipalities(text: string, limit = DEFAULT_MUNICIPALITY_LIMIT): Observable<MunicipalityOption[]> {
-    const params = new HttpParams().set('search', text.trim()).set('limit', limit);
+  searchMunicipalities(text: string, filter: MunicipalityFilter = {}): Observable<MunicipalityOption[]> {
+    let params = new HttpParams().set('limit', filter.limit ?? DEFAULT_MUNICIPALITY_LIMIT);
+    const search = text.trim();
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (filter.countryId !== undefined && filter.countryId !== null) {
+      params = params.set('countryId', filter.countryId);
+    }
     return this.http
       .get<MunicipalityDto[]>(apiUrl('/public/geo/municipalities'), { params })
       .pipe(map((rows) => rows.map(({ code, name, regionName }) => ({ code, name, regionName }))));

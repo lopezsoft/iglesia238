@@ -10,6 +10,8 @@ import { SmartLogger } from '../../common/logging/smart-logger.service.js';
  * recipient, the subject or the body, which would leak the one-time links.
  */
 export class LoggingMailer implements Mailer {
+  readonly isConfigured = false;
+
   constructor(private readonly logger: SmartLogger) {}
 
   send(message: MailMessage): Promise<MailDeliveryResult> {

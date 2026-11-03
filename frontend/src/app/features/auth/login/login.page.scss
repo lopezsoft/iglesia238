@@ -32,6 +32,12 @@
     gap: $space-4;
   }
 
+  &__alternatives {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
   &__help {
     text-align: center;
   }

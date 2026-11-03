@@ -87,7 +87,8 @@
   }
 
   &__heading,
-  &__label-full {
+  &__label-full,
+  &__locked-note {
     display: none;
   }
 
@@ -229,6 +230,12 @@
 
     &__group + &__group {
       margin-top: $space-2;
+    }
+
+    &__locked-note {
+      display: block;
+      margin: $space-2 $space-4 0;
+      color: $color-sidebar-muted;
     }
 
     &__heading {

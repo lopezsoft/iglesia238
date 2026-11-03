@@ -17,6 +17,7 @@ const session: SessionUser = {
   id: 1,
   displayName: 'Laura Gómez',
   email: 'laura@iglesia.example',
+  emailVerified: true,
   assignments: [{ role: 'SECRETARY', roleName: 'Secretaría', permissions: ['applications.review'], scope: sede }],
   selectableScopes: [sede, otherSede],
 };
@@ -29,6 +30,8 @@ class FakeAuthGateway extends AuthGateway {
   confirmPasswordReset = () => of(undefined);
   getInvitation = (): Observable<InvitationInfo> => of({ email: 'x@y.z', displayName: null, expiresAt: null });
   acceptInvitation = () => of(undefined);
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword = () => of(undefined);
 }
 

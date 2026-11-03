@@ -2,7 +2,7 @@
 <a class="skip-link" href="#main-content" (click)="skipToContent($event)">Saltar al contenido</a>
 <div class="shell" [class.shell--menu-open]="menuOpen()">
   <nav #sidebar class="rail" aria-label="Navegación principal" id="main-navigation">
-    <a class="rail__brand" routerLink="/dashboard" title="Iglesia 238">
+    <a class="rail__brand" [routerLink]="locked() ? '/confirm-email' : '/dashboard'" title="Iglesia 238">
       <span class="rail__logo"><app-icon name="church" [size]="24" /></span>
       <span class="rail__brand-text">
         <span class="rail__product">Iglesia 238</span>
@@ -11,6 +11,26 @@
     </a>
 
     <div class="rail__scroll">
+      @if (locked()) {
+        <div class="rail__group" role="group" aria-label="Cuenta pendiente de confirmar">
+          <p class="rail__heading">Cuenta</p>
+          <ul>
+            <li>
+              <a
+                class="rail__link is-active"
+                routerLink="/confirm-email"
+                aria-current="page"
+                title="Confirma tu correo"
+              >
+                <span class="rail__icon"><app-icon name="mail" [size]="22" variant="line" /></span>
+                <span class="rail__label" aria-hidden="true">Correo</span>
+                <span class="rail__label-full">Confirma tu correo</span>
+              </a>
+            </li>
+          </ul>
+          <p class="rail__locked-note text-small">El resto de la aplicación se habilita al confirmar tu correo.</p>
+        </div>
+      }
       @for (group of navGroups(); track group.label) {
         <div class="rail__group" role="group" [attr.aria-label]="group.label">
           <p class="rail__heading">{{ group.label }}</p>
@@ -58,8 +78,10 @@
         <app-icon name="menu" />
       </button>
 
-      <app-quick-create-menu />
-      <app-scope-switcher />
+      @if (!locked()) {
+        <app-quick-create-menu />
+        <app-scope-switcher />
+      }
       <app-status-cluster />
 
       <div class="topbar__end">

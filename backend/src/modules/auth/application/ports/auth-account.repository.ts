@@ -38,6 +38,12 @@ export interface AuthAccountRepository {
     upgradedPasswordHash: string | null,
     transaction?: Transaction,
   ): Promise<void>;
+  /** Stamps the confirmation of the mailbox. A date that is already set is never moved. */
+  markEmailVerified(
+    userId: number,
+    verifiedAt: Date,
+    transaction?: Transaction,
+  ): Promise<void>;
   /** Stores a new password and clears the failure count and the lock. Optionally verifies the e-mail. */
   setPassword(
     userId: number,

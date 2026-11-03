@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import { AccessTokenStore } from '../http/access-token.store';
 import { apiUrl } from '../http/api-url';
-import { AuthGateway, InvitationInfo } from './auth.gateway';
+import { AuthGateway, EmailVerificationResend, InvitationInfo } from './auth.gateway';
 import { Permission } from './permission';
 import { RoleCode } from './role';
 import { RoleAssignment, Scope, ScopeKind, SessionUser } from './session.model';
@@ -27,6 +27,7 @@ export interface SessionDto {
   readonly id: number;
   readonly displayName: string;
   readonly email: string;
+  readonly emailVerified: boolean;
   readonly assignments: readonly AssignmentDto[];
   readonly selectableScopes: readonly ScopeDto[];
 }
@@ -35,6 +36,10 @@ interface TokenResponse {
   readonly accessToken: string;
   readonly expiresIn: number;
   readonly session?: SessionDto;
+}
+
+interface EmailVerificationResendDto {
+  readonly devVerificationLink?: string | null;
 }
 
 interface InvitationDto {
@@ -115,6 +120,17 @@ export class HttpAuthGateway extends AuthGateway {
       .post<void>(apiUrl('/auth/change-password'), { currentPassword, newPassword })
       .pipe(map(() => undefined));
   }
+
+  confirmEmail(token: string): Observable<void> {
+    // The token goes in the body, not in the URL: URLs end up in proxy and access logs.
+    return this.http.post<void>(apiUrl('/auth/email-verification/confirm'), { token }).pipe(map(() => undefined));
+  }
+
+  resendEmailVerification(): Observable<EmailVerificationResend> {
+    return this.http
+      .post<EmailVerificationResendDto | null>(apiUrl('/auth/email-verification/resend'), {})
+      .pipe(map((body) => ({ devVerificationLink: body?.devVerificationLink ?? null })));
+  }
 }
 
 function requireSession(response: TokenResponse): SessionDto {
@@ -136,6 +152,8 @@ export function toSessionUser(dto: SessionDto): SessionUser {
     id: dto.id,
     displayName: dto.displayName,
     email: dto.email,
+    // Only an explicit false locks the app; the API enforces the rule on every domain call anyway.
+    emailVerified: dto.emailVerified !== false,
     assignments,
     selectableScopes: dto.selectableScopes.map(toScope),
   };

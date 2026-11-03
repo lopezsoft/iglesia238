@@ -104,6 +104,14 @@ export interface MunicipalityOption {
   readonly regionName: string;
 }
 
+/** Optional limits of the municipality search. */
+export interface MunicipalityFilter {
+  /** At most this many results (the API default otherwise). */
+  readonly limit?: number;
+  /** Only municipalities of this country; every country when it is left out. */
+  readonly countryId?: number | null;
+}
+
 export function municipalityOptionLabel(option: Pick<MunicipalityOption, 'name' | 'regionName'>): string {
   return `${option.name} (${option.regionName})`;
 }

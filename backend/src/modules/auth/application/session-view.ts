@@ -19,6 +19,8 @@ export interface SessionView {
   readonly id: number;
   readonly displayName: string;
   readonly email: string;
+  /** False until the person confirms the mailbox: every domain route answers 403 EMAIL_NOT_VERIFIED. */
+  readonly emailVerified: boolean;
   readonly assignments: readonly AssignmentView[];
   readonly selectableScopes: readonly ScopeView[];
 }

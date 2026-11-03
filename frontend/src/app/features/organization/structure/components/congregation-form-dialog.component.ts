@@ -11,8 +11,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { startWith } from 'rxjs';
 import { DomainError, userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
@@ -34,6 +35,8 @@ type CongregationField =
   | 'code';
 
 const CODE_ERRORS: ReadonlySet<string> = new Set(['DUPLICATE_CODE', 'INVALID_CODE']);
+/** 400 when the municipality is not of the country of the legal entity. */
+const MUNICIPALITY_COUNTRY_MISMATCH = 'MUNICIPALITY_COUNTRY_MISMATCH';
 
 export interface CongregationSaved {
   readonly congregation: CongregationRow;
@@ -62,7 +65,10 @@ export class CongregationFormDialogComponent {
   protected readonly pending = signal(false);
   protected readonly nameError = signal<string | null>(null);
   protected readonly codeError = signal<string | null>(null);
+  protected readonly municipalityError = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
+  /** False when the country of the chosen legal entity has no municipality loaded. */
+  protected readonly municipalitiesAvailable = signal(true);
 
   protected readonly options = rxResource({
     params: () => (this.open() ? true : undefined),
@@ -98,8 +104,23 @@ export class CongregationFormDialogComponent {
     acceptsApplications: [true],
   });
 
-  /** Name of the chosen municipality, shown while the DIVIPOLA code is set. */
+  /** Name of the chosen municipality, shown while its code is set. */
   protected readonly municipalityText = signal('');
+
+  private readonly legalEntityId = toSignal(
+    this.form.controls.legalEntityId.valueChanges.pipe(startWith(this.form.controls.legalEntityId.value)),
+    { initialValue: '' },
+  );
+  /** The legal entity chosen in the form: the municipality of the sede must be of its country. */
+  protected readonly selectedLegalEntity = computed(() => {
+    const id = Number(this.legalEntityId());
+    return this.loadedOptions()?.legalEntities.find((option) => option.id === id) ?? null;
+  });
+  protected readonly municipalityBlockedText = computed(() =>
+    this.legalEntityId() === '' ? 'Elige primero la razón social.' : null,
+  );
+  /** Legal entity the chosen municipality was searched for; its country decides whether it stays valid. */
+  private municipalityLegalEntityId = '';
 
   constructor() {
     effect(() => {
@@ -110,10 +131,27 @@ export class CongregationFormDialogComponent {
     });
   }
 
+  /**
+   * The municipality must be of the country of the legal entity: it is cleared when the new legal entity
+   * is of another country (or its country is unknown).
+   */
+  protected onLegalEntityChanged(): void {
+    const next = this.form.controls.legalEntityId.value;
+    const countryOf = (id: string): number | null =>
+      this.loadedOptions()?.legalEntities.find((option) => option.id === Number(id))?.countryId ?? null;
+    const previousCountry = countryOf(this.municipalityLegalEntityId);
+    if (previousCountry === null || previousCountry !== countryOf(next)) {
+      this.onMunicipalityCleared();
+    }
+    this.municipalityLegalEntityId = next;
+  }
+
   protected onMunicipalityPicked(picked: MunicipalityPicked): void {
     this.form.controls.municipalityCode.setValue(picked.code);
     this.form.controls.municipalityCode.markAsTouched();
     this.municipalityText.set(picked.label);
+    this.municipalityError.set(null);
+    this.municipalityLegalEntityId = this.form.controls.legalEntityId.value;
   }
 
   protected onMunicipalityCleared(): void {
@@ -129,6 +167,7 @@ export class CongregationFormDialogComponent {
   protected submit(): void {
     this.nameError.set(null);
     this.codeError.set(null);
+    this.municipalityError.set(null);
     this.formError.set(null);
     if (this.form.invalid || this.pending()) {
       this.form.markAllAsTouched();
@@ -166,7 +205,9 @@ export class CongregationFormDialogComponent {
             ? this.nameError
             : CODE_ERRORS.has(code)
               ? this.codeError
-              : this.formError;
+              : code === MUNICIPALITY_COUNTRY_MISMATCH
+                ? this.municipalityError
+                : this.formError;
         target.set(userMessage(error));
       },
     });
@@ -191,8 +232,10 @@ export class CongregationFormDialogComponent {
       this.form.controls.acceptsApplications.enable();
     }
     this.municipalityText.set(current ? placeLabel(current) : '');
+    this.municipalityLegalEntityId = current ? String(current.legalEntityId) : '';
     this.nameError.set(null);
     this.codeError.set(null);
+    this.municipalityError.set(null);
     this.formError.set(null);
   }
 }

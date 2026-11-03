@@ -5,11 +5,13 @@ import {
   computed,
   effect,
   inject,
+  input,
   linkedSignal,
   signal,
+  viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { userMessage } from '../../../core/errors/domain-error';
 import {
@@ -23,6 +25,9 @@ import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
+import { TabCardItem, TabCardsComponent } from '../../../shared/ui/tab-cards.component';
+import { PlatformCountriesPanelComponent } from '../countries/components/platform-countries-panel.component';
+import { PlatformLegalEntitiesPanelComponent } from '../legal-entities/components/platform-legal-entities-panel.component';
 import {
   DenominationFormDrawerComponent,
   DenominationSaved,
@@ -39,6 +44,18 @@ import { DenominationsRepository } from './data/denominations.repository';
 
 const PAGE_SIZE = 10;
 
+type PlatformTab = 'denominaciones' | 'razones' | 'paises';
+
+const TABS: readonly TabCardItem<PlatformTab>[] = [
+  { id: 'denominaciones', title: 'Denominaciones', subtitle: 'Iglesias de la plataforma', icon: 'landmark' },
+  { id: 'razones', title: 'Razones sociales', subtitle: 'Entidades legales y NIT', icon: 'building' },
+  { id: 'paises', title: 'Países', subtitle: 'Geografía y estado', icon: 'globe' },
+];
+
+function isPlatformTab(value: string | null | undefined): value is PlatformTab {
+  return TABS.some((tab) => tab.id === value);
+}
+
 /** B-01: denominations (tenants) of the platform, managed by the platform admin. */
 @Component({
   selector: 'app-denominations-page',
@@ -53,10 +70,13 @@ const PAGE_SIZE = 10;
     LoadingComponent,
     PageHeaderComponent,
     PaginationComponent,
+    PlatformCountriesPanelComponent,
+    PlatformLegalEntitiesPanelComponent,
     RouterLink,
     SectionPanelComponent,
     StatCardComponent,
     StatusBadgeComponent,
+    TabCardsComponent,
   ],
   templateUrl: './denominations.page.html',
   styleUrl: './denominations.page.scss',
@@ -64,6 +84,17 @@ const PAGE_SIZE = 10;
 export class DenominationsPage {
   private readonly repository = inject(DenominationsRepository);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  /** `?tab=` query param, bound by the router. */
+  readonly tab = input<string>();
+
+  protected readonly tabs = TABS;
+  protected readonly activeTab = computed<PlatformTab>(() => {
+    const tab = this.tab();
+    return isPlatformTab(tab) ? tab : 'denominaciones';
+  });
+  private readonly legalEntitiesPanel = viewChild(PlatformLegalEntitiesPanelComponent);
 
   protected readonly statusOptions = DENOMINATION_STATUS_OPTIONS;
   protected readonly pageSize = PAGE_SIZE;
@@ -132,9 +163,38 @@ export class DenominationsPage {
     this.status.set((event.target as HTMLSelectElement).value as DenominationStatusFilter);
   }
 
+  protected selectTab(value: string): void {
+    const tab = isPlatformTab(value) ? value : 'denominaciones';
+    this.notice.set(null);
+    void this.router.navigate([], {
+      queryParams: { tab: tab === 'denominaciones' ? null : tab },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  protected tabId(tab: string): string {
+    return `platform-tab-${tab}`;
+  }
+
   protected openCreate(): void {
+    if (this.activeTab() === 'razones') {
+      this.legalEntitiesPanel()?.openCreate();
+      return;
+    }
     this.editing.set(null);
     this.formOpen.set(true);
+  }
+
+  /** A country was activated or deactivated: only the notice changes on this page. */
+  protected onCountriesChanged(message: string): void {
+    this.notice.set(message);
+  }
+
+  /** A legal entity was created, edited or toggled: the counters of the churches change too. */
+  protected onLegalEntitiesChanged(message: string): void {
+    this.notice.set(message);
+    this.reload();
   }
 
   protected openEdit(denomination: DenominationSummary): void {

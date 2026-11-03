@@ -166,7 +166,10 @@ describe('Contributions and vows over HTTP', () => {
       .overrideProvider(RedisService)
       .useValue({ client: { ping: vi.fn() } })
       .overrideProvider(SESSION_VALIDATOR)
-      .useValue({ isActive: () => Promise.resolve(true) })
+      .useValue({
+        isActive: () => Promise.resolve(true),
+        isEmailVerified: () => Promise.resolve(true),
+      })
       .overrideProvider(ASSIGNMENTS_READER)
       .useValue(reader)
       .overrideProvider(CONTRIBUTIONS_REPOSITORY)

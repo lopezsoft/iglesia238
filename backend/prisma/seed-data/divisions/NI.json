@@ -1,0 +1,261 @@
+{
+  "source": "INIDE (Instituto Nacional de Información de Desarrollo), Compendio Estadísticas Vitales 2022 - 2023, anexo \"División Política Administrativa\" (Ley No. 59 y reformas; Ley No. 854 de 2014), pp. 195-197, https://www.inide.gob.ni/docs/compendio/compendio22_23/Compendio_Estadisticas_Vitales_2022_2023.pdf (consultado 2026-11-03)",
+  "countryIsoAlpha2": "NI",
+  "regions": [
+    {
+      "code": "05",
+      "name": "Nueva Segovia",
+      "municipalities": [
+        {"code":"0505","name":"Jalapa"},
+        {"code":"0510","name":"Murra"},
+        {"code":"0515","name":"El Jícaro"},
+        {"code":"0520","name":"San Fernando"},
+        {"code":"0525","name":"Mozonte"},
+        {"code":"0530","name":"Dipilto"},
+        {"code":"0535","name":"Macuelizo"},
+        {"code":"0540","name":"Santa María"},
+        {"code":"0545","name":"Ocotal"},
+        {"code":"0550","name":"Ciudad Antigua"},
+        {"code":"0555","name":"Quilalí"},
+        {"code":"0560","name":"Wiwilí de Nueva Segovia"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Jinotega",
+      "municipalities": [
+        {"code":"1005","name":"Wiwilí de Jinotega"},
+        {"code":"1010","name":"El Cuá"},
+        {"code":"1012","name":"San José de Bocay"},
+        {"code":"1015","name":"Santa María de Pantasma"},
+        {"code":"1020","name":"San Rafael del Norte"},
+        {"code":"1025","name":"San Sebastián de Yalí"},
+        {"code":"1030","name":"La Concordia"},
+        {"code":"1035","name":"Jinotega"}
+      ]
+    },
+    {
+      "code": "20",
+      "name": "Madriz",
+      "municipalities": [
+        {"code":"2005","name":"Somoto"},
+        {"code":"2010","name":"Totogalpa"},
+        {"code":"2015","name":"Telpaneca"},
+        {"code":"2020","name":"San Juan de Río Coco"},
+        {"code":"2025","name":"Palacagüina"},
+        {"code":"2030","name":"Yalagüina"},
+        {"code":"2035","name":"San Lucas"},
+        {"code":"2040","name":"Las Sabanas"},
+        {"code":"2045","name":"San José de Cusmapa"}
+      ]
+    },
+    {
+      "code": "25",
+      "name": "Estelí",
+      "municipalities": [
+        {"code":"2505","name":"Pueblo Nuevo"},
+        {"code":"2510","name":"Condega"},
+        {"code":"2515","name":"Estelí"},
+        {"code":"2520","name":"San Juan de Limay"},
+        {"code":"2525","name":"La Trinidad"},
+        {"code":"2530","name":"San Nicolás"}
+      ]
+    },
+    {
+      "code": "30",
+      "name": "Chinandega",
+      "municipalities": [
+        {"code":"3005","name":"San Pedro del Norte"},
+        {"code":"3010","name":"San Francisco del Norte"},
+        {"code":"3015","name":"Cinco Pinos"},
+        {"code":"3020","name":"Santo Tomás del Norte"},
+        {"code":"3025","name":"El Viejo"},
+        {"code":"3030","name":"Puerto Morazán"},
+        {"code":"3035","name":"Somotillo"},
+        {"code":"3040","name":"Villanueva"},
+        {"code":"3045","name":"Chinandega"},
+        {"code":"3050","name":"El Realejo"},
+        {"code":"3055","name":"Corinto"},
+        {"code":"3060","name":"Chichigalpa"},
+        {"code":"3065","name":"Posoltega"}
+      ]
+    },
+    {
+      "code": "35",
+      "name": "León",
+      "municipalities": [
+        {"code":"3505","name":"Achuapa"},
+        {"code":"3510","name":"El Sauce"},
+        {"code":"3515","name":"Santa Rosa del Peñón"},
+        {"code":"3520","name":"El Jicaral"},
+        {"code":"3525","name":"Larreynaga"},
+        {"code":"3530","name":"Telica"},
+        {"code":"3535","name":"Quezalguaque"},
+        {"code":"3540","name":"León"},
+        {"code":"3545","name":"La Paz Centro"},
+        {"code":"3550","name":"Nagarote"}
+      ]
+    },
+    {
+      "code": "40",
+      "name": "Matagalpa",
+      "municipalities": [
+        {"code":"4005","name":"Rancho Grande"},
+        {"code":"4010","name":"Río Blanco"},
+        {"code":"4015","name":"El Tuma - La Dalia"},
+        {"code":"4020","name":"San Isidro"},
+        {"code":"4025","name":"Sébaco"},
+        {"code":"4030","name":"Matagalpa"},
+        {"code":"4035","name":"San Ramón"},
+        {"code":"4040","name":"Matiguás"},
+        {"code":"4045","name":"Muy Muy"},
+        {"code":"4050","name":"Esquipulas"},
+        {"code":"4055","name":"San Dionisio"},
+        {"code":"4060","name":"Terrabona"},
+        {"code":"4065","name":"Ciudad Darío"}
+      ]
+    },
+    {
+      "code": "50",
+      "name": "Boaco",
+      "municipalities": [
+        {"code":"5005","name":"San José de los Remates"},
+        {"code":"5010","name":"Boaco"},
+        {"code":"5015","name":"Camoapa"},
+        {"code":"5020","name":"Santa Lucía"},
+        {"code":"5025","name":"Teustepe"},
+        {"code":"5030","name":"San Lorenzo"}
+      ]
+    },
+    {
+      "code": "55",
+      "name": "Managua",
+      "municipalities": [
+        {"code":"5505","name":"San Francisco Libre"},
+        {"code":"5510","name":"Tipitapa"},
+        {"code":"5515","name":"Mateare"},
+        {"code":"5520","name":"Villa El Carmen"},
+        {"code":"5522","name":"Ciudad Sandino"},
+        {"code":"5525","name":"Managua"},
+        {"code":"5530","name":"Ticuantepe"},
+        {"code":"5532","name":"El Crucero"},
+        {"code":"5535","name":"San Rafael del Sur"}
+      ]
+    },
+    {
+      "code": "60",
+      "name": "Masaya",
+      "municipalities": [
+        {"code":"6005","name":"Nindirí"},
+        {"code":"6010","name":"Masaya"},
+        {"code":"6015","name":"Tisma"},
+        {"code":"6020","name":"La Concepción"},
+        {"code":"6025","name":"Masatepe"},
+        {"code":"6030","name":"Nandasmo"},
+        {"code":"6035","name":"Catarina"},
+        {"code":"6040","name":"San Juan de Oriente"},
+        {"code":"6045","name":"Niquinohomo"}
+      ]
+    },
+    {
+      "code": "65",
+      "name": "Chontales",
+      "municipalities": [
+        {"code":"6505","name":"Comalapa"},
+        {"code":"6507","name":"San Francisco de Cuapa"},
+        {"code":"6510","name":"Juigalpa"},
+        {"code":"6515","name":"La Libertad"},
+        {"code":"6520","name":"Santo Domingo"},
+        {"code":"6525","name":"Santo Tomás"},
+        {"code":"6530","name":"San Pedro de Lóvago"},
+        {"code":"6535","name":"Acoyapa"},
+        {"code":"6540","name":"Villa Sandino"},
+        {"code":"6545","name":"El Coral"}
+      ]
+    },
+    {
+      "code": "70",
+      "name": "Granada",
+      "municipalities": [
+        {"code":"7005","name":"Diriá"},
+        {"code":"7010","name":"Diriomo"},
+        {"code":"7015","name":"Granada"},
+        {"code":"7020","name":"Nandaime"}
+      ]
+    },
+    {
+      "code": "75",
+      "name": "Carazo",
+      "municipalities": [
+        {"code":"7505","name":"San Marcos"},
+        {"code":"7510","name":"Jinotepe"},
+        {"code":"7515","name":"Dolores"},
+        {"code":"7520","name":"Diriamba"},
+        {"code":"7525","name":"El Rosario"},
+        {"code":"7530","name":"La Paz de Carazo"},
+        {"code":"7535","name":"Santa Teresa"},
+        {"code":"7540","name":"La Conquista"}
+      ]
+    },
+    {
+      "code": "80",
+      "name": "Rivas",
+      "municipalities": [
+        {"code":"8005","name":"Tola"},
+        {"code":"8010","name":"Belén"},
+        {"code":"8015","name":"Potosí"},
+        {"code":"8020","name":"Buenos Aires"},
+        {"code":"8025","name":"Moyogalpa"},
+        {"code":"8030","name":"Altagracia"},
+        {"code":"8035","name":"San Jorge"},
+        {"code":"8040","name":"Rivas"},
+        {"code":"8045","name":"San Juan del Sur"},
+        {"code":"8050","name":"Cárdenas"}
+      ]
+    },
+    {
+      "code": "85",
+      "name": "Río San Juan",
+      "municipalities": [
+        {"code":"8505","name":"Morrito"},
+        {"code":"8510","name":"El Almendro"},
+        {"code":"8515","name":"San Miguelito"},
+        {"code":"8520","name":"San Carlos"},
+        {"code":"8525","name":"El Castillo"},
+        {"code":"8530","name":"San Juan de Nicaragua"}
+      ]
+    },
+    {
+      "code": "91",
+      "name": "Región Autónoma Costa Caribe Norte",
+      "municipalities": [
+        {"code":"9105","name":"Waspán"},
+        {"code":"9110","name":"Puerto Cabezas (Bilwi)"},
+        {"code":"9115","name":"Rosita"},
+        {"code":"9120","name":"Bonanza"},
+        {"code":"9125","name":"Waslala"},
+        {"code":"9127","name":"Mulukukú"},
+        {"code":"9130","name":"Siuna"},
+        {"code":"9135","name":"Prinzapolka"}
+      ]
+    },
+    {
+      "code": "93",
+      "name": "Región Autónoma Costa Caribe Sur",
+      "municipalities": [
+        {"code":"9305","name":"Paiwas"},
+        {"code":"9310","name":"La Cruz de Río Grande"},
+        {"code":"9312","name":"Desembocadura de Río Grande"},
+        {"code":"9315","name":"Laguna de Perlas"},
+        {"code":"9316","name":"El Tortuguero"},
+        {"code":"9320","name":"El Rama"},
+        {"code":"9323","name":"El Ayote"},
+        {"code":"9325","name":"Muelle de los Bueyes"},
+        {"code":"9330","name":"Kukrahill"},
+        {"code":"9335","name":"Corn Island"},
+        {"code":"9340","name":"Bluefields"},
+        {"code":"9345","name":"Nueva Guinea"}
+      ]
+    }
+  ]
+}

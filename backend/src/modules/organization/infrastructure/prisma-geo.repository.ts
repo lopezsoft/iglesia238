@@ -3,6 +3,7 @@ import type { Transaction } from '../../../common/persistence/transaction.js';
 import { clientOf } from '../../../infrastructure/prisma/prisma-transaction.js';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 import type {
+  CountryRef,
   GeoRepository,
   MunicipalityRef,
   NeighborhoodRef,
@@ -12,20 +13,31 @@ import type {
 export class PrismaGeoRepository implements GeoRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMunicipalityByCode(code: string): Promise<MunicipalityRef | null> {
-    // DIVIPOLA codes are unique across Colombia; the seed only loads that country's divisions.
+  findCountry(id: number): Promise<CountryRef | null> {
+    return this.prisma.country.findUnique({
+      where: { id },
+      select: { id: true, name: true, isActive: true },
+    });
+  }
+
+  async findMunicipality(
+    countryId: number,
+    code: string,
+  ): Promise<MunicipalityRef | null> {
+    // Codes are unique per region, so the country is part of the key (in Colombia, DIVIPOLA codes).
     const row = await this.prisma.municipality.findFirst({
-      where: { code },
+      where: { code, region: { countryId } },
       select: {
         id: true,
         code: true,
         name: true,
-        region: { select: { name: true } },
+        region: { select: { name: true, countryId: true } },
       },
     });
     return row
       ? {
           id: row.id,
+          countryId: row.region.countryId,
           code: row.code ?? code,
           name: row.name,
           regionName: row.region.name,

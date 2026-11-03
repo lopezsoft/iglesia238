@@ -27,6 +27,7 @@ const session: SessionUser = {
   id: 1,
   displayName: 'Andrés Molina',
   email: 'andres@iglesia.example',
+  emailVerified: true,
   assignments: [
     {
       role: 'DENOMINATION_ADMIN',
@@ -60,6 +61,8 @@ class FakeAuthGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }

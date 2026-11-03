@@ -16,6 +16,9 @@ export class DomainError extends Error {
   }
 }
 
+/** `code` of the 403 the API answers to domain calls while the e-mail of the account is not confirmed. */
+export const EMAIL_NOT_VERIFIED_CODE = 'EMAIL_NOT_VERIFIED';
+
 export const GENERIC_ERROR_MESSAGE = 'No fue posible completar la operación. Intenta de nuevo.';
 
 export function userMessage(error: unknown): string {

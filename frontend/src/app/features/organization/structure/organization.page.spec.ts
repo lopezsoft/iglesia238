@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Observable, firstValueFrom, of } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 import { AuthGateway, InvitationInfo } from '../../../core/auth/auth.gateway';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Scope, SessionUser } from '../../../core/auth/session.model';
 import { CatalogsRepository, MunicipalitySearch } from '../../../core/catalogs/catalogs.repository';
-import { Municipality } from '../../../core/models/catalogs';
+import { DomainError } from '../../../core/errors/domain-error';
+import { Country, Municipality } from '../../../core/models/catalogs';
+import { CongregationFormDialogComponent } from './components/congregation-form-dialog.component';
 import { MunicipalitySelectComponent } from './components/municipality-select.component';
 import {
   CongregationFormOptions,
@@ -31,6 +33,7 @@ const session: SessionUser = {
   id: 1,
   displayName: 'Andrés Molina',
   email: 'andres@iglesia.example',
+  emailVerified: true,
   assignments: [
     {
       role: 'DENOMINATION_ADMIN',
@@ -64,6 +67,8 @@ class FakeAuthGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }
@@ -99,11 +104,22 @@ const ENTITY: LegalEntityRow = {
   email: null,
   phone: null,
   address: null,
+  countryId: 1,
+  countryName: 'Colombia',
   municipalityCode: '13001',
   municipalityName: 'Cartagena de Indias',
   regionName: 'Bolívar',
   isActive: true,
   createdAt: '2026-10-01T15:00:00.000Z',
+};
+/** Legal entities of the sede form: two of Colombia and one of a test country without municipalities. */
+const FORM_OPTIONS: CongregationFormOptions = {
+  legalEntities: [
+    { id: 3, label: 'Corporación Monte de Sión', isActive: true, countryId: 1, countryName: 'Colombia' },
+    { id: 5, label: 'Fundación Sión Norte', isActive: true, countryId: 1, countryName: 'Colombia' },
+    { id: 4, label: 'Asociación de prueba', isActive: true, countryId: 2, countryName: 'País de prueba' },
+  ],
+  districts: [],
 };
 const OVERVIEW: OrganizationOverview = {
   denominationName: 'Monte de Sión',
@@ -122,13 +138,16 @@ class FakeOrganizationRepository extends OrganizationRepository {
     return of(this.policyInForce);
   }
   policyInForce = true;
+  formOptions: CongregationFormOptions = { legalEntities: [], districts: [] };
+  readonly created: CongregationInput[] = [];
   listCongregations(): Observable<CongregationRow[]> {
     return of([SEDE]);
   }
   congregationFormOptions(): Observable<CongregationFormOptions> {
-    return of({ legalEntities: [], districts: [] });
+    return of(this.formOptions);
   }
-  createCongregation(_input: CongregationInput): Observable<CongregationRow> {
+  createCongregation(input: CongregationInput): Observable<CongregationRow> {
+    this.created.push(input);
     return of(SEDE);
   }
   updateCongregation(): Observable<CongregationRow> {
@@ -167,6 +186,7 @@ const MUNICIPALITIES: Municipality[] = [
   { code: '13001', name: 'Cartagena de Indias', regionCode: '13', regionName: 'Bolívar' },
   { code: '13430', name: 'Magangué', regionCode: '13', regionName: 'Bolívar' },
 ];
+const COUNTRIES: Country[] = [{ id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true }];
 
 class FakeCatalogsRepository extends CatalogsRepository {
   readonly searches: MunicipalitySearch[] = [];
@@ -174,8 +194,15 @@ class FakeCatalogsRepository extends CatalogsRepository {
   catalogs() {
     return of({ documentTypes: [], maritalStatuses: [], educationLevels: [], studyTypes: [], meetingTypes: [], attendanceCategories: [] });
   }
+  countries() {
+    return of(COUNTRIES);
+  }
   searchMunicipalities(query: MunicipalitySearch) {
     this.searches.push(query);
+    // Only Colombia (id 1) has municipalities in this fake; an unfiltered search covers it too.
+    if (query.countryId !== undefined && query.countryId !== null && query.countryId !== 1) {
+      return of([]);
+    }
     return of(MUNICIPALITIES.filter((item) => item.name.toLowerCase().includes(query.search.toLowerCase())));
   }
   municipality() {
@@ -249,6 +276,7 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('app-legal-entities-panel')?.textContent).toContain('900.123.456-7');
+    expect(element.querySelector('app-legal-entities-panel tbody tr')?.textContent).toContain('Colombia');
     expect(element.querySelector('app-congregations-panel')).toBeNull();
   });
 });
@@ -303,6 +331,120 @@ describe('MunicipalitySelectComponent', () => {
     expect(element.querySelector('.picked__label')?.textContent).toContain('Cartagena de Indias (Bolívar)');
     element.querySelector<HTMLButtonElement>('.picked .btn')?.click();
     expect(cleared).toEqual([true]);
+  });
+});
+
+describe('CongregationFormDialogComponent', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
+    };
+  });
+
+  interface FormInternals {
+    form: {
+      patchValue(value: Record<string, unknown>): void;
+      controls: { municipalityCode: { value: string } };
+    };
+    submit(): void;
+  }
+
+  async function renderForm() {
+    const organization = new FakeOrganizationRepository();
+    organization.formOptions = FORM_OPTIONS;
+    const catalogs = configure(undefined, organization);
+    const fixture = TestBed.createComponent(CongregationFormDialogComponent);
+    fixture.componentInstance.open.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    return {
+      fixture,
+      element,
+      catalogs,
+      organization,
+      component: fixture.componentInstance as unknown as FormInternals,
+      async chooseLegalEntity(id: string): Promise<void> {
+        const select = element.querySelector<HTMLSelectElement>('#congregation-legal-entity')!;
+        select.value = id;
+        select.dispatchEvent(new Event('change'));
+        await fixture.whenStable();
+        fixture.detectChanges();
+      },
+      async typeMunicipality(text: string): Promise<void> {
+        const input = element.querySelector<HTMLInputElement>('#congregation-municipality')!;
+        input.value = text;
+        input.dispatchEvent(new Event('input'));
+        await new Promise((resolve) => setTimeout(resolve, 320));
+        await fixture.whenStable();
+        fixture.detectChanges();
+      },
+    };
+  }
+
+  it('requires the municipality and asks for the legal entity before searching it', async () => {
+    const { element, fixture, component, organization } = await renderForm();
+
+    expect(element.querySelector('#congregation-municipality')?.hasAttribute('disabled')).toBe(true);
+    expect(element.textContent).toContain('Elige primero la razón social.');
+
+    component.form.patchValue({ name: 'Sede Chía', legalEntityId: '3', address: 'Calle 1' });
+    component.submit();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(organization.created).toEqual([]);
+    expect(element.textContent).toContain('Selecciona el municipio.');
+  });
+
+  it('searches only in the country of the legal entity and forgets the municipality of another country', async () => {
+    const { element, fixture, catalogs, component, chooseLegalEntity, typeMunicipality } = await renderForm();
+    component.form.patchValue({ name: 'Sede Centro', address: 'Calle 30' });
+
+    await chooseLegalEntity('3');
+    expect(element.textContent).toContain('Municipios de Colombia, el país de la razón social.');
+    await typeMunicipality('cart');
+
+    expect(catalogs.searches.at(-1)).toEqual({ search: 'cart', limit: 15, countryId: 1 });
+    element.querySelector('[role="option"]')!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(component.form.controls.municipalityCode.value).toBe('13001');
+
+    // Another legal entity of the same country keeps the municipality.
+    await chooseLegalEntity('5');
+    expect(component.form.controls.municipalityCode.value).toBe('13001');
+
+    // A legal entity of another country forgets it, and that country has no municipality to choose.
+    await chooseLegalEntity('4');
+    expect(component.form.controls.municipalityCode.value).toBe('');
+    expect(element.textContent).toContain('No hay municipios cargados para este país.');
+    const alerts = Array.from(element.querySelectorAll('[role="alert"]')).map((alert) => alert.textContent ?? '');
+    expect(alerts.some((text) => text.includes('no tiene municipios cargados'))).toBe(true);
+  });
+
+  it('sends the municipality of the legal entity country and shows a mismatch on the field', async () => {
+    const { element, fixture, component, organization } = await renderForm();
+    organization.createCongregation = (input: CongregationInput) => {
+      organization.created.push(input);
+      return throwError(
+        () => new DomainError('MUNICIPALITY_COUNTRY_MISMATCH', 'El municipio no pertenece al país de la razón social.', 400),
+      );
+    };
+    component.form.patchValue({ name: 'Sede Centro', legalEntityId: '3', municipalityCode: '13001', address: 'Calle 30' });
+
+    component.submit();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(organization.created).toEqual([expect.objectContaining({ legalEntityId: 3, municipalityCode: '13001' })]);
+    const alerts = Array.from(element.querySelectorAll('[role="alert"]')).map((alert) => alert.textContent ?? '');
+    expect(alerts.some((text) => text.includes('El municipio no pertenece al país de la razón social.'))).toBe(true);
+    expect(element.querySelector('.alert--danger')).toBeNull();
   });
 });
 

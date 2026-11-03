@@ -24,6 +24,7 @@ export class PrismaSessionProfileReader implements SessionProfileReader {
         id: true,
         email: true,
         displayName: true,
+        emailVerifiedAt: true,
         roleAssignments: {
           where: { revokedAt: null },
           orderBy: { id: 'asc' },
@@ -81,6 +82,7 @@ export class PrismaSessionProfileReader implements SessionProfileReader {
       id: user.id,
       displayName: displayNameOf(user.displayName, user.email),
       email: user.email,
+      emailVerified: user.emailVerifiedAt !== null,
       assignments,
       selectableScopes: await this.selectableScopes(assignments),
     };

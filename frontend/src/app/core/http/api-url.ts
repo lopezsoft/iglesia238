@@ -18,7 +18,8 @@ export function apiPath(url: string): string {
 }
 
 /** Endpoints a person uses without a session: a 401 there is an answer, never a reason to refresh. */
-const SESSIONLESS_AUTH = /^\/auth\/(login|refresh|logout|password-reset|invitations)(\/|$)/;
+const SESSIONLESS_AUTH =
+  /^\/auth\/(login|refresh|logout|password-reset|invitations|email-verification\/confirm)(\/|$)/;
 
 export function isSessionlessAuthPath(url: string): boolean {
   return SESSIONLESS_AUTH.test(apiPath(url));

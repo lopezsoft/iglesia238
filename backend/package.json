@@ -1,6 +1,6 @@
 {
   "name": "church-management-api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Multi-tenant church management API: membership, secretariat and accounting",
   "author": "",
   "private": true,
@@ -26,6 +26,9 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
+    "db:comments:check": "tsx prisma/tools/check-comments.ts",
+    "db:comments:inject": "tsx prisma/tools/inject-comments.ts",
+    "db:dictionary": "tsx prisma/tools/data-dictionary.ts",
     "admin:create": "tsx src/cli/create-platform-admin.ts",
     "admin:reset-password": "tsx src/cli/reset-platform-admin-password.ts",
     "docker:up": "docker compose -f ../docker-compose.yml --env-file ../.env up -d",

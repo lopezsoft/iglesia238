@@ -65,6 +65,8 @@ export class FakeAudit {
 
 export class FakeMailer {
   readonly sent: MailMessage[] = [];
+  /** False imitates the logging adapter (SMTP not configured). */
+  isConfigured = true;
 
   send(message: MailMessage): Promise<{ delivered: boolean }> {
     this.sent.push(message);
@@ -211,6 +213,14 @@ export class FakeAccounts implements AuthAccountRepository {
     });
     return Promise.resolve();
   }
+
+  markEmailVerified(userId: number, verifiedAt: Date): Promise<void> {
+    const account = this.accounts.get(userId) as AuthAccount & {
+      failed: number;
+    };
+    this.accounts.set(userId, { ...account, emailVerifiedAt: verifiedAt });
+    return Promise.resolve();
+  }
 }
 
 interface RefreshRow {
@@ -227,6 +237,8 @@ export class FakeRefreshTokens
   implements RefreshTokenRepository, SessionValidator
 {
   readonly rows: RefreshRow[] = [];
+  /** Users whose e-mail is not confirmed (everybody else is). */
+  readonly unverifiedUsers = new Set<number>();
   private nextId = 1;
 
   constructor(private readonly clock: Clock = new SystemClock()) {}
@@ -293,6 +305,10 @@ export class FakeRefreshTokens
           row.expiresAt > now,
       ),
     );
+  }
+
+  isEmailVerified(userId: number): Promise<boolean> {
+    return Promise.resolve(!this.unverifiedUsers.has(userId));
   }
 
   active(family: string): number {
@@ -370,6 +386,7 @@ export function buildSession(id = 1): SessionView {
     id,
     displayName: 'Laura Gómez',
     email: 'laura@iglesia.org',
+    emailVerified: true,
     assignments: [
       {
         role: 'SECRETARY',

@@ -10,13 +10,13 @@
 
     &__legend {
       padding: 0;
-      margin-bottom: $space-1;
+      margin-bottom: 0;
       font-size: $font-size-lg;
       font-weight: $font-weight-semibold;
     }
 
     &__lead {
-      margin-bottom: $space-4;
+      margin-bottom: $space-3;
     }
 
     &__error {

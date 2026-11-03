@@ -62,6 +62,21 @@ export class AcceptInvitationDto {
   password!: string;
 }
 
+export class EmailVerificationConfirmDto {
+  @ApiProperty({ description: 'Token del enlace de confirmación del correo.' })
+  @IsString()
+  @Matches(TOKEN_PATTERN, { message: 'El enlace no es válido.' })
+  token!: string;
+}
+
+export class EmailVerificationResendResponseDto {
+  @ApiPropertyOptional({
+    description:
+      'Enlace de confirmación. Solo en desarrollo (NODE_ENV distinto de production) y sin SMTP configurado; nunca en producción.',
+  })
+  devVerificationLink?: string;
+}
+
 export class ChangePasswordDto {
   @ApiProperty({ maxLength: MAX_PASSWORD_LENGTH })
   @IsString()
@@ -107,6 +122,12 @@ export class SessionResponseDto {
   @ApiProperty() id!: number;
   @ApiProperty() displayName!: string;
   @ApiProperty() email!: string;
+
+  @ApiProperty({
+    description:
+      'Falso hasta que la persona confirma su correo: las rutas de dominio responden 403 EMAIL_NOT_VERIFIED y solo funcionan /auth/*.',
+  })
+  emailVerified!: boolean;
 
   @ApiProperty({
     type: [AssignmentDto],

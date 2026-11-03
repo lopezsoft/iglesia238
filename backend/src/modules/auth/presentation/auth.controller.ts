@@ -19,6 +19,7 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { withMinimumDuration } from '../../../common/http/minimum-duration.js';
 import { RateLimit } from '../../../common/rate-limit/rate-limit.decorator.js';
+import { AllowUnverifiedEmail } from '../../../common/security/allow-unverified-email.decorator.js';
 import {
   ClientIp,
   CurrentPrincipal,
@@ -35,6 +36,10 @@ import {
   type AuthSettings,
 } from '../application/auth.settings.js';
 import { ChangePasswordUseCase } from '../application/change-password.use-case.js';
+import {
+  ConfirmEmailVerificationUseCase,
+  ResendEmailVerificationUseCase,
+} from '../application/email-verification.use-cases.js';
 import { ConfirmPasswordResetUseCase } from '../application/confirm-password-reset.use-case.js';
 import { GetSessionUseCase } from '../application/get-session.use-case.js';
 import { LoginUseCase } from '../application/login.use-case.js';
@@ -44,6 +49,8 @@ import { RequestPasswordResetUseCase } from '../application/request-password-res
 import {
   AcceptInvitationDto,
   ChangePasswordDto,
+  EmailVerificationConfirmDto,
+  EmailVerificationResendResponseDto,
   InvitationLookupDto,
   InvitationResponseDto,
   LoginRequestDto,
@@ -77,6 +84,12 @@ const REQUESTED_WITH_HEADER = ApiHeader({
     'Cualquier valor no vacío (por ejemplo XMLHttpRequest). Protege la cookie de refresco.',
 });
 
+/**
+ * Account routes. The whole controller is open to a user whose e-mail is not confirmed yet
+ * (@AllowUnverifiedEmail): they must be able to read their session, renew it, ask for a new
+ * confirmation link, change the password and sign out. Everything else answers 403 EMAIL_NOT_VERIFIED.
+ */
+@AllowUnverifiedEmail()
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -90,6 +103,8 @@ export class AuthController {
     private readonly getInvitation: GetInvitationUseCase,
     private readonly acceptInvitation: AcceptInvitationUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly confirmEmail: ConfirmEmailVerificationUseCase,
+    private readonly resendEmail: ResendEmailVerificationUseCase,
     @Inject(AUTH_SETTINGS) private readonly settings: AuthSettings,
   ) {}
 
@@ -316,6 +331,64 @@ export class AuthController {
       password: body.password,
       ipAddress,
     });
+  }
+
+  @Public()
+  @RateLimit({
+    name: 'auth-email-verification-confirm',
+    limit: 20,
+    windowSeconds: ONE_HOUR,
+  })
+  @Post('email-verification/confirm')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Confirma el correo con el enlace recibido',
+    description:
+      'Marca el correo como verificado y consume el token (un solo uso, vence a las 72 horas). El token viaja en el cuerpo, no en la URL. No inicia sesión.',
+  })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'TOKEN_INVALID_OR_EXPIRED',
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'RATE_LIMITED',
+  })
+  async confirmEmailVerification(
+    @Body() body: EmailVerificationConfirmDto,
+    @ClientIp() ipAddress: string | null,
+  ): Promise<void> {
+    await this.confirmEmail.execute({ token: body.token, ipAddress });
+  }
+
+  @Post('email-verification/resend')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiBearerAuth()
+  @RateLimit({
+    name: 'auth-email-verification-resend',
+    limit: 20,
+    windowSeconds: ONE_HOUR,
+    failure: 'closed',
+  })
+  @ApiOperation({
+    summary: 'Reenvía el enlace de confirmación del correo',
+    description:
+      'Para el usuario autenticado, incluso con el correo sin confirmar. Responde 202 siempre; el enlace anterior deja de servir. Máximo 5 por hora y usuario. `devVerificationLink` solo se devuelve en desarrollo, sin SMTP configurado.',
+  })
+  @ApiResponse({
+    status: HttpStatus.ACCEPTED,
+    type: EmailVerificationResendResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'RATE_LIMITED',
+  })
+  async resendEmailVerification(
+    @CurrentPrincipal() principal: Principal,
+    @ClientIp() ipAddress: string | null,
+  ): Promise<EmailVerificationResendResponseDto> {
+    return this.resendEmail.execute({ userId: principal.userId, ipAddress });
   }
 
   @Post('change-password')

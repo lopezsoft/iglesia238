@@ -1,7 +1,7 @@
 <app-page-header
   breadcrumb="Inicio / Plataforma / Denominaciones"
   title="Denominaciones"
-  description="Alta, edición y estado de las denominaciones (tenants) que usan la plataforma."
+  description="Alta, edición y estado de las denominaciones (tenants) y de las razones sociales de cada iglesia."
 >
   @if (canReadAudit()) {
     <a class="btn btn--secondary" routerLink="/audit">
@@ -9,10 +9,10 @@
       <span>Ver auditoría</span>
     </a>
   }
-  @if (canManage()) {
+  @if (canManage() && activeTab() !== 'paises') {
     <button type="button" class="btn btn--primary" (click)="openCreate()">
       <app-icon name="plus" />
-      <span>Nueva denominación</span>
+      <span>{{ activeTab() === 'razones' ? 'Nueva razón social' : 'Nueva denominación' }}</span>
     </button>
   }
 </app-page-header>
@@ -68,17 +68,38 @@
     tone="indigo"
     icon="lock"
     title="Aislamiento por denominación"
-    subtitle="La plataforma administra denominaciones y administradores, nunca sus datos."
+    subtitle="La plataforma administra denominaciones y sus razones sociales, nunca sus datos."
     layout="stack"
   >
     <p class="text-small">
       Como administrador de plataforma no puedes ver miembros, solicitudes ni información financiera
       de ninguna denominación. Esos datos solo son visibles para los roles asignados dentro de cada
       una. Al crear una denominación se prepara su plantilla inicial (fondo, plan de cuentas, tipos
-      de aporte, certificados y política de datos en borrador).
+      de aporte, certificados y política de datos en borrador). Registra en «Razones sociales» las
+      entidades legales de cada iglesia: cualquier persona podrá registrar su sede eligiendo una, sin
+      que exista un administrador de denominación.
     </p>
   </app-section-panel>
 
+  <app-tab-cards
+    ariaLabel="Secciones de la plataforma"
+    idPrefix="platform"
+    [items]="tabs"
+    [selected]="activeTab()"
+    (selectedChange)="selectTab($event)"
+  />
+
+  <section
+    class="stack"
+    role="tabpanel"
+    [id]="'platform-panel-' + activeTab()"
+    [attr.aria-labelledby]="tabId(activeTab())"
+  >
+    @if (activeTab() === 'razones') {
+      <app-platform-legal-entities-panel [canManage]="canManage()" (changed)="onLegalEntitiesChanged($event)" />
+    } @else if (activeTab() === 'paises') {
+      <app-platform-countries-panel [canManage]="canManage()" (changed)="onCountriesChanged($event)" />
+    } @else {
   <section class="card card--flush" aria-labelledby="denominations-list-title">
     <div class="card__header list-header">
       <h2 id="denominations-list-title">Listado</h2>
@@ -202,6 +223,8 @@
     acción queda registrada en Auditoría. Permiso requerido:
     <span class="chip chip--mono">denominations.manage</span>.
   </p>
+    }
+  </section>
 </div>
 
 <app-denomination-form-drawer

@@ -3,6 +3,7 @@ import type {
   CongregationData,
   CongregationRecord,
   CongregationRepository,
+  CountryRef,
   DistrictData,
   DistrictRecord,
   DistrictRepository,
@@ -12,24 +13,74 @@ import type {
   LegalEntityRepository,
   MunicipalityRef,
   NeighborhoodRef,
+  PlatformDenominationRef,
+  PlatformLegalEntityReader,
+  PlatformLegalEntityRecord,
 } from '../../src/modules/organization/application/organization.ports.js';
+
+export const COLOMBIA: CountryRef = {
+  id: 48,
+  name: 'Colombia',
+  isActive: true,
+};
+/** A second country, only for the tests: its municipality codes repeat Colombian ones on purpose. */
+export const OTHER_COUNTRY: CountryRef = {
+  id: 64,
+  name: 'Ecuador',
+  isActive: true,
+};
+/** A country without municipalities loaded. */
+export const EMPTY_COUNTRY: CountryRef = {
+  id: 171,
+  name: 'Perú',
+  isActive: true,
+};
+/** A country the platform has not activated. */
+export const INACTIVE_COUNTRY: CountryRef = {
+  id: 75,
+  name: 'Francia',
+  isActive: false,
+};
 
 export const CARTAGENA: MunicipalityRef = {
   id: 1,
+  countryId: COLOMBIA.id,
   code: '13001',
   name: 'Cartagena de Indias',
   regionName: 'Bolívar',
 };
 export const BOGOTA: MunicipalityRef = {
   id: 2,
+  countryId: COLOMBIA.id,
   code: '11001',
   name: 'Bogotá, D.C.',
   regionName: 'Bogotá, D.C.',
 };
+/** Same code as Cartagena, in the other country. */
+export const FOREIGN_TWIN: MunicipalityRef = {
+  id: 3,
+  countryId: OTHER_COUNTRY.id,
+  code: '13001',
+  name: 'Municipio extranjero',
+  regionName: 'Provincia extranjera',
+};
+export const QUITO: MunicipalityRef = {
+  id: 4,
+  countryId: OTHER_COUNTRY.id,
+  code: '1701',
+  name: 'Quito',
+  regionName: 'Pichincha',
+};
 
 /** One shared "database" so the fakes of the three aggregates can see each other like the tables do. */
 export class InMemoryOrganization {
-  readonly municipalities = [CARTAGENA, BOGOTA];
+  readonly countries = [
+    COLOMBIA,
+    OTHER_COUNTRY,
+    EMPTY_COUNTRY,
+    INACTIVE_COUNTRY,
+  ];
+  readonly municipalities = [CARTAGENA, BOGOTA, FOREIGN_TWIN, QUITO];
   readonly neighborhoods: (NeighborhoodRef & { municipalityId: number })[] = [];
   legalEntities: (LegalEntityRecord & { rawTaxId: string })[] = [];
   districts: Omit<DistrictRecord, 'congregationNames'>[] = [];
@@ -63,6 +114,8 @@ export class InMemoryOrganization {
       email: null,
       phone: null,
       address: null,
+      countryId: COLOMBIA.id,
+      countryName: COLOMBIA.name,
       municipalityCode: CARTAGENA.code,
       municipalityName: CARTAGENA.name,
       regionName: CARTAGENA.regionName,
@@ -163,6 +216,16 @@ export class InMemoryLegalEntityRepository implements LegalEntityRepository {
     );
   }
 
+  countCongregations(scope: TenantScope, id: number) {
+    return Promise.resolve(
+      this.world.congregations.filter(
+        (row) =>
+          row.denominationId === scope.denominationId &&
+          row.legalEntityId === id,
+      ).length,
+    );
+  }
+
   create(scope: TenantScope, data: LegalEntityData) {
     const row = this.world.addLegalEntity(
       scope.denominationId,
@@ -191,6 +254,10 @@ export class InMemoryLegalEntityRepository implements LegalEntityRepository {
       email: data.email,
       phone: data.phone,
       address: data.address,
+      countryId: data.countryId,
+      countryName:
+        this.world.countries.find((row) => row.id === data.countryId)?.name ??
+        '',
       municipalityCode: municipality?.code ?? null,
       municipalityName: municipality?.name ?? null,
       regionName: municipality?.regionName ?? null,
@@ -349,9 +416,17 @@ export class InMemoryCongregationRepository implements CongregationRepository {
 export class InMemoryGeoRepository implements GeoRepository {
   constructor(private readonly world: InMemoryOrganization) {}
 
-  findMunicipalityByCode(code: string) {
+  findCountry(id: number) {
     return Promise.resolve(
-      this.world.municipalities.find((row) => row.code === code) ?? null,
+      this.world.countries.find((row) => row.id === id) ?? null,
+    );
+  }
+
+  findMunicipality(countryId: number, code: string) {
+    return Promise.resolve(
+      this.world.municipalities.find(
+        (row) => row.countryId === countryId && row.code === code,
+      ) ?? null,
     );
   }
 
@@ -367,5 +442,57 @@ export class InMemoryGeoRepository implements GeoRepository {
     const created = { id: this.world.nextId(), name, municipalityId };
     this.world.neighborhoods.push(created);
     return Promise.resolve({ id: created.id, name: created.name });
+  }
+}
+
+/** Cross-denomination view of the same legal entities the tenant repository holds. */
+export class InMemoryPlatformLegalEntityReader implements PlatformLegalEntityReader {
+  constructor(
+    private readonly world: InMemoryOrganization,
+    readonly denominations: PlatformDenominationRef[] = [
+      { id: 1, name: 'Denominación Uno', isActive: true },
+      { id: 2, name: 'Denominación Dos', isActive: true },
+      { id: 3, name: 'Denominación Cerrada', isActive: false },
+    ],
+  ) {}
+
+  list(denominationId: number | null) {
+    return Promise.resolve(
+      this.world.legalEntities
+        .filter(
+          (row) =>
+            denominationId === null || row.denominationId === denominationId,
+        )
+        .map((row) => this.toRecord(row))
+        .sort(
+          (a, b) =>
+            a.denominationName.localeCompare(b.denominationName, 'es') ||
+            a.legalName.localeCompare(b.legalName, 'es'),
+        ),
+    );
+  }
+
+  findById(id: number) {
+    const row = this.world.legalEntities.find((entity) => entity.id === id);
+    return Promise.resolve(row ? this.toRecord(row) : null);
+  }
+
+  findDenomination(id: number) {
+    return Promise.resolve(
+      this.denominations.find((denomination) => denomination.id === id) ?? null,
+    );
+  }
+
+  private toRecord(
+    row: InMemoryOrganization['legalEntities'][number],
+  ): PlatformLegalEntityRecord {
+    return {
+      ...row,
+      denominationName:
+        this.denominations.find((d) => d.id === row.denominationId)?.name ?? '',
+      congregationCount: this.world.congregations.filter(
+        (congregation) => congregation.legalEntityId === row.id,
+      ).length,
+    };
   }
 }

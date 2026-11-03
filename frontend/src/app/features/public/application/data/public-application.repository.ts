@@ -3,6 +3,7 @@ import {
   ApplicationStatusCheck,
   ApplicationSubmission,
   CurrentPrivacyPolicy,
+  MunicipalityFilter,
   MunicipalityOption,
   OpenCongregation,
   PublicCatalogs,
@@ -23,8 +24,11 @@ export abstract class PublicApplicationRepository {
   /** Document types and marital statuses of the form. */
   abstract getCatalogs(): Observable<PublicCatalogs>;
 
-  /** Municipalities (DIVIPOLA) whose name matches the text; at most `limit`. */
-  abstract searchMunicipalities(text: string, limit?: number): Observable<MunicipalityOption[]>;
+  /**
+   * Municipalities whose name matches the text (any of them when it is empty), optionally of one
+   * country only; at most `filter.limit`.
+   */
+  abstract searchMunicipalities(text: string, filter?: MunicipalityFilter): Observable<MunicipalityOption[]>;
 
   /** Stores a PENDING application and returns only its tracking code. */
   abstract submit(input: ApplicationSubmission): Observable<SubmissionReceipt>;

@@ -1,17 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  ForbiddenDomainException,
   InvalidInputException,
   NotFoundDomainException,
 } from '../../../common/errors/domain.exception.js';
+import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import {
   CATALOGS_READER,
   type CatalogsReader,
+  type CountryView,
   type EnsuredNeighborhood,
   type GlobalCatalogs,
+  type MunicipalityKey,
   type MunicipalityView,
   type NeighborhoodView,
   type PublicCatalogs,
 } from './catalogs.reader.js';
+
+/** Permission that administers the countries; it also lets a session list the inactive ones. */
+export const COUNTRIES_MANAGE_PERMISSION = 'denominations.manage';
 
 export const DEFAULT_MUNICIPALITY_LIMIT = 20;
 export const MAX_MUNICIPALITY_LIMIT = 50;
@@ -50,6 +57,33 @@ export class GetCatalogsUseCase {
   }
 }
 
+/** GET /geo/countries: the active countries; the inactive ones too for whoever administers them. */
+@Injectable()
+export class ListCountriesUseCase {
+  constructor(
+    @Inject(CATALOGS_READER) private readonly reader: CatalogsReader,
+  ) {}
+
+  async execute(
+    includeInactive: boolean,
+    tenant: TenantContext | null,
+  ): Promise<CountryView[]> {
+    if (
+      includeInactive &&
+      !(
+        tenant?.kind === 'PLATFORM' &&
+        tenant.hasAll(COUNTRIES_MANAGE_PERMISSION)
+      )
+    ) {
+      throw new ForbiddenDomainException(
+        'Solo el equipo de plataforma puede ver los países inactivos.',
+      );
+    }
+    return this.reader.listCountries(includeInactive);
+  }
+}
+
+/** Municipalities of active countries only, optionally of one country. */
 @Injectable()
 export class SearchMunicipalitiesUseCase {
   constructor(
@@ -59,12 +93,18 @@ export class SearchMunicipalitiesUseCase {
   execute(
     search: string | undefined,
     limit: number | undefined,
+    countryId: number | undefined = undefined,
   ): Promise<MunicipalityView[]> {
     return this.reader.searchMunicipalities(
       cleanSearch(search),
       clampLimit(limit),
+      countryId ?? null,
     );
   }
+}
+
+function keyOf(code: string, countryId: number | undefined): MunicipalityKey {
+  return { code, countryId: countryId ?? null };
 }
 
 @Injectable()
@@ -73,8 +113,13 @@ export class GetMunicipalityUseCase {
     @Inject(CATALOGS_READER) private readonly reader: CatalogsReader,
   ) {}
 
-  async execute(code: string): Promise<MunicipalityView> {
-    const municipality = await this.reader.findMunicipality(code);
+  async execute(
+    code: string,
+    countryId: number | undefined = undefined,
+  ): Promise<MunicipalityView> {
+    const municipality = await this.reader.findMunicipality(
+      keyOf(code, countryId),
+    );
     if (!municipality) {
       throw new NotFoundDomainException(MUNICIPALITY_NOT_FOUND);
     }
@@ -92,9 +137,10 @@ export class ListNeighborhoodsUseCase {
     municipalityCode: string,
     search: string | undefined,
     limit: number | undefined,
+    countryId: number | undefined = undefined,
   ): Promise<NeighborhoodView[]> {
     const neighborhoods = await this.reader.listNeighborhoods(
-      municipalityCode,
+      keyOf(municipalityCode, countryId),
       cleanSearch(search),
       clampLimit(limit),
     );
@@ -115,6 +161,7 @@ export class EnsureNeighborhoodUseCase {
   async execute(
     municipalityCode: string,
     rawName: string,
+    countryId: number | undefined = undefined,
   ): Promise<EnsuredNeighborhood> {
     const name = rawName.replace(/\s+/g, ' ').trim();
     if (
@@ -126,7 +173,7 @@ export class EnsureNeighborhoodUseCase {
       );
     }
     const neighborhood = await this.reader.ensureNeighborhood(
-      municipalityCode,
+      keyOf(municipalityCode, countryId),
       name,
     );
     if (!neighborhood) {

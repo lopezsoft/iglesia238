@@ -1,6 +1,6 @@
 import { Observable, of, throwError } from 'rxjs';
 import { DomainError } from '../../errors/domain-error';
-import { AuthGateway, InvitationInfo } from '../auth.gateway';
+import { AuthGateway, EmailVerificationResend, InvitationInfo } from '../auth.gateway';
 import { SessionUser } from '../session.model';
 
 export const SCRIPTED_PASSWORD = 'clave-de-prueba';
@@ -53,5 +53,13 @@ export class ScriptedAuthGateway extends AuthGateway {
 
   changePassword(): Observable<void> {
     return of(undefined);
+  }
+
+  confirmEmail(): Observable<void> {
+    return of(undefined);
+  }
+
+  resendEmailVerification(): Observable<EmailVerificationResend> {
+    return of({ devVerificationLink: null });
   }
 }

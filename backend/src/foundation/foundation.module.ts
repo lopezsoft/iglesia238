@@ -2,7 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AUDIT_RECORDER } from '../common/audit/audit-recorder.port.js';
+import { DEFAULT_COUNTRY_ISO } from '../common/geo/default-country.js';
 import { SmartLogger } from '../common/logging/smart-logger.service.js';
+import { EXPOSE_DEV_LINKS } from '../common/mail/dev-link.js';
 import { MAILER } from '../common/mail/mailer.port.js';
 import { DocumentNumberingService } from '../common/numbering/document-numbering.service.js';
 import { DOCUMENT_SEQUENCE_STORE } from '../common/numbering/document-sequence.store.js';
@@ -82,6 +84,19 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
         );
       },
     },
+    {
+      // One-time links may be echoed in the response only outside production (and only without SMTP).
+      provide: EXPOSE_DEV_LINKS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Environment, true>): boolean =>
+        config.get('NODE_ENV', { infer: true }) !== 'production',
+    },
+    {
+      provide: DEFAULT_COUNTRY_ISO,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Environment, true>): string =>
+        config.get('DEFAULT_COUNTRY_ISO', { infer: true }),
+    },
     { provide: TRANSACTION_RUNNER, useClass: PrismaTransactionRunner },
     { provide: AUDIT_RECORDER, useClass: PrismaAuditRecorder },
     { provide: DOCUMENT_SEQUENCE_STORE, useClass: PrismaDocumentSequenceStore },
@@ -97,6 +112,8 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
     RateLimitGuard,
     PASSWORD_HASHER,
     MAILER,
+    EXPOSE_DEV_LINKS,
+    DEFAULT_COUNTRY_ISO,
     TRANSACTION_RUNNER,
     AUDIT_RECORDER,
     DocumentNumberingService,

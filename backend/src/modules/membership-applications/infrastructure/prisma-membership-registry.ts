@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
 import { BusinessRuleException } from '../../../common/errors/domain.exception.js';
 import { parseIsoDate } from '../../../common/mappers/value-mappers.js';
 import type { Transaction } from '../../../common/persistence/transaction.js';
@@ -75,7 +76,11 @@ function toExistingPerson(row: PersonRow): ExistingPerson {
 /** Writes the membership tables on behalf of the approval of an application. */
 @Injectable()
 export class PrismaMembershipRegistry implements MembershipRegistry {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /** The application form sends a bare municipality code: it is resolved inside this country. */
+    @Inject(DEFAULT_COUNTRY_ISO) private readonly defaultCountryIso: string,
+  ) {}
 
   async findPeopleByDocuments(
     scope: TenantScope,
@@ -366,7 +371,10 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         : null,
       data.municipalityCode
         ? client.municipality.findFirst({
-            where: { code: data.municipalityCode },
+            where: {
+              code: data.municipalityCode,
+              region: { country: { isoAlpha2: this.defaultCountryIso } },
+            },
             select: { id: true },
           })
         : null,

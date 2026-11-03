@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { parseMariaDbUrl } from '../src/infrastructure/prisma/mariadb-connection.js';
@@ -16,6 +16,8 @@ interface CountrySeed {
   isoAlpha3: string | null;
   name: string;
   phoneCode: string | null;
+  /** Only on creation; absent means inactive. */
+  isActive?: boolean;
 }
 
 interface RegionSeed extends CatalogEntry {
@@ -31,6 +33,22 @@ interface DivisionsSeed {
 function readSeedData<T>(fileName: string): T {
   const url = new URL(`./seed-data/${fileName}`, import.meta.url);
   return JSON.parse(readFileSync(url, 'utf8')) as T;
+}
+
+/** Regions and municipalities: one file per country, named by its ISO 3166-1 alpha-2 code (CO.json). */
+const DIVISIONS_FOLDER = 'divisions';
+const DIVISIONS_FILE = /^([A-Z]{2})\.json$/;
+
+function divisionFiles(): { isoAlpha2: string; fileName: string }[] {
+  const folder = new URL(`./seed-data/${DIVISIONS_FOLDER}/`, import.meta.url);
+  return readdirSync(folder)
+    .map((name) => DIVISIONS_FILE.exec(name))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => ({
+      isoAlpha2: match[1],
+      fileName: `${DIVISIONS_FOLDER}/${match[0]}`,
+    }))
+    .sort((a, b) => a.isoAlpha2.localeCompare(b.isoAlpha2));
 }
 
 const DOCUMENT_TYPES: CatalogEntry[] = [
@@ -226,10 +244,11 @@ async function seedCountries(prisma: PrismaClient): Promise<void> {
   const { countries } = readSeedData<{ countries: CountrySeed[] }>(
     'countries.json',
   );
-  for (const { isoAlpha2, ...data } of countries) {
+  for (const { isoAlpha2, isActive = false, ...data } of countries) {
+    // The platform administrator owns isActive: the seed sets it only when the country is created.
     await prisma.country.upsert({
       where: { isoAlpha2 },
-      create: { isoAlpha2, ...data },
+      create: { isoAlpha2, isActive, ...data },
       update: data,
     });
   }
@@ -237,9 +256,15 @@ async function seedCountries(prisma: PrismaClient): Promise<void> {
 
 async function seedAdministrativeDivisions(
   prisma: PrismaClient,
+  isoAlpha2: string,
   fileName: string,
 ): Promise<void> {
   const { countryIsoAlpha2, regions } = readSeedData<DivisionsSeed>(fileName);
+  if (countryIsoAlpha2 !== isoAlpha2) {
+    throw new Error(
+      `${fileName} declares country ${countryIsoAlpha2}; the file name must match it`,
+    );
+  }
   const country = await prisma.country.findUniqueOrThrow({
     where: { isoAlpha2: countryIsoAlpha2 },
   });
@@ -276,7 +301,9 @@ async function seedAdministrativeDivisions(
 
 async function seed(prisma: PrismaClient): Promise<void> {
   await seedCountries(prisma);
-  await seedAdministrativeDivisions(prisma, 'colombia-divipola.json');
+  for (const { isoAlpha2, fileName } of divisionFiles()) {
+    await seedAdministrativeDivisions(prisma, isoAlpha2, fileName);
+  }
 
   const updateName = ({ code, name }: CatalogEntry) => ({
     where: { code },

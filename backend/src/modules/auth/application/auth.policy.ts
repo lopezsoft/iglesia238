@@ -5,6 +5,9 @@ export const LOCK_MINUTES = 15;
 /** Recovery links live for 30 minutes and work once. */
 export const PASSWORD_RESET_TOKEN_MINUTES = 30;
 
+/** The confirmation link of a new account lives 72 hours and works once. */
+export const EMAIL_VERIFICATION_TOKEN_HOURS = 72;
+
 /**
  * A refresh token that was rotated a moment ago and is presented again is almost always two tabs
  * refreshing at the same time, not a theft: inside this window it is refused without ending the session.
@@ -14,6 +17,11 @@ export const REFRESH_REUSE_GRACE_SECONDS = 10;
 /** Per-email limits applied by the use cases, next to the per-IP limits of the controller. */
 export const LOGIN_EMAIL_RATE = { limit: 10, windowSeconds: 15 * 60 } as const;
 export const PASSWORD_RESET_EMAIL_RATE = {
+  limit: 5,
+  windowSeconds: 60 * 60,
+} as const;
+/** A new link can be requested a few times per hour per user (it sends an e-mail each time). */
+export const EMAIL_VERIFICATION_RESEND_RATE = {
   limit: 5,
   windowSeconds: 60 * 60,
 } as const;
@@ -42,6 +50,8 @@ export const AuthAuditAction = {
   PASSWORD_RESET: 'PASSWORD_RESET',
   PASSWORD_CHANGED: 'PASSWORD_CHANGED',
   INVITATION_ACCEPTED: 'INVITATION_ACCEPTED',
+  EMAIL_VERIFICATION_REQUESTED: 'EMAIL_VERIFICATION_REQUESTED',
+  EMAIL_VERIFIED: 'EMAIL_VERIFIED',
 } as const;
 
 export const AUDIT_ENTITY_USER = 'User';

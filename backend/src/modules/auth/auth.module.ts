@@ -9,6 +9,10 @@ import {
 } from './application/auth.settings.js';
 import { ChangePasswordUseCase } from './application/change-password.use-case.js';
 import { ConfirmPasswordResetUseCase } from './application/confirm-password-reset.use-case.js';
+import {
+  ConfirmEmailVerificationUseCase,
+  ResendEmailVerificationUseCase,
+} from './application/email-verification.use-cases.js';
 import { GetSessionUseCase } from './application/get-session.use-case.js';
 import {
   AcceptInvitationUseCase,
@@ -75,6 +79,8 @@ import { AuthController } from './presentation/auth.controller.js';
     GetInvitationUseCase,
     AcceptInvitationUseCase,
     ChangePasswordUseCase,
+    ConfirmEmailVerificationUseCase,
+    ResendEmailVerificationUseCase,
   ],
 })
 export class AuthModule {}

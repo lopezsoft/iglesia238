@@ -37,7 +37,7 @@ export class LoadingComponent {
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      padding: 2rem 1rem;
+      padding: 1.25rem 1rem;
       text-align: center;
     }
 

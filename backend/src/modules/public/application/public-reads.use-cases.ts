@@ -34,6 +34,51 @@ export class ListOpenCongregationsUseCase {
   }
 }
 
+const VISIBLE_TAX_ID_CHARACTERS = 3;
+
+/** "900.123.456-7" becomes "***.***.**6-7": only the last 3 characters are visible, separators stay. */
+export function maskTaxId(taxId: string): string {
+  const visibleFrom = Math.max(0, taxId.length - VISIBLE_TAX_ID_CHARACTERS);
+  return [...taxId]
+    .map((char, index) =>
+      index >= visibleFrom || !/[\p{L}\p{N}]/u.test(char) ? char : '*',
+    )
+    .join('');
+}
+
+export interface PublicLegalEntityView {
+  readonly id: number;
+  readonly legalName: string;
+  readonly tradeName: string | null;
+  readonly taxIdMasked: string;
+  readonly denominationId: number;
+  readonly denominationName: string;
+  readonly countryId: number;
+  readonly countryName: string;
+}
+
+/** Legal entities the registration form offers. The NIT leaves the API masked. */
+@Injectable()
+export class ListPublicLegalEntitiesUseCase {
+  constructor(
+    @Inject(PUBLIC_DIRECTORY) private readonly directory: PublicDirectory,
+  ) {}
+
+  async execute(): Promise<PublicLegalEntityView[]> {
+    const rows = await this.directory.listLegalEntities();
+    return rows.map((row) => ({
+      id: row.id,
+      legalName: row.legalName,
+      tradeName: row.tradeName,
+      taxIdMasked: maskTaxId(row.taxId),
+      denominationId: row.denominationId,
+      denominationName: row.denominationName,
+      countryId: row.countryId,
+      countryName: row.countryName,
+    }));
+  }
+}
+
 /** The policy an applicant of the denomination accepts today. */
 @Injectable()
 export class GetCurrentPolicyUseCase {

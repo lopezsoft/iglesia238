@@ -7,14 +7,14 @@ import {
 
 class FakeStore implements PlatformPasswordStore {
   admins = new Map<string, number>([['admin@iglesia.org', 4]]);
-  replaced: { userId: number; passwordHash: string }[] = [];
+  replaced: { userId: number; passwordHash: string; verifiedAt: Date }[] = [];
 
   findPlatformAdminId(email: string) {
     return Promise.resolve(this.admins.get(email) ?? null);
   }
 
-  replacePassword(userId: number, passwordHash: string) {
-    this.replaced.push({ userId, passwordHash });
+  replacePassword(userId: number, passwordHash: string, verifiedAt: Date) {
+    this.replaced.push({ userId, passwordHash, verifiedAt });
     return Promise.resolve();
   }
 }
@@ -31,10 +31,18 @@ describe('resetPlatformAdminPassword', () => {
   it('stores a hash of the new password for the platform administrator', async () => {
     const store = new FakeStore();
 
-    const result = await resetPlatformAdminPassword({ store, hasher }, input);
+    const now = new Date('2026-11-02T15:00:00.000Z');
+
+    const result = await resetPlatformAdminPassword(
+      { store, hasher, now: () => now },
+      input,
+    );
 
     expect(result).toEqual({ userId: 4, email: 'admin@iglesia.org' });
-    expect(store.replaced).toEqual([{ userId: 4, passwordHash: 'hashed(17)' }]);
+    // The e-mail is confirmed in the same operation, so the administrator is not locked out.
+    expect(store.replaced).toEqual([
+      { userId: 4, passwordHash: 'hashed(17)', verifiedAt: now },
+    ]);
   });
 
   it('refuses a weak password before touching anything', async () => {

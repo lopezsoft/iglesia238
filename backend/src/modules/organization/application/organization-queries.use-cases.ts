@@ -20,8 +20,14 @@ export interface SelectOptionView {
   readonly isActive: boolean;
 }
 
+/** The country tells the form where to search the municipality of the sede. */
+export interface LegalEntityOptionView extends SelectOptionView {
+  readonly countryId: number;
+  readonly countryName: string;
+}
+
 export interface CongregationFormOptionsView {
-  readonly legalEntities: readonly SelectOptionView[];
+  readonly legalEntities: readonly LegalEntityOptionView[];
   readonly districts: readonly SelectOptionView[];
 }
 
@@ -62,6 +68,8 @@ export class GetCongregationFormOptionsUseCase {
           id: row.id,
           label: row.legalName,
           isActive: row.isActive,
+          countryId: row.countryId,
+          countryName: row.countryName,
         }))
         .sort((a, b) => compareSpanish(a.label, b.label)),
       districts: sortDistricts(districts).map((row) => ({

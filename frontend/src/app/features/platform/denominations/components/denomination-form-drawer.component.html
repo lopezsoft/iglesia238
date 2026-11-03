@@ -60,7 +60,7 @@
           <p class="text-small">
             Los porcentajes del diezmo no tienen valor por defecto: el administrador de la
             denominación los registra en Contabilidad. La política de datos queda en borrador y las
-            sedes no reciben inscripciones públicas hasta que la publique.
+            sedes no reciben inscripciones públicas hasta que se publique.
           </p>
         </div>
       </section>
@@ -69,9 +69,10 @@
     <div class="alert alert--warning" role="note">
       <app-icon name="lock" />
       <span>
-        Aislamiento de datos: después de crearla no podrás ver sus miembros ni sus finanzas. Asigna
-        un administrador de denominación desde <a routerLink="/users">Usuarios y roles</a> para que
-        configure sedes y razones sociales.
+        Aislamiento de datos: después de crearla no podrás ver sus miembros ni sus finanzas. Registra
+        sus razones sociales en la sección <a routerLink="/denominations" [queryParams]="{ tab: 'razones' }">Razones sociales</a>:
+        cualquier persona podrá registrar su sede eligiendo una, sin necesidad de un administrador de
+        denominación.
       </span>
     </div>
   </form>

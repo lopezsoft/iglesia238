@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { apiUrl } from '../../../../core/http/api-url';
 import {
   CongregationFormOptions,
@@ -11,10 +11,17 @@ import {
   LegalEntityInput,
   LegalEntityRow,
   OrganizationOverview,
+  SelectOption,
 } from './organization.models';
 import { OrganizationRepository } from './organization.repository';
 
 const BASE = '/organization';
+
+/** GET /organization/congregations/form-options. The legal entities may or may not carry their country. */
+interface FormOptionsDto {
+  readonly legalEntities: readonly (SelectOption & { countryId?: number | null; countryName?: string | null })[];
+  readonly districts: readonly SelectOption[];
+}
 
 /** Adapter over `/api/organization/*`. The API applies the rules and isolates the denomination. */
 @Injectable()
@@ -35,8 +42,32 @@ export class HttpOrganizationRepository extends OrganizationRepository {
     return this.http.get<CongregationRow[]>(apiUrl(`${BASE}/congregations`));
   }
 
+  /**
+   * Options of the sede form. The legal entities are completed with their country (from the legal entity
+   * rows) because the municipality of a sede must belong to the country of its legal entity.
+   */
   override congregationFormOptions(): Observable<CongregationFormOptions> {
-    return this.http.get<CongregationFormOptions>(apiUrl(`${BASE}/congregations/form-options`));
+    return forkJoin({
+      options: this.http.get<FormOptionsDto>(apiUrl(`${BASE}/congregations/form-options`)),
+      rows: this.listLegalEntities(),
+    }).pipe(
+      map(({ options, rows }) => {
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        return {
+          districts: options.districts,
+          legalEntities: options.legalEntities.map(({ id, label, isActive, countryId, countryName }) => {
+            const row = byId.get(id);
+            return {
+              id,
+              label,
+              isActive,
+              countryId: countryId ?? row?.countryId ?? null,
+              countryName: countryName ?? row?.countryName ?? null,
+            };
+          }),
+        };
+      }),
+    );
   }
 
   override createCongregation(input: CongregationInput): Observable<CongregationRow> {

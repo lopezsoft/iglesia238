@@ -3,7 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { LOCK_MINUTES, MAX_FAILED_ATTEMPTS } from '../../../core/auth/auth-policy';
-import { AuthService } from '../../../core/auth/auth.service';
+import { AuthService, CONFIRM_EMAIL_PATH } from '../../../core/auth/auth.service';
 import { DomainError, userMessage } from '../../../core/errors/domain-error';
 import { GreetingPillComponent } from '../../../shared/ui/greeting-pill.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
@@ -76,8 +76,9 @@ export class LoginPage {
     this.pending.set(true);
     this.failure.set(null);
     try {
-      await firstValueFrom(this.auth.login(email.trim(), password));
-      await this.router.navigateByUrl(safeReturnUrl(this.returnUrl()));
+      const user = await firstValueFrom(this.auth.login(email.trim(), password));
+      // An unconfirmed e-mail locks the app: the only page that opens is "Confirma tu correo".
+      await this.router.navigateByUrl(user.emailVerified ? safeReturnUrl(this.returnUrl()) : CONFIRM_EMAIL_PATH);
     } catch (error) {
       this.failure.set({
         message: userMessage(error),

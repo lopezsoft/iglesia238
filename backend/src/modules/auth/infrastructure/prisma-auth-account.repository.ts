@@ -77,6 +77,17 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
     });
   }
 
+  async markEmailVerified(
+    userId: number,
+    verifiedAt: Date,
+    transaction?: Transaction,
+  ): Promise<void> {
+    await clientOf(this.prisma, transaction).user.updateMany({
+      where: { id: userId, emailVerifiedAt: null },
+      data: { emailVerifiedAt: verifiedAt },
+    });
+  }
+
   async setPassword(
     userId: number,
     passwordHash: string,

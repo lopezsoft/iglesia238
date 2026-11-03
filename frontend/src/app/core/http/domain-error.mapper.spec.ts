@@ -34,6 +34,13 @@ describe('toDomainError', () => {
     expect(toDomainError(failure(409)).code).toBe('CONFLICT');
   });
 
+  it('has a Spanish text for EMAIL_NOT_VERIFIED when the body sends none', () => {
+    const error = toDomainError(failure(403, { code: 'EMAIL_NOT_VERIFIED' }));
+
+    expect(error.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(error.message).toBe('Confirma tu correo electrónico para usar la aplicación.');
+  });
+
   it('never shows the message of a server fault', () => {
     const error = toDomainError(failure(500, { code: 'DB_DOWN', message: 'connect ECONNREFUSED 10.0.0.5:3306' }));
 

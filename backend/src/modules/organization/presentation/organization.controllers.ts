@@ -37,6 +37,7 @@ import {
   SetLegalEntityActiveUseCase,
   UpdateLegalEntityUseCase,
   type LegalEntityInput,
+  type LegalEntityUpdateInput,
 } from '../application/legal-entities.use-cases.js';
 import {
   GetCongregationFormOptionsUseCase,
@@ -51,6 +52,7 @@ import {
   DistrictDto,
   LegalEntityBodyDto,
   LegalEntityDto,
+  LegalEntityUpdateBodyDto,
   OrganizationOverviewDto,
   StatusBodyDto,
 } from './organization.dto.js';
@@ -76,7 +78,24 @@ function toLegalEntityInput(body: LegalEntityBodyDto): LegalEntityInput {
     tradeName: body.tradeName ?? null,
     taxId: body.taxId,
     legalRepresentative: body.legalRepresentative,
-    municipalityCode: body.municipalityCode,
+    countryId: body.countryId,
+    municipalityCode: body.municipalityCode ?? null,
+    email: body.email ?? null,
+    phone: body.phone ?? null,
+    address: body.address ?? null,
+  };
+}
+
+function toLegalEntityUpdateInput(
+  body: LegalEntityUpdateBodyDto,
+): LegalEntityUpdateInput {
+  return {
+    legalName: body.legalName,
+    tradeName: body.tradeName ?? null,
+    taxId: body.taxId,
+    legalRepresentative: body.legalRepresentative,
+    countryId: body.countryId ?? null,
+    municipalityCode: body.municipalityCode ?? null,
     email: body.email ?? null,
     phone: body.phone ?? null,
     address: body.address ?? null,
@@ -134,9 +153,13 @@ export class CongregationsController {
   @Post()
   @ApiOperation({
     summary:
-      'Crea una sede. Si no se envía el código, se genera a partir del nombre',
+      'Crea una sede. Si no se envía el código, se genera a partir del nombre. El municipio es obligatorio y del país de la razón social',
   })
   @ApiResponse({ status: HttpStatus.CREATED, type: CongregationDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'MUNICIPALITY_COUNTRY_MISMATCH',
+  })
   create(
     @CurrentTenant() context: TenantContext,
     @ClientIp() ipAddress: string | null,
@@ -150,8 +173,15 @@ export class CongregationsController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Edita una sede' })
+  @ApiOperation({
+    summary:
+      'Edita una sede. El municipio se valida contra el país de la razón social elegida',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: CongregationDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'MUNICIPALITY_COUNTRY_MISMATCH',
+  })
   update(
     @CurrentTenant() context: TenantContext,
     @ClientIp() ipAddress: string | null,
@@ -230,9 +260,18 @@ export class LegalEntitiesController {
 
   @Post()
   @ApiOperation({
-    summary: 'Crea una razón social (el NIT es único en la plataforma)',
+    summary:
+      'Crea una razón social en un país (el NIT es único en la plataforma; el municipio, opcional, es de ese país)',
   })
   @ApiResponse({ status: HttpStatus.CREATED, type: LegalEntityDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'MUNICIPALITY_COUNTRY_MISMATCH',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'COUNTRY_NOT_FOUND',
+  })
   create(
     @CurrentTenant() context: TenantContext,
     @ClientIp() ipAddress: string | null,
@@ -246,19 +285,35 @@ export class LegalEntitiesController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Edita una razón social' })
+  @ApiOperation({
+    summary:
+      'Edita una razón social (sin countryId conserva el país; sin municipalityCode queda sin municipio)',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: LegalEntityDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'MUNICIPALITY_COUNTRY_MISMATCH',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'COUNTRY_NOT_FOUND',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description:
+      'DUPLICATE_TAX_ID o LEGAL_ENTITY_HAS_CONGREGATIONS (cambio de país con sedes)',
+  })
   update(
     @CurrentTenant() context: TenantContext,
     @ClientIp() ipAddress: string | null,
     @Param('id', PositiveIntPipe) id: number,
-    @Body() body: LegalEntityBodyDto,
+    @Body() body: LegalEntityUpdateBodyDto,
   ) {
     return this.updateLegalEntity.execute({
       context,
       ipAddress,
       id,
-      input: toLegalEntityInput(body),
+      input: toLegalEntityUpdateInput(body),
     });
   }
 

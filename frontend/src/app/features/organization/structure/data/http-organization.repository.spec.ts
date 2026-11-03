@@ -37,6 +37,7 @@ const LEGAL_ENTITY: LegalEntityInput = {
   tradeName: null,
   taxId: '900.123.456-7',
   legalRepresentative: 'Representante',
+  countryId: 1,
   municipalityCode: '11001',
   email: null,
   phone: null,
@@ -63,7 +64,30 @@ describe('HttpOrganizationRepository', () => {
     backend
       .expectOne('/api/organization/congregations/form-options')
       .flush({ legalEntities: [], districts: [] });
+    backend.expectOne('/api/organization/legal-entities').flush([]);
     expect(await options).toEqual({ legalEntities: [], districts: [] });
+  });
+
+  it('completes the legal entities of the sede form with their country', async () => {
+    const { repository, backend } = setup();
+
+    const options = firstValueFrom(repository.congregationFormOptions());
+    backend.expectOne('/api/organization/congregations/form-options').flush({
+      legalEntities: [
+        { id: 3, label: 'Corporación Monte de Sión', isActive: true },
+        { id: 4, label: 'Sin datos', isActive: false },
+      ],
+      districts: [{ id: 2, label: 'Distrito 2', isActive: true }],
+    });
+    backend.expectOne('/api/organization/legal-entities').flush([{ id: 3, countryId: 1, countryName: 'Colombia' }]);
+
+    expect(await options).toEqual({
+      legalEntities: [
+        { id: 3, label: 'Corporación Monte de Sión', isActive: true, countryId: 1, countryName: 'Colombia' },
+        { id: 4, label: 'Sin datos', isActive: false, countryId: null, countryName: null },
+      ],
+      districts: [{ id: 2, label: 'Distrito 2', isActive: true }],
+    });
   });
 
   it('creates and updates a sede with the contract bodies', async () => {
@@ -118,6 +142,7 @@ describe('HttpOrganizationRepository', () => {
     const updated = firstValueFrom(repository.updateLegalEntity(3, LEGAL_ENTITY));
     const update = backend.expectOne('/api/organization/legal-entities/3');
     expect(update.request.method).toBe('PUT');
+    expect(update.request.body).toEqual(LEGAL_ENTITY);
     update.flush({ id: 3 });
     await updated;
   });

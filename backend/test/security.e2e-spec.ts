@@ -105,7 +105,10 @@ describe('Security: authentication, scope and permissions', () => {
       .overrideProvider(RedisService)
       .useValue({ client: { ping: vi.fn() } })
       .overrideProvider(SESSION_VALIDATOR)
-      .useValue({ isActive: () => Promise.resolve(true) })
+      .useValue({
+        isActive: () => Promise.resolve(true),
+        isEmailVerified: () => Promise.resolve(true),
+      })
       .overrideProvider(ASSIGNMENTS_READER)
       .useValue(fakeReader)
       .compile();

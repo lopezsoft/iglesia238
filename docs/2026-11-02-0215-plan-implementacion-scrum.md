@@ -4,7 +4,7 @@
 |---|---|
 | **Fecha** | 2026-11-02 |
 | **Alcance** | Backend y modelo de datos. El frontend del MVP habla con la API real (sección 7) |
-| **Estado** | Sprint 0 terminado. Versión 0.4.0: la API implementa los módulos de los sprints 1 a 6 y el frontend los consume sin datos de prueba; falta aplicar la migración `20261102150000_api_support_fields`, probar contra MariaDB y los sprints 7 y 8 (migración de datos, salida a producción y cierre de alcance) |
+| **Estado** | Sprint 0 terminado. Versión 0.5.0: la API implementa los módulos de los sprints 1 a 6 y el frontend los consume sin datos de prueba; una sola migración inicial con diccionario de datos completo, aplicada en la base de desarrollo; faltan las pruebas manuales contra MariaDB y los sprints 7 y 8 (migración de datos, salida a producción y cierre de alcance) |
 | **Documentos relacionados** | [Auditoría inicial](2026-11-02-0058-auditoria-estado-proyecto.md) · [backend/README.md](../backend/README.md) |
 
 Este plan sustituye al DER propuesto en la sección 10 de la auditoría, que estaba en español. El modelo vigente es `backend/prisma/schema/`, con identificadores en inglés.
@@ -322,12 +322,12 @@ Capacidad de referencia: 30 a 35 puntos por sprint. Se ajusta tras medir la velo
 | 7 | Migración y salida a producción | G-01, G-02, G-03, TEC-03, A-05 | 29 |
 | 8 | Cierre de alcance | D-04, D-05, C-07, F-01, TEC-04, TEC-05 | 18 |
 
-Estado a la versión 0.4.0 (ver [CHANGELOG](../CHANGELOG.md)): el frontend del MVP ya no tiene adaptadores de demostración, cada pantalla usa su adaptador HTTP, y el backend implementa acceso, organización, inscripción pública, membresía, secretaría, aportes y caja, liquidación del diezmo, presupuesto y reportes. Pendiente por verificar contra una base real (la migración se aplica con `npm run prisma:migrate:deploy`): las consultas Prisma que solo se probaron con dobles en memoria.
+Estado a la versión 0.5.0 (ver [CHANGELOG](../CHANGELOG.md)): el frontend del MVP ya no tiene adaptadores de demostración, cada pantalla usa su adaptador HTTP, y el backend implementa acceso, organización, inscripción pública, membresía, secretaría, aportes y caja, liquidación del diezmo, presupuesto y reportes. Las migraciones se unificaron en `20261103000000_init`, con un comentario (`COMMENT`) en cada tabla y columna; el modelado está en [2026-11-02-2339-modelo-de-datos.md](2026-11-02-2339-modelo-de-datos.md). Pendiente por verificar con uso real: las consultas Prisma que solo se probaron con dobles en memoria.
 
-| Sprint | Estado a 0.4.0 |
+| Sprint | Estado a 0.5.0 |
 |---|---|
 | 1 Acceso seguro y multi-iglesia | Implementado (login, refresh, invitaciones, recuperación, roles por alcance); falta CI (TEC-01) |
-| 2 Organización e inscripción pública | Implementado |
+| 2 Organización e inscripción pública | Implementado, con registro público de sedes, país de la razón social y divisiones de 18 países |
 | 3 Membresía | Implementado (alta manual, estado, traslados, ficha socioeconómica, auditoría) |
 | 4 Secretaría | Implementado (certificados y carnés con PDF, asistencia, registros); sin QR ni fotos |
 | 5 Aportes y caja | Implementado |

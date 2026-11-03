@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { DomainError } from '../errors/domain-error';
+import { DomainError, EMAIL_NOT_VERIFIED_CODE } from '../errors/domain-error';
 
 interface ApiErrorBody {
   readonly code?: unknown;
@@ -21,6 +21,11 @@ const DEFAULTS: Readonly<Record<number, StatusDefault>> = {
   422: { code: 'VALIDATION_ERROR', message: 'Revisa los datos ingresados.' },
   // The API's rate limiter answers 429 RATE_LIMITED. A locked account answers a plain 401 on purpose.
   429: { code: 'RATE_LIMITED', message: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' },
+};
+
+/** Spanish text for the codes the screens react to, used when the API body carries no message. */
+const CODE_MESSAGES: Readonly<Record<string, string>> = {
+  [EMAIL_NOT_VERIFIED_CODE]: 'Confirma tu correo electrónico para usar la aplicación.',
 };
 
 const NETWORK_ERROR: StatusDefault = {
@@ -48,7 +53,8 @@ export function toDomainError(error: HttpErrorResponse): DomainError {
   const fallback = fallbackFor(error.status);
   const body = isBody(error.error) ? error.error : null;
   const code = typeof body?.code === 'string' && body.code !== '' ? body.code : fallback.code;
-  const message = error.status >= 500 ? fallback.message : readMessage(body, fallback.message);
+  const message =
+    error.status >= 500 ? fallback.message : readMessage(body, CODE_MESSAGES[code] ?? fallback.message);
   return new DomainError(code, message, error.status, readRetryAfter(error));
 }
 

@@ -21,6 +21,7 @@ import {
   denominationAuditActor,
   denominationScopeOf,
   generateCongregationCode,
+  municipalityCountryMismatch,
   normalizeCode,
   optionalEmail,
   optionalText,
@@ -140,14 +141,20 @@ export class CongregationInputValidator {
       );
     }
 
-    const municipality = await this.geo.findMunicipalityByCode(
+    // The sede is in the country of its legal entity, so the code is resolved inside that country
+    // (codes repeat across countries). Changing the legal entity on an edit validates it again.
+    const municipalityCode = requiredText(
       input.municipalityCode,
+      'El municipio de la sede',
+      10,
+      'MUNICIPALITY_REQUIRED',
+    );
+    const municipality = await this.geo.findMunicipality(
+      legalEntity.countryId,
+      municipalityCode,
     );
     if (!municipality) {
-      throw new InvalidInputException(
-        'Selecciona un municipio válido.',
-        'INVALID_MUNICIPALITY',
-      );
+      throw municipalityCountryMismatch();
     }
 
     return {

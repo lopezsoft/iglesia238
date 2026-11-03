@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { ApplicationStep, StepId } from '../application-steps';
+
+/** One step of a public wizard (the member application and the congregation registration share it). */
+export interface WizardStep {
+  readonly id: string;
+  readonly label: string;
+  readonly hint: string;
+}
 
 type StepState = 'done' | 'current' | 'pending';
 
@@ -11,7 +17,7 @@ type StepState = 'done' | 'current' | 'pending';
   imports: [IconComponent],
   styleUrl: './application-stepper.component.scss',
   template: `
-    <ol class="stepper" aria-label="Pasos de la solicitud">
+    <ol class="stepper" [attr.aria-label]="ariaLabel()">
       @for (step of items(); track step.id; let index = $index) {
         <li class="stepper__item" [class]="'stepper__item--' + step.state" [attr.aria-current]="step.state === 'current' ? 'step' : null">
           <span class="stepper__marker" aria-hidden="true">
@@ -36,8 +42,9 @@ type StepState = 'done' | 'current' | 'pending';
   `,
 })
 export class ApplicationStepperComponent {
-  readonly steps = input.required<readonly ApplicationStep[]>();
-  readonly current = input.required<StepId>();
+  readonly steps = input.required<readonly WizardStep[]>();
+  readonly current = input.required<string>();
+  readonly ariaLabel = input('Pasos de la solicitud');
 
   protected readonly items = computed(() => {
     const currentIndex = this.steps().findIndex((step) => step.id === this.current());

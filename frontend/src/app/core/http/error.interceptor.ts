@@ -1,18 +1,32 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { Injector, inject } from '@angular/core';
 import { catchError, from, Observable, of, switchMap, throwError } from 'rxjs';
-import { isApiRequest } from './api-url';
+import { AuthService } from '../auth/auth.service';
+import { EMAIL_NOT_VERIFIED_CODE } from '../errors/domain-error';
+import { isApiRequest, isScopedPath } from './api-url';
 import { toDomainError } from './domain-error.mapper';
 
-/** Outermost interceptor: every API failure reaches the screens as a DomainError. */
+/**
+ * Outermost interceptor: every API failure reaches the screens as a DomainError. A domain call
+ * refused with EMAIL_NOT_VERIFIED also tells the session to lock the app on the "Confirma tu correo" page.
+ */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   if (!isApiRequest(request.url)) {
     return next(request);
   }
+  // Resolved on demand: AuthService depends on HttpClient, which is built with this interceptor.
+  const injector = inject(Injector);
   return next(request).pipe(
     catchError((error: unknown) =>
       error instanceof HttpErrorResponse
         ? withReadableBody(error).pipe(
-            switchMap((readable) => throwError(() => toDomainError(readable))),
+            switchMap((readable) => {
+              const domainError = toDomainError(readable);
+              if (domainError.code === EMAIL_NOT_VERIFIED_CODE && isScopedPath(request.url)) {
+                void injector.get(AuthService).handleEmailNotVerified();
+              }
+              return throwError(() => domainError);
+            }),
           )
         : throwError(() => error),
     ),

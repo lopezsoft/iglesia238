@@ -6,6 +6,7 @@ import {
   ApplicationStatusCheck,
   ApplicationSubmission,
   CurrentPrivacyPolicy,
+  MunicipalityFilter,
   MunicipalityOption,
   OpenCongregation,
   PublicCatalogs,
@@ -16,9 +17,15 @@ import { MunicipalityPickerComponent } from './municipality-picker.component';
 
 class FakeRepository extends PublicApplicationRepository {
   readonly searches: string[] = [];
+  readonly filters: (MunicipalityFilter | undefined)[] = [];
 
-  searchMunicipalities(text: string): Observable<MunicipalityOption[]> {
+  searchMunicipalities(text: string, filter?: MunicipalityFilter): Observable<MunicipalityOption[]> {
+    if (filter?.limit === 1) {
+      // Availability check of a country: only the country with id 1 has municipalities here.
+      return of(filter.countryId === 1 ? [{ code: '13001', name: 'Cartagena', regionName: 'Bolívar' }] : []);
+    }
     this.searches.push(text);
+    this.filters.push(filter);
     return of([
       { code: '13001', name: 'Cartagena', regionName: 'Bolívar' },
       { code: '13430', name: 'Magangué', regionName: 'Bolívar' },
@@ -43,18 +50,26 @@ class FakeRepository extends PublicApplicationRepository {
 
 @Component({
   imports: [MunicipalityPickerComponent],
-  template: `<app-municipality-picker [codeControl]="code" [nameControl]="name" />`,
+  template: `<app-municipality-picker
+    [codeControl]="code"
+    [nameControl]="name"
+    [countryId]="countryId"
+    (availabilityChange)="available = $event"
+  />`,
 })
 class HostComponent {
   readonly code = new FormControl('', { nonNullable: true });
   readonly name = new FormControl('', { nonNullable: true });
+  countryId: number | null = null;
+  available: boolean | null = null;
 }
 
-async function render() {
+async function render(countryId: number | null = null) {
   TestBed.configureTestingModule({
     providers: [{ provide: PublicApplicationRepository, useClass: FakeRepository }],
   });
   const fixture = TestBed.createComponent(HostComponent);
+  fixture.componentInstance.countryId = countryId;
   await fixture.whenStable();
   return {
     fixture,
@@ -88,11 +103,34 @@ describe('MunicipalityPickerComponent', () => {
     await type(fixture, 'car');
 
     expect(repository.searches).toEqual(['car']);
+    // The member application searches every country.
+    expect(repository.filters).toEqual([undefined]);
     const options = [...element.querySelectorAll('[role="option"]')];
     expect(options.map((option) => [...option.querySelectorAll('span')].map((part) => part.textContent?.trim()))).toEqual([
       ['Cartagena', 'Bolívar'],
       ['Magangué', 'Bolívar'],
     ]);
+  });
+
+  it('searches only in the given country', async () => {
+    const { fixture, repository, element } = await render(1);
+
+    await type(fixture, 'car');
+
+    expect(repository.filters).toEqual([{ countryId: 1 }]);
+    expect(element.querySelectorAll('[role="option"]')).toHaveLength(2);
+    expect(fixture.componentInstance.available).toBe(true);
+  });
+
+  it('explains that a country has no municipalities instead of offering the search', async () => {
+    const { fixture, element } = await render(2);
+    fixture.detectChanges();
+
+    const input = element.querySelector<HTMLInputElement>('input')!;
+    expect(input.disabled).toBe(true);
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('No hay municipios cargados para este país.');
+    expect(input.getAttribute('aria-describedby')).toBe(element.querySelector('[role="status"]')?.id);
+    expect(fixture.componentInstance.available).toBe(false);
   });
 
   it('keeps the code in the form and shows the choice, until the person changes it', async () => {

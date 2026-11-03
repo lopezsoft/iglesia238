@@ -18,6 +18,7 @@ Cómo se comunica con la API:
 - **Alcance:** el selector «Actuar en» fija la cabecera `X-Scope` (`P`, `D:<denominaciónId>` o `C:<sedeId>`) de cada petición. La API la valida contra los roles vigentes.
 - **Permisos:** la sesión trae los permisos de cada rol (calculados por la API); el frontend solo los usa para mostrar u ocultar menús y acciones.
 - **Errores:** un interceptor convierte `HttpErrorResponse` en `DomainError` con el mensaje en español y el `code` de la API.
+- **Registro de sedes y correo:** cualquiera puede registrar una sede desde el login (`/register-congregation`, sin cuenta): elige una razón social que creó el administrador de plataforma (Denominaciones > Razones sociales), llena los datos y su usuario, y la sede queda activa. Mientras el correo no se confirma (`emailVerified: false` en la sesión), toda ruta autenticada lleva a `/confirm-email`, y la API responde `403 EMAIL_NOT_VERIFIED`. El enlace del correo abre `/login/verify-email?token=`. Sin SMTP, la API devuelve `devVerificationLink` y la pantalla lo muestra en un recuadro de «Modo desarrollo».
 - **Versión:** `src/environments/environment.ts` (`appVersion`) debe coincidir con `package.json`.
 
 ## Desarrollo

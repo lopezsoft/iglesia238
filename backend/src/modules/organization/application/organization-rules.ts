@@ -1,4 +1,8 @@
-import { InvalidInputException } from '../../../common/errors/domain.exception.js';
+import {
+  ConflictDomainException,
+  InvalidInputException,
+  NotFoundDomainException,
+} from '../../../common/errors/domain.exception.js';
 import type { AuditActor } from '../../../common/audit/audit-recorder.port.js';
 import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import { TenantScope } from '../../../common/tenancy/tenant-scope.js';
@@ -22,6 +26,31 @@ export const FIELD_LIMITS = {
 } as const;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const COUNTRY_NOT_FOUND = 'COUNTRY_NOT_FOUND';
+export const MUNICIPALITY_COUNTRY_MISMATCH = 'MUNICIPALITY_COUNTRY_MISMATCH';
+
+export function countryNotFound(): NotFoundDomainException {
+  return new NotFoundDomainException('El país no existe.', COUNTRY_NOT_FOUND);
+}
+
+export function countryInactive(): ConflictDomainException {
+  return new ConflictDomainException(
+    'El país no está activo en el sistema.',
+    'COUNTRY_INACTIVE',
+  );
+}
+
+/**
+ * The municipality is looked up inside the country of the legal entity, so a code that is not found
+ * there is not a municipality of that country, whatever it may be elsewhere.
+ */
+export function municipalityCountryMismatch(): InvalidInputException {
+  return new InvalidInputException(
+    'El municipio no pertenece al país de la razón social.',
+    MUNICIPALITY_COUNTRY_MISMATCH,
+  );
+}
 
 /**
  * NIT: base digits (plain or grouped by thousands with dots) plus the check digit,

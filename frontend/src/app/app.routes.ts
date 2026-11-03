@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
+import { authGuard, emailPendingGuard, emailVerifiedGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
 import { ACCESS } from './core/navigation/navigation';
 import { PublicLayoutComponent } from './layout/public-layout.component';
 import { ShellComponent } from './layout/shell.component';
@@ -19,6 +19,13 @@ export const routes: Routes = [
       import('./features/auth/accept-invitation/accept-invitation.page').then((m) => m.AcceptInvitationPage),
   },
   {
+    // Confirms the e-mail of a new account; works with or without a session.
+    path: 'login/verify-email',
+    title: 'Confirmar correo',
+    loadComponent: () =>
+      import('./features/auth/verify-email/verify-email.page').then((m) => m.VerifyEmailPage),
+  },
+  {
     path: 'login',
     canMatch: [guestGuard],
     loadChildren: () => import('./features/auth/auth.routes'),
@@ -29,9 +36,29 @@ export const routes: Routes = [
     loadChildren: () => import('./features/public/public.routes'),
   },
   {
+    // Anyone can register a sede: no account and no prior link.
+    path: 'register-congregation',
+    component: PublicLayoutComponent,
+    loadChildren: () => import('./features/public/congregation-registration/congregation-registration.routes'),
+  },
+  {
+    // The only page of an account with an unconfirmed e-mail: the rest of the app is locked.
+    path: 'confirm-email',
+    component: ShellComponent,
+    canMatch: [authGuard, emailPendingGuard],
+    children: [
+      {
+        path: '',
+        title: 'Confirma tu correo',
+        loadComponent: () =>
+          import('./features/auth/confirm-email/confirm-email.page').then((m) => m.ConfirmEmailPage),
+      },
+    ],
+  },
+  {
     path: '',
     component: ShellComponent,
-    canMatch: [authGuard],
+    canMatch: [authGuard, emailVerifiedGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {

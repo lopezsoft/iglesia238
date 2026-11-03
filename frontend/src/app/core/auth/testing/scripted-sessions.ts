@@ -37,6 +37,7 @@ export function sessionOf(
   displayName: string,
   assignments: readonly RoleAssignment[],
   selectableScopes: readonly Scope[],
+  emailVerified = true,
 ): SessionUser {
-  return { id: 1, displayName, email, assignments, selectableScopes };
+  return { id: 1, displayName, email, emailVerified, assignments, selectableScopes };
 }

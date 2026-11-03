@@ -31,6 +31,8 @@ class RejectingGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }
@@ -98,6 +100,47 @@ describe('LoginPage', () => {
     expect(navigate).not.toHaveBeenCalled();
     // A wrong password keeps the hint about the lock.
     expect(element.querySelector('[role="alert"]')?.textContent).toContain('15 minutos');
+  });
+
+  it('offers to register a sede next to the membership sign-up, with text that matches the new flow', async () => {
+    const { element } = await render();
+
+    const links = Array.from(element.querySelectorAll('.login__alternatives a')).map((link) => ({
+      href: link.getAttribute('href'),
+      text: link.textContent?.trim(),
+    }));
+    expect(links).toEqual([
+      { href: '/apply', text: 'Inscríbete como miembro' },
+      { href: '/register-congregation', text: 'Registrar mi sede' },
+    ]);
+    expect(element.textContent).not.toContain('al administrador de tu denominación');
+    expect(element.textContent).toContain('¿Tu iglesia aún no está en el sistema?');
+  });
+
+  it('sends an account with an unconfirmed e-mail to the locked page instead of the requested one', async () => {
+    class UnconfirmedGateway extends RejectingGateway {
+      override login(): Observable<SessionUser> {
+        return of({
+          id: 1,
+          displayName: 'Gestora Nueva',
+          email: 'nueva@iglesia.example',
+          emailVerified: false,
+          assignments: [],
+          selectableScopes: [],
+        });
+      }
+    }
+    const { fixture, element } = await render(UnconfirmedGateway);
+    fixture.componentRef.setInput('returnUrl', '/members');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    const [email, password] = Array.from(element.querySelectorAll<HTMLInputElement>('input'));
+    type(email, 'nueva@iglesia.example');
+    type(password, 'una-clave-larga-1');
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    expect(navigate).toHaveBeenCalledWith('/confirm-email');
   });
 
   it('enters the locked state when the API rate-limits the connection (429 RATE_LIMITED)', async () => {

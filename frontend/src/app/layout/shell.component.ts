@@ -48,8 +48,13 @@ export class ShellComponent {
   private readonly router = inject(Router);
 
   protected readonly activeScope = this.auth.activeScope;
+  /** The account's e-mail is not confirmed: no menu, no modules, only the "Confirma tu correo" page. */
+  protected readonly locked = computed(() => !this.auth.emailVerified());
   protected readonly navGroups = computed(() => {
     this.auth.permissions();
+    if (this.locked()) {
+      return [];
+    }
     return visibleNavGroups((permissions) => this.auth.canAny(permissions));
   });
   protected readonly menuOpen = signal(false);

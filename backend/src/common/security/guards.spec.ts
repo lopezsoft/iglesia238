@@ -14,6 +14,8 @@ import {
   RequirePermissions,
 } from './permissions.decorator.js';
 import { PermissionsGuard } from './permissions.guard.js';
+import { AllowUnverifiedEmail } from './allow-unverified-email.decorator.js';
+import { EmailVerifiedGuard } from './email-verified.guard.js';
 import type { SessionValidator } from './session-validator.port.js';
 import { FixedClock } from '../../../test/support/foundation-fakes.js';
 import { Public } from './public.decorator.js';
@@ -24,6 +26,9 @@ class Handlers {
 
   @Public()
   publicRoute(): void {}
+
+  @AllowUnverifiedEmail()
+  accountRoute(): void {}
 
   @RequirePermissions('members.read', 'members.write')
   needsBoth(): void {}
@@ -54,7 +59,10 @@ describe('JwtAuthGuard', () => {
   const isActive = vi.fn<SessionValidator['isActive']>(() =>
     Promise.resolve(true),
   );
-  const sessions: SessionValidator = { isActive };
+  const sessions: SessionValidator = {
+    isActive,
+    isEmailVerified: () => Promise.resolve(true),
+  };
   const guard = new JwtAuthGuard(
     new Reflector(),
     { verify } as unknown as AccessTokenService,
@@ -248,5 +256,60 @@ describe('PermissionsGuard', () => {
     expect(resolve).toHaveBeenCalledWith(
       expect.objectContaining({ rawScope: 'C:10' }),
     );
+  });
+});
+
+describe('EmailVerifiedGuard', () => {
+  const isEmailVerified = vi.fn<SessionValidator['isEmailVerified']>();
+  const guard = new EmailVerifiedGuard(new Reflector(), {
+    isActive: () => Promise.resolve(true),
+    isEmailVerified,
+  });
+  const principal = { userId: 7, sessionId: 'sid' };
+
+  beforeEach(() => isEmailVerified.mockReset());
+
+  it('lets a verified user through', async () => {
+    isEmailVerified.mockResolvedValue(true);
+
+    await expect(
+      guard.canActivate(contextFor('open', request({}, { principal }))),
+    ).resolves.toBe(true);
+    expect(isEmailVerified).toHaveBeenCalledWith(7);
+  });
+
+  it('answers 403 EMAIL_NOT_VERIFIED to an unverified user on a domain route, whatever its permissions', async () => {
+    isEmailVerified.mockResolvedValue(false);
+
+    for (const handler of ['open', 'needsBoth', 'needsOne'] as const) {
+      const error = await guard
+        .canActivate(contextFor(handler, request({}, { principal })))
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(ForbiddenDomainException);
+      expect((error as ForbiddenDomainException).code).toBe(
+        'EMAIL_NOT_VERIFIED',
+      );
+    }
+  });
+
+  it('lets an unverified user reach a route marked @AllowUnverifiedEmail() without looking them up', async () => {
+    await expect(
+      guard.canActivate(contextFor('accountRoute', request({}, { principal }))),
+    ).resolves.toBe(true);
+    expect(isEmailVerified).not.toHaveBeenCalled();
+  });
+
+  it('does not touch @Public() routes', async () => {
+    await expect(
+      guard.canActivate(contextFor('publicRoute', request())),
+    ).resolves.toBe(true);
+    expect(isEmailVerified).not.toHaveBeenCalled();
+  });
+
+  it('requires a principal (it runs after the authentication guard)', async () => {
+    await expect(
+      guard.canActivate(contextFor('open', request())),
+    ).rejects.toBeInstanceOf(UnauthenticatedException);
   });
 });

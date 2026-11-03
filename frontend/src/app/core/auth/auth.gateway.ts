@@ -9,6 +9,11 @@ export interface InvitationInfo {
   readonly expiresAt: string | null;
 }
 
+/** Answer of "resend the confirmation e-mail". The link comes back only when SMTP is not configured (dev). */
+export interface EmailVerificationResend {
+  readonly devVerificationLink: string | null;
+}
+
 /**
  * Port to the identity provider. The HTTP adapter talks to /api/auth: login, rotating refresh
  * token in an HttpOnly cookie, password recovery and invitations.
@@ -44,4 +49,10 @@ export abstract class AuthGateway {
 
   /** Changes the password of the signed-in user; the API closes their other sessions. */
   abstract changePassword(currentPassword: string, newPassword: string): Observable<void>;
+
+  /** Confirms the e-mail address with the one-time token of the confirmation link. No session needed. */
+  abstract confirmEmail(token: string): Observable<void>;
+
+  /** Sends the confirmation e-mail again to the signed-in user. */
+  abstract resendEmailVerification(): Observable<EmailVerificationResend>;
 }

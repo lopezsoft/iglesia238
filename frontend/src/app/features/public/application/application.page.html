@@ -47,8 +47,10 @@
                   <app-empty-state
                     icon="church"
                     title="Ninguna sede está recibiendo solicitudes"
-                    description="Vuelve a intentarlo más tarde o comunícate con la secretaría de tu iglesia."
-                  />
+                    description="Vuelve a intentarlo más tarde o comunícate con la secretaría de tu iglesia. Si tu iglesia aún no tiene sede en el sistema, puedes registrarla."
+                  >
+                    <a class="btn btn--secondary" routerLink="/register-congregation">Registrar mi sede</a>
+                  </app-empty-state>
                 } @else {
                   <app-congregation-step
                     [congregations]="list"

@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DomainError, userMessage } from '../../../core/errors/domain-error';
 import { Sex, ageOn, personFullName } from '../../../core/models/membership.model';
@@ -41,6 +42,7 @@ interface Receipt {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     IconComponent,
     LoadingComponent,
     ErrorBannerComponent,

@@ -27,4 +27,12 @@ export class PrismaSessionValidator implements SessionValidator {
     });
     return open > 0;
   }
+
+  async isEmailVerified(userId: number): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { emailVerifiedAt: true },
+    });
+    return user?.emailVerifiedAt != null;
+  }
 }

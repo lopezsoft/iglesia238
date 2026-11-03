@@ -1,0 +1,240 @@
+<div class="register">
+  <header class="register__hero">
+    <p class="register__eyebrow">
+      <app-icon name="church" [size]="14" />
+      Registro público · Sin cuenta
+    </p>
+    <h1>Registrar mi sede</h1>
+    <p class="register__lead">
+      En tres pasos: elige tu iglesia, registra la sede y crea tu usuario. La sede queda activa de inmediato; solo
+      debes confirmar tu correo.
+    </p>
+  </header>
+
+  <section class="card card--flush register__card" aria-labelledby="register-title">
+    <h2 id="register-title" class="visually-hidden">Formulario de registro de la sede</h2>
+
+    @if (receipt(); as done) {
+      <app-registration-done
+        [congregationName]="done.congregationName"
+        [email]="done.managerEmail"
+        [devVerificationLink]="done.devVerificationLink"
+      />
+    } @else if (legalEntities.error()) {
+      <div class="register__state">
+        <app-error-banner [message]="legalEntitiesError()" (retry)="legalEntities.reload()" />
+      </div>
+    } @else if (!legalEntities.hasValue()) {
+      <div class="register__state">
+        <app-loading label="Cargando iglesias…" />
+      </div>
+    } @else if (noEntities()) {
+      <div class="register__blocked" role="status">
+        <span class="register__blocked-icon"><app-icon name="landmark" [size]="28" /></span>
+        <h3>Tu iglesia aún no está registrada en la plataforma</h3>
+        <p class="text-muted">
+          Para registrar una sede, primero el administrador de la plataforma debe crear tu iglesia y su razón social.
+          Mientras tanto no es posible continuar.
+        </p>
+        <ol class="register__blocked-steps">
+          <li>Pide al administrador de la plataforma que registre tu iglesia y su razón social (NIT).</li>
+          <li>Cuando esté lista, vuelve a esta página: aparecerá en el paso 1.</li>
+          <li>Registra tu sede y crea tu usuario en dos pasos más.</li>
+        </ol>
+        <div class="cluster register__blocked-actions">
+          <button type="button" class="btn btn--primary" (click)="legalEntities.reload()">
+            <app-icon name="refresh" [size]="16" />
+            Volver a comprobar
+          </button>
+          <a class="btn btn--secondary" routerLink="/login">Ir a iniciar sesión</a>
+        </div>
+      </div>
+    } @else {
+      <div class="register__steps">
+        <app-application-stepper [steps]="steps" [current]="currentStep()" ariaLabel="Pasos del registro de la sede" />
+      </div>
+
+      <form #registrationForm class="register__body" [formGroup]="form" (ngSubmit)="next()" novalidate>
+        <p #stepHeading class="text-muted text-small register__counter" tabindex="-1">
+          Paso {{ stepIndex() + 1 }} de {{ steps.length }}
+        </p>
+
+        @switch (currentStep()) {
+          @case ('church') {
+            <app-legal-entity-picker
+              [entities]="legalEntities.value()"
+              [control]="form.controls.legalEntityId"
+              [revealErrors]="revealed()"
+            />
+          }
+          @case ('congregation') {
+            <fieldset class="register__section" formGroupName="congregation">
+              <legend class="register__legend">Datos de la sede</legend>
+              <div class="form-grid">
+                <app-text-field
+                  label="Nombre de la sede *"
+                  formControlName="name"
+                  icon="church"
+                  autocomplete="organization"
+                  placeholder="Ej.: Sede Chía"
+                  [maxlength]="limits.congregationName"
+                  [required]="true"
+                  [error]="nameError()"
+                />
+
+                <div class="field">
+                  <div class="register__field-head">
+                    <label class="field__label" for="register-municipality">Municipio *</label>
+                    @if (selectedEntity(); as entity) {
+                      <span id="register-municipality-country" class="field__hint register__country">
+                        País: {{ entity.countryName }}
+                      </span>
+                    }
+                  </div>
+                  <app-municipality-picker
+                    inputId="register-municipality"
+                    [codeControl]="form.controls.congregation.controls.municipalityCode"
+                    [nameControl]="form.controls.congregation.controls.municipalityName"
+                    [countryId]="selectedEntity()?.countryId ?? null"
+                    [invalid]="municipalityInvalid()"
+                    [describedBy]="municipalityDescribedBy() || null"
+                    (availabilityChange)="municipalitiesAvailable.set($event)"
+                  />
+                  @if (municipalityInvalid()) {
+                    <p id="register-municipality-error" class="field__error" role="alert">{{ municipalityError() }}</p>
+                  }
+                </div>
+
+                <app-text-field
+                  label="Dirección *"
+                  formControlName="address"
+                  icon="home"
+                  autocomplete="street-address"
+                  [maxlength]="limits.address"
+                  [required]="true"
+                  [error]="addressError()"
+                />
+
+                <app-text-field
+                  label="Teléfono de la sede"
+                  type="tel"
+                  formControlName="phone"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  [maxlength]="limits.phone"
+                  [error]="phoneError()"
+                />
+
+                <app-text-field
+                  label="Correo de la sede"
+                  type="email"
+                  formControlName="email"
+                  icon="mail"
+                  inputmode="email"
+                  hint="Opcional. Contacto de la sede, no el de tu usuario."
+                  [maxlength]="limits.email"
+                  [error]="emailError()"
+                />
+              </div>
+            </fieldset>
+          }
+          @case ('manager') {
+            <fieldset class="register__section" formGroupName="manager">
+              <legend class="register__legend">Tu usuario administrador</legend>
+              @if (selectedEntity(); as entity) {
+                <p class="register__summary">
+                  <app-icon name="church" [size]="16" />
+                  <span>
+                    Sede <strong>{{ form.controls.congregation.controls.name.value.trim() }}</strong> en
+                    {{ entity.denominationName }} · {{ entity.legalName }}
+                  </span>
+                </p>
+              }
+              <div class="form-grid">
+                <app-text-field
+                  label="Nombre completo *"
+                  formControlName="displayName"
+                  icon="user"
+                  autocomplete="name"
+                  [maxlength]="limits.displayName"
+                  [required]="true"
+                  [error]="displayNameError()"
+                />
+
+                <app-text-field
+                  label="Correo electrónico *"
+                  type="email"
+                  formControlName="email"
+                  icon="mail"
+                  autocomplete="username"
+                  inputmode="email"
+                  hint="Te enviaremos el enlace para confirmarlo."
+                  [maxlength]="limits.email"
+                  [required]="true"
+                  [error]="managerEmailError()"
+                />
+
+                <app-text-field
+                  label="Contraseña *"
+                  type="password"
+                  formControlName="password"
+                  icon="lock"
+                  autocomplete="new-password"
+                  [hint]="passwordHint"
+                  [required]="true"
+                  [error]="passwordError()"
+                />
+
+                <app-text-field
+                  label="Repite la contraseña *"
+                  type="password"
+                  formControlName="confirm"
+                  icon="lock"
+                  autocomplete="new-password"
+                  [required]="true"
+                  [error]="confirmError()"
+                />
+              </div>
+            </fieldset>
+          }
+        }
+
+        @if (submitError(); as message) {
+          <p class="alert alert--danger register__error" role="alert">
+            <app-icon name="alert" [size]="18" />
+            <span>{{ message }}</span>
+          </p>
+        }
+
+        <div class="register__nav">
+          <div class="register__nav-start">
+            @if (stepIndex() > 0) {
+              <button type="button" class="btn btn--secondary" (click)="previous()" [disabled]="pending()">
+                <app-icon name="chevron-left" [size]="16" />
+                Anterior
+              </button>
+            } @else {
+              <span class="text-muted text-small">
+                ¿Ya tienes cuenta? <a class="link-strong" routerLink="/login">Inicia sesión</a>
+              </span>
+            }
+          </div>
+          <button type="submit" class="btn btn--primary" [class.is-loading]="pending()" [disabled]="pending()">
+            @if (isLastStep()) {
+              @if (pending()) {
+                <app-spinner />
+                Registrando…
+              } @else {
+                <app-icon name="check" [size]="16" />
+                Registrar mi sede
+              }
+            } @else {
+              Siguiente
+              <app-icon name="chevron-right" [size]="16" />
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+</div>

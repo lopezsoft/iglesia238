@@ -10,10 +10,16 @@ export interface PlatformPasswordStore {
   /** The id of the active platform administrator with that e-mail, or null. */
   findPlatformAdminId(email: string): Promise<number | null>;
   /**
-   * Replaces the password, clears the failed attempts and the lock, and ends every open session of the
-   * account, all in one transaction.
+   * Replaces the password, clears the failed attempts and the lock, confirms the e-mail when it was
+   * not (the person who runs the command owns the server, so the account is trusted and a platform
+   * administrator is never locked out by the e-mail confirmation rule), and ends every open session of
+   * the account, all in one transaction.
    */
-  replacePassword(userId: number, passwordHash: string): Promise<void>;
+  replacePassword(
+    userId: number,
+    passwordHash: string,
+    verifiedAt: Date,
+  ): Promise<void>;
 }
 
 export interface ResetPlatformAdminPasswordInput {
@@ -27,7 +33,11 @@ export interface ResetPlatformAdminPasswordInput {
  * recover through the application.
  */
 export async function resetPlatformAdminPassword(
-  deps: { store: PlatformPasswordStore; hasher: PasswordHasher },
+  deps: {
+    store: PlatformPasswordStore;
+    hasher: PasswordHasher;
+    now?: () => Date;
+  },
   input: ResetPlatformAdminPasswordInput,
 ): Promise<{ userId: number; email: string }> {
   const email = normalizeEmail(input.email);
@@ -48,6 +58,7 @@ export async function resetPlatformAdminPassword(
   await deps.store.replacePassword(
     userId,
     await deps.hasher.hash(input.password),
+    (deps.now ?? (() => new Date()))(),
   );
   return { userId, email };
 }

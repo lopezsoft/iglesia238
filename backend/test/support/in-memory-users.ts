@@ -414,6 +414,7 @@ export class FakeAppLinks implements AppLinks {
 
 export class FakeMailer implements Mailer {
   readonly sent: MailMessage[] = [];
+  readonly isConfigured = true;
   delivered = true;
 
   send(message: MailMessage) {

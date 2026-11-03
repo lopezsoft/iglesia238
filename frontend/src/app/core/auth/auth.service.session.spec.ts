@@ -15,6 +15,7 @@ const apiSession: SessionUser = {
   id: 1,
   displayName: 'Lucía Gómez',
   email: 'lucia@iglesia.example',
+  emailVerified: true,
   assignments: [
     { role: 'DENOMINATION_ADMIN', roleName: 'Administrador de denominación', permissions: ['congregations.manage', 'members.read'], scope: denomination },
     { role: 'TREASURER', roleName: 'Tesorero(a)', permissions: ['contributions.write'], scope: sedeSur },
@@ -52,6 +53,8 @@ class FakeAuthGateway extends AuthGateway {
   acceptInvitation(): Observable<void> {
     return of(undefined);
   }
+  confirmEmail = () => of(undefined);
+  resendEmailVerification = () => of({ devVerificationLink: null });
   changePassword(): Observable<void> {
     return of(undefined);
   }
@@ -133,6 +136,43 @@ describe('AuthService with an API session', () => {
       await auth.refreshSession();
 
       expect(auth.isAuthenticated()).toBe(false);
+    });
+  });
+
+  describe('handleEmailNotVerified', () => {
+    afterEach(() => {
+      FakeAuthGateway.current = apiSession;
+    });
+
+    it('reads the session again and sends the person to the locked page when the server still sees it unconfirmed', async () => {
+      const { auth, router } = setup();
+      const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+      await firstValueFrom(auth.login('lucia@iglesia.example', 'x'));
+      FakeAuthGateway.current = { ...apiSession, emailVerified: false };
+
+      await auth.handleEmailNotVerified();
+
+      expect(auth.emailVerified()).toBe(false);
+      expect(navigate).toHaveBeenCalledWith('/confirm-email', { replaceUrl: true });
+    });
+
+    it('trusts the API over a session that claims the e-mail is confirmed', async () => {
+      const { auth, router } = setup();
+      vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+      await firstValueFrom(auth.login('lucia@iglesia.example', 'x'));
+
+      await auth.handleEmailNotVerified();
+
+      expect(auth.emailVerified()).toBe(false);
+    });
+
+    it('does nothing without a session', async () => {
+      const { auth, router } = setup();
+      const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+      await auth.handleEmailNotVerified();
+
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 

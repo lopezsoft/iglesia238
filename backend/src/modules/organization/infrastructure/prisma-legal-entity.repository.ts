@@ -12,6 +12,7 @@ import type {
 } from '../application/organization.ports.js';
 
 const WITH_MUNICIPALITY = {
+  country: { select: { name: true } },
   municipality: {
     select: { code: true, name: true, region: { select: { name: true } } },
   },
@@ -32,6 +33,8 @@ function toRecord(row: LegalEntityRow): LegalEntityRecord {
     email: row.email,
     phone: row.phone,
     address: row.address,
+    countryId: row.countryId,
+    countryName: row.country.name,
     municipalityCode: row.municipality?.code ?? null,
     municipalityName: row.municipality?.name ?? null,
     regionName: row.municipality?.region.name ?? null,
@@ -87,6 +90,16 @@ export class PrismaLegalEntityRepository
         denominationId: scope.denominationId,
         legalEntityId: id,
         isActive: true,
+        deletedAt: null,
+      },
+    });
+  }
+
+  countCongregations(scope: TenantScope, id: number): Promise<number> {
+    return this.prisma.congregation.count({
+      where: {
+        denominationId: scope.denominationId,
+        legalEntityId: id,
         deletedAt: null,
       },
     });

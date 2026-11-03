@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/errors/all-exceptions.filter.js';
 import { ERROR_TRANSLATORS } from './common/errors/error-translator.port.js';
 import { LoggingModule } from './common/logging/logging.module.js';
+import { EmailVerifiedGuard } from './common/security/email-verified.guard.js';
 import { JwtAuthGuard } from './common/security/jwt-auth.guard.js';
 import { PermissionsGuard } from './common/security/permissions.guard.js';
 import { validateEnvironment } from './config/environment.js';
@@ -73,8 +74,10 @@ import { TitheSettlementsModule } from './modules/tithe-settlements/tithe-settle
       inject: [PrismaErrorTranslator],
     },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    // Order matters: authenticate first, then validate the scope and the permissions.
+    // Order matters: authenticate first, then require a confirmed e-mail, then validate the scope and
+    // the permissions.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: EmailVerifiedGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
