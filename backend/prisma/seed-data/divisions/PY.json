@@ -1,0 +1,377 @@
+{
+  "source": "INE Paraguay (Instituto Nacional de Estadística), \"Códigos geográficos 2022 - Departamentos, distritos y barrios\": Codigos de departamentos INE 2022.xlsx y Codigos de distritos INE 2022.xlsx (lista de departamentos y distritos del Paraguay, año 2022), https://www.ine.gov.py/microdatos/register/CODIGO-GEOGRAFICO-2022/; ortografía en mayúsculas/minúsculas tomada de los cuadros oficiales del Censo Nacional de Población y Viviendas 2022 (INE). Descargado 2026-11-03.",
+  "countryIsoAlpha2": "PY",
+  "regions": [
+    {
+      "code": "00",
+      "name": "Asunción",
+      "municipalities": [
+        {"code":"0000","name":"Asunción"}
+      ]
+    },
+    {
+      "code": "01",
+      "name": "Concepción",
+      "municipalities": [
+        {"code":"0101","name":"Concepción"},
+        {"code":"0102","name":"Belén"},
+        {"code":"0103","name":"Horqueta"},
+        {"code":"0104","name":"Loreto"},
+        {"code":"0105","name":"San Carlos del Apa"},
+        {"code":"0106","name":"San Lázaro"},
+        {"code":"0107","name":"Yby Yaú"},
+        {"code":"0108","name":"Azote'y"},
+        {"code":"0109","name":"Sargento José Félix López"},
+        {"code":"0110","name":"San Alfredo"},
+        {"code":"0111","name":"Paso Barreto"},
+        {"code":"0112","name":"Arroyito"},
+        {"code":"0113","name":"Paso Horqueta"},
+        {"code":"0114","name":"Itacuá"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "San Pedro",
+      "municipalities": [
+        {"code":"0201","name":"San Pedro del Ycuamandyyú"},
+        {"code":"0202","name":"Antequera"},
+        {"code":"0203","name":"Choré"},
+        {"code":"0204","name":"General Elizardo Aquino"},
+        {"code":"0205","name":"Itacurubí del Rosario"},
+        {"code":"0206","name":"Lima"},
+        {"code":"0207","name":"Nueva Germania"},
+        {"code":"0208","name":"San Estanislao"},
+        {"code":"0209","name":"San Pablo"},
+        {"code":"0210","name":"Tacuatí"},
+        {"code":"0211","name":"Unión"},
+        {"code":"0212","name":"25 de Diciembre"},
+        {"code":"0213","name":"Villa del Rosario"},
+        {"code":"0214","name":"General Francisco Isidoro Resquín"},
+        {"code":"0215","name":"Yataity del Norte"},
+        {"code":"0216","name":"Guajayvi"},
+        {"code":"0217","name":"Capiibary"},
+        {"code":"0218","name":"Santa Rosa del Aguaray"},
+        {"code":"0219","name":"Yrybucua"},
+        {"code":"0220","name":"Liberación"},
+        {"code":"0221","name":"San Vicente Pancholo"},
+        {"code":"0222","name":"San José del Rosario"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Cordillera",
+      "municipalities": [
+        {"code":"0301","name":"Caacupé"},
+        {"code":"0302","name":"Altos"},
+        {"code":"0303","name":"Arroyos y Esteros"},
+        {"code":"0304","name":"Atyrá"},
+        {"code":"0305","name":"Caraguatay"},
+        {"code":"0306","name":"Emboscada"},
+        {"code":"0307","name":"Eusebio Ayala"},
+        {"code":"0308","name":"Isla Pucú"},
+        {"code":"0309","name":"Itacurubí de la Cordillera"},
+        {"code":"0310","name":"Juan de Mena"},
+        {"code":"0311","name":"Loma Grande"},
+        {"code":"0312","name":"Mbocayaty del Yhaguy"},
+        {"code":"0313","name":"Nueva Colombia"},
+        {"code":"0314","name":"Piribebuy"},
+        {"code":"0315","name":"Primero de Marzo"},
+        {"code":"0316","name":"San Bernardino"},
+        {"code":"0317","name":"Santa Elena"},
+        {"code":"0318","name":"Tobatí"},
+        {"code":"0319","name":"Valenzuela"},
+        {"code":"0320","name":"San José Obrero"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Guairá",
+      "municipalities": [
+        {"code":"0401","name":"Villarrica"},
+        {"code":"0402","name":"Borja"},
+        {"code":"0403","name":"Capitán Mauricio José Troche"},
+        {"code":"0404","name":"Coronel Martínez"},
+        {"code":"0405","name":"Félix Pérez Cardozo"},
+        {"code":"0406","name":"Gral. Eugenio A. Garay"},
+        {"code":"0407","name":"Independencia"},
+        {"code":"0408","name":"Itapé"},
+        {"code":"0409","name":"Iturbe"},
+        {"code":"0410","name":"José Fassardi"},
+        {"code":"0411","name":"Mbocayaty"},
+        {"code":"0412","name":"Natalicio Talavera"},
+        {"code":"0413","name":"Ñumí"},
+        {"code":"0414","name":"San Salvador"},
+        {"code":"0415","name":"Yataity"},
+        {"code":"0416","name":"Doctor Bottrell"},
+        {"code":"0417","name":"Paso Yobai"},
+        {"code":"0418","name":"Tebicuary"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Caaguazú",
+      "municipalities": [
+        {"code":"0501","name":"Coronel Oviedo"},
+        {"code":"0502","name":"Caaguazú"},
+        {"code":"0503","name":"Carayaó"},
+        {"code":"0504","name":"Dr. Cecilio Báez"},
+        {"code":"0505","name":"Santa Rosa del Mbutuy"},
+        {"code":"0506","name":"Dr. Juan Manuel Frutos"},
+        {"code":"0507","name":"Repatriación"},
+        {"code":"0508","name":"Nueva Londres"},
+        {"code":"0509","name":"San Joaquín"},
+        {"code":"0510","name":"San José de los Arroyos"},
+        {"code":"0511","name":"Yhú"},
+        {"code":"0512","name":"Dr. J. Eulogio Estigarribia"},
+        {"code":"0513","name":"R.I. 3 Corrales"},
+        {"code":"0514","name":"Raúl Arsenio Oviedo"},
+        {"code":"0515","name":"José Domingo Ocampos"},
+        {"code":"0516","name":"Mariscal Francisco Solano López"},
+        {"code":"0517","name":"La Pastora"},
+        {"code":"0518","name":"3 de Febrero"},
+        {"code":"0519","name":"Simón Bolívar"},
+        {"code":"0520","name":"Vaquería"},
+        {"code":"0521","name":"Tembiaporá"},
+        {"code":"0522","name":"Nueva Toledo"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Caazapá",
+      "municipalities": [
+        {"code":"0601","name":"Caazapá"},
+        {"code":"0602","name":"Abaí"},
+        {"code":"0603","name":"Buena Vista"},
+        {"code":"0604","name":"Dr. Moisés S. Bertoni"},
+        {"code":"0605","name":"Gral. Higinio Morínigo"},
+        {"code":"0606","name":"Maciel"},
+        {"code":"0607","name":"San Juan Nepomuceno"},
+        {"code":"0608","name":"Tavaí"},
+        {"code":"0609","name":"Yegros"},
+        {"code":"0610","name":"Yuty"},
+        {"code":"0611","name":"3 de Mayo"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "Itapúa",
+      "municipalities": [
+        {"code":"0701","name":"Encarnación"},
+        {"code":"0702","name":"Bella Vista"},
+        {"code":"0703","name":"Cambyretá"},
+        {"code":"0704","name":"Capitán Meza"},
+        {"code":"0705","name":"Capitán Miranda"},
+        {"code":"0706","name":"Nueva Alborada"},
+        {"code":"0707","name":"Carmen del Paraná"},
+        {"code":"0708","name":"Coronel Bogado"},
+        {"code":"0709","name":"Carlos Antonio López"},
+        {"code":"0710","name":"Natalio"},
+        {"code":"0711","name":"Fram"},
+        {"code":"0712","name":"General Artigas"},
+        {"code":"0713","name":"General Delgado"},
+        {"code":"0714","name":"Hohenau"},
+        {"code":"0715","name":"Jesús"},
+        {"code":"0716","name":"José Leandro Oviedo"},
+        {"code":"0717","name":"Obligado"},
+        {"code":"0718","name":"Mayor Julio Dionisio Otaño"},
+        {"code":"0719","name":"San Cosme y Damián"},
+        {"code":"0720","name":"San Pedro del Paraná"},
+        {"code":"0721","name":"San Rafael del Paraná"},
+        {"code":"0722","name":"Trinidad"},
+        {"code":"0723","name":"Edelira"},
+        {"code":"0724","name":"Tomás Romero Pereira"},
+        {"code":"0725","name":"Alto Verá"},
+        {"code":"0726","name":"La Paz"},
+        {"code":"0727","name":"Yatytay"},
+        {"code":"0728","name":"San Juan del Paraná"},
+        {"code":"0729","name":"Pirapó"},
+        {"code":"0730","name":"Itapúa Poty"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "Misiones",
+      "municipalities": [
+        {"code":"0801","name":"San Juan Bautista de las Misiones"},
+        {"code":"0802","name":"Ayolas"},
+        {"code":"0803","name":"San Ignacio"},
+        {"code":"0804","name":"San Miguel"},
+        {"code":"0805","name":"San Patricio"},
+        {"code":"0806","name":"Santa María"},
+        {"code":"0807","name":"Santa Rosa"},
+        {"code":"0808","name":"Santiago"},
+        {"code":"0809","name":"Villa Florida"},
+        {"code":"0810","name":"Yabebyry"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Paraguarí",
+      "municipalities": [
+        {"code":"0901","name":"Paraguarí"},
+        {"code":"0902","name":"Acahay"},
+        {"code":"0903","name":"Caapucú"},
+        {"code":"0904","name":"Caballero"},
+        {"code":"0905","name":"Carapeguá"},
+        {"code":"0906","name":"Escobar"},
+        {"code":"0907","name":"La Colmena"},
+        {"code":"0908","name":"Mbuyapey"},
+        {"code":"0909","name":"Pirayú"},
+        {"code":"0910","name":"Quiindy"},
+        {"code":"0911","name":"Quyquyhó"},
+        {"code":"0912","name":"Roque González de Santa Cruz"},
+        {"code":"0913","name":"Sapucái"},
+        {"code":"0914","name":"Tebicuary-mí"},
+        {"code":"0915","name":"Yaguarón"},
+        {"code":"0916","name":"Ybycuí"},
+        {"code":"0917","name":"Ybytymí"},
+        {"code":"0918","name":"María Antonia"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Alto Paraná",
+      "municipalities": [
+        {"code":"1001","name":"Ciudad del Este"},
+        {"code":"1002","name":"Presidente Franco"},
+        {"code":"1003","name":"Domingo Martínez de Irala"},
+        {"code":"1004","name":"Dr. Juan León Mallorquín"},
+        {"code":"1005","name":"Hernandarias"},
+        {"code":"1006","name":"Itakyry"},
+        {"code":"1007","name":"Juan E. O'Leary"},
+        {"code":"1008","name":"Ñacunday"},
+        {"code":"1009","name":"Yguazú"},
+        {"code":"1010","name":"Los Cedrales"},
+        {"code":"1011","name":"Minga Guazú"},
+        {"code":"1012","name":"San Cristóbal"},
+        {"code":"1013","name":"Santa Rita"},
+        {"code":"1014","name":"Naranjal"},
+        {"code":"1015","name":"Santa Rosa del Monday"},
+        {"code":"1016","name":"Minga Porá"},
+        {"code":"1017","name":"Mbaracayú"},
+        {"code":"1018","name":"San Alberto"},
+        {"code":"1019","name":"Iruña"},
+        {"code":"1020","name":"Santa Fe del Paraná"},
+        {"code":"1021","name":"Tavapy"},
+        {"code":"1022","name":"Dr. Raúl Peña"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "Central",
+      "municipalities": [
+        {"code":"1101","name":"Areguá"},
+        {"code":"1102","name":"Capiatá"},
+        {"code":"1103","name":"Fernando de la Mora"},
+        {"code":"1104","name":"Guarambaré"},
+        {"code":"1105","name":"Itá"},
+        {"code":"1106","name":"Itauguá"},
+        {"code":"1107","name":"Lambaré"},
+        {"code":"1108","name":"Limpio"},
+        {"code":"1109","name":"Luque"},
+        {"code":"1110","name":"Mariano Roque Alonso"},
+        {"code":"1111","name":"Nueva Italia"},
+        {"code":"1112","name":"Ñemby"},
+        {"code":"1113","name":"San Antonio"},
+        {"code":"1114","name":"San Lorenzo"},
+        {"code":"1115","name":"Villa Elisa"},
+        {"code":"1116","name":"Villeta"},
+        {"code":"1117","name":"Ypacaraí"},
+        {"code":"1118","name":"Ypané"},
+        {"code":"1119","name":"J. Augusto Saldívar"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "Ñeembucú",
+      "municipalities": [
+        {"code":"1201","name":"Pilar"},
+        {"code":"1202","name":"Alberdi"},
+        {"code":"1203","name":"Cerrito"},
+        {"code":"1204","name":"Desmochados"},
+        {"code":"1205","name":"Gral. José Eduvigis Díaz"},
+        {"code":"1206","name":"Guazú-Cuá"},
+        {"code":"1207","name":"Humaitá"},
+        {"code":"1208","name":"Isla Umbú"},
+        {"code":"1209","name":"Laureles"},
+        {"code":"1210","name":"Mayor José Dejesús Martínez"},
+        {"code":"1211","name":"Paso de Patria"},
+        {"code":"1212","name":"San Juan Bautista de Ñeembucú"},
+        {"code":"1213","name":"Tacuaras"},
+        {"code":"1214","name":"Villa Franca"},
+        {"code":"1215","name":"Villa Oliva"},
+        {"code":"1216","name":"Villalbín"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "Amambay",
+      "municipalities": [
+        {"code":"1301","name":"Pedro Juan Caballero"},
+        {"code":"1302","name":"Bella Vista"},
+        {"code":"1303","name":"Capitán Bado"},
+        {"code":"1304","name":"Zanja Pytá"},
+        {"code":"1305","name":"Karapaí"},
+        {"code":"1306","name":"Cerro Corá"}
+      ]
+    },
+    {
+      "code": "14",
+      "name": "Canindeyú",
+      "municipalities": [
+        {"code":"1401","name":"Salto del Guairá"},
+        {"code":"1402","name":"Corpus Christi"},
+        {"code":"1403","name":"Villa Curuguaty"},
+        {"code":"1404","name":"Villa Ygatimí"},
+        {"code":"1405","name":"Itanará"},
+        {"code":"1406","name":"Ypejhú"},
+        {"code":"1407","name":"Francisco Caballero Álvarez"},
+        {"code":"1408","name":"Katueté"},
+        {"code":"1409","name":"La Paloma del Espíritu Santo"},
+        {"code":"1410","name":"Nueva Esperanza"},
+        {"code":"1411","name":"Yasy Cañy"},
+        {"code":"1412","name":"Ybyrarobaná"},
+        {"code":"1413","name":"Yby Pytá"},
+        {"code":"1414","name":"Maracaná"},
+        {"code":"1415","name":"Puerto Adela"},
+        {"code":"1416","name":"Laurel"}
+      ]
+    },
+    {
+      "code": "15",
+      "name": "Presidente Hayes",
+      "municipalities": [
+        {"code":"1502","name":"Benjamín Aceval"},
+        {"code":"1503","name":"Puerto Pinasco"},
+        {"code":"1504","name":"Villa Hayes"},
+        {"code":"1505","name":"Nanawa"},
+        {"code":"1506","name":"José Falcón"},
+        {"code":"1507","name":"Tte. 1° Manuel Irala Fernández"},
+        {"code":"1508","name":"Teniente Esteban Martínez"},
+        {"code":"1509","name":"General José María Bruguez"},
+        {"code":"1510","name":"Campo Aceval"},
+        {"code":"1511","name":"Nueva Asunción"}
+      ]
+    },
+    {
+      "code": "16",
+      "name": "Boquerón",
+      "municipalities": [
+        {"code":"1602","name":"Mariscal José Félix Estigarribia"},
+        {"code":"1604","name":"Filadelfia"},
+        {"code":"1605","name":"Loma Plata"},
+        {"code":"1606","name":"Boquerón"}
+      ]
+    },
+    {
+      "code": "17",
+      "name": "Alto Paraguay",
+      "municipalities": [
+        {"code":"1701","name":"Fuerte Olimpo"},
+        {"code":"1702","name":"Puerto Casado"},
+        {"code":"1704","name":"Bahía Negra"},
+        {"code":"1705","name":"Carmelo Peralta"}
+      ]
+    }
+  ]
+}

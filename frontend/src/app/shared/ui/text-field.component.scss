@@ -1,0 +1,17 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.text-field__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.field__label {
+  font-size: $font-size-xs + 0.0625rem;
+}

@@ -1,0 +1,71 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.filters {
+  .field {
+    flex: 1 1 12rem;
+    max-width: 18rem;
+  }
+
+  &__status {
+    align-self: center;
+  }
+
+  &__actions {
+    margin-left: auto;
+  }
+
+  &__hint {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}
+
+.closed-banner {
+  align-items: center;
+  flex-wrap: wrap;
+
+  > div {
+    flex: 1 1 16rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.consolidate__text {
+  margin: 0;
+  color: $color-ink;
+}
+
+.moves {
+  &__header {
+    padding: $space-5 $space-5 0;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  &__filters {
+    align-items: flex-end;
+    padding: $space-4 $space-5;
+
+    .field {
+      flex: 0 1 16rem;
+    }
+  }
+
+  &__search {
+    flex: 1 1 14rem;
+  }
+}

@@ -1,0 +1,214 @@
+<app-page-header
+  title="Política de datos"
+  breadcrumb="Inicio / Organización / Política de datos"
+  description="Texto de tratamiento de datos personales (Ley 1581 de 2012) que aceptan quienes solicitan ser miembros. Cada versión publicada queda como evidencia de lo que se aceptó."
+>
+  @if (canManage()) {
+    <button type="button" class="btn btn--primary" (click)="newVersion()">
+      <app-icon name="plus" [size]="16" />
+      Nueva versión
+    </button>
+  }
+</app-page-header>
+
+@if (notice(); as text) {
+  <div class="alert alert--success" role="status">
+    <app-icon name="check" [size]="20" />
+    <span class="privacy-page__notice">{{ text }}</span>
+    <button type="button" class="btn btn--ghost btn--icon" aria-label="Cerrar aviso" (click)="dismissNotice()">
+      <app-icon name="x" />
+    </button>
+  </div>
+}
+
+@if (policies.error(); as error) {
+  <app-error-banner [message]="userMessage(error)" (retry)="policies.reload()" />
+} @else if (policies.isLoading() && !policies.hasValue()) {
+  <app-loading label="Cargando las versiones de la política…" />
+} @else {
+  @if (!hasCurrent()) {
+    <div class="alert alert--warning" role="alert">
+      <app-icon name="alert" [size]="20" />
+      <div>
+        <strong>No hay una política vigente</strong>
+        <p>
+          Mientras no publiques una, el formulario público no recibe solicitudes de tus sedes: sin el
+          texto no se puede obtener una autorización válida.
+        </p>
+      </div>
+    </div>
+  }
+
+  <div class="kpi-grid">
+    <app-stat-card
+      label="Política vigente"
+      [value]="current()?.version ?? 'Ninguna'"
+      [hint]="current() ? 'Desde el ' + (current()!.effectiveFrom | date: 'dd/MM/yyyy') : 'Publica una versión'"
+      icon="shield-check"
+      [tone]="current() ? 'green' : 'orange'"
+    />
+    <app-stat-card
+      label="Borradores"
+      [value]="draftCount()"
+      hint="Sin publicar"
+      icon="file-text"
+      tone="slate"
+    />
+    <app-stat-card
+      label="Autorizaciones otorgadas"
+      [value]="consentTotal()"
+      hint="Con todas las versiones"
+      icon="check"
+      tone="cyan"
+    />
+    <app-stat-card
+      label="Solicitudes recibidas"
+      [value]="applicationTotal()"
+      hint="Aceptaron alguna versión"
+      icon="inbox"
+      tone="indigo"
+    />
+  </div>
+
+  <app-section-panel
+    title="Versiones"
+    subtitle="La más reciente primero. Una versión publicada no se modifica: se crea una nueva."
+    icon="file-text"
+    tone="indigo"
+    layout="stack"
+  >
+    @if (!canManage()) {
+      <app-read-only-notice permission="congregations.manage" />
+    }
+
+    @if (items().length === 0) {
+      <app-empty-state
+        title="Aún no hay versiones"
+        description="Crea la primera versión de la política y publícala para abrir el formulario público."
+        icon="shield-check"
+      >
+        @if (canManage()) {
+          <button type="button" class="btn btn--primary" (click)="newVersion()">Crear la primera versión</button>
+        }
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap card card--flush">
+        <table class="table">
+          <caption class="visually-hidden">
+            Versiones de la política de datos
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Versión</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Rige desde</th>
+              <th scope="col">Publicada</th>
+              <th scope="col" class="text-right">Autorizaciones</th>
+              <th scope="col" class="text-right">Solicitudes</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (policy of items(); track policy.id) {
+              <tr [class.is-selected]="policy.isCurrent">
+                <th scope="row" class="code">{{ policy.version }}</th>
+                <td><app-status-badge [label]="stateLabels[policy.state]" [tone]="stateTones[policy.state]" /></td>
+                <td>{{ policy.effectiveFrom | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ policy.publishedAt ? (policy.publishedAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="num">{{ policy.consentCount }}</td>
+                <td class="num">{{ policy.applicationCount }}</td>
+                <td>
+                  <div class="cluster privacy-page__actions">
+                    <button type="button" class="btn btn--ghost btn--sm" (click)="previewing.set(policy)">Ver texto</button>
+                    @if (canManage() && policy.status === 'DRAFT') {
+                      <button type="button" class="btn btn--secondary btn--sm" (click)="edit(policy)">Editar</button>
+                      <button type="button" class="btn btn--primary btn--sm" (click)="ask('publish', policy)">
+                        Publicar
+                      </button>
+                      <button type="button" class="btn btn--danger-ghost btn--sm" (click)="ask('delete', policy)">
+                        Eliminar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-section-panel>
+}
+
+<app-policy-form-dialog
+  [(open)]="formOpen"
+  [policy]="editing()"
+  [suggestedVersion]="suggestedVersion()"
+  [pending]="pending()"
+  [error]="formError()"
+  (saved)="save($event)"
+/>
+
+<app-dialog
+  [open]="previewing() !== null"
+  (openChange)="!$event && previewing.set(null)"
+  [title]="previewing() ? 'Política versión ' + previewing()!.version : 'Política'"
+  variant="wide"
+>
+  @if (previewing(); as policy) {
+    <p class="text-small text-muted">
+      Rige desde el {{ policy.effectiveFrom | date: 'dd/MM/yyyy' }} · {{ stateLabels[policy.state] }}
+    </p>
+    <p class="privacy-page__text">{{ policy.content }}</p>
+  }
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="previewing.set(null)">Cerrar</button>
+  </div>
+</app-dialog>
+
+<app-dialog
+  [open]="confirmation() !== null"
+  (openChange)="!$event && confirmation.set(null)"
+  [title]="confirmation()?.kind === 'publish' ? 'Publicar la política' : 'Eliminar el borrador'"
+>
+  @if (confirmation(); as action) {
+    @if (action.kind === 'publish') {
+      <p>
+        Vas a publicar la versión <strong>{{ action.policy.version }}</strong>. Desde que rija, los
+        solicitantes aceptarán este texto y ya no podrás modificarlo: si necesitas cambiarlo, crearás una
+        versión nueva.
+      </p>
+      <p class="alert alert--warning" role="note">
+        Lee el texto completo antes de publicar: es exactamente lo que los solicitantes leen y aceptan. Si es la
+        plantilla inicial de la Ley 1581 de 2012, ajústala a tu iglesia (responsable, contacto, finalidades) con
+        «Editar» antes de publicarla.
+      </p>
+      <p class="text-small text-muted">
+        Si la fecha «Rige desde» ya pasó, la política rige desde hoy.
+      </p>
+    } @else {
+      <p>
+        Se eliminará el borrador <strong>{{ action.policy.version }}</strong>. Esta acción no se puede
+        deshacer.
+      </p>
+    }
+    @if (commandError(); as message) {
+      <p class="alert alert--danger" role="alert">{{ message }}</p>
+    }
+  }
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" [disabled]="pending()" (click)="confirmation.set(null)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn"
+      [class.btn--primary]="confirmation()?.kind === 'publish'"
+      [class.btn--danger]="confirmation()?.kind === 'delete'"
+      [disabled]="pending()"
+      (click)="confirm()"
+    >
+      {{ confirmation()?.kind === 'publish' ? 'Publicar' : 'Eliminar' }}
+    </button>
+  </div>
+</app-dialog>

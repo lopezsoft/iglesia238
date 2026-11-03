@@ -1,0 +1,157 @@
+<aside class="card panel" aria-labelledby="user-panel-title">
+  <header class="panel__header">
+    <div>
+      <h2 id="user-panel-title">Roles de {{ user().displayName }}</h2>
+      <p class="text-muted text-small">{{ user().email }} · {{ activeCountText() }}</p>
+    </div>
+    <button type="button" class="btn btn--ghost btn--icon" aria-label="Cerrar panel de roles" (click)="closed.emit()">
+      <app-icon name="x" />
+    </button>
+  </header>
+
+  <p class="alert text-small" role="note">
+    <app-icon name="info" />
+    <span>Los cambios de rol aplican de inmediato: el API valida los permisos en cada petición.</span>
+  </p>
+
+  <div class="panel__access">
+    <button type="button" class="btn btn--secondary btn--sm" [disabled]="pending()" (click)="issueLink()">
+      <app-icon name="mail" />
+      <span>{{ linkLabel() }}</span>
+    </button>
+    <span class="text-muted text-small">
+      Genera un enlace de un solo uso para que {{ user().displayName }} cree su contraseña.
+    </span>
+  </div>
+
+  @if (error(); as message) {
+    <p class="alert alert--danger" role="alert">{{ message }}</p>
+  }
+
+  <section class="panel__section" aria-labelledby="active-roles-title">
+    <h3 id="active-roles-title">Asignaciones activas</h3>
+    @if (active().length > 0) {
+      <ul class="panel__list">
+        @for (assignment of active(); track assignment.id) {
+          <li class="panel__item">
+            <div>
+              <p>
+                <strong>{{ roleNames[assignment.role] }}</strong>
+                <span class="text-muted"> · {{ assignment.scopeLabel }}</span>
+              </p>
+              <p class="text-muted text-small">
+                @if (assignment.grantedByName; as grantor) {
+                  Otorgado por {{ grantor }} el {{ assignment.createdAt | date: 'dd/MM/yyyy' }}
+                } @else {
+                  Otorgado el {{ assignment.createdAt | date: 'dd/MM/yyyy' }}
+                }
+              </p>
+            </div>
+            @if (isOwnAdminRole(assignment)) {
+              <div class="panel__blocked">
+                <button type="button" class="btn btn--danger-ghost btn--sm" disabled>Revocar</button>
+                <span class="text-muted text-small">No puedes revocar tu propio rol</span>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="btn btn--danger-ghost btn--sm"
+                [disabled]="pending()"
+                [attr.aria-label]="'Revocar ' + label(assignment)"
+                (click)="askRevoke(assignment)"
+              >
+                Revocar
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="text-muted text-small">
+        Sin roles activos. Este usuario no puede entrar a ningún módulo hasta que le asignes un rol.
+      </p>
+    }
+  </section>
+
+  <section class="panel__section" aria-labelledby="assign-role-title">
+    <h3 id="assign-role-title">Asignar rol</h3>
+    @if (user().isSelf) {
+      <p class="text-muted text-small" role="note">
+        No puedes asignarte roles a ti mismo: así nadie amplía su propio acceso. Pídeselo a otro administrador, o invita
+        una cuenta distinta para que opere la tesorería o la secretaría de la sede.
+      </p>
+    } @else {
+      <app-assign-role-form [user]="user()" [context]="context()" (granted)="changed.emit($event)" />
+    }
+  </section>
+
+  <section class="panel__section" aria-labelledby="role-history-title">
+    <h3 id="role-history-title">Historial de asignaciones</h3>
+    @if (history().length > 0) {
+      <ul class="panel__list">
+        @for (assignment of history(); track assignment.id) {
+          <li class="panel__item">
+            <div>
+              <p class="cluster panel__history-title">
+                <span>{{ label(assignment) }}</span>
+                <span class="badge">Revocado</span>
+              </p>
+              <p class="text-muted text-small">
+                Otorgado el {{ assignment.createdAt | date: 'dd/MM/yyyy' }} · revocado el
+                {{ assignment.revokedAt | date: 'dd/MM/yyyy' }}
+              </p>
+            </div>
+            @if (isActiveAgain(assignment)) {
+              <span class="text-muted text-small">Ya está activo de nuevo</span>
+            } @else if (!user().isSelf) {
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm"
+                [disabled]="pending()"
+                [attr.aria-label]="'Otorgar de nuevo ' + label(assignment)"
+                (click)="regrant(assignment)"
+              >
+                Otorgar de nuevo
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="text-muted text-small">Sin asignaciones revocadas.</p>
+    }
+    <p class="text-muted text-small">
+      Revocar no borra el registro: queda en el historial
+      @if (canReadAudit()) {
+        y en la <a routerLink="/audit">auditoría</a>.
+      } @else {
+        y en la auditoría.
+      }
+    </p>
+  </section>
+</aside>
+
+<app-dialog [(open)]="confirmOpen" title="Revocar rol">
+  @if (revoking(); as assignment) {
+    <div class="stack">
+      <p>
+        ¿Revocar <strong>{{ label(assignment) }}</strong> a {{ user().displayName }}?
+      </p>
+      <p class="text-muted text-small">
+        Perderá los permisos de este rol de inmediato. La asignación no se borra: queda en el
+        historial y puedes otorgarla de nuevo.
+      </p>
+      @if (confirmError(); as message) {
+        <p class="alert alert--danger" role="alert">{{ message }}</p>
+      }
+    </div>
+  }
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="confirmOpen.set(false)">Cancelar</button>
+    <button type="button" class="btn btn--danger" [disabled]="pending()" (click)="confirmRevoke()">
+      {{ pending() ? 'Revocando…' : 'Revocar rol' }}
+    </button>
+  </div>
+</app-dialog>
+
+<app-one-time-link-dialog [(open)]="linkOpen" [link]="issuedLink()" [recipient]="user().displayName" />

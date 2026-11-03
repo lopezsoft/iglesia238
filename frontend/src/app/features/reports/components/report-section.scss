@@ -1,0 +1,40 @@
+// Shared bits of the report sections (title size, footer, horizontal bars).
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.section-title {
+  font-size: $font-size-md;
+}
+
+.section-footer {
+  margin-top: $space-4;
+
+  p + p {
+    margin-top: $space-1;
+  }
+}
+
+.type-bars {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $space-2;
+    margin-bottom: $space-1;
+    font-size: $font-size-sm;
+  }
+
+  &__name {
+    font-weight: $font-weight-medium;
+  }
+}

@@ -1,0 +1,63 @@
+@use 'tokens' as *;
+
+.members__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-4;
+
+  .members__tabs {
+    flex: 1 1 36rem;
+    min-width: 0;
+  }
+}
+
+.members__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4 $space-5;
+  border-bottom: 1px solid $color-border;
+}
+
+.members__search {
+  flex: 1 1 16rem;
+}
+
+.members__notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+}
+
+.members__note {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  flex-wrap: wrap;
+}
+
+.members__state {
+  padding: $space-4 $space-5;
+}
+
+// Column headers that sort: a button that looks like the header text.
+.members__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-primary;
+  }
+}

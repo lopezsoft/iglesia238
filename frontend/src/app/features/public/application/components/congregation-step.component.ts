@@ -1,0 +1,72 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { IconComponent } from '../../../../shared/ui/icon.component';
+import { OpenCongregation } from '../data/public-application.models';
+import { showsError } from '../application-form';
+
+/** Step 1: choose the congregation (only the ones accepting applications are listed). */
+@Component({
+  selector: 'app-congregation-step',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, RouterLink, IconComponent],
+  styleUrl: './congregation-step.component.scss',
+  template: `
+    <fieldset class="step">
+      <legend class="step__legend">Elige tu sede</legend>
+      <p class="text-muted step__lead">Mostramos solo las sedes que están recibiendo solicitudes en este momento.</p>
+      <div class="sedes">
+        @for (congregation of congregations(); track congregation.id) {
+          <label class="sede" [class.sede--selected]="control().value === congregation.id">
+            <input
+              type="radio"
+              name="congregation"
+              [formControl]="control()"
+              [value]="congregation.id"
+              [attr.aria-describedby]="hasError() ? 'congregation-error' : null"
+            />
+            <span class="sede__body">
+              <span class="sede__name">{{ congregation.name }}</span>
+              <span class="text-muted text-small">{{ congregation.denominationName }}</span>
+              <span class="sede__place text-small">
+                <app-icon name="home" [size]="14" />
+                {{ placeOf(congregation) }}
+              </span>
+              @if (congregation.address) {
+                <span class="text-muted text-small">{{ addressOf(congregation) }}</span>
+              }
+              <span class="badge badge--success sede__badge">Recibe solicitudes</span>
+            </span>
+          </label>
+        } @empty {
+          <p class="text-muted step__empty" role="status">
+            Todavía no hay sedes recibiendo solicitudes. Pide a la secretaría de tu iglesia que abra las inscripciones de su
+            sede o, si tu iglesia aún no está en el sistema, <a routerLink="/register-congregation">registra tu sede</a>.
+          </p>
+        }
+      </div>
+      @if (hasError()) {
+        <p id="congregation-error" class="field__error step__error" role="alert">Selecciona una sede para continuar.</p>
+      }
+    </fieldset>
+  `,
+})
+export class CongregationStepComponent {
+  readonly congregations = input.required<readonly OpenCongregation[]>();
+  readonly control = input.required<FormControl<number | null>>();
+  readonly revealErrors = input(false);
+
+  protected placeOf(congregation: OpenCongregation): string {
+    return congregation.municipalityName
+      ? [congregation.municipalityName, congregation.regionName].filter(Boolean).join(', ')
+      : 'Municipio no indicado';
+  }
+
+  protected addressOf(congregation: OpenCongregation): string {
+    return [congregation.address, congregation.neighborhood].filter(Boolean).join(', ');
+  }
+
+  protected hasError(): boolean {
+    return showsError(this.control(), this.revealErrors());
+  }
+}

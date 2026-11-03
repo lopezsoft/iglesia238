@@ -1,0 +1,249 @@
+<div class="stack">
+  <div class="alert alert--warning" role="note">
+    <app-icon name="lock" />
+    <div>
+      <strong>Datos de menores: acceso restringido</strong>
+      <p class="text-small">
+        Información protegida por la Ley 1581 de 2012. Solo los roles con permiso de registros la
+        consultan; los documentos se muestran enmascarados y cada registro nuevo y cada consulta de
+        un registro quedan en auditoría.
+      </p>
+    </div>
+  </div>
+
+  <section class="card card--flush" aria-labelledby="dedications-title">
+    <header class="card__header panel__header">
+      <div>
+        <h2 id="dedications-title">Presentación de niños</h2>
+        <p class="text-muted text-small">
+          {{ scopeName() }} · más reciente primero · {{ result()?.total ?? 0 }} registros
+        </p>
+      </div>
+    </header>
+
+    <div class="toolbar panel__filters">
+      <div class="field filter-search">
+        <label for="ded-search">Buscar niño(a)</label>
+        <input
+          id="ded-search"
+          class="input"
+          type="search"
+          autocomplete="off"
+          placeholder="Nombre del niño o la niña"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
+      </div>
+      @if (congregations().length > 1) {
+        <div class="field">
+          <label for="ded-filter-sede">Sede</label>
+          <select
+            id="ded-filter-sede"
+            class="select"
+            (change)="setCongregation($any($event.target).value)"
+          >
+            <option value="">Todas las sedes</option>
+            @for (sede of congregations(); track sede.id) {
+              <option [value]="sede.id" [selected]="congregationId() === sede.id">
+                {{ sede.name }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+      <div class="field">
+        <label for="ded-from">Desde</label>
+        <input
+          id="ded-from"
+          class="input"
+          type="date"
+          [value]="from() ?? ''"
+          [max]="to() ?? ''"
+          (change)="setDate('from', $any($event.target).value)"
+        />
+      </div>
+      <div class="field">
+        <label for="ded-to">Hasta</label>
+        <input
+          id="ded-to"
+          class="input"
+          type="date"
+          [value]="to() ?? ''"
+          [min]="from() ?? ''"
+          (change)="setDate('to', $any($event.target).value)"
+        />
+      </div>
+      @if (hasFilters()) {
+        <button type="button" class="btn btn--ghost" (click)="clearFilters()">
+          <app-icon name="x" [size]="16" />
+          Limpiar filtros
+        </button>
+      }
+    </div>
+
+    @if (list.error()) {
+      <div class="panel__message">
+        <app-error-banner [message]="loadError()" (retry)="list.reload()" />
+      </div>
+    } @else if (!result()) {
+      <div class="panel__message"><app-loading label="Cargando presentaciones…" /></div>
+    } @else if (result()!.total === 0) {
+      <app-empty-state
+        icon="book"
+        [title]="hasFilters() ? 'Sin resultados' : 'Sin presentaciones registradas'"
+        [description]="
+          hasFilters()
+            ? 'Ninguna presentación coincide con los filtros.'
+            : 'Las presentaciones de niños aparecerán aquí.'
+        "
+      />
+    } @else {
+      <div class="table-wrap" [attr.aria-busy]="list.isLoading()">
+        <table class="table">
+          <caption class="visually-hidden">
+            Presentaciones de niños registradas en
+            {{
+              scopeName()
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Niño(a)</th>
+              <th scope="col">Nacimiento</th>
+              <th scope="col">Padres o acudiente</th>
+              <th scope="col">Presentación</th>
+              @if (congregations().length > 1) {
+                <th scope="col">Sede</th>
+              }
+              <th scope="col">Oficiante</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of result()!.items; track row.id) {
+              <tr>
+                <td>
+                  <div>{{ row.child.fullName }}</div>
+                  <div class="text-muted text-small mono">
+                    {{ row.child.maskedDocument ?? 'Sin documento' }}
+                  </div>
+                </td>
+                <td>
+                  {{ row.child.birthDate ? (row.child.birthDate | date: 'dd/MM/yyyy') : '—' }}
+                  @if (row.child.age !== null) {
+                    <div class="text-muted text-small">{{ row.child.age }} años</div>
+                  }
+                </td>
+                <td>
+                  @for (item of parents(row); track item.role) {
+                    <div>
+                      {{ item.parent.name }}
+                      <span class="text-muted text-small">({{ item.role.toLowerCase() }})</span>
+                      @if (item.parent.memberCode) {
+                        <span class="chip chip--mono">{{ item.parent.memberCode }}</span>
+                      }
+                    </div>
+                  } @empty {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>{{ row.dedicatedOn | date: 'dd/MM/yyyy' }}</td>
+                @if (congregations().length > 1) {
+                  <td>{{ row.congregationName }}</td>
+                }
+                <td>{{ row.pastor?.fullName ?? 'Sin registrar' }}</td>
+                <td class="text-right">
+                  <button
+                    type="button"
+                    class="btn btn--secondary btn--sm"
+                    [attr.aria-label]="'Ver la presentación de ' + row.child.fullName"
+                    (click)="open(row)"
+                  >
+                    <app-icon name="eye" [size]="16" />
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        [page]="result()!.page"
+        [pageSize]="pageSize"
+        [total]="result()!.total"
+        (pageChange)="pageNumber.set($event)"
+      />
+    }
+  </section>
+</div>
+
+<app-dialog
+  [open]="detailOpen()"
+  (openChange)="closeDetail($event)"
+  title="Presentación de niño(a)"
+  variant="drawer"
+>
+  @if (detail.error()) {
+    <div class="alert alert--danger" role="alert">
+      <app-icon name="alert" />
+      <span>{{ detailError() }}</span>
+    </div>
+  } @else if (detailData(); as record) {
+    <div class="stack">
+      <div class="alert alert--warning" role="note">
+        <app-icon name="lock" />
+        <span class="text-small">Esta consulta quedó registrada en la auditoría.</span>
+      </div>
+      <dl class="details">
+        <div>
+          <dt>Niño(a)</dt>
+          <dd>{{ record.child.fullName }}</dd>
+        </div>
+        <div>
+          <dt>Documento</dt>
+          <dd class="mono">{{ record.child.maskedDocument ?? 'Sin documento' }}</dd>
+        </div>
+        <div>
+          <dt>Nacimiento</dt>
+          <dd>
+            {{ record.child.birthDate ? (record.child.birthDate | date: 'dd/MM/yyyy') : '—' }}
+            @if (record.child.age !== null) {
+              ({{ record.child.age }} años)
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Fecha de presentación</dt>
+          <dd>{{ record.dedicatedOn | date: "d 'de' MMMM 'de' y" }}</dd>
+        </div>
+        <div>
+          <dt>Sede</dt>
+          <dd>{{ record.congregationName }}</dd>
+        </div>
+        <div>
+          <dt>Oficiante</dt>
+          <dd>{{ record.pastor?.fullName ?? 'Sin registrar' }}</dd>
+        </div>
+        @for (item of parents(record); track item.role) {
+          <div>
+            <dt>{{ item.role }}</dt>
+            <dd>
+              {{ item.parent.name }}
+              @if (item.parent.memberCode) {
+                <span class="chip chip--mono">{{ item.parent.memberCode }}</span>
+              } @else {
+                <span class="text-muted text-small">(sin registro)</span>
+              }
+            </dd>
+          </div>
+        }
+      </dl>
+    </div>
+  } @else {
+    <app-loading label="Cargando el registro…" />
+  }
+  <div dialog-footer>
+    <button type="button" class="btn btn--secondary" (click)="closeDetail(false)">Cerrar</button>
+  </div>
+</app-dialog>

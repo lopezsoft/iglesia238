@@ -1,0 +1,53 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: inline-block;
+}
+
+.cluster-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: $space-1;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-pill;
+
+  &__button {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: $radius-pill;
+    background: transparent;
+    color: $color-ink-muted;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-surface-2;
+      color: $color-ink;
+    }
+
+    &.is-online {
+      color: $color-online;
+    }
+
+    &.is-offline {
+      color: $color-offline;
+    }
+  }
+}
+
+@include until($breakpoint-lg) {
+  .cluster-pill__button--optional {
+    display: none;
+  }
+}
+
+@include until($breakpoint-md) {
+  :host {
+    display: none;
+  }
+}

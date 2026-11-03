@@ -1,0 +1,81 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.applications-page {
+  &__filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    align-items: end;
+    gap: $space-3;
+    padding: $space-4;
+  }
+
+  &__search {
+    grid-column: span 2;
+
+    @include until($breakpoint-sm) {
+      grid-column: auto;
+    }
+  }
+
+  &__filter-actions {
+    align-items: center;
+  }
+
+  &__layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: $space-5;
+  }
+
+  &__queue {
+    flex: 2 1 21rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  &__queue-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid $color-border;
+    background: $color-surface-2;
+
+    h2 {
+      margin: 0;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__padded {
+    padding: $space-4;
+  }
+
+  &__detail {
+    display: flex;
+    flex: 3 1 28rem;
+    flex-direction: column;
+    gap: $space-4;
+    min-width: 0;
+  }
+
+  &__notice-text {
+    flex: 1;
+    min-width: 0;
+
+    p {
+      margin: $space-1 0;
+    }
+  }
+}

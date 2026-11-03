@@ -1,0 +1,143 @@
+// Tema: única fuente de valores de color, sombras y degradados como propiedades CSS.
+// `_tokens.scss` expone alias SCSS (`$color-primary` => `var(--color-primary)`), así los
+// componentes no cambian y el tema oscuro solo redefine estas variables.
+//
+// Se entrega el tema claro. El bloque `[data-theme='dark']` deja los valores preparados, pero
+// ninguna pantalla activa ese atributo todavía (no hay interruptor ni se sigue el sistema).
+
+// Tonos de categoría: fg (icono y texto fuerte), soft (fondo de chip), border y panel (fondo tintado).
+$tone-values: (
+  'cyan': (fg: #0e8ea8, soft: #d9f4fa, border: #bfeaf3, panel: #eefafd),
+  'green': (fg: #17874f, soft: #dcf6e8, border: #c4ecd6, panel: #ecf9f2),
+  'orange': (fg: #c26405, soft: #fdecd6, border: #f9d9ae, panel: #fff6ea),
+  'red': (fg: #d63b3b, soft: #fde3e3, border: #f8c7c7, panel: #fff0f0),
+  'indigo': (fg: #4f46c8, soft: #e6e5fb, border: #d0cef5, panel: #f1f0fd),
+  'slate': (fg: #3a5a99, soft: #e4eaf6, border: #d3dcee, panel: #f3f6fc),
+);
+
+:root {
+  color-scheme: light;
+
+  // Marca y acciones
+  --color-primary: #1f56c4;
+  --color-primary-hover: #1a47a6;
+  --color-primary-strong: #12358a;
+  --color-primary-soft: #e7eefb;
+  --color-primary-ring: rgb(31 86 196 / 22%);
+  --color-brand-accent: #6fa5ff;
+  --color-on-primary: #ffffff;
+  --color-on-brand: #ffffff;
+  --color-on-brand-muted: rgb(255 255 255 / 82%);
+
+  // Superficies y texto
+  --color-ground: #f3f6fb;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef2f8;
+  --color-surface-tint: #f7f9fd;
+  --color-border: #e3e8f1;
+  --color-border-strong: #c9d2e0;
+  --color-ink: #14233f;
+  --color-ink-muted: #5b6b86;
+  --color-ink-subtle: #6f7d96;
+
+  // Semánticos (texto seguro sobre su fondo suave)
+  --color-warning: #a8530c;
+  --color-warning-soft: #fdecd6;
+  --color-success: #1b7a47;
+  --color-success-soft: #dcf6e8;
+  --color-danger: #b42318;
+  --color-danger-hover: #8f1c13;
+  --color-danger-soft: #fde3e3;
+  --color-danger-border: #f4c4c0;
+
+  // Shell
+  --color-sidebar: #ffffff;
+  --color-sidebar-text: #2a4a86;
+  --color-sidebar-muted: #6b7fa6;
+  --color-sidebar-active: #e4ebf8;
+  --color-sidebar-icon: #1c3f86;
+  --color-brand-mark: #1f56c4;
+  --color-online: #22c55e;
+  --color-offline: #d97706;
+  --color-badge-alert: #ef4444;
+  --color-backdrop: rgb(20 35 63 / 45%);
+  --color-shadow: rgb(20 35 63 / 6%);
+  --color-shadow-strong: rgb(20 35 63 / 22%);
+
+  // Degradados
+  --gradient-primary: linear-gradient(135deg, #1b4fb5 0%, #2b6fe6 100%);
+  --gradient-hero: linear-gradient(120deg, #17367f 0%, #1d4fb8 55%, #2b6fe6 100%);
+  --gradient-brand-panel: linear-gradient(160deg, #0a2461 0%, #123c93 45%, #1f5fd0 100%);
+  --gradient-auth-form: radial-gradient(circle at 100% 0, rgb(31 86 196 / 6%), transparent 45%);
+
+  // Sombras de tono azulado
+  --shadow-card: 0 1px 2px rgb(20 35 63 / 4%), 0 4px 14px rgb(20 35 63 / 5%);
+  --shadow-card-hover: 0 2px 4px rgb(20 35 63 / 6%), 0 10px 24px rgb(31 86 196 / 12%);
+  --shadow-button: 0 8px 20px rgb(31 86 196 / 30%);
+  --shadow-button-soft: 0 4px 12px rgb(31 86 196 / 25%);
+  --shadow-hero: 0 12px 30px rgb(23 54 127 / 28%);
+  --shadow-overlay: 0 16px 40px rgb(20 35 63 / 22%);
+
+  // Superficies translúcidas sobre fondos de marca
+  --glass-bg: rgb(255 255 255 / 8%);
+  --glass-bg-strong: rgb(255 255 255 / 14%);
+  --glass-border: rgb(255 255 255 / 18%);
+  --glass-grid: rgb(255 255 255 / 4%);
+  --glass-glow: rgb(79 140 255 / 25%);
+
+  @each $name, $parts in $tone-values {
+    @each $part, $value in $parts {
+      --tone-#{$name}-#{$part}: #{$value};
+    }
+  }
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-primary: #5b8dff;
+  --color-primary-hover: #7aa3ff;
+  --color-primary-strong: #b9cdff;
+  --color-primary-soft: rgb(91 141 255 / 16%);
+  --color-primary-ring: rgb(91 141 255 / 35%);
+  --color-brand-accent: #8db6ff;
+  --color-on-primary: #0b1220;
+  --color-on-brand-muted: rgb(255 255 255 / 78%);
+
+  --color-ground: #0b1220;
+  --color-surface: #121b2e;
+  --color-surface-2: #1a2540;
+  --color-surface-tint: #152037;
+  --color-border: #26324f;
+  --color-border-strong: #3a4a70;
+  --color-ink: #e8eefc;
+  --color-ink-muted: #9fb0d0;
+  --color-ink-subtle: #8394b5;
+
+  --color-warning: #f0a15a;
+  --color-warning-soft: rgb(240 161 90 / 16%);
+  --color-success: #5fd495;
+  --color-success-soft: rgb(95 212 149 / 16%);
+  --color-danger: #ff8a80;
+  --color-danger-hover: #ffa8a0;
+  --color-danger-soft: rgb(255 138 128 / 16%);
+  --color-danger-border: rgb(255 138 128 / 35%);
+
+  --color-sidebar: #0f1729;
+  --color-sidebar-text: #b9cdff;
+  --color-sidebar-muted: #8394b5;
+  --color-sidebar-active: #1a2540;
+  --color-sidebar-icon: #8db6ff;
+  --color-brand-mark: #5b8dff;
+  --color-backdrop: rgb(0 0 0 / 60%);
+  --color-shadow: rgb(0 0 0 / 30%);
+  --color-shadow-strong: rgb(0 0 0 / 55%);
+
+  --gradient-primary: linear-gradient(135deg, #2f63d4 0%, #4a82f0 100%);
+  --gradient-hero: linear-gradient(120deg, #0d2257 0%, #153a86 55%, #1c47a8 100%);
+  --gradient-brand-panel: linear-gradient(160deg, #060f2b 0%, #0d2257 45%, #153a86 100%);
+
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 3%);
+  --shadow-card-hover: 0 0 0 1px rgb(91 141 255 / 40%);
+  --shadow-overlay: 0 16px 40px rgb(0 0 0 / 55%);
+}

@@ -1,0 +1,372 @@
+{
+  "source": "INEC Ecuador (Instituto Nacional de Estadística y Censos), Clasificador Geográfico Estadístico 2026 (DPA actualizada al 31 de diciembre de 2025), archivo CODIFICACIÓN_2026.xlsx, hojas PROVINCIAS y CANTONES; https://www.ecuadorencifras.gob.ec/documentos/web-inec/Cartografia/Clasificador_Geografico/CLASIFICADOR_GEOGRAFICO_2026.zip (consultado 2026-11-02). Instantánea de la DPA al 31-12-2025: 24 provincias y 222 cantones. No incluye el cantón Borbón (Esmeraldas, escindido de Eloy Alfaro), creado por ley aprobada por la Asamblea Nacional el 30-06-2026 y publicada en el Registro Oficial en julio de 2026, porque INEC aún no le ha asignado código DPA. Excluida la zona en estudio (código 90).",
+  "countryIsoAlpha2": "EC",
+  "regions": [
+    {
+      "code": "01",
+      "name": "Azuay",
+      "municipalities": [
+        {"code":"0101","name":"Cuenca"},
+        {"code":"0102","name":"Girón"},
+        {"code":"0103","name":"Gualaceo"},
+        {"code":"0104","name":"Nabón"},
+        {"code":"0105","name":"Paute"},
+        {"code":"0106","name":"Pucará"},
+        {"code":"0107","name":"San Fernando"},
+        {"code":"0108","name":"Santa Isabel"},
+        {"code":"0109","name":"Sígsig"},
+        {"code":"0110","name":"Oña"},
+        {"code":"0111","name":"Chordeleg"},
+        {"code":"0112","name":"El Pan"},
+        {"code":"0113","name":"Sevilla de Oro"},
+        {"code":"0114","name":"Guachapala"},
+        {"code":"0115","name":"Camilo Ponce Enríquez"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "Bolívar",
+      "municipalities": [
+        {"code":"0201","name":"Guaranda"},
+        {"code":"0202","name":"Chillanes"},
+        {"code":"0203","name":"Chimbo"},
+        {"code":"0204","name":"Echeandía"},
+        {"code":"0205","name":"San Miguel"},
+        {"code":"0206","name":"Caluma"},
+        {"code":"0207","name":"Las Naves"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Cañar",
+      "municipalities": [
+        {"code":"0301","name":"Azogues"},
+        {"code":"0302","name":"Biblián"},
+        {"code":"0303","name":"Cañar"},
+        {"code":"0304","name":"La Troncal"},
+        {"code":"0305","name":"El Tambo"},
+        {"code":"0306","name":"Déleg"},
+        {"code":"0307","name":"Suscal"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Carchi",
+      "municipalities": [
+        {"code":"0401","name":"Tulcán"},
+        {"code":"0402","name":"Bolívar"},
+        {"code":"0403","name":"Espejo"},
+        {"code":"0404","name":"Mira"},
+        {"code":"0405","name":"Montúfar"},
+        {"code":"0406","name":"San Pedro de Huaca"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Cotopaxi",
+      "municipalities": [
+        {"code":"0501","name":"Latacunga"},
+        {"code":"0502","name":"La Maná"},
+        {"code":"0503","name":"Pangua"},
+        {"code":"0504","name":"Pujilí"},
+        {"code":"0505","name":"Salcedo"},
+        {"code":"0506","name":"Saquisilí"},
+        {"code":"0507","name":"Sigchos"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Chimborazo",
+      "municipalities": [
+        {"code":"0601","name":"Riobamba"},
+        {"code":"0602","name":"Alausí"},
+        {"code":"0603","name":"Colta"},
+        {"code":"0604","name":"Chambo"},
+        {"code":"0605","name":"Chunchi"},
+        {"code":"0606","name":"Guamote"},
+        {"code":"0607","name":"Guano"},
+        {"code":"0608","name":"Pallatanga"},
+        {"code":"0609","name":"Penipe"},
+        {"code":"0610","name":"Cumandá"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "El Oro",
+      "municipalities": [
+        {"code":"0701","name":"Machala"},
+        {"code":"0702","name":"Arenillas"},
+        {"code":"0703","name":"Atahualpa"},
+        {"code":"0704","name":"Balsas"},
+        {"code":"0705","name":"Chilla"},
+        {"code":"0706","name":"El Guabo"},
+        {"code":"0707","name":"Huaquillas"},
+        {"code":"0708","name":"Marcabelí"},
+        {"code":"0709","name":"Pasaje"},
+        {"code":"0710","name":"Piñas"},
+        {"code":"0711","name":"Portovelo"},
+        {"code":"0712","name":"Santa Rosa"},
+        {"code":"0713","name":"Zaruma"},
+        {"code":"0714","name":"Las Lajas"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "Esmeraldas",
+      "municipalities": [
+        {"code":"0801","name":"Esmeraldas"},
+        {"code":"0802","name":"Eloy Alfaro"},
+        {"code":"0803","name":"Muisne"},
+        {"code":"0804","name":"Quinindé"},
+        {"code":"0805","name":"San Lorenzo"},
+        {"code":"0806","name":"Atacames"},
+        {"code":"0807","name":"Rioverde"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Guayas",
+      "municipalities": [
+        {"code":"0901","name":"Guayaquil"},
+        {"code":"0902","name":"Alfredo Baquerizo Moreno (Juján)"},
+        {"code":"0903","name":"Balao"},
+        {"code":"0904","name":"Balzar"},
+        {"code":"0905","name":"Colimes"},
+        {"code":"0906","name":"Daule"},
+        {"code":"0907","name":"Durán"},
+        {"code":"0908","name":"El Empalme"},
+        {"code":"0909","name":"El Triunfo"},
+        {"code":"0910","name":"Milagro"},
+        {"code":"0911","name":"Naranjal"},
+        {"code":"0912","name":"Naranjito"},
+        {"code":"0913","name":"Palestina"},
+        {"code":"0914","name":"Pedro Carbo"},
+        {"code":"0916","name":"Samborondón"},
+        {"code":"0918","name":"Santa Lucía"},
+        {"code":"0919","name":"Salitre"},
+        {"code":"0920","name":"San Jacinto de Yaguachi"},
+        {"code":"0921","name":"Playas"},
+        {"code":"0922","name":"Simón Bolívar"},
+        {"code":"0923","name":"Coronel Marcelino Maridueña"},
+        {"code":"0924","name":"Lomas de Sargentillo"},
+        {"code":"0925","name":"Nobol"},
+        {"code":"0927","name":"General Antonio Elizalde"},
+        {"code":"0928","name":"Isidro Ayora"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Imbabura",
+      "municipalities": [
+        {"code":"1001","name":"Ibarra"},
+        {"code":"1002","name":"Antonio Ante"},
+        {"code":"1003","name":"Cotacachi"},
+        {"code":"1004","name":"Otavalo"},
+        {"code":"1005","name":"Pimampiro"},
+        {"code":"1006","name":"San Miguel de Urcuquí"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "Loja",
+      "municipalities": [
+        {"code":"1101","name":"Loja"},
+        {"code":"1102","name":"Calvas"},
+        {"code":"1103","name":"Catamayo"},
+        {"code":"1104","name":"Celica"},
+        {"code":"1105","name":"Chaguarpamba"},
+        {"code":"1106","name":"Espíndola"},
+        {"code":"1107","name":"Gonzanamá"},
+        {"code":"1108","name":"Macará"},
+        {"code":"1109","name":"Paltas"},
+        {"code":"1110","name":"Puyango"},
+        {"code":"1111","name":"Saraguro"},
+        {"code":"1112","name":"Sozoranga"},
+        {"code":"1113","name":"Zapotillo"},
+        {"code":"1114","name":"Pindal"},
+        {"code":"1115","name":"Quilanga"},
+        {"code":"1116","name":"Olmedo"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "Los Ríos",
+      "municipalities": [
+        {"code":"1201","name":"Babahoyo"},
+        {"code":"1202","name":"Baba"},
+        {"code":"1203","name":"Montalvo"},
+        {"code":"1204","name":"Puebloviejo"},
+        {"code":"1205","name":"Quevedo"},
+        {"code":"1206","name":"Urdaneta"},
+        {"code":"1207","name":"Ventanas"},
+        {"code":"1208","name":"Vinces"},
+        {"code":"1209","name":"Palenque"},
+        {"code":"1210","name":"Buena Fe"},
+        {"code":"1211","name":"Valencia"},
+        {"code":"1212","name":"Mocache"},
+        {"code":"1213","name":"Quinsaloma"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "Manabí",
+      "municipalities": [
+        {"code":"1301","name":"Portoviejo"},
+        {"code":"1302","name":"Bolívar"},
+        {"code":"1303","name":"Chone"},
+        {"code":"1304","name":"El Carmen"},
+        {"code":"1305","name":"Flavio Alfaro"},
+        {"code":"1306","name":"Jipijapa"},
+        {"code":"1307","name":"Junín"},
+        {"code":"1308","name":"Manta"},
+        {"code":"1309","name":"Montecristi"},
+        {"code":"1310","name":"Paján"},
+        {"code":"1311","name":"Pichincha"},
+        {"code":"1312","name":"Rocafuerte"},
+        {"code":"1313","name":"Santa Ana"},
+        {"code":"1314","name":"Sucre"},
+        {"code":"1315","name":"Tosagua"},
+        {"code":"1316","name":"24 de Mayo"},
+        {"code":"1317","name":"Pedernales"},
+        {"code":"1318","name":"Olmedo"},
+        {"code":"1319","name":"Puerto López"},
+        {"code":"1320","name":"Jama"},
+        {"code":"1321","name":"Jaramijó"},
+        {"code":"1322","name":"San Vicente"}
+      ]
+    },
+    {
+      "code": "14",
+      "name": "Morona Santiago",
+      "municipalities": [
+        {"code":"1401","name":"Morona"},
+        {"code":"1402","name":"Gualaquiza"},
+        {"code":"1403","name":"Limón Indanza"},
+        {"code":"1404","name":"Palora"},
+        {"code":"1405","name":"Santiago"},
+        {"code":"1406","name":"Sucúa"},
+        {"code":"1407","name":"Huamboya"},
+        {"code":"1408","name":"San Juan Bosco"},
+        {"code":"1409","name":"Taisha"},
+        {"code":"1410","name":"Logroño"},
+        {"code":"1411","name":"Pablo Sexto"},
+        {"code":"1412","name":"Tiwintza"},
+        {"code":"1413","name":"Sevilla Don Bosco"}
+      ]
+    },
+    {
+      "code": "15",
+      "name": "Napo",
+      "municipalities": [
+        {"code":"1501","name":"Tena"},
+        {"code":"1503","name":"Archidona"},
+        {"code":"1504","name":"El Chaco"},
+        {"code":"1507","name":"Quijos"},
+        {"code":"1509","name":"Carlos Julio Arosemena Tola"}
+      ]
+    },
+    {
+      "code": "16",
+      "name": "Pastaza",
+      "municipalities": [
+        {"code":"1601","name":"Pastaza"},
+        {"code":"1602","name":"Mera"},
+        {"code":"1603","name":"Santa Clara"},
+        {"code":"1604","name":"Arajuno"}
+      ]
+    },
+    {
+      "code": "17",
+      "name": "Pichincha",
+      "municipalities": [
+        {"code":"1701","name":"Distrito Metropolitano de Quito"},
+        {"code":"1702","name":"Cayambe"},
+        {"code":"1703","name":"Mejía"},
+        {"code":"1704","name":"Pedro Moncayo"},
+        {"code":"1705","name":"Rumiñahui"},
+        {"code":"1707","name":"San Miguel de los Bancos"},
+        {"code":"1708","name":"Pedro Vicente Maldonado"},
+        {"code":"1709","name":"Puerto Quito"}
+      ]
+    },
+    {
+      "code": "18",
+      "name": "Tungurahua",
+      "municipalities": [
+        {"code":"1801","name":"Ambato"},
+        {"code":"1802","name":"Baños de Agua Santa"},
+        {"code":"1803","name":"Cevallos"},
+        {"code":"1804","name":"Mocha"},
+        {"code":"1805","name":"Patate"},
+        {"code":"1806","name":"Quero"},
+        {"code":"1807","name":"San Pedro de Pelileo"},
+        {"code":"1808","name":"Santiago de Píllaro"},
+        {"code":"1809","name":"Tisaleo"}
+      ]
+    },
+    {
+      "code": "19",
+      "name": "Zamora Chinchipe",
+      "municipalities": [
+        {"code":"1901","name":"Zamora"},
+        {"code":"1902","name":"Chinchipe"},
+        {"code":"1903","name":"Nangaritza"},
+        {"code":"1904","name":"Yacuambi"},
+        {"code":"1905","name":"Yantzaza"},
+        {"code":"1906","name":"El Pangui"},
+        {"code":"1907","name":"Centinela del Cóndor"},
+        {"code":"1908","name":"Palanda"},
+        {"code":"1909","name":"Paquisha"}
+      ]
+    },
+    {
+      "code": "20",
+      "name": "Galápagos",
+      "municipalities": [
+        {"code":"2001","name":"San Cristóbal"},
+        {"code":"2002","name":"Isabela"},
+        {"code":"2003","name":"Santa Cruz"}
+      ]
+    },
+    {
+      "code": "21",
+      "name": "Sucumbíos",
+      "municipalities": [
+        {"code":"2101","name":"Lago Agrio"},
+        {"code":"2102","name":"Gonzalo Pizarro"},
+        {"code":"2103","name":"Putumayo"},
+        {"code":"2104","name":"Shushufindi"},
+        {"code":"2105","name":"Sucumbíos"},
+        {"code":"2106","name":"Cascales"},
+        {"code":"2107","name":"Cuyabeno"}
+      ]
+    },
+    {
+      "code": "22",
+      "name": "Orellana",
+      "municipalities": [
+        {"code":"2201","name":"Francisco de Orellana"},
+        {"code":"2202","name":"Aguarico"},
+        {"code":"2203","name":"La Joya de los Sachas"},
+        {"code":"2204","name":"Loreto"}
+      ]
+    },
+    {
+      "code": "23",
+      "name": "Santo Domingo de los Tsáchilas",
+      "municipalities": [
+        {"code":"2301","name":"Santo Domingo"},
+        {"code":"2302","name":"La Concordia"}
+      ]
+    },
+    {
+      "code": "24",
+      "name": "Santa Elena",
+      "municipalities": [
+        {"code":"2401","name":"Santa Elena"},
+        {"code":"2402","name":"La Libertad"},
+        {"code":"2403","name":"Salinas"}
+      ]
+    }
+  ]
+}

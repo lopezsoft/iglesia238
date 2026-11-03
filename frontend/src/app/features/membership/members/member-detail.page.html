@@ -1,0 +1,191 @@
+<div class="stack">
+  <nav aria-label="Ruta de navegación" class="text-small text-muted">
+    <a routerLink="/members">Membresía</a>
+    <span aria-hidden="true"> / </span>
+    <a routerLink="/members">Miembros</a>
+    @if (detail(); as member) {
+      <span aria-hidden="true"> / </span>
+      <span aria-current="page">{{ fullName() }}</span>
+    }
+  </nav>
+
+  @if (notFound()) {
+    <section class="card">
+      <app-empty-state
+        icon="user"
+        title="Miembro no encontrado"
+        description="El miembro no existe o pertenece a otra sede o denominación. Verifica la sede en la que actúas."
+      >
+        <a class="btn btn--secondary btn--sm" routerLink="/members">Volver a Miembros</a>
+      </app-empty-state>
+    </section>
+  } @else if (loadError(); as message) {
+    <app-error-banner [message]="message" (retry)="member.reload()" />
+  } @else if (detail(); as member) {
+    <div aria-live="polite" class="stack member__notices">
+      @if (transferNotice(); as notice) {
+        <div class="alert alert--success" role="status">
+          <app-icon name="check" />
+          <div class="cluster">
+            <span><strong>Traslado registrado.</strong> {{ notice }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="transferNotice.set(null)">
+              Cerrar aviso
+            </button>
+          </div>
+        </div>
+      }
+      @if (savedNotice(); as notice) {
+        <div class="alert alert--success" role="status">
+          <app-icon name="check" />
+          <div class="cluster">
+            <span>{{ notice }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="savedNotice.set(null)">
+              Cerrar aviso
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <section class="member__hero" aria-labelledby="member-name">
+      <div class="member__avatar" aria-hidden="true">{{ initials() }}</div>
+      <div class="member__identity">
+        <div class="member__title">
+          <h1 id="member-name">{{ fullName() }}</h1>
+          <span class="member__chip mono">{{ member.code }}</span>
+          <app-status-badge
+            [label]="statusLabels[member.status]"
+            [tone]="statusTones[member.status]"
+          />
+        </div>
+        <dl class="member__facts">
+          <div>
+            <dt>Sede actual</dt>
+            <dd>{{ congregationPlace() }}</dd>
+          </div>
+          <div>
+            <dt>Fecha de ingreso</dt>
+            <dd>{{ member.joinedOn ? (member.joinedOn | date: 'dd/MM/yyyy') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Documento</dt>
+            <dd class="mono">
+              {{ documentLabel(member.person.documentTypeCode, member.person.documentNumber) }}
+            </dd>
+          </div>
+          <div>
+            <dt>Celular</dt>
+            <dd class="mono">{{ member.person.phone ?? '—' }}</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="member__actions">
+        @if (canIssueCertificates()) {
+          <a
+            class="btn btn--secondary"
+            routerLink="/certificates"
+            [queryParams]="{ memberId: member.id }"
+          >
+            <app-icon name="certificate" />
+            Emitir certificado
+          </a>
+        }
+        @if (canWrite()) {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            aria-haspopup="dialog"
+            [disabled]="!canTransfer()"
+            [attr.aria-describedby]="canTransfer() ? null : 'transfer-hint'"
+            (click)="transferOpen.set(true)"
+          >
+            <app-icon name="transfer" />
+            Trasladar
+          </button>
+          <button
+            type="button"
+            class="btn btn--secondary"
+            aria-haspopup="dialog"
+            [disabled]="!canChangeStatus()"
+            (click)="statusOpen.set(true)"
+          >
+            <app-icon name="sliders" />
+            Cambiar estado
+          </button>
+          <button
+            type="button"
+            class="btn btn--secondary"
+            aria-haspopup="dialog"
+            (click)="editOpen.set(true)"
+          >
+            <app-icon name="edit" />
+            Editar
+          </button>
+        }
+      </div>
+      @if (canWrite() && !canTransfer()) {
+        <p id="transfer-hint" class="member__hint">Solo se trasladan miembros en estado Activo.</p>
+      }
+    </section>
+
+    <app-tab-cards
+      [items]="tabs"
+      [(selected)]="activeTab"
+      ariaLabel="Secciones de la ficha"
+      idPrefix="member"
+    />
+
+    <section
+      class="card member__panel"
+      role="tabpanel"
+      tabindex="0"
+      [id]="'member-panel-' + activeTab()"
+      [attr.aria-labelledby]="'member-tab-' + activeTab()"
+    >
+      @switch (activeTab()) {
+        @case ('personal') {
+          <app-personal-data-tab [member]="member" (editMembership)="membershipOpen.set(true)" />
+        }
+        @case ('family') {
+          <app-family-tab [memberId]="member.id" />
+        }
+        @case ('studies') {
+          <app-studies-tab [memberId]="member.id" />
+        }
+        @case ('positions') {
+          <app-positions-tab [memberId]="member.id" />
+        }
+        @case ('socioeconomic') {
+          <app-socioeconomic-tab [memberId]="member.id" />
+        }
+        @case ('registry') {
+          <app-registry-tab [memberId]="member.id" [revision]="revision()" />
+        }
+        @case ('consent') {
+          <app-consent-tab
+            [memberId]="member.id"
+            [memberStatus]="member.status"
+            (anonymizedDone)="onAnonymized()"
+          />
+        }
+      }
+    </section>
+
+    @if (canWrite()) {
+      <app-person-edit-dialog [(open)]="editOpen" [member]="member" (saved)="onPersonSaved()" />
+      <app-membership-edit-dialog
+        [(open)]="membershipOpen"
+        [member]="member"
+        (saved)="onMembershipSaved()"
+      />
+      <app-status-dialog [(open)]="statusOpen" [member]="member" (changed)="onStatusChanged()" />
+      <app-transfer-dialog
+        [(open)]="transferOpen"
+        [member]="member"
+        (transferred)="onTransferred($event)"
+      />
+    }
+  } @else {
+    <app-loading label="Cargando la ficha del miembro…" />
+  }
+</div>

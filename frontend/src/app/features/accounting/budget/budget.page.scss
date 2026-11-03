@@ -1,0 +1,96 @@
+@use 'tokens' as *;
+
+.year-field {
+  flex-direction: row;
+  align-items: center;
+  gap: $space-2;
+}
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: $space-3;
+
+  &__tabs {
+    flex: 1 1 24rem;
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: $space-4;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+}
+
+.rate-field {
+  max-width: 22rem;
+}
+
+.rate-input {
+  display: flex;
+  gap: $space-2;
+}
+
+.filters {
+  &__search {
+    flex: 1 1 14rem;
+    max-width: 24rem;
+  }
+
+  &__over {
+    align-self: center;
+  }
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0 0 0 auto;
+
+  &__mark {
+    width: 2px;
+    height: 0.875rem;
+    background: $color-ink-muted;
+  }
+}
+
+.committee-total {
+  padding: $space-4;
+  border-radius: $radius-control;
+  background: $color-surface-2;
+
+  p {
+    margin: 0 0 $space-3;
+  }
+}
+
+.notes p {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0 0 $space-2;
+}

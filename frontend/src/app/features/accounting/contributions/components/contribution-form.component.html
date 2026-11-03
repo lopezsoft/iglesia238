@@ -1,0 +1,175 @@
+<section class="card form-card" aria-label="Formulario de registro de aporte">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-layout">
+      <div class="stack form-column">
+        <div class="field">
+          <span class="field__label" id="type-label">Tipo de aporte *</span>
+          <div class="type-group" role="group" aria-labelledby="type-label">
+            @for (type of options().types; track type.id) {
+              <button
+                type="button"
+                class="btn btn--sm"
+                [class.btn--primary]="typeId() === type.id"
+                [class.btn--secondary]="typeId() !== type.id"
+                [attr.aria-pressed]="typeId() === type.id"
+                (click)="selectType(type)"
+              >
+                {{ type.name }}
+              </button>
+            }
+          </div>
+          <span class="field__hint">{{ typeHelp() }}</span>
+          @if (errors().type) {
+            <span class="field__error">{{ errors().type }}</span>
+          }
+        </div>
+
+        <fieldset class="donor">
+          <legend class="field__label">Aportante *</legend>
+          <div class="cluster">
+            <label class="checkbox" for="donor-nominal">
+              <input type="radio" id="donor-nominal" name="donor-mode" [checked]="donorMode() === 'NOMINAL'" (change)="setDonorMode('NOMINAL')" />
+              Nominal
+            </label>
+            <label class="checkbox" for="donor-anonymous">
+              <input type="radio" id="donor-anonymous" name="donor-mode" [checked]="donorMode() === 'ANONYMOUS'" [disabled]="isVow()" (change)="setDonorMode('ANONYMOUS')" />
+              Anónimo
+            </label>
+            <label class="checkbox" for="donor-collection">
+              <input type="radio" id="donor-collection" name="donor-mode" [checked]="donorMode() === 'COLLECTION'" [disabled]="isVow()" (change)="setDonorMode('COLLECTION')" />
+              Colecta agregada
+            </label>
+          </div>
+        </fieldset>
+
+        @switch (donorMode()) {
+          @case ('NOMINAL') {
+            <div class="field">
+              <app-person-search
+                inputId="contributor-search"
+                label="Persona"
+                [search]="searchPersons"
+                [invalid]="!!errors().person"
+                [selected]="person()"
+                (selectedChange)="onPersonChange($event)"
+              />
+              @if (errors().person) {
+                <span class="field__error">{{ errors().person }}</span>
+              }
+            </div>
+          }
+          @case ('ANONYMOUS') {
+            <div class="alert" role="note">
+              <app-icon name="info" />
+              <span>El recibo se emite sin datos del aportante. No suma al historial de ningún miembro.</span>
+            </div>
+          }
+          @case ('COLLECTION') {
+            <div class="field">
+              <label for="collection-label">Descripción de la colecta</label>
+              <input id="collection-label" class="input" type="text" formControlName="notes" maxlength="255" placeholder="Culto dominical 10:00 a. m." aria-describedby="collection-help" />
+              <span id="collection-help" class="field__hint">Total contado de alfolíes o sobres sin nombre en un servicio.</span>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="form-grid form-column">
+        <div class="field">
+          <label for="contribution-date">Fecha *</label>
+          <input
+            id="contribution-date"
+            class="input"
+            type="date"
+            formControlName="receivedOn"
+            [attr.min]="options().minDate"
+            [attr.max]="options().maxDate"
+            [attr.aria-invalid]="!!errors().date"
+            aria-describedby="date-help"
+          />
+          <span id="date-help" class="field__hint">{{ openPeriodsText() }}</span>
+          @if (errors().date) {
+            <span class="field__error">{{ errors().date }}</span>
+          }
+        </div>
+        <div class="field">
+          <label for="contribution-amount">Valor (COP) *</label>
+          <input
+            id="contribution-amount"
+            class="input mono"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            step="1"
+            placeholder="0"
+            formControlName="amount"
+            [attr.aria-invalid]="!!errors().amount"
+          />
+          @if (errors().amount) {
+            <span class="field__error">{{ errors().amount }}</span>
+          }
+        </div>
+        <div class="field">
+          <label for="payment-method">Medio de pago *</label>
+          <select id="payment-method" class="select" formControlName="paymentMethod">
+            @for (method of methods; track method) {
+              <option [ngValue]="method">{{ methodLabels[method] }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="payment-reference">{{ referenceLabel() }}</label>
+          <input
+            id="payment-reference"
+            class="input mono"
+            type="text"
+            maxlength="80"
+            formControlName="paymentReference"
+            placeholder="TRX 884120"
+            aria-describedby="reference-help"
+            [attr.aria-invalid]="!!errors().reference"
+          />
+          <span id="reference-help" class="field__hint">Obligatoria para transferencia, datáfono y consignación.</span>
+          @if (errors().reference) {
+            <span class="field__error">{{ errors().reference }}</span>
+          }
+        </div>
+        @if (isVow()) {
+          <div class="field vow-field">
+            <label for="vow-select">Promesa de voto *</label>
+            <select id="vow-select" class="select" formControlName="vowPledgeId" aria-describedby="vow-help" [attr.aria-invalid]="!!errors().vow">
+              <option [ngValue]="null">{{ vowPlaceholder() }}</option>
+              @for (pledge of pledgeOptions(); track pledge.id) {
+                <option [ngValue]="pledge.id">{{ pledge.label }}</option>
+              }
+            </select>
+            @if (errors().vow) {
+              <span class="field__error">{{ errors().vow }}</span>
+            }
+            <span id="vow-help" class="field__hint">
+              Solo promesas de la misma persona y tipo, con saldo. El abono reduce el saldo; consulta el detalle en
+              <a routerLink="/accounting/vows">Votos</a>.
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert--danger form-error" role="alert">{{ error() }}</div>
+    }
+
+    <div class="form-footer">
+      <span class="text-muted text-small">
+        Los campos con * son obligatorios. Al registrar se genera el recibo; el Libro de caja lo consolida después con los aportes del día.
+      </span>
+      <div class="cluster">
+        <button type="button" class="btn btn--secondary" (click)="reset()">Limpiar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="pending()">
+          <app-icon name="check" />
+          {{ pending() ? 'Registrando…' : 'Registrar aporte' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,321 @@
+@let app = application();
+<article class="card card--flush application-detail" aria-labelledby="application-detail-title">
+  <header class="application-detail__header">
+    <app-icon-chip [icon]="app.isMinor ? 'user-circle' : 'user'" tone="indigo" size="lg" [solid]="true" />
+    <div class="application-detail__title">
+      <div class="cluster">
+        <h2 id="application-detail-title">{{ app.fullName }}</h2>
+        <app-status-badge [label]="statusLabels[app.status]" [tone]="statusTones[app.status]" />
+      </div>
+      <p class="text-small text-muted">
+        Recibida el {{ app.createdAt | date: 'dd/MM/yyyy HH:mm' }} · {{ app.congregationName }} ·
+        Formulario público
+      </p>
+    </div>
+  </header>
+
+  <div class="application-detail__body">
+    @if (showDuplicateWarning() && app.duplicateMatch; as match) {
+      <app-duplicate-warning
+        [match]="match"
+        [canResolve]="canReview()"
+        [pending]="pending()"
+        (link)="askToLink($event)"
+        (markDuplicate)="markDuplicate.emit($event)"
+        (dismiss)="dismissDuplicate.emit()"
+      />
+    }
+
+    @if (showDismissedMatch() && app.duplicateMatch) {
+      <p class="application-detail__note text-small">
+        <app-icon name="check" [size]="16" />
+        Coincidencia con {{ app.duplicateMatch.fullName }} descartada por {{ reviewerName() }}. Dos
+        personas de la denominación no pueden compartir el mismo documento: rechaza la solicitud
+        para que el solicitante corrija su documento.
+      </p>
+    }
+
+    @switch (app.status) {
+      @case ('IN_REVIEW') {
+        <p class="application-detail__note text-small">
+          <app-icon name="clock" [size]="16" />
+          En revisión{{ app.reviewerName ? ' por ' + app.reviewerName : '' }}.
+        </p>
+      }
+      @case ('DUPLICATE') {
+        <div class="alert">
+          <app-icon name="copy" />
+          <div>
+            <strong>Solicitud duplicada</strong>
+            <p>
+              @if (app.linkedPerson; as person) {
+                Enlazada a {{ person.fullName }}
+                @if (person.congregationName) {
+                  ({{ person.congregationName }})
+                }
+                .
+              }
+              No se creó un miembro nuevo.
+            </p>
+            <p class="text-small text-muted">
+              Marcada el {{ app.reviewedAt | date: 'dd/MM/yyyy' }} por {{ app.reviewerName ?? '—' }}
+            </p>
+          </div>
+        </div>
+      }
+      @case ('APPROVED') {
+        <div class="alert alert--success application-detail__resolution">
+          <div>
+            <strong
+              >Aprobada · número de miembro <span class="mono">{{ app.memberCode ?? '—' }}</span></strong
+            >
+            <p class="text-small text-muted">
+              Aprobada el {{ app.reviewedAt | date: 'dd/MM/yyyy' }} por
+              {{ app.reviewerName ?? '—' }}
+            </p>
+          </div>
+          @if (app.memberId !== null) {
+            <a [routerLink]="['/members', app.memberId]">Ver ficha del miembro</a>
+          }
+        </div>
+      }
+      @case ('REJECTED') {
+        <div class="alert alert--danger">
+          <div>
+            <strong>Rechazada</strong>
+            <p>Motivo (nota interna): {{ app.rejectionReason }}</p>
+            <p class="text-small text-muted">
+              Rechazada el {{ app.reviewedAt | date: 'dd/MM/yyyy' }} por
+              {{ app.reviewerName ?? '—' }}. El solicitante solo ve que no fue aprobada.
+            </p>
+          </div>
+        </div>
+      }
+    }
+
+    <div class="application-detail__figures">
+      <app-mini-stat label="Documento" [value]="document()" [meta]="app.documentTypeName" icon="id-card" tone="indigo" />
+      <app-mini-stat
+        label="Edad"
+        [value]="app.age !== null ? app.age + ' años' : '—'"
+        [meta]="app.isMinor ? 'Menor de edad' : 'Mayor de edad'"
+        icon="user"
+        tone="cyan"
+      />
+      <app-mini-stat label="Sede" [value]="app.congregationName" icon="church" tone="green" />
+      <app-mini-stat
+        label="Política aceptada"
+        [value]="app.policyVersion ? 'v' + app.policyVersion : '—'"
+        [meta]="'el ' + (app.consentedAt | date: 'dd/MM/yyyy HH:mm')"
+        icon="shield-check"
+        tone="orange"
+      />
+    </div>
+
+    <app-section-panel title="Datos personales" icon="user" tone="slate" layout="stack">
+      <dl class="details">
+        <div>
+          <dt>Fecha de nacimiento</dt>
+          <dd>
+            @if (app.birthDate) {
+              {{ app.birthDate | date: 'dd/MM/yyyy' }}
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Sexo</dt>
+          <dd>{{ sex() }}</dd>
+        </div>
+        <div>
+          <dt>Estado civil</dt>
+          <dd>{{ app.formData.maritalStatusName ?? app.formData.maritalStatusCode }}</dd>
+        </div>
+        <div>
+          <dt>Ocupación</dt>
+          <dd>{{ app.formData.occupation ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Bautizado(a)</dt>
+          <dd>{{ baptism() }}</dd>
+        </div>
+        <div>
+          <dt>Congregación anterior</dt>
+          <dd>{{ app.formData.previousCongregationName ?? 'Ninguna' }}</dd>
+        </div>
+      </dl>
+    </app-section-panel>
+
+    <app-section-panel title="Contacto y residencia" icon="mail" tone="cyan" layout="stack">
+      <dl class="details">
+        <div>
+          <dt>Teléfono</dt>
+          <dd>{{ app.phone ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Correo electrónico</dt>
+          <dd class="application-detail__wrap">{{ app.email ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Dirección</dt>
+          <dd>{{ app.formData.address }}</dd>
+        </div>
+        <div>
+          <dt>Barrio</dt>
+          <dd>{{ app.formData.neighborhood ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Municipio</dt>
+          <dd>{{ municipality() }}</dd>
+        </div>
+      </dl>
+    </app-section-panel>
+
+    <app-section-panel
+      title="Acudiente"
+      [subtitle]="app.isMinor ? 'El solicitante es menor de edad' : 'No aplica: es mayor de edad'"
+      icon="users"
+      tone="orange"
+      layout="stack"
+    >
+      @if (app.isMinor) {
+        <dl class="details">
+          <div>
+            <dt>Nombre</dt>
+            <dd>{{ app.guardianName ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Documento</dt>
+            <dd class="mono">
+              {{ app.formData.guardianDocumentTypeCode ?? '' }} {{ app.guardianDocument ?? '—' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Parentesco</dt>
+            <dd>{{ app.formData.guardianRelationship ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Teléfono</dt>
+            <dd>{{ app.formData.guardianPhone ?? '—' }}</dd>
+          </div>
+        </dl>
+        <p class="text-small text-muted">
+          El acudiente autorizó el tratamiento de datos en nombre del solicitante.
+        </p>
+      } @else {
+        <p class="text-muted">El solicitante autorizó el tratamiento de sus datos personales por sí mismo.</p>
+      }
+    </app-section-panel>
+
+    <app-section-panel title="Seguimiento" icon="clock" tone="green" layout="stack">
+      <dl class="details">
+        <div>
+          <dt>Recibida</dt>
+          <dd>{{ app.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+        <div>
+          <dt>Revisor</dt>
+          <dd>{{ app.reviewerName ?? 'Sin asignar' }}</dd>
+        </div>
+        <div>
+          <dt>Fecha de decisión</dt>
+          <dd>{{ app.reviewedAt ? (app.reviewedAt | date: 'dd/MM/yyyy HH:mm') : 'Pendiente' }}</dd>
+        </div>
+      </dl>
+      <p class="text-small text-muted">Autorización conforme a la Ley 1581 de 2012.</p>
+    </app-section-panel>
+  </div>
+
+  @if (reviewable()) {
+    <footer class="application-detail__footer">
+      @if (canReview()) {
+        @if (rejectOpen()) {
+          <app-reject-form
+            [pending]="pending()"
+            (submitted)="reject.emit($event)"
+            (cancelled)="rejectOpen.set(false)"
+          />
+        }
+        <div class="application-detail__actions">
+          <p class="application-detail__hint text-small text-muted">
+            <app-icon name="info" [size]="16" />
+            Al aprobar se crean, en una sola transacción, la persona, el miembro, su registro con
+            número de miembro y la autorización de datos. Si un paso falla, no se guarda nada.
+          </p>
+          <div class="cluster">
+            @if (app.status === 'PENDING') {
+              <button
+                type="button"
+                class="btn btn--secondary"
+                [disabled]="pending()"
+                (click)="startReview.emit()"
+              >
+                Tomar en revisión
+              </button>
+            }
+            <button
+              type="button"
+              class="btn btn--danger-ghost"
+              [disabled]="pending() || rejectOpen()"
+              (click)="rejectOpen.set(true)"
+            >
+              Rechazar
+            </button>
+            <button
+              type="button"
+              class="btn btn--primary"
+              [disabled]="pending() || approveBlocked()"
+              [attr.aria-describedby]="approveBlocked() ? 'approve-blocked' : null"
+              (click)="approve.emit()"
+            >
+              {{ pending() ? 'Procesando…' : 'Aprobar y crear miembro' }}
+            </button>
+          </div>
+        </div>
+        @if (approveBlocked()) {
+          <p id="approve-blocked" class="application-detail__blocked text-small">
+            @if (duplicateDismissed()) {
+              El documento ya pertenece a otra persona de la denominación. Rechaza la solicitud
+              para que el solicitante corrija su documento.
+            } @else {
+              Resuelve la coincidencia de documento para habilitar la aprobación.
+            }
+          </p>
+        }
+      } @else {
+        <app-read-only-notice permission="applications.review" />
+      }
+    </footer>
+  }
+</article>
+
+<app-dialog [(open)]="linkDialogOpen" title="Aprobar sobre una persona ya registrada">
+  @if (linkCandidate(); as candidate) {
+    <p>
+      La solicitud de <strong>{{ app.fullName }}</strong> se aprobará sobre el registro de
+      <strong>{{ candidate.fullName }}</strong> (<span class="mono">{{
+        candidate.documentTypeCode ?? ''
+      }}
+        {{ candidate.documentNumber ?? '' }}</span
+      >).
+    </p>
+    <ul class="application-detail__consequences">
+      <li>No se crea otra persona: se completan los datos que su ficha no tiene.</li>
+      <li>
+        @if (candidate.memberId !== null) {
+          Se reactiva su membresía en {{ app.congregationName }} con un número de miembro nuevo.
+        } @else {
+          Se crea su membresía en {{ app.congregationName }} con el siguiente número de miembro.
+        }
+      </li>
+      <li>Se registra su autorización de datos con la política que aceptó en esta solicitud.</li>
+    </ul>
+  }
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="linkDialogOpen.set(false)">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="pending()" (click)="confirmLink()">
+      Confirmar y aprobar
+    </button>
+  </div>
+</app-dialog>

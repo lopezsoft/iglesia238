@@ -1,0 +1,60 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.diff-row td,
+.diff-row:hover {
+  background: $color-surface-2;
+}
+
+.diff {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-2 0;
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: $space-2;
+    padding: $space-2 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-control;
+    background: $color-surface;
+    font-size: $font-size-sm;
+  }
+
+  &__field {
+    min-width: 9rem;
+    font-weight: $font-weight-medium;
+  }
+
+  &__from {
+    color: $color-danger;
+    text-decoration: line-through;
+  }
+
+  &__to {
+    color: $color-success;
+  }
+}

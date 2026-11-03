@@ -1,0 +1,160 @@
+<div class="panel-header">
+  <h2>Sedes</h2>
+  <span class="text-muted text-small"
+    >Cualquier persona puede registrar una sede desde «Registrar mi sede» en el inicio de sesión; también puedes
+    crearlas aquí. Solo las sedes activas con inscripciones abiertas aparecen en el formulario público.</span
+  >
+</div>
+
+@if (policyMissing()) {
+  <div class="alert alert--warning" role="status">
+    <app-icon name="alert" />
+    <span>
+      La denominación no tiene una política de datos publicada: el formulario público no mostrará ninguna sede,
+      aunque tenga las inscripciones abiertas.
+      <a routerLink="/privacy-policy">Revisar y publicar la política</a>
+    </span>
+  </div>
+}
+
+@if (actionError(); as message) {
+  @if (!confirmOpen()) {
+    <div class="alert alert--danger" role="alert">
+      <app-icon name="alert" />
+      <span>{{ message }}</span>
+    </div>
+  }
+}
+
+<div class="card card--flush">
+  @if (loadError(); as message) {
+    <div class="panel-feedback">
+      <app-error-banner [message]="message" (retry)="congregations.reload()" />
+    </div>
+  } @else if (congregations.isLoading() && !congregations.value()) {
+    <div class="panel-feedback"><app-loading label="Cargando sedes…" /></div>
+  } @else if (visible().total === 0) {
+    <app-empty-state
+      icon="building"
+      title="Aún no hay sedes"
+      description="Las sedes se registran solas desde «Registrar mi sede» en el inicio de sesión, o puedes crear la primera aquí."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table class="table" [attr.aria-busy]="congregations.isLoading()">
+        <thead>
+          <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Razón social</th>
+            <th scope="col">Distrito</th>
+            <th scope="col">Municipio</th>
+            <th scope="col">Acepta inscripciones</th>
+            <th scope="col">Estado</th>
+            @if (canManage()) {
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visible().items; track row.id) {
+            <tr>
+              <td>
+                <div class="cell-title">
+                  {{ row.name }} <span class="chip chip--mono">{{ row.code }}</span>
+                </div>
+                <div class="text-muted text-small">
+                  {{ row.address ?? 'Sin dirección'
+                  }}{{ row.neighborhood ? ', ' + row.neighborhood : '' }}
+                </div>
+              </td>
+              <td>{{ row.legalEntityName }}</td>
+              <td>{{ row.districtNumber ? 'Distrito ' + row.districtNumber : '—' }}</td>
+              <td>{{ place(row) }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="switch"
+                  [attr.aria-pressed]="row.acceptsApplications"
+                  [attr.aria-label]="'Acepta inscripciones: ' + row.name"
+                  [disabled]="
+                    !canManage() ||
+                    pendingId() === row.id ||
+                    (!row.isActive && !row.acceptsApplications)
+                  "
+                  (click)="toggleApplications(row)"
+                >
+                  <span class="switch__track" aria-hidden="true"
+                    ><span class="switch__knob"></span
+                  ></span>
+                  <span aria-hidden="true">{{ row.acceptsApplications ? 'Sí' : 'No' }}</span>
+                </button>
+              </td>
+              <td>
+                <app-status-badge
+                  [label]="row.isActive ? 'Activa' : 'Inactiva'"
+                  [tone]="row.isActive ? 'success' : 'neutral'"
+                />
+              </td>
+              @if (canManage()) {
+                <td>
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Editar ' + row.name"
+                      (click)="openEdit(row)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--sm"
+                      [class.btn--danger-ghost]="row.isActive"
+                      [class.btn--secondary]="!row.isActive"
+                      [attr.aria-label]="(row.isActive ? 'Desactivar ' : 'Activar ') + row.name"
+                      (click)="openStatus(row)"
+                    >
+                      {{ row.isActive ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="visible().total"
+      (pageChange)="page.set($event)"
+    />
+  }
+</div>
+
+<app-congregation-form-dialog
+  [(open)]="formOpen"
+  [congregation]="editing()"
+  [denominationName]="denominationName()"
+  (saved)="onSaved($event)"
+/>
+
+@if (statusTarget(); as target) {
+  <app-confirm-dialog
+    [(open)]="confirmOpen"
+    [title]="target.isActive ? '¿Desactivar la sede?' : '¿Activar la sede?'"
+    [message]="
+      target.isActive
+        ? target.name +
+          ' dejará de recibir inscripciones y no podrá seleccionarse en nuevos registros. Sus datos se conservan.'
+        : target.name +
+          ' volverá a estar disponible. Las inscripciones públicas siguen cerradas hasta que las abras.'
+    "
+    [confirmLabel]="target.isActive ? 'Desactivar' : 'Activar'"
+    [danger]="target.isActive"
+    [pending]="pendingId() === target.id"
+    [error]="actionError()"
+    (confirmed)="confirmStatus()"
+  />
+}

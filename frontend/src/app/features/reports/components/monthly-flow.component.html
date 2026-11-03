@@ -1,0 +1,92 @@
+<section class="card" aria-labelledby="flow-title">
+  <header class="card__header">
+    <div>
+      <h2 id="flow-title" class="section-title">Ingresos y egresos por mes</h2>
+      <p class="text-muted text-small">
+        {{ report().fundLabel }} · cifras en pesos colombianos (COP)
+      </p>
+    </div>
+    <div class="cluster">
+      <span class="legend" aria-hidden="true">
+        <span class="legend__swatch legend__swatch--income"></span>Ingresos
+        <span class="legend__swatch legend__swatch--expense"></span>Egresos
+      </span>
+      <button type="button" class="btn btn--secondary btn--sm" (click)="exportCsv.emit()">
+        <app-icon name="download" />
+        Exportar CSV
+      </button>
+    </div>
+  </header>
+
+  <div class="chart" role="img" [attr.aria-label]="chartLabel()">
+    @for (bar of bars(); track bar.key) {
+      <div class="chart__group" aria-hidden="true">
+        <div class="chart__bars">
+          <div class="chart__track">
+            <span class="chart__value">{{ bar.incomeShort }}</span>
+            <span
+              class="chart__bar chart__bar--income"
+              [style.height.%]="bar.incomeHeight"
+              [title]="bar.incomeTitle"
+            ></span>
+          </div>
+          <div class="chart__track">
+            <span class="chart__value">{{ bar.expenseShort }}</span>
+            <span
+              class="chart__bar chart__bar--expense"
+              [style.height.%]="bar.expenseHeight"
+              [title]="bar.expenseTitle"
+            ></span>
+          </div>
+        </div>
+        <span class="chart__label">{{ bar.shortLabel }}</span>
+      </div>
+    }
+  </div>
+  <p class="text-muted text-small chart__note">Valores de las barras en millones de pesos.</p>
+
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">
+        Tabla de datos del gráfico: ingresos, egresos y saldo por mes
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Mes</th>
+          <th scope="col" class="text-right">Ingresos</th>
+          <th scope="col" class="text-right">Egresos</th>
+          <th scope="col" class="text-right">Saldo del mes</th>
+          <th scope="col">Periodo de caja</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (month of report().months; track month.month) {
+          <tr>
+            <th scope="row">{{ month.label }}</th>
+            <td class="num">{{ month.income | money }}</td>
+            <td class="num">{{ month.expense | money }}</td>
+            <td class="num">{{ month.balance | money }}</td>
+            <td>
+              @if (month.periodStatus; as status) {
+                <span class="badge" [class.badge--success]="status === 'OPEN'">{{
+                  periodLabels[status]
+                }}</span>
+              } @else {
+                <span class="text-muted text-small">Sin periodo</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num">{{ report().totals.income | money }}</td>
+          <td class="num">{{ report().totals.expense | money }}</td>
+          <td class="num">{{ report().totals.balance | money }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>

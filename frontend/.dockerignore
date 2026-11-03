@@ -1,0 +1,10 @@
+node_modules
+dist
+.angular
+coverage
+out-tsc
+.git
+.env
+.env.*
+!.env.example
+*.log

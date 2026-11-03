@@ -1,0 +1,103 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.trend-controls:empty {
+  display: none;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-3;
+  margin: 0 0 $space-5;
+
+  > div {
+    padding: $space-3;
+    border-radius: $radius-control;
+    background: $color-surface-tint;
+    border: 1px solid $color-border;
+  }
+
+  dt {
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+  }
+
+  dd {
+    margin: $space-1 0 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-extrabold;
+    font-variant-numeric: tabular-nums;
+
+    &.text-small {
+      font-size: $font-size-2xs;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  .is-up {
+    color: $color-success;
+  }
+
+  .is-down {
+    color: $color-danger;
+  }
+}
+
+.chart {
+  display: flex;
+  align-items: stretch;
+  gap: $space-2;
+  height: 12rem;
+
+  &__column {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__track {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__value {
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__bar {
+    width: 100%;
+    max-width: 2.5rem;
+    border: 1px solid $color-primary;
+    border-radius: $radius-xs $radius-xs 0 0;
+    background: $gradient-primary;
+
+    &--draft {
+      border-style: dashed;
+      background: $color-primary-soft;
+    }
+  }
+
+  &__label {
+    max-width: 100%;
+    overflow: hidden;
+    color: $color-ink-muted;
+    font-size: $font-size-2xs;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

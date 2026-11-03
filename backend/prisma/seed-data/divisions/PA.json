@@ -1,0 +1,167 @@
+{
+  "source": "ANATI - Instituto Geográfico Nacional \"Tommy Guardia\" (IGNTG), República de Panamá: Mapa Web División Política Administrativa 2025a (capas Provincia y Distrito; códigos cod_prov/cod_dist), https://sigigntg.anati.gob.pa/arcgisserver/rest/services/Mapa_Web_Divisi%C3%B3n_Pol%C3%ADtica_Administrativa_2025a_MIL1/MapServer, consultado 2026-11-03. Totales contrastados con INEC (Contraloría General de la República): \"Algunas características de la división política administrativa ... Año 2023\" y \"Panamá en Cifras 2019-23\".",
+  "countryIsoAlpha2": "PA",
+  "regions": [
+    {
+      "code": "01",
+      "name": "Bocas del Toro",
+      "municipalities": [
+        {"code":"0101","name":"Bocas del Toro"},
+        {"code":"0102","name":"Changuinola"},
+        {"code":"0103","name":"Chiriquí Grande"},
+        {"code":"0104","name":"Almirante"},
+        {"code":"0105","name":"Comarca Naso Tjër Di"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "Coclé",
+      "municipalities": [
+        {"code":"0201","name":"Aguadulce"},
+        {"code":"0202","name":"Antón"},
+        {"code":"0203","name":"La Pintada"},
+        {"code":"0204","name":"Natá"},
+        {"code":"0205","name":"Olá"},
+        {"code":"0206","name":"Penonomé"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Colón",
+      "municipalities": [
+        {"code":"0301","name":"Colón"},
+        {"code":"0302","name":"Chagres"},
+        {"code":"0303","name":"Donoso"},
+        {"code":"0304","name":"Portobelo"},
+        {"code":"0305","name":"Santa Isabel"},
+        {"code":"0306","name":"Omar Torrijos Herrera"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Chiriquí",
+      "municipalities": [
+        {"code":"0401","name":"Alanje"},
+        {"code":"0402","name":"Barú"},
+        {"code":"0403","name":"Boquerón"},
+        {"code":"0404","name":"Boquete"},
+        {"code":"0405","name":"Bugaba"},
+        {"code":"0406","name":"David"},
+        {"code":"0407","name":"Dolega"},
+        {"code":"0408","name":"Gualaca"},
+        {"code":"0409","name":"Remedios"},
+        {"code":"0410","name":"Renacimiento"},
+        {"code":"0411","name":"San Félix"},
+        {"code":"0412","name":"San Lorenzo"},
+        {"code":"0413","name":"Tolé"},
+        {"code":"0414","name":"Tierras Altas"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Darién",
+      "municipalities": [
+        {"code":"0501","name":"Chepigana"},
+        {"code":"0502","name":"Pinogana"},
+        {"code":"0503","name":"Santa Fe"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Herrera",
+      "municipalities": [
+        {"code":"0601","name":"Chitré"},
+        {"code":"0602","name":"Las Minas"},
+        {"code":"0603","name":"Los Pozos"},
+        {"code":"0604","name":"Ocú"},
+        {"code":"0605","name":"Parita"},
+        {"code":"0606","name":"Pesé"},
+        {"code":"0607","name":"Santa María"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "Los Santos",
+      "municipalities": [
+        {"code":"0701","name":"Guararé"},
+        {"code":"0702","name":"Las Tablas"},
+        {"code":"0703","name":"Los Santos"},
+        {"code":"0704","name":"Macaracas"},
+        {"code":"0705","name":"Pedasí"},
+        {"code":"0706","name":"Pocrí"},
+        {"code":"0707","name":"Tonosí"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "Panamá",
+      "municipalities": [
+        {"code":"0802","name":"Balboa"},
+        {"code":"0805","name":"Chepo"},
+        {"code":"0806","name":"Chimán"},
+        {"code":"0808","name":"Panamá"},
+        {"code":"0810","name":"San Miguelito"},
+        {"code":"0811","name":"Taboga"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Veraguas",
+      "municipalities": [
+        {"code":"0901","name":"Atalaya"},
+        {"code":"0902","name":"Calobre"},
+        {"code":"0903","name":"Cañazas"},
+        {"code":"0904","name":"La Mesa"},
+        {"code":"0905","name":"Las Palmas"},
+        {"code":"0906","name":"Montijo"},
+        {"code":"0907","name":"Río de Jesús"},
+        {"code":"0908","name":"San Francisco"},
+        {"code":"0909","name":"Santa Fe"},
+        {"code":"0910","name":"Santiago"},
+        {"code":"0911","name":"Soná"},
+        {"code":"0912","name":"Mariato"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Comarca Kuna Yala",
+      "municipalities": [
+        {"code":"1001","name":"Comarca Kuna Yala"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "Comarca Emberá-Wounaán",
+      "municipalities": [
+        {"code":"1101","name":"Cémaco"},
+        {"code":"1102","name":"Sambú"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "Comarca Ngäbe-Buglé",
+      "municipalities": [
+        {"code":"1201","name":"Besiko"},
+        {"code":"1202","name":"Mironó"},
+        {"code":"1203","name":"Müna"},
+        {"code":"1204","name":"Nole Duima"},
+        {"code":"1205","name":"Ñürüm"},
+        {"code":"1206","name":"Kankintú"},
+        {"code":"1207","name":"Kusapín"},
+        {"code":"1208","name":"Jirondai"},
+        {"code":"1209","name":"Santa Catalina o Calovébora (Bledeshia)"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "Panamá Oeste",
+      "municipalities": [
+        {"code":"1301","name":"Arraiján"},
+        {"code":"1303","name":"Capira"},
+        {"code":"1304","name":"Chame"},
+        {"code":"1307","name":"La Chorrera"},
+        {"code":"1309","name":"San Carlos"}
+      ]
+    }
+  ]
+}

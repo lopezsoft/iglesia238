@@ -1,0 +1,210 @@
+<div class="tab__header">
+  <div>
+    <h2>Autorización de tratamiento de datos</h2>
+    <p class="text-muted text-small">
+      Ley 1581 de 2012 y política de tratamiento de datos de la denominación.
+    </p>
+  </div>
+</div>
+
+<div aria-live="polite">
+  @if (command.message(); as text) {
+    <p class="alert alert--success" role="status">{{ text }}</p>
+  }
+</div>
+
+@if (loadError(); as text) {
+  <app-error-banner [message]="text" (retry)="consents.reload()" />
+} @else if (consents.isLoading() && !consents.hasValue()) {
+  <app-loading label="Cargando autorizaciones…" />
+} @else if (latest(); as consent) {
+  <div class="tab__summary">
+    <div class="tab__box">
+      <span class="tab__box-label">Versión aceptada</span>
+      <span class="tab__box-value mono">{{ consent.policyVersion }}</span>
+      @if (consent.policyEffectiveFrom) {
+        <span class="text-muted text-small"
+          >Vigente desde el {{ consent.policyEffectiveFrom | date: 'dd/MM/yyyy' }}</span
+        >
+      }
+    </div>
+    <div class="tab__box">
+      <span class="tab__box-label">Fecha de aceptación</span>
+      <span class="tab__box-value">{{ consent.grantedAt | date: 'dd/MM/yyyy' }}</span>
+      <span class="text-muted text-small">{{ channelLabels[consent.channel] }}</span>
+    </div>
+    <div class="tab__box">
+      <span class="tab__box-label">Estado</span>
+      <span>
+        <app-status-badge
+          [label]="active() ? 'Vigente' : 'Revocada'"
+          [tone]="active() ? 'success' : 'danger'"
+        />
+      </span>
+      <span class="text-muted text-small">
+        Finalidades: registro de membresía, certificados y comunicaciones de la congregación.
+      </span>
+    </div>
+  </div>
+
+  <h3>Historial de aceptaciones</h3>
+  <div class="table-wrap tab__table">
+    <table class="table">
+      <caption class="visually-hidden">
+        Historial de autorizaciones de datos
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Versión</th>
+          <th scope="col">Fecha</th>
+          <th scope="col">Canal</th>
+          <th scope="col">Acudiente</th>
+          <th scope="col">Revocada el</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td class="code">{{ row.policyVersion }}</td>
+            <td>{{ row.grantedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ channelLabels[row.channel] }}</td>
+            <td>{{ row.guardianName ?? '—' }}</td>
+            <td>{{ row.revokedAt ? (row.revokedAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <section class="tab__box" aria-labelledby="revocation-title">
+    <h3 id="revocation-title">Revocación de la autorización</h3>
+    <p class="text-small">
+      Si la persona revoca su autorización, se registra la revocación. Con todas las autorizaciones
+      revocadas y el miembro inactivo, se puede anonimizar: se borran de forma irreversible nombre,
+      documento, contacto, dirección y ficha socioeconómica, y se conservan los aportes,
+      certificados y libros de registro con un identificador anónimo. La revocación no se puede
+      deshacer.
+    </p>
+    @if (!canWrite()) {
+      <app-read-only-notice
+        permission="members.write"
+        detail="Solo la secretaría o el pastor registran revocaciones."
+      />
+    } @else if (active()) {
+      <div>
+        <button
+          type="button"
+          class="btn btn--danger-ghost"
+          aria-haspopup="dialog"
+          (click)="openConfirm()"
+        >
+          Registrar revocación
+        </button>
+      </div>
+    } @else {
+      <p class="text-muted text-small">
+        La autorización ya fue revocada; no hay una autorización vigente.
+      </p>
+    }
+    @if (anonymizationPending()) {
+      <p class="alert alert--warning text-small" role="note">
+        Anonimización pendiente: los datos personales siguen visibles hasta que se anonimicen.
+        @if (memberStatus() === 'ACTIVE') {
+          Cambia el estado del miembro a Inactivo para poder hacerlo.
+        }
+      </p>
+      @if (canAnonymize()) {
+        <div>
+          <button
+            type="button"
+            class="btn btn--danger"
+            aria-haspopup="dialog"
+            (click)="openAnonymize()"
+          >
+            Anonimizar datos personales
+          </button>
+        </div>
+      }
+    }
+  </section>
+} @else {
+  <app-empty-state icon="shield" title="Sin autorizaciones registradas" />
+}
+
+<app-dialog [(open)]="confirmOpen" title="Confirmar revocación de la autorización">
+  <div class="stack">
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <p>Al confirmar, el sistema:</p>
+    <ol>
+      <li>registra la fecha de revocación de la autorización vigente (no la borra);</li>
+      <li>
+        deja la anonimización pendiente: nombre, documento, contacto, dirección y ficha
+        socioeconómica siguen visibles hasta que anonimices al miembro inactivo;
+      </li>
+      <li>deja constancia en la auditoría (<code>CONSENT_REVOKED</code>).</li>
+    </ol>
+    <p class="text-small text-muted">
+      Antes de confirmar, archiva el soporte de la solicitud del titular. Sin soporte, la revocación
+      no tiene validez ante una reclamación.
+    </p>
+    <label class="checkbox">
+      <input
+        type="checkbox"
+        [checked]="acknowledged()"
+        (change)="acknowledged.set($any($event.target).checked)"
+      />
+      <span>El titular presentó la solicitud de revocación y su soporte quedó archivado.</span>
+    </label>
+  </div>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="confirmOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="!acknowledged() || command.pending()"
+      (click)="revoke()"
+    >
+      {{ command.pending() ? 'Registrando…' : 'Confirmar revocación' }}
+    </button>
+  </div>
+</app-dialog>
+
+<app-dialog [(open)]="anonymizeOpen" title="Anonimizar datos personales">
+  <div class="stack">
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <p class="alert alert--warning" role="note">
+      Esta acción es irreversible. Se borran nombre, documento, fecha de nacimiento, contactos,
+      direcciones y ficha socioeconómica. Los aportes, certificados y libros se conservan con un
+      identificador anónimo.
+    </p>
+    <div class="field">
+      <label for="anonymize-confirmation">Escribe {{ confirmationWord }} para confirmar</label>
+      <input
+        id="anonymize-confirmation"
+        class="input"
+        autocomplete="off"
+        [value]="anonymizeConfirmation()"
+        (input)="anonymizeConfirmation.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="anonymizeOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="!confirmationMatches() || command.pending()"
+      (click)="anonymize()"
+    >
+      {{ command.pending() ? 'Anonimizando…' : 'Anonimizar' }}
+    </button>
+  </div>
+</app-dialog>

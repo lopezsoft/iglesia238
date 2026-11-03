@@ -1,13 +1,15 @@
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import 'dotenv/config';
+import { defineConfig } from 'prisma/config';
 
+// Without DATABASE_URL, commands such as `prisma generate` must keep working (Docker build).
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: 'prisma/schema',
   migrations: {
-    path: "prisma/migrations",
+    path: 'prisma/migrations',
+    seed: 'tsx prisma/seed.ts',
   },
-  engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL ?? '',
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

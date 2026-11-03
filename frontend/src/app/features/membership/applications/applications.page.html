@@ -1,0 +1,183 @@
+<app-page-header
+  title="Solicitudes de membresía"
+  breadcrumb="Inicio / Membresía / Solicitudes"
+  [description]="
+    'Revisa las inscripciones recibidas desde el formulario público de ' +
+    scopeLabel() +
+    ' y decide si se aprueban.'
+  "
+>
+  <a class="btn btn--secondary" routerLink="/apply" target="_blank" rel="noopener">
+    <app-icon name="arrow-right" [size]="16" />
+    Ver formulario público
+  </a>
+</app-page-header>
+
+<app-application-status-filter
+  [active]="filter()"
+  [counts]="queue.hasValue() ? queue.value().counts : null"
+  (selected)="selectFilter($event)"
+/>
+
+<form class="card applications-page__filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+  <div class="field applications-page__search">
+    <label for="applications-search">Buscar</label>
+    <div class="input-group input-group--icon">
+      <app-icon class="input-group__icon" name="search" [size]="18" />
+      <input
+        id="applications-search"
+        class="input"
+        type="search"
+        formControlName="q"
+        placeholder="Nombre o documento"
+        autocomplete="off"
+      />
+    </div>
+  </div>
+  @if (denominationWide() && sedes().length > 1) {
+    <div class="field">
+      <label for="applications-sede">Sede</label>
+      <select id="applications-sede" class="select" formControlName="sede">
+        <option value="">Todas las sedes</option>
+        @for (scope of sedes(); track scope.congregationId) {
+          <option [value]="scope.congregationId">{{ scope.label }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="field">
+    <label for="applications-from">Recibidas desde</label>
+    <input id="applications-from" class="input" type="date" formControlName="from" />
+  </div>
+  <div class="field">
+    <label for="applications-to">Hasta</label>
+    <input id="applications-to" class="input" type="date" formControlName="to" />
+  </div>
+  <div class="field">
+    <label for="applications-order">Orden</label>
+    <select id="applications-order" class="select" formControlName="order">
+      <option value="desc">Más recientes primero</option>
+      <option value="asc">Más antiguas primero</option>
+    </select>
+  </div>
+  <div class="cluster applications-page__filter-actions">
+    <button type="submit" class="btn btn--primary">
+      <app-icon name="filter" [size]="16" />
+      Aplicar
+    </button>
+    @if (filtersActive()) {
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Quitar filtros</button>
+    }
+  </div>
+</form>
+
+<div class="applications-page__layout">
+  <section class="card card--flush applications-page__queue" aria-labelledby="queue-title">
+    <div class="applications-page__queue-header">
+      <h2 id="queue-title">{{ listTitle() }}</h2>
+      <span class="text-small text-muted">
+        {{ query().order === 'asc' ? 'Más antiguas primero' : 'Más recientes primero' }}
+      </span>
+    </div>
+
+    @if (queue.error(); as error) {
+      <div class="applications-page__padded">
+        <app-error-banner [message]="userMessage(error)" (retry)="queue.reload()" />
+      </div>
+    } @else if (queue.isLoading() && !queue.hasValue()) {
+      <div class="applications-page__padded">
+        <app-loading label="Cargando solicitudes…" />
+      </div>
+    } @else if (items().length === 0) {
+      <app-empty-state
+        [title]="filtersActive() ? 'Ninguna solicitud coincide con los filtros' : 'No hay solicitudes en este estado'"
+        [description]="
+          filtersActive()
+            ? 'Cambia la búsqueda o quita los filtros.'
+            : 'Cuando lleguen nuevas inscripciones aparecerán aquí.'
+        "
+      />
+    } @else {
+      <app-application-list
+        [items]="items()"
+        [selectedId]="selectedId()"
+        [showCongregation]="denominationWide()"
+        (selected)="selectApplication($event)"
+      />
+      <app-pagination
+        [page]="query().page"
+        [pageSize]="pageSize"
+        [total]="total()"
+        (pageChange)="changePage($event)"
+      />
+    }
+  </section>
+
+  <section class="applications-page__detail" aria-label="Detalle de la solicitud">
+    <div role="status" aria-live="polite">
+      @if (notice(); as current) {
+        <div class="alert" [class.alert--success]="current.kind === 'approved'">
+          <app-icon [name]="current.kind === 'approved' ? 'check' : 'info'" [size]="20" />
+          <div class="applications-page__notice-text">
+            @if (current.kind === 'approved') {
+              <strong
+                >Miembro creado con el número
+                <span class="mono">{{ current.memberCode }}</span></strong
+              >
+              <p>{{ current.text }}</p>
+              <a [routerLink]="['/members', current.memberId]">Ver ficha del miembro</a>
+            } @else {
+              <p>{{ current.text }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            class="btn btn--ghost btn--icon"
+            aria-label="Cerrar aviso"
+            (click)="dismissNotice()"
+          >
+            <app-icon name="x" />
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (commandError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    @if (detail.error(); as error) {
+      <app-error-banner [message]="userMessage(error)" (retry)="detail.reload()" />
+    } @else if (detail.hasValue()) {
+      @let application = detail.value();
+      <app-application-detail
+        [application]="application"
+        [canReview]="canReview()"
+        [pending]="pending()"
+        [duplicateDismissed]="duplicateDismissed()"
+        [reviewerName]="reviewerName()"
+        (startReview)="startReview(application)"
+        (reject)="reject(application, $event)"
+        (markDuplicate)="markDuplicate(application, $event)"
+        (dismissDuplicate)="dismissDuplicate(application)"
+        (approve)="approve(application)"
+        (approveLinked)="approveLinked(application, $event)"
+      />
+    } @else if (detail.isLoading()) {
+      <div class="card">
+        <app-loading label="Cargando solicitud…" />
+      </div>
+    } @else if (queue.hasValue()) {
+      <div class="card">
+        <app-empty-state
+          title="Selecciona una solicitud"
+          description="El detalle de la solicitud aparecerá aquí."
+          icon="inbox"
+        />
+      </div>
+    }
+  </section>
+</div>

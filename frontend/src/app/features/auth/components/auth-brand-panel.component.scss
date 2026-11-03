@@ -1,0 +1,314 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-5 + 0.5rem;
+  padding: 4.5rem 6rem;
+  overflow: hidden;
+  isolation: isolate;
+  background: $gradient-brand-panel;
+  color: $color-on-brand;
+}
+
+// Rejilla tenue: vive en un pseudo-elemento para animarla con transform (sin repintar el fondo).
+:host::before {
+  content: '';
+  position: absolute;
+  inset: -44px;
+  z-index: -2;
+  background:
+    linear-gradient($glass-grid 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, $glass-grid 1px, transparent 1px) 0 0 / 44px 44px;
+  pointer-events: none;
+}
+
+// Resplandores suaves que derivan lentamente.
+:host::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 85% 12%, $glass-glow, transparent 40%),
+    radial-gradient(circle at 12% 88%, $glass-glow, transparent 38%);
+  pointer-events: none;
+}
+
+:host > * {
+  position: relative;
+}
+
+// Movimiento decorativo: solo si la persona no pidió reducirlo.
+@media (prefers-reduced-motion: no-preference) {
+  :host::before {
+    animation: grid-drift 24s linear infinite;
+    will-change: transform;
+  }
+
+  :host::after {
+    animation: glow-drift 18s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  .brand,
+  .headline,
+  .lead,
+  .chips li {
+    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .brand {
+    animation-delay: 0.05s;
+  }
+
+  .headline {
+    animation-delay: 0.15s;
+  }
+
+  .lead {
+    animation-delay: 0.3s;
+  }
+
+  .headline__accent {
+    background: linear-gradient(
+      100deg,
+      $color-brand-accent 20%,
+      $color-on-brand 45%,
+      $color-brand-accent 70%
+    );
+    background-size: 220% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer 6s ease-in-out 1.2s infinite;
+  }
+
+  .brand__mark {
+    animation: mark-pulse 3.6s ease-in-out 1s infinite;
+  }
+
+  .showcase app-showcase-card {
+    animation:
+      rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      float 7s ease-in-out infinite;
+  }
+
+  .showcase__chart {
+    animation-delay: 0.45s, 1.25s;
+  }
+
+  .showcase__request {
+    animation-delay: 0.6s, 2.4s;
+    animation-duration: 0.8s, 8.5s;
+  }
+
+  .showcase__member {
+    animation-delay: 0.75s, 0.6s;
+    animation-duration: 0.8s, 6.5s;
+  }
+
+  .chips li {
+    animation-delay: calc(0.9s + var(--i, 0) * 0.08s);
+    transition: translate 0.2s ease;
+
+    &:hover {
+      translate: 0 -3px;
+    }
+  }
+
+  .chips li:nth-child(1) {
+    --i: 0;
+  }
+
+  .chips li:nth-child(2) {
+    --i: 1;
+  }
+
+  .chips li:nth-child(3) {
+    --i: 2;
+  }
+
+  .chips li:nth-child(4) {
+    --i: 3;
+  }
+
+  .chips li:nth-child(5) {
+    --i: 4;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -0.7rem;
+  }
+}
+
+@keyframes grid-drift {
+  to {
+    transform: translate(44px, 44px);
+  }
+}
+
+@keyframes glow-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(-4%, 5%) scale(1.12);
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    background-position: 100% 0;
+  }
+
+  50% {
+    background-position: 0 0;
+  }
+}
+
+@keyframes mark-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 $glass-glow;
+  }
+
+  50% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+
+  &__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: $radius-card;
+    background: $color-on-brand;
+    color: $color-brand-mark;
+  }
+
+  &__name {
+    font-size: $font-size-lg + 0.125rem;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: -0.02em;
+  }
+
+  &__accent {
+    color: $color-brand-accent;
+  }
+}
+
+.headline {
+  max-width: 40rem;
+  font-size: $font-size-auth-headline;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+
+  &__accent {
+    display: block;
+    color: $color-brand-accent;
+  }
+}
+
+.lead {
+  max-width: 36rem;
+  color: $color-on-brand-muted;
+  font-size: $font-size-md + 0.0625rem;
+  line-height: 1.55;
+}
+
+.showcase {
+  position: relative;
+  flex: 1;
+  min-height: 15rem;
+  max-width: 38rem;
+
+  app-showcase-card {
+    position: absolute;
+  }
+
+  &__chart {
+    top: 0;
+    left: 0;
+    width: 15rem;
+  }
+
+  &__request {
+    top: 0;
+    left: 13.5rem;
+    width: 14rem;
+  }
+
+  &__member {
+    top: 9.75rem;
+    left: 3rem;
+    width: 15rem;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@include until($breakpoint-lg) {
+  :host {
+    padding: $space-7 $space-6;
+  }
+
+  .showcase {
+    display: none;
+  }
+}
+
+// Una sola columna: el panel de marca se reduce a una banda superior.
+@include until($breakpoint-md) {
+  :host {
+    gap: $space-3;
+    padding: $space-5 $space-4;
+  }
+
+  .headline {
+    font-size: $font-size-lg;
+    letter-spacing: -0.02em;
+  }
+
+  .lead,
+  .chips {
+    display: none;
+  }
+}

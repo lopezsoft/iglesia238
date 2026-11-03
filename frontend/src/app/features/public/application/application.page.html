@@ -1,0 +1,159 @@
+<div class="apply">
+  <header class="apply__hero">
+    <p class="apply__eyebrow">
+      <app-icon name="user-plus" [size]="16" />
+      Inscripción pública · Sin cuenta
+    </p>
+    <h1>Solicitud de membresía</h1>
+    <p class="apply__lead">
+      Completa los pasos para solicitar tu ingreso como miembro. La secretaría de la sede que elijas
+      revisará tu solicitud y te contactará.
+    </p>
+    <ul class="apply__chips" aria-label="Características del formulario">
+      <li><app-feature-chip label="Cuatro pasos cortos" icon="check" /></li>
+      <li><app-feature-chip label="Datos protegidos (Ley 1581)" icon="shield-check" /></li>
+      <li><app-feature-chip label="Sigue tu solicitud con un código" icon="search" /></li>
+    </ul>
+  </header>
+
+  <div class="apply__layout">
+    <section class="card card--flush apply__form" aria-labelledby="form-title">
+      <h2 id="form-title" class="visually-hidden">Formulario de solicitud</h2>
+
+      @if (receipt(); as done) {
+        <app-submission-confirmation
+          [trackingCode]="done.trackingCode"
+          [congregationName]="done.congregationName"
+          (restart)="restart()"
+        />
+      } @else {
+        <div class="apply__steps">
+          <app-application-stepper [steps]="steps()" [current]="currentStep()" />
+        </div>
+
+        <form #applicationForm class="apply__body" [formGroup]="form" (ngSubmit)="next()" novalidate>
+          <p #stepHeading class="text-muted text-small apply__counter" tabindex="-1">
+            Paso {{ stepIndex() + 1 }} de {{ steps().length }}
+          </p>
+
+          @switch (currentStep()) {
+            @case ('congregation') {
+              @if (congregations.isLoading()) {
+                <app-loading label="Cargando sedes…" />
+              } @else if (congregations.error()) {
+                <app-error-banner [message]="congregationsError()" (retry)="congregations.reload()" />
+              } @else if (congregations.value(); as list) {
+                @if (list.length === 0) {
+                  <app-empty-state
+                    icon="church"
+                    title="Ninguna sede está recibiendo solicitudes"
+                    description="Vuelve a intentarlo más tarde o comunícate con la secretaría de tu iglesia. Si tu iglesia aún no tiene sede en el sistema, puedes registrarla."
+                  >
+                    <a class="btn btn--secondary" routerLink="/register-congregation">Registrar mi sede</a>
+                  </app-empty-state>
+                } @else {
+                  <app-congregation-step
+                    [congregations]="list"
+                    [control]="form.controls.congregationId"
+                    [revealErrors]="revealed().has('congregation')"
+                  />
+                }
+              }
+            }
+            @case ('personal') {
+              @if (catalogs.isLoading()) {
+                <app-loading label="Cargando el formulario…" />
+              } @else if (catalogs.error()) {
+                <app-error-banner [message]="catalogsError()" (retry)="catalogs.reload()" />
+              } @else if (catalogs.value(); as options) {
+                <app-personal-data-step
+                  [group]="form.controls.personal"
+                  [documentTypes]="options.documentTypes"
+                  [maritalStatuses]="options.maritalStatuses"
+                  [age]="age()"
+                  [revealErrors]="revealed().has('personal')"
+                />
+              }
+            }
+            @case ('guardian') {
+              @if (catalogs.hasValue()) {
+                @let options = catalogs.value();
+                <app-guardian-step
+                  [group]="form.controls.guardian"
+                  [documentTypes]="options.documentTypes"
+                  [revealErrors]="revealed().has('guardian')"
+                />
+              }
+            }
+            @case ('consent') {
+              @if (summary(); as currentSummary) {
+                <app-consent-step
+                  [group]="form.controls.consent"
+                  [policy]="currentPolicy()"
+                  [policyLoading]="policy.isLoading()"
+                  [policyError]="policyError()"
+                  [summary]="currentSummary"
+                  [revealErrors]="revealed().has('consent')"
+                  (retryPolicy)="policy.reload()"
+                />
+              }
+            }
+          }
+
+          @if (submitError(); as message) {
+            <p class="alert alert--danger apply__error" role="alert">
+              <app-icon name="alert" [size]="18" />
+              <span>{{ message }}</span>
+            </p>
+          }
+
+          <div class="apply__nav">
+            <div>
+              @if (stepIndex() > 0) {
+                <button type="button" class="btn btn--secondary" (click)="previous()" [disabled]="pending()">
+                  <app-icon name="chevron-left" [size]="16" />
+                  Anterior
+                </button>
+              }
+            </div>
+            <div class="apply__nav-end">
+              <span class="text-muted text-small">Tus datos se guardan solo al enviar.</span>
+              @if (isLastStep()) {
+                <button type="submit" class="btn btn--primary" [disabled]="pending() || !policy.hasValue()">
+                  <app-icon name="check" [size]="16" />
+                  {{ pending() ? 'Enviando…' : 'Enviar solicitud' }}
+                </button>
+              } @else {
+                <button type="submit" class="btn btn--primary" [disabled]="congregations.isLoading()">
+                  Siguiente
+                  <app-icon name="chevron-right" [size]="16" />
+                </button>
+              }
+            </div>
+          </div>
+        </form>
+      }
+    </section>
+
+    <aside class="apply__aside">
+      <app-section-panel
+        title="Consultar mi solicitud"
+        subtitle="Escribe el código que recibiste al enviarla."
+        icon="search"
+        tone="cyan"
+        layout="stack"
+      >
+        <app-status-check inputId="aside-tracking-code" />
+      </app-section-panel>
+
+      <app-section-panel title="¿Qué pasa después?" icon="clock" tone="green" layout="stack">
+        <ol class="apply__next">
+          <li>La secretaría verifica que no exista otro registro con tu número de documento.</li>
+          <li>El pastor o la secretaría revisan y deciden sobre tu solicitud.</li>
+          <li>Si es aprobada, quedas registrado como miembro de la sede y recibes tu número de miembro.</li>
+        </ol>
+        <p class="text-muted text-small">Estados posibles: Pendiente, En revisión, Aprobada o Rechazada.</p>
+      </app-section-panel>
+    </aside>
+  </div>
+</div>

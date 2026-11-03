@@ -1,0 +1,512 @@
+// ==========================================
+// Contabilidad: libro de caja por sede y fondo, aportes y presupuesto
+// Dinero en Decimal(14,2), nunca Float. Los registros no se borran: se anulan o se revierten.
+// Las FK incluyen denominationId y congregationId, para que comprobantes, movimientos y aportes
+// pertenezcan a la misma sede.
+// ==========================================
+
+enum AccountNature {
+  INCOME
+  EXPENSE
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+}
+
+/// Sentido del dinero. Una reversa usa el sentido contrario al del movimiento original.
+enum CashDirection {
+  IN
+  OUT
+}
+
+/// Determina el comportamiento: solo TITHE entra en la liquidación y solo VOW admite compromiso.
+enum ContributionCategory {
+  TITHE
+  OFFERING
+  FIRST_FRUITS
+  VOW
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  BANK_DEPOSIT
+  OTHER
+}
+
+enum ContributionStatus {
+  RECORDED
+  VOIDED
+}
+
+enum VowPledgeStatus {
+  ACTIVE
+  FULFILLED
+  CANCELLED
+}
+
+enum TitheSettlementStatus {
+  ISSUED
+  VOIDED
+}
+
+enum BudgetType {
+  FIXED
+  COMMITTEE
+}
+
+enum BudgetStatus {
+  DRAFT
+  APPROVED
+  CLOSED
+}
+
+/// Fondo o comité contable (Fondo Local, Dorcas, Jóvenes, Escuela Dominical, Construcción...). Ámbito: por denominación, compartido por todas sus sedes.
+/// Cada movimiento de caja y cada línea de presupuesto se imputa a un fondo; el nombre es único dentro de la denominación.
+model Fund {
+  /// Identificador interno autoincremental.
+  id                  Int                  @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId      Int                  @map("denomination_id")
+  /// Nombre del fondo o comité, único dentro de la denominación (máx. 120 caracteres).
+  name                String               @db.VarChar(120)
+  /// Indica si el fondo está activo; un fondo inactivo no recibe movimientos de caja nuevos.
+  isActive            Boolean              @default(true) @map("is_active")
+  denomination        Denomination         @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accounts            Account[]
+  fundOpeningBalances FundOpeningBalance[]
+  cashTransactions    CashTransaction[]
+  budgetLines         BudgetLine[]
+
+  @@unique([denominationId, name])
+  @@unique([denominationId, id])
+  @@map("funds")
+}
+
+/// Cuenta del plan de cuentas, en jerarquía de grupos y subcuentas. Ámbito: por denominación.
+/// Solo las cuentas imputables reciben movimientos; una subcuenta hereda la naturaleza del padre y su código empieza por el del padre.
+/// El código legado no es único: en los Excel un grupo y su hijo comparten código.
+model Account {
+  /// Identificador interno autoincremental.
+  id             Int           @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int           @map("denomination_id")
+  /// Fondo sugerido al consolidar aportes y liquidar el diezmo; si es nulo se usa el fondo activo más antiguo o el Fondo Local, respectivamente. El fondo real queda en cada movimiento (FK a funds.id).
+  defaultFundId  Int?          @map("default_fund_id")
+  /// Cuenta grupo de la que depende esta subcuenta; nulo en las cuentas raíz (FK a accounts.id).
+  parentId       Int?          @map("parent_id")
+  /// Código numérico de la cuenta (solo dígitos, máx. 20), único en la denominación; el de una subcuenta empieza por el de su padre.
+  code           String        @db.VarChar(20)
+  /// Código que tenía la cuenta en los libros Excel de origen; informativo y no único.
+  legacyCode     String?       @map("legacy_code") @db.VarChar(20)
+  /// Nombre de la cuenta (máx. 150 caracteres).
+  name           String        @db.VarChar(150)
+  /// Naturaleza: INCOME (ingreso, recibe entradas) o EXPENSE (egreso, recibe salidas); la subcuenta hereda la del padre y no cambia después de creada.
+  nature         AccountNature
+  /// Indica si la cuenta es imputable y recibe movimientos; las cuentas grupo, con subcuentas, no lo son.
+  isPostable     Boolean       @default(true) @map("is_postable")
+  /// Indica si la cuenta está activa; una cuenta inactiva no admite movimientos nuevos.
+  isActive       Boolean       @default(true) @map("is_active")
+
+  denomination      Denomination       @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  defaultFund       Fund?              @relation(fields: [denominationId, defaultFundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  parent            Account?           @relation("AccountHierarchy", fields: [denominationId, parentId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  children          Account[]          @relation("AccountHierarchy")
+  contributionTypes ContributionType[]
+  cashTransactions  CashTransaction[]
+  budgetLines       BudgetLine[]
+
+  @@unique([denominationId, code])
+  @@unique([denominationId, id])
+  @@map("accounts")
+}
+
+/// Tipo de aporte (diezmo, ofrenda, primicia, voto u otros que defina la denominación) y la cuenta de ingreso que alimenta. Ámbito: por denominación.
+/// Su categoría determina el comportamiento: solo TITHE entra en la liquidación del diezmo y solo VOW admite promesas de voto.
+model ContributionType {
+  /// Identificador interno autoincremental.
+  id             Int                  @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int                  @map("denomination_id")
+  /// Categoría: TITHE (diezmo, se liquida), OFFERING (ofrenda), FIRST_FRUITS (primicia), VOW (voto, admite promesa) u OTHER (otro).
+  category       ContributionCategory
+  /// Código corto en mayúsculas (A-Z, 0-9 y guion bajo, de 2 a 30 caracteres), único en la denominación.
+  code           String               @db.VarChar(30)
+  /// Nombre visible del tipo de aporte (máx. 100 caracteres).
+  name           String               @db.VarChar(100)
+  /// Cuenta de ingreso imputable donde se contabilizan los aportes de este tipo (FK a accounts.id).
+  accountId      Int                  @map("account_id")
+  /// Indica si el tipo está activo; un tipo inactivo no admite aportes nuevos.
+  isActive       Boolean              @default(true) @map("is_active")
+
+  denomination  Denomination   @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  account       Account        @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  vowPledges    VowPledge[]
+  contributions Contribution[]
+
+  @@unique([denominationId, code])
+  @@unique([denominationId, id])
+  @@map("contribution_types")
+}
+
+/// Saldo con el que un fondo inicia un año en una sede. Ámbito: por sede; uno por sede, fondo y año. Los saldos mensuales no se guardan: se calculan con los movimientos.
+/// Lo define tesorería o se arrastra automáticamente al cerrar el periodo de diciembre del año anterior.
+model FundOpeningBalance {
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int          @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId Int          @map("congregation_id")
+  /// Fondo al que corresponde el saldo inicial (FK a funds.id).
+  fundId         Int          @map("fund_id")
+  /// Año calendario (cuatro dígitos) que abre con este saldo.
+  year           Int
+  /// Saldo del fondo en la sede al 1 de enero del año, en la moneda de la denominación (dos decimales).
+  amount         Decimal      @db.Decimal(14, 2)
+  congregation   Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund           Fund         @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([congregationId, fundId, year])
+  @@map("fund_opening_balances")
+}
+
+/// Periodo contable mensual que controla en qué fechas se registran movimientos y aportes. Ámbito: por sede; uno por sede, año y mes.
+/// Un periodo cerrado no admite registros. Se cierra en orden, después de terminar el mes y sin aportes por consolidar; al cerrarlo se abre el siguiente.
+model AccountingPeriod {
+  /// Identificador interno autoincremental.
+  id               Int               @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId   Int               @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId   Int               @map("congregation_id")
+  /// Año calendario del periodo (cuatro dígitos).
+  year             Int
+  /// Mes del periodo, de 1 (enero) a 12 (diciembre) (regla CHECK).
+  month            Int
+  /// Estado: OPEN (abierto, admite movimientos y aportes) o CLOSED (cerrado, ya no admite registros).
+  status           PeriodStatus      @default(OPEN)
+  /// Fecha y hora en que se cerró el periodo (UTC); nulo mientras está abierto.
+  closedAt         DateTime?         @map("closed_at")
+  congregation     Congregation      @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransactions CashTransaction[]
+
+  @@unique([congregationId, year, month])
+  @@unique([denominationId, congregationId, id])
+  @@map("accounting_periods")
+}
+
+/// Comprobante numerado que respalda aportes, movimientos de caja y liquidaciones. Ámbito: por sede.
+/// Tipos: REC recibo de aporte, CI ingreso (también la consolidación de aportes), CE egreso y LD liquidación del diezmo. No se borra: se anula con motivo.
+model Voucher {
+  /// Identificador interno autoincremental.
+  id               Int               @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId   Int               @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId   Int               @map("congregation_id")
+  /// Tipo de comprobante: REC (recibo de aporte), CI (comprobante de ingreso), CE (comprobante de egreso) o LD (liquidación del diezmo).
+  type             String            @db.VarChar(30)
+  /// Consecutivo por sede y tipo que nunca se reinicia; el código impreso es TIPO-AÑO-NÚMERO, con el año tomado de la fecha de emisión.
+  number           Int
+  /// Fecha de emisión (fecha ISO, sin hora); coincide con la fecha del aporte, movimiento o liquidación que respalda.
+  issuedOn         DateTime          @map("issued_on") @db.Date
+  /// Persona que firma el comprobante; lleva una sola firma y es opcional (FK a persons.id).
+  signerId         Int?              @map("signer_id")
+  /// Fecha y hora de la anulación del comprobante (UTC); nulo si está vigente.
+  voidedAt         DateTime?         @map("voided_at")
+  /// Motivo de la anulación (máx. 255 caracteres); nulo si el comprobante está vigente.
+  voidReason       String?           @map("void_reason") @db.VarChar(255)
+  congregation     Congregation      @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  signer           Person?           @relation(fields: [denominationId, signerId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransactions CashTransaction[]
+  contributions    Contribution[]
+  titheSettlement  TitheSettlement?
+
+  @@unique([congregationId, type, number])
+  @@unique([denominationId, congregationId, id])
+  @@map("vouchers")
+}
+
+/// Línea del libro de caja, imputada a una cuenta y un fondo dentro de un periodo contable. Ámbito: por sede.
+/// El importe siempre es positivo y el sentido lo da la dirección. No se edita ni se borra: se corrige con una reversa (misma cuenta, fondo e importe, sentido contrario).
+/// Que la fecha caiga en un periodo abierto se valida en la aplicación.
+model CashTransaction {
+  /// Identificador interno autoincremental.
+  id             Int           @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int           @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId Int           @map("congregation_id")
+  /// Periodo contable del mes de la fecha del movimiento; debe estar abierto al registrar (FK a accounting_periods.id).
+  periodId       Int           @map("period_id")
+  /// Cuenta imputable: de ingreso para una entrada y de egreso para una salida; la reversa conserva la cuenta original (FK a accounts.id).
+  accountId      Int           @map("account_id")
+  /// Fondo cuyo saldo afecta el movimiento (FK a funds.id).
+  fundId         Int           @map("fund_id")
+  /// Comprobante que respalda el movimiento (CI, CE o LD); las líneas de una liquidación comparten su LD (FK a vouchers.id).
+  voucherId      Int?          @map("voucher_id")
+  /// Sentido del dinero: IN (entrada, suma al saldo del fondo) u OUT (salida, lo resta); una reversa usa el sentido contrario al original.
+  direction      CashDirection
+  /// Fecha contable del movimiento (fecha ISO, sin hora); no puede ser posterior a hoy y debe caer en un periodo abierto.
+  postedOn       DateTime      @map("posted_on") @db.Date
+  /// Importe del movimiento en la moneda de la denominación, siempre mayor que cero (regla CHECK, dos decimales).
+  amount         Decimal       @db.Decimal(14, 2)
+  /// Descripción del movimiento (de 3 a 255 caracteres); en una reversa incluye el comprobante original y el motivo.
+  description    String        @db.VarChar(255)
+  /// Movimiento original que esta línea reversa; nulo si no es una reversa. Cada movimiento admite una sola reversa (FK a cash_transactions.id).
+  reversalOfId   Int?          @map("reversal_of_id")
+  /// Usuario que registró el movimiento (FK a users.id).
+  createdById    Int           @map("created_by_id")
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  period        AccountingPeriod @relation(fields: [denominationId, congregationId, periodId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  account       Account          @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund          Fund             @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher       Voucher?         @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  reversalOf    CashTransaction? @relation("TransactionReversal", fields: [denominationId, congregationId, reversalOfId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  reversedBy    CashTransaction? @relation("TransactionReversal")
+  createdBy     User             @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  contributions Contribution[]
+
+  @@unique([denominationId, congregationId, id])
+  @@unique([denominationId, congregationId, reversalOfId])
+  @@index([periodId, postedOn])
+  @@index([accountId, postedOn])
+  @@index([fundId, postedOn])
+  @@index([congregationId, postedOn])
+  @@map("cash_transactions")
+}
+
+/// Promesa de voto que hace una persona por un importe. Ámbito: por sede donde se hizo la promesa.
+/// Sus pagos son aportes que apuntan a ella; lo abonado y el saldo no se guardan, se calculan.
+/// Un miembro trasladado puede pagar en su nueva sede un voto hecho en la anterior.
+model VowPledge {
+  /// Identificador interno autoincremental.
+  id                 Int             @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId     Int             @map("denomination_id")
+  /// Sede donde se hizo la promesa y a la que pertenece el registro (FK a congregations.id).
+  congregationId     Int             @map("congregation_id")
+  /// Persona que hizo la promesa; solo sus propios aportes pueden pagarla (FK a persons.id).
+  personId           Int             @map("person_id")
+  /// Tipo de aporte de categoría VOW con el que se paga la promesa (FK a contribution_types.id).
+  contributionTypeId Int             @map("contribution_type_id")
+  /// Observaciones de la promesa (máx. 255 caracteres); opcional.
+  description        String?         @db.VarChar(255)
+  /// Importe prometido en la moneda de la denominación, mayor que cero (regla CHECK, dos decimales).
+  pledgedAmount      Decimal         @map("pledged_amount") @db.Decimal(14, 2)
+  /// Fecha en que se hizo la promesa (fecha ISO, sin hora).
+  pledgedOn          DateTime        @map("pledged_on") @db.Date
+  /// Fecha límite para cumplir la promesa (fecha ISO); opcional y nunca anterior a la fecha de la promesa.
+  dueOn              DateTime?       @map("due_on") @db.Date
+  /// Estado: ACTIVE (vigente, con saldo), FULFILLED (los pagos alcanzan lo prometido) o CANCELLED (cancelada, definitiva).
+  status             VowPledgeStatus @default(ACTIVE)
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  congregation     Congregation     @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  person           Person           @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributionType ContributionType @relation(fields: [denominationId, contributionTypeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributions    Contribution[]
+
+  @@unique([denominationId, id])
+  @@unique([denominationId, personId, contributionTypeId, id])
+  @@index([personId, status])
+  @@index([congregationId, status])
+  @@map("vow_pledges")
+}
+
+/// Aporte recibido (diezmo, ofrenda, primicia, pago de voto u otro). Ámbito: por sede. Dato muy sensible: exige permiso específico; no se borra, se anula con motivo.
+/// Sin persona es anónimo o una colecta agregada. Nace con su recibo REC y luego se consolida con otros en un movimiento de caja.
+/// Un pago de voto es de la misma persona y tipo que la promesa.
+model Contribution {
+  /// Identificador interno autoincremental.
+  id                 Int                @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId     Int                @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId     Int                @map("congregation_id")
+  /// Tipo de aporte; su categoría decide si entra en la liquidación del diezmo o si puede pagar un voto (FK a contribution_types.id).
+  contributionTypeId Int                @map("contribution_type_id")
+  /// Persona que hizo el aporte; nulo si es anónimo o una colecta agregada (FK a persons.id).
+  personId           Int?               @map("person_id")
+  /// Promesa de voto que paga este aporte; exige persona y debe coincidir con la promesa en persona y tipo (FK a vow_pledges.id).
+  vowPledgeId        Int?               @map("vow_pledge_id")
+  /// Movimiento de caja (CI) que consolidó el aporte; nulo mientras está pendiente y vuelve a nulo si se reversa la consolidación (FK a cash_transactions.id).
+  cashTransactionId  Int?               @map("cash_transaction_id")
+  /// Recibo de aporte (comprobante REC) emitido al registrarlo; se anula junto con el aporte (FK a vouchers.id).
+  voucherId          Int?               @map("voucher_id")
+  /// Liquidación del diezmo que incluyó el aporte; nulo si no está liquidado y vuelve a nulo si se anula la liquidación (FK a tithe_settlements.id).
+  titheSettlementId  Int?               @map("tithe_settlement_id")
+  /// Fecha en que se recibió el aporte (fecha ISO, sin hora); no posterior a hoy y dentro de un periodo abierto.
+  receivedOn         DateTime           @map("received_on") @db.Date
+  /// Importe del aporte en la moneda de la denominación, mayor que cero (regla CHECK, dos decimales).
+  amount             Decimal            @db.Decimal(14, 2)
+  /// Medio de pago: CASH (efectivo), BANK_TRANSFER (transferencia), CARD (datáfono), BANK_DEPOSIT (consignación) u OTHER (otro).
+  paymentMethod      PaymentMethod      @default(CASH) @map("payment_method")
+  /// Referencia bancaria de la operación (máx. 80 caracteres); obligatoria en transferencia, datáfono y consignación.
+  paymentReference   String?            @map("payment_reference") @db.VarChar(80)
+  /// Observaciones del aporte (máx. 255 caracteres); opcional.
+  notes              String?            @db.VarChar(255)
+  /// Estado: RECORDED (registrado y vigente) o VOIDED (anulado, con fecha, usuario y motivo). Que esté liquidado se deduce de la liquidación asociada.
+  status             ContributionStatus @default(RECORDED)
+  /// Usuario que registró el aporte (FK a users.id).
+  recordedById       Int                @map("recorded_by_id")
+  /// Usuario que anuló el aporte; nulo si está vigente (FK a users.id).
+  voidedById         Int?               @map("voided_by_id")
+  /// Fecha y hora de la anulación (UTC); nulo si el aporte está vigente.
+  voidedAt           DateTime?          @map("voided_at")
+  /// Motivo de la anulación (máx. 255 caracteres); nulo si el aporte está vigente.
+  voidReason         String?            @map("void_reason") @db.VarChar(255)
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  congregation     Congregation     @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  contributionType ContributionType @relation(fields: [denominationId, contributionTypeId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  person           Person?          @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  vowPledge        VowPledge?       @relation(fields: [denominationId, personId, contributionTypeId, vowPledgeId], references: [denominationId, personId, contributionTypeId, id], onDelete: Restrict, onUpdate: Restrict)
+  cashTransaction  CashTransaction? @relation(fields: [denominationId, congregationId, cashTransactionId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher          Voucher?         @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  titheSettlement  TitheSettlement? @relation(fields: [denominationId, congregationId, titheSettlementId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  recordedBy       User             @relation("ContributionRecorder", fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  voidedBy         User?            @relation("ContributionVoider", fields: [voidedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([congregationId, receivedOn])
+  @@index([congregationId, contributionTypeId, receivedOn])
+  @@index([denominationId, receivedOn])
+  @@index([personId, receivedOn])
+  @@index([vowPledgeId])
+  @@index([cashTransactionId])
+  @@index([titheSettlementId])
+  @@map("contributions")
+}
+
+/// Porcentajes de liquidación del diezmo con su fecha de vigencia (en las fuentes, 21 % nacional y 3 % fondo local). Ámbito: por denominación.
+/// Parte nacional = bruto × tasa nacional; fondo local = (bruto − parte nacional) × tasa local; neto pastoral = el resto. Se redondea a pesos y el residuo va a la parte mayor.
+/// Rige la regla de vigencia más reciente que no supere la fecha de la liquidación.
+model TitheSettlementRule {
+  /// Identificador interno autoincremental.
+  id                Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId    Int          @map("denomination_id")
+  /// Fecha desde la que rigen los porcentajes (fecha ISO, sin hora); única por denominación.
+  effectiveFrom     DateTime     @map("effective_from") @db.Date
+  /// Fracción del diezmo bruto que va a la parte nacional, de 0 a 1 con cuatro decimales (0.2100 = 21 %).
+  nationalShareRate Decimal      @map("national_share_rate") @db.Decimal(5, 4)
+  /// Fracción que va al fondo local, aplicada al bruto menos la parte nacional, de 0 a 1 con cuatro decimales (0.0300 = 3 %).
+  localFundRate     Decimal      @map("local_fund_rate") @db.Decimal(5, 4)
+  denomination      Denomination @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([denominationId, effectiveFrom])
+  @@map("tithe_settlement_rules")
+}
+
+/// Liquidación del diezmo de un rango de fechas: reparte el bruto entre parte nacional, fondo local y neto pastoral. Ámbito: por sede.
+/// Copia porcentajes e importes para que un cambio futuro no altere el pasado; emite un comprobante LD con sus salidas de caja.
+/// Los diezmos liquidados apuntan aquí. Que los rangos no se solapen se valida en la aplicación.
+model TitheSettlement {
+  /// Identificador interno autoincremental.
+  id                Int                   @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId    Int                   @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId    Int                   @map("congregation_id")
+  /// Comprobante LD de la liquidación, que agrupa sus salidas de caja; único por sede (FK a vouchers.id).
+  voucherId         Int?                  @map("voucher_id")
+  /// Pastor que recibe el neto pastoral; opcional, hoy la liquidación no lo diligencia (FK a persons.id).
+  pastorId          Int?                  @map("pastor_id")
+  /// Fecha de la liquidación (fecha ISO, sin hora); también es la fecha contable de sus salidas de caja.
+  settledOn         DateTime              @map("settled_on") @db.Date
+  /// Primer día del rango de diezmos liquidados (fecha ISO, inclusivo); no puede ser posterior al último día (regla CHECK).
+  coveredFrom       DateTime              @map("covered_from") @db.Date
+  /// Último día del rango de diezmos liquidados (fecha ISO, inclusivo).
+  coveredTo         DateTime              @map("covered_to") @db.Date
+  /// Diezmo bruto: suma de los diezmos vigentes y aún no liquidados del rango, en la moneda de la denominación.
+  grossTithe        Decimal               @map("gross_tithe") @db.Decimal(14, 2)
+  /// Copia de la fracción nacional vigente al liquidar, de 0 a 1 con cuatro decimales (0.2100 = 21 %).
+  nationalShareRate Decimal               @map("national_share_rate") @db.Decimal(5, 4)
+  /// Copia de la fracción del fondo local vigente al liquidar, de 0 a 1 con cuatro decimales, aplicada al bruto menos la parte nacional.
+  localFundRate     Decimal               @map("local_fund_rate") @db.Decimal(5, 4)
+  /// Importe de la parte nacional (bruto × fracción nacional, redondeado a pesos enteros), no negativo; genera una salida de caja en la cuenta 530505.
+  nationalShare     Decimal               @map("national_share") @db.Decimal(14, 2)
+  /// Importe del fondo local ((bruto − parte nacional) × fracción local, redondeado a pesos); queda en la sede y no genera movimiento de caja.
+  localFundShare    Decimal               @map("local_fund_share") @db.Decimal(14, 2)
+  /// Neto pastoral: bruto menos parte nacional y fondo local (recibe el residuo del redondeo si es el mayor); los tres suman el bruto (regla CHECK) y genera salida en 530510.
+  pastorNet         Decimal               @map("pastor_net") @db.Decimal(14, 2)
+  /// Estado: ISSUED (emitida y vigente) o VOIDED (anulada: reversa sus salidas de caja, anula el LD y libera los diezmos).
+  status            TitheSettlementStatus @default(ISSUED)
+  /// Usuario que anuló la liquidación; nulo si está vigente (FK a users.id).
+  voidedById        Int?                  @map("voided_by_id")
+  /// Fecha y hora de la anulación (UTC); nulo si la liquidación está vigente.
+  voidedAt          DateTime?             @map("voided_at")
+  /// Motivo de la anulación (máx. 255 caracteres); nulo si la liquidación está vigente.
+  voidReason        String?               @map("void_reason") @db.VarChar(255)
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  congregation  Congregation   @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voucher       Voucher?       @relation(fields: [denominationId, congregationId, voucherId], references: [denominationId, congregationId, id], onDelete: Restrict, onUpdate: Restrict)
+  pastor        Person?        @relation(fields: [denominationId, pastorId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  voidedBy      User?          @relation(fields: [voidedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  contributions Contribution[]
+
+  @@unique([denominationId, congregationId, id])
+  @@unique([denominationId, congregationId, voucherId])
+  @@index([congregationId, settledOn])
+  @@index([congregationId, coveredFrom, coveredTo])
+  @@map("tithe_settlements")
+}
+
+/// Presupuesto anual, fijo o por comités, como en los Excel. Ámbito: por sede; uno por sede, año y tipo.
+/// Pasa de borrador a aprobado (puede volver a borrador) y de aprobado a cerrado; un presupuesto cerrado es definitivo y no admite cambios.
+model Budget {
+  /// Identificador interno autoincremental.
+  id                 Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId     Int          @map("denomination_id")
+  /// Sede a la que pertenece el registro (FK a congregations.id).
+  congregationId     Int          @map("congregation_id")
+  /// Año calendario del presupuesto (cuatro dígitos).
+  year               Int
+  /// Tipo: FIXED (presupuesto fijo) o COMMITTEE (presupuesto por comités, donde el fondo de cada línea es el comité).
+  type               BudgetType
+  /// Incremento esperado de los ingresos como fracción de 0 a 1 con cuatro decimales (0.0500 = 5 %); nulo si no se definió.
+  incomeIncreaseRate Decimal?     @map("income_increase_rate") @db.Decimal(5, 4)
+  /// Estado: DRAFT (borrador), APPROVED (aprobado, exige al menos una línea y puede volver a borrador) o CLOSED (cerrado, definitivo); solo el cerrado bloquea cambios.
+  status             BudgetStatus @default(DRAFT)
+  congregation       Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  budgetLines        BudgetLine[]
+
+  @@unique([congregationId, year, type])
+  @@unique([denominationId, id])
+  @@map("budgets")
+}
+
+/// Línea de un presupuesto: lo planeado en el año para una cuenta y un fondo. Ámbito: por sede, a través de su presupuesto; una por presupuesto, cuenta y fondo.
+/// El valor mensual es opcional: algunos conceptos de los Excel no son 12 veces el valor mensual.
+model BudgetLine {
+  /// Identificador interno autoincremental.
+  id             Int      @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int      @map("denomination_id")
+  /// Presupuesto al que pertenece la línea (FK a budgets.id).
+  budgetId       Int      @map("budget_id")
+  /// Cuenta imputable presupuestada (FK a accounts.id).
+  accountId      Int      @map("account_id")
+  /// Fondo de la línea; en el presupuesto por comités, el comité (FK a funds.id).
+  fundId         Int      @map("fund_id")
+  /// Valor mensual planeado en la moneda de la denominación; opcional y no mayor que el anual. Si falta, la ejecución usa el anual entre 12.
+  monthlyAmount  Decimal? @map("monthly_amount") @db.Decimal(14, 2)
+  /// Valor anual planeado en la moneda de la denominación (dos decimales); la base exige que no sea negativo y la aplicación, que sea mayor que cero.
+  annualAmount   Decimal  @map("annual_amount") @db.Decimal(14, 2)
+  budget         Budget   @relation(fields: [denominationId, budgetId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  account        Account  @relation(fields: [denominationId, accountId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  fund           Fund     @relation(fields: [denominationId, fundId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([budgetId, accountId, fundId])
+  @@map("budget_lines")
+}

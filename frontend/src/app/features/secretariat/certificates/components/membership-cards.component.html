@@ -1,0 +1,195 @@
+<section class="card card--flush" aria-labelledby="cards-title">
+  <div class="card__header cards-header">
+    <div>
+      <h2 id="cards-title">Carnés de miembro</h2>
+      <p class="text-muted text-small">
+        Vigencia de dos años desde la emisión. Un carné vencido se conserva en el historial del
+        miembro.
+      </p>
+    </div>
+    @if (canIssue() && today()) {
+      <button type="button" class="btn btn--primary" (click)="issueOpen.set(true)">
+        <app-icon name="plus" />
+        Emitir carné
+      </button>
+    }
+  </div>
+
+  <div class="toolbar cards-filters">
+    <div class="field cards-search">
+      <label for="cards-search">Buscar</label>
+      <input
+        id="cards-search"
+        class="input"
+        type="search"
+        autocomplete="off"
+        placeholder="Nombre del miembro o número de carné (SC-0130)"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+    <app-segmented-control
+      ariaLabel="Filtrar por estado"
+      [options]="filters"
+      [value]="status()"
+      (valueChange)="setStatus($event)"
+    />
+    <button
+      type="button"
+      class="btn btn--sm"
+      [class.btn--primary]="expiringSoon()"
+      [class.btn--secondary]="!expiringSoon()"
+      [attr.aria-pressed]="expiringSoon()"
+      (click)="toggleExpiring()"
+    >
+      <app-icon name="clock" [size]="16" />
+      Vencen en {{ warningDays }} días
+    </button>
+    @if (hasFilters()) {
+      <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+        <app-icon name="x" [size]="16" />
+        Limpiar filtros
+      </button>
+    }
+  </div>
+
+  <div role="status" aria-live="polite" class="cards-message">
+    @if (message(); as text) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span>{{ text }}</span>
+      </div>
+    }
+  </div>
+
+  @if (downloadError(); as text) {
+    <div class="cards-message" role="alert">
+      <div class="alert alert--danger">
+        <app-icon name="alert" />
+        <span>{{ text }}</span>
+      </div>
+    </div>
+  }
+
+  @if (cards.error()) {
+    <div class="cards-message">
+      <app-error-banner [message]="loadError()" (retry)="cards.reload()" />
+    </div>
+  } @else if (cards.isLoading() && !cards.hasValue()) {
+    <div class="cards-message"><app-loading label="Cargando carnés…" /></div>
+  } @else if (cards.value(); as result) {
+    @if (result.total === 0) {
+      <app-empty-state
+        icon="id-card"
+        [title]="hasFilters() ? 'Sin resultados' : 'Aún no hay carnés'"
+        [description]="
+          hasFilters()
+            ? 'Ningún carné coincide con los filtros seleccionados.'
+            : 'Los carnés que emitas aparecerán aquí con su vigencia.'
+        "
+      />
+    } @else {
+      <div class="table-wrap" [attr.aria-busy]="cards.isLoading()">
+        <table class="table">
+          <caption class="visually-hidden">
+            Carnés de miembro
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Carné número</th>
+              <th scope="col">Miembro</th>
+              @if (!hasSede()) {
+                <th scope="col">Sede</th>
+              }
+              <th scope="col">Emisión</th>
+              <th scope="col">Vencimiento</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (card of result.items; track card.id) {
+              <tr>
+                <td class="code">{{ card.cardNumber }}</td>
+                <td>{{ card.memberName }}</td>
+                @if (!hasSede()) {
+                  <td>{{ card.congregationName }}</td>
+                }
+                <td>{{ card.issuedOn | date: 'dd/MM/yyyy' }}</td>
+                <td>
+                  <div>{{ card.expiresOn | date: 'dd/MM/yyyy' }}</div>
+                  @if (card.daysToExpire !== null && card.daysToExpire <= warningDays) {
+                    <div class="text-small expiry-hint">
+                      {{
+                        card.daysToExpire === 0
+                          ? 'Vence hoy'
+                          : 'Vence en ' + card.daysToExpire + ' días'
+                      }}
+                    </div>
+                  }
+                </td>
+                <td>
+                  <app-status-badge
+                    [label]="statusLabels[card.status]"
+                    [tone]="statusTones[card.status]"
+                  />
+                  @if (card.voidReason) {
+                    <div class="text-muted text-small void-reason">
+                      Motivo: {{ card.voidReason }}
+                    </div>
+                  }
+                </td>
+                <td>
+                  <div class="cluster row-actions">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Descargar PDF del carné ' + card.cardNumber"
+                      [disabled]="downloadingId() === card.id"
+                      (click)="downloadPdf(card)"
+                    >
+                      <app-icon name="file-text" [size]="16" />
+                      PDF
+                    </button>
+                    @if (canIssue() && card.status === 'VALID') {
+                      <button
+                        type="button"
+                        class="btn btn--danger-ghost btn--sm"
+                        [attr.aria-label]="'Anular carné ' + card.cardNumber"
+                        (click)="askVoid(card)"
+                      >
+                        <app-icon name="ban" [size]="16" />
+                        Anular
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        [page]="result.page"
+        [pageSize]="result.pageSize"
+        [total]="result.total"
+        (pageChange)="page.set($event)"
+      />
+    }
+  }
+</section>
+
+@if (today(); as day) {
+  <app-card-issue-dialog [(open)]="issueOpen" [today]="day" (issued)="onIssued($event)" />
+}
+
+<app-void-dialog
+  [(open)]="voidOpen"
+  title="Anular carné"
+  [subject]="voidSubject()"
+  description="El carné anulado se conserva en el historial con el motivo. Después podrás emitir uno nuevo al miembro."
+  confirmLabel="Anular carné"
+  [pending]="voidPending()"
+  [error]="voidError()"
+  (confirmed)="confirmVoid($event)"
+/>

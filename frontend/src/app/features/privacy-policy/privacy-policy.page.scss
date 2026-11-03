@@ -1,0 +1,30 @@
+@use 'tokens' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.privacy-page {
+  &__notice {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: $space-2;
+  }
+
+  &__text {
+    max-height: 60vh;
+    padding: $space-4;
+    overflow-y: auto;
+    border: 1px solid $color-border;
+    border-radius: $radius-control;
+    background: $color-surface-2;
+    white-space: pre-line;
+  }
+}

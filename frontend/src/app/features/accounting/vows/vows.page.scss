@@ -1,0 +1,25 @@
+@use 'tokens' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4 $space-5;
+}
+
+.grow {
+  flex: 1 1 16rem;
+}
+
+.overdue {
+  align-self: center;
+  padding-top: $space-4;
+}

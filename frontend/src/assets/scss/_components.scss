@@ -1,0 +1,736 @@
+// Vocabulario visual compartido. Las funcionalidades usan estas clases en sus plantillas
+// y reservan los estilos de componente para la disposición propia de cada pantalla.
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// Tonos de categoría: `class="tone-green"` publica --tone-* para chips, paneles y KPI.
+@each $name in $tone-names {
+  .tone-#{$name} {
+    @include tone($name);
+  }
+}
+
+// Botones
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  min-height: $control-height;
+  padding: 0 $space-4;
+  border: 1px solid transparent;
+  border-radius: $radius-control;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease,
+    transform 60ms ease;
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &.is-loading {
+    pointer-events: none;
+  }
+
+  &--primary {
+    background: $gradient-primary;
+    color: $color-on-primary;
+    box-shadow: $shadow-button-soft;
+
+    &:hover:not(:disabled) {
+      color: $color-on-primary;
+      filter: brightness(1.07);
+      box-shadow: $shadow-button;
+    }
+  }
+
+  &--secondary {
+    background: $color-surface;
+    border-color: $color-border-strong;
+    color: $color-primary-strong;
+
+    &:hover:not(:disabled) {
+      background: $color-primary-soft;
+      border-color: $color-primary;
+      color: $color-primary-strong;
+    }
+  }
+
+  &--soft {
+    background: $color-primary-soft;
+    color: $color-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-sidebar-active;
+      color: $color-primary-strong;
+    }
+  }
+
+  &--danger {
+    background: $color-danger;
+    color: $color-on-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-danger-hover;
+      color: $color-on-primary;
+    }
+  }
+
+  &--danger-ghost {
+    background: $color-surface;
+    border-color: $color-danger-border;
+    color: $color-danger;
+
+    &:hover:not(:disabled) {
+      background: $color-danger-soft;
+      color: $color-danger;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-primary;
+
+    &:hover:not(:disabled) {
+      background: $color-primary-soft;
+    }
+  }
+
+  &--pill {
+    border-radius: $radius-pill;
+  }
+
+  &--sm {
+    min-height: 2rem;
+    padding: 0 $space-3;
+    font-size: $font-size-xs;
+  }
+
+  &--compact {
+    min-height: $control-height-compact;
+    padding: 0 $space-3;
+    font-size: $font-size-xs;
+  }
+
+  &--lg {
+    min-height: $button-height-lg;
+    padding: 0 $space-5;
+    border-radius: $radius-input-lg;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+  }
+
+  &--block {
+    width: 100%;
+  }
+
+  &--icon {
+    width: $control-height;
+    padding: 0;
+  }
+
+  &--export-pdf {
+    color: $color-danger;
+  }
+
+  &--export-xls {
+    color: $color-success;
+  }
+}
+
+@media (pointer: coarse) {
+  .btn {
+    min-height: 2.75rem;
+  }
+}
+
+// Entradas de menús desplegables (<app-dropdown>): role="menuitem" o "menuitemradio".
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  width: 100%;
+  min-height: $control-height;
+  padding: $space-2 $space-3;
+  border: 0;
+  border-radius: $radius-control;
+  background: transparent;
+  color: $color-ink;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: $color-surface-2;
+    color: $color-ink;
+  }
+
+  &[aria-checked='true'] {
+    background: $color-primary-soft;
+    color: $color-primary-strong;
+  }
+
+  &--danger {
+    color: $color-danger;
+
+    &:hover,
+    &:focus-visible {
+      background: $color-danger-soft;
+      color: $color-danger;
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__hint {
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-regular;
+    color: $color-ink-subtle;
+  }
+}
+
+.menu-heading {
+  padding: $space-2 $space-3 $space-1;
+  color: $color-ink-subtle;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.menu-divider {
+  height: 1px;
+  margin: $space-1 0;
+  background: $color-border;
+}
+
+// Píldora de contexto (sede activa) de la barra superior; `--button` la vuelve clicable.
+.scope-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: $control-height-compact;
+  padding: 0 $space-3;
+  border: 1px solid $color-primary-soft;
+  border-radius: $radius-pill;
+  background: $color-surface;
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+
+  &--button {
+    cursor: pointer;
+
+    &:hover {
+      background: $color-primary-soft;
+    }
+  }
+}
+
+// Botón sin marco que abre el menú de usuario (avatar + nombre).
+.user-trigger {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-1 $space-2;
+  border: 0;
+  border-radius: $radius-pill;
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-surface-2;
+  }
+}
+
+// Tarjetas y secciones
+.card {
+  @include card;
+  padding: $space-4;
+
+  &--flush {
+    padding: 0;
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    margin-bottom: $space-3;
+  }
+
+  &__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: $space-3;
+    margin-top: $space-4;
+  }
+}
+
+// Insignia de icono para cabeceras de tarjeta (usa el tono vigente: `class="panel-badge tone-green"`).
+.panel-badge {
+  @include icon-chip(2.25rem);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
+  gap: $space-3;
+}
+
+// Rejilla de KPI: 4 columnas en escritorio, 2 en tabletas y 1 en móviles.
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-4;
+
+  @include from($breakpoint-sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include from($breakpoint-lg) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: $space-3;
+}
+
+.text-muted {
+  color: $color-ink-muted;
+}
+
+.text-small {
+  font-size: $font-size-xs;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.link-strong {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+}
+
+// Formularios
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0;
+
+  > label,
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    color: $color-ink;
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  &__error {
+    font-size: $font-size-xs;
+    color: $color-danger;
+  }
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: $control-height;
+  padding: 0 $space-3;
+  background: $color-surface-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  color: $color-ink;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &::placeholder {
+    color: $color-ink-subtle;
+  }
+
+  &:focus-visible {
+    outline: none;
+    background: $color-surface;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px $color-primary-ring;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    color: $color-ink-muted;
+  }
+
+  &.ng-invalid.ng-touched,
+  &[aria-invalid='true'] {
+    border-color: $color-danger;
+  }
+
+  &--lg {
+    min-height: $control-height-lg;
+    padding: 0 $space-4;
+    border-color: transparent;
+    border-radius: $radius-input-lg;
+  }
+}
+
+.textarea {
+  min-height: 6rem;
+  padding: $space-2 $space-3;
+  resize: vertical;
+}
+
+// Campo con icono a la izquierda y acción opcional a la derecha.
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: $space-4;
+    color: $color-ink-subtle;
+    pointer-events: none;
+  }
+
+  &--icon .input {
+    padding-left: 2.75rem;
+  }
+
+  &--action .input {
+    padding-right: 3rem;
+  }
+
+  &__action {
+    position: absolute;
+    right: $space-2;
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: $radius-control;
+    background: transparent;
+    color: $color-ink-muted;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-surface-2;
+      color: $color-ink;
+    }
+  }
+}
+
+// Separador con texto centrado: «—— ¿Aún no tienes cuenta? ——»
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  color: $color-ink-subtle;
+  font-size: $font-size-xs;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $color-border;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: $space-3;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: $space-2;
+  cursor: pointer;
+
+  input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.1rem;
+    accent-color: $color-primary;
+  }
+}
+
+// Tablas
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: $space-2 + 0.125rem $space-3;
+    border-bottom: 1px solid $color-border;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: $color-surface-tint;
+    color: $color-ink-muted;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in srgb, #{$color-primary-soft} 50%, transparent);
+  }
+
+  tr.is-selected {
+    background: $color-primary-soft;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-weight: $font-weight-semibold;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .code {
+    font-family: $font-mono;
+    white-space: nowrap;
+  }
+
+  tfoot td {
+    font-weight: $font-weight-bold;
+    background: $color-surface-tint;
+  }
+}
+
+// Insignias de estado
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem $space-2;
+  border-radius: $radius-pill;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-bold;
+  white-space: nowrap;
+  background: $color-surface-2;
+  color: $color-ink-muted;
+
+  &--success {
+    background: $color-success-soft;
+    color: $color-success;
+  }
+
+  &--warning {
+    background: $color-warning-soft;
+    color: $color-warning;
+  }
+
+  &--danger {
+    background: $color-danger-soft;
+    color: $color-danger;
+  }
+
+  &--info {
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+
+  &--indigo {
+    background: var(--tone-indigo-soft);
+    color: var(--tone-indigo-fg);
+  }
+
+  &--cyan {
+    background: var(--tone-cyan-soft);
+    color: var(--tone-cyan-fg);
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0.125rem $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-pill;
+  background: $color-surface;
+  font-size: $font-size-xs;
+
+  &--mono {
+    font-family: $font-mono;
+  }
+}
+
+// Avisos
+.alert {
+  display: flex;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-control;
+  background: $color-primary-soft;
+  color: $color-ink;
+
+  &--warning {
+    background: $color-warning-soft;
+  }
+
+  &--danger {
+    background: $color-danger-soft;
+  }
+
+  &--success {
+    background: $color-success-soft;
+  }
+
+  strong {
+    font-weight: $font-weight-bold;
+  }
+}
+
+// Pestañas densas: role="tablist" con botones role="tab".
+// Para las secciones principales de un módulo usa <app-tab-cards>.
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  padding: $space-1;
+  margin-bottom: $space-5;
+  background: $color-surface-2;
+  border-radius: $radius-control;
+  width: fit-content;
+  max-width: 100%;
+
+  [role='tab'] {
+    min-height: 2.25rem;
+    padding: 0 $space-4;
+    border: 0;
+    border-radius: $radius-control - 2px;
+    background: transparent;
+    color: $color-ink-muted;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      background: $color-surface;
+      color: $color-primary;
+      box-shadow: $shadow-card;
+    }
+  }
+}
+
+// Listas de definición (fichas)
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: $space-4 $space-5;
+  margin: 0;
+
+  dt {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-ink-muted;
+  }
+
+  dd {
+    margin: $space-1 0 0;
+  }
+}
+
+// Barras de progreso y gráficos simples
+.progress {
+  height: 0.5rem;
+  border-radius: $radius-pill;
+  background: $color-surface-2;
+  overflow: hidden;
+
+  &__bar {
+    height: 100%;
+    background: $color-primary;
+    border-radius: $radius-pill;
+
+    &--danger {
+      background: $color-danger;
+    }
+
+    &--success {
+      background: $color-success;
+    }
+  }
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+}
+
+// Animaciones compartidas por <app-spinner> y <app-skeleton>
+@keyframes app-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes app-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

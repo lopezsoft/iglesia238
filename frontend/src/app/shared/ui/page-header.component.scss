@@ -1,0 +1,40 @@
+@use 'tokens' as *;
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-4;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__breadcrumb {
+    color: $color-ink-subtle;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    color: $color-ink-muted;
+    max-width: 48rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+
+    &:empty {
+      display: none;
+    }
+  }
+}

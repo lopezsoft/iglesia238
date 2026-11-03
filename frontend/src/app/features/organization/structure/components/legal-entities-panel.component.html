@@ -1,0 +1,115 @@
+<div class="panel-header">
+  <h2>Razones sociales</h2>
+  <span class="text-muted text-small"
+    >Entidades legales que emiten certificados y reciben aportes.</span
+  >
+</div>
+
+<div class="card card--flush">
+  @if (loadError(); as message) {
+    <div class="panel-feedback">
+      <app-error-banner [message]="message" (retry)="legalEntities.reload()" />
+    </div>
+  } @else if (legalEntities.isLoading() && !legalEntities.value()) {
+    <div class="panel-feedback"><app-loading label="Cargando razones sociales…" /></div>
+  } @else if (visible().total === 0) {
+    <app-empty-state
+      icon="landmark"
+      title="Aún no hay razones sociales"
+      description="Registra la entidad legal a la que pertenecerán las sedes."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table class="table" [attr.aria-busy]="legalEntities.isLoading()">
+        <thead>
+          <tr>
+            <th scope="col">Razón social</th>
+            <th scope="col">Nombre comercial</th>
+            <th scope="col">NIT</th>
+            <th scope="col">Representante legal</th>
+            <th scope="col">País</th>
+            <th scope="col">Municipio</th>
+            <th scope="col">Estado</th>
+            @if (canManage()) {
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visible().items; track row.id) {
+            <tr>
+              <td class="cell-title">{{ row.legalName }}</td>
+              <td>{{ row.tradeName ?? '—' }}</td>
+              <td class="code">{{ row.taxId }}</td>
+              <td>{{ row.legalRepresentative ?? '—' }}</td>
+              <td>{{ row.countryName || '—' }}</td>
+              <td>{{ place(row) }}</td>
+              <td>
+                <app-status-badge
+                  [label]="row.isActive ? 'Activa' : 'Inactiva'"
+                  [tone]="row.isActive ? 'success' : 'neutral'"
+                />
+              </td>
+              @if (canManage()) {
+                <td>
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Editar ' + row.legalName"
+                      (click)="openEdit(row)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--sm"
+                      [class.btn--danger-ghost]="row.isActive"
+                      [class.btn--secondary]="!row.isActive"
+                      [attr.aria-label]="
+                        (row.isActive ? 'Desactivar ' : 'Activar ') + row.legalName
+                      "
+                      (click)="openStatus(row)"
+                    >
+                      {{ row.isActive ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="visible().total"
+      (pageChange)="page.set($event)"
+    />
+  }
+</div>
+
+<app-legal-entity-form-dialog
+  [(open)]="formOpen"
+  [legalEntity]="editing()"
+  (saved)="onSaved($event)"
+/>
+
+@if (statusTarget(); as target) {
+  <app-confirm-dialog
+    [(open)]="confirmOpen"
+    [title]="target.isActive ? '¿Desactivar la razón social?' : '¿Activar la razón social?'"
+    [message]="
+      target.isActive
+        ? target.legalName +
+          ' no podrá asignarse a nuevas sedes. Solo puede desactivarse si ninguna sede activa la usa.'
+        : target.legalName + ' volverá a estar disponible para las sedes.'
+    "
+    [confirmLabel]="target.isActive ? 'Desactivar' : 'Activar'"
+    [danger]="target.isActive"
+    [pending]="pending()"
+    [error]="actionError()"
+    (confirmed)="confirmStatus()"
+  />
+}

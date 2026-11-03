@@ -1,0 +1,69 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+h3 {
+  margin: 0 0 $space-1;
+  font-size: $font-size-md;
+}
+
+.sum-check {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: $space-3 0 0;
+  color: $color-danger;
+
+  &--ok {
+    color: $color-success;
+  }
+}
+
+.linked {
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  overflow: hidden;
+
+  &__toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    border: 0;
+    background: $color-surface-2;
+    color: $color-ink;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  &__chevron--open {
+    transform: rotate(180deg);
+  }
+
+  &__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+  }
+}
+
+.confirm {
+  align-items: center;
+
+  &__text {
+    flex: 1 1 18rem;
+    margin: 0;
+  }
+
+  &__error {
+    flex-basis: 100%;
+  }
+}

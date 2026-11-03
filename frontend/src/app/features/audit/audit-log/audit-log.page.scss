@@ -1,0 +1,23 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.events__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-4;
+  border-bottom: 1px solid $color-border;
+
+  h2 {
+    font-size: $font-size-lg;
+  }
+}
+
+.events__error {
+  padding: $space-4;
+}

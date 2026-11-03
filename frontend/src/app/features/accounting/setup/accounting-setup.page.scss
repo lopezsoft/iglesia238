@@ -1,0 +1,23 @@
+@use 'tokens' as *;
+
+.flash {
+  align-items: center;
+
+  span {
+    flex: 1;
+  }
+}
+
+.todos {
+  align-items: flex-start;
+
+  ul {
+    flex: 1;
+    margin: 0;
+    padding-left: $space-4;
+  }
+
+  li + li {
+    margin-top: $space-1;
+  }
+}

@@ -1,1 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
+// Estilos globales: tema (propiedades CSS), tokens, base y vocabulario de componentes en src/assets/scss.
+@use 'theme';
+@use 'base';
+@use 'components';

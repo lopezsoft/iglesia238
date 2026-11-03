@@ -1,0 +1,174 @@
+// ==========================================
+// Ficha: ministerios y organización
+// HIPÓTESIS: el diccionario solo da los nombres de estas tablas. La jerarquía
+// Ministerio > Grupo > Bloque > Equipo debe validarse con el cliente antes de construir sus módulos.
+// ==========================================
+
+/// Ministerio de una sede: nivel superior de la jerarquía Ministerio > Grupo > Bloque > Equipo de trabajo. Ámbito por sede.
+/// Nombre único dentro de la sede. Estructura provisional (hipótesis) pendiente de validar con el cliente; aún no la usa ningún módulo.
+model Ministry {
+  /// Identificador interno autoincremental.
+  id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante la FK compuesta a congregations).
+  denominationId Int          @map("denomination_id")
+  /// Sede a la que pertenece el ministerio (FK compuesta a congregations.id junto con denomination_id).
+  congregationId Int          @map("congregation_id")
+  /// Nombre del ministerio, único dentro de la sede (máx. 120 caracteres).
+  name           String       @db.VarChar(120)
+  /// Indica si el ministerio está activo; falso lo conserva como histórico sin borrarlo.
+  isActive       Boolean      @default(true) @map("is_active")
+  congregation   Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  workGroups     WorkGroup[]
+
+  @@unique([congregationId, name])
+  @@unique([denominationId, id])
+  @@map("ministries")
+}
+
+/// Grupo de trabajo dentro de un ministerio: segundo nivel de la jerarquía Ministerio > Grupo > Bloque > Equipo. Ámbito por denominación, heredando la sede del ministerio.
+/// Nombre único dentro del ministerio. Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model WorkGroup {
+  /// Identificador interno autoincremental.
+  id             Int         @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante la FK compuesta a ministries).
+  denominationId Int         @map("denomination_id")
+  /// Ministerio al que pertenece el grupo (FK compuesta a ministries.id junto con denomination_id).
+  ministryId     Int         @map("ministry_id")
+  /// Nombre del grupo de trabajo, único dentro del ministerio (máx. 120 caracteres).
+  name           String      @db.VarChar(120)
+  ministry       Ministry    @relation(fields: [denominationId, ministryId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  workBlocks     WorkBlock[]
+
+  @@unique([ministryId, name])
+  @@unique([denominationId, id])
+  @@map("work_groups")
+}
+
+/// Bloque de trabajo dentro de un grupo de trabajo: tercer nivel de la jerarquía Ministerio > Grupo > Bloque > Equipo. Ámbito por denominación, heredando la sede del ministerio.
+/// Nombre único dentro del grupo. Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model WorkBlock {
+  /// Identificador interno autoincremental.
+  id             Int        @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante la FK compuesta a work_groups).
+  denominationId Int        @map("denomination_id")
+  /// Grupo de trabajo al que pertenece el bloque (FK compuesta a work_groups.id junto con denomination_id).
+  workGroupId    Int        @map("work_group_id")
+  /// Nombre del bloque de trabajo, único dentro del grupo (máx. 120 caracteres).
+  name           String     @db.VarChar(120)
+  workGroup      WorkGroup  @relation(fields: [denominationId, workGroupId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  workTeams      WorkTeam[]
+
+  @@unique([workGroupId, name])
+  @@unique([denominationId, id])
+  @@map("work_blocks")
+}
+
+/// Equipo de trabajo dentro de un bloque: último nivel de la jerarquía Ministerio > Grupo > Bloque > Equipo; agrupa miembros y tiene cronogramas.
+/// Ámbito por denominación, heredando la sede del ministerio. Nombre único dentro del bloque. Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model WorkTeam {
+  /// Identificador interno autoincremental.
+  id              Int              @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante la FK compuesta a work_blocks).
+  denominationId  Int              @map("denomination_id")
+  /// Bloque de trabajo al que pertenece el equipo (FK compuesta a work_blocks.id junto con denomination_id).
+  workBlockId     Int              @map("work_block_id")
+  /// Nombre del equipo de trabajo, único dentro del bloque (máx. 120 caracteres).
+  name            String           @db.VarChar(120)
+  workBlock       WorkBlock        @relation(fields: [denominationId, workBlockId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  workTeamMembers WorkTeamMember[]
+  schedules       Schedule[]
+
+  @@unique([workBlockId, name])
+  @@unique([denominationId, id])
+  @@map("work_teams")
+}
+
+/// Participación de un miembro en un equipo de trabajo durante un periodo, con su rol opcional. Ámbito por denominación (miembro y equipo de la misma).
+/// Un miembro puede repetir equipo en periodos distintos; la participación vigente es la que no tiene fecha de fin. Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model WorkTeamMember {
+  /// Identificador interno autoincremental.
+  id             Int       @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante las FK compuestas a members y work_teams).
+  denominationId Int       @map("denomination_id")
+  /// Miembro que integra el equipo (FK compuesta a members.id junto con denomination_id).
+  memberId       Int       @map("member_id")
+  /// Equipo de trabajo que integra el miembro (FK compuesta a work_teams.id junto con denomination_id).
+  workTeamId     Int       @map("work_team_id")
+  /// Rol o función del miembro dentro del equipo, en texto libre (máx. 80 caracteres); nulo si no tiene uno definido.
+  teamRole       String?   @map("team_role") @db.VarChar(80)
+  /// Fecha de inicio de la participación en el equipo (fecha calendario AAAA-MM-DD, sin hora).
+  startedOn      DateTime  @map("started_on") @db.Date
+  /// Fecha de fin de la participación (fecha calendario AAAA-MM-DD); nula mientras el miembro sigue en el equipo.
+  endedOn        DateTime? @map("ended_on") @db.Date
+  member         Member    @relation(fields: [denominationId, memberId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  workTeam       WorkTeam  @relation(fields: [denominationId, workTeamId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([memberId])
+  @@index([workTeamId])
+  @@map("work_team_members")
+}
+
+/// Cronograma de un equipo de trabajo: plan con vigencia en fechas en el que se programan temas por día. Ámbito por denominación, heredando la sede del equipo.
+/// Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model Schedule {
+  /// Identificador interno autoincremental.
+  id             Int             @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante la FK compuesta a work_teams).
+  denominationId Int             @map("denomination_id")
+  /// Equipo de trabajo que planifica el cronograma (FK compuesta a work_teams.id junto con denomination_id).
+  workTeamId     Int             @map("work_team_id")
+  /// Nombre descriptivo del cronograma (máx. 120 caracteres).
+  name           String          @db.VarChar(120)
+  /// Fecha de inicio de la vigencia del cronograma (fecha calendario AAAA-MM-DD, sin hora).
+  startsOn       DateTime        @map("starts_on") @db.Date
+  /// Fecha de fin de la vigencia (fecha calendario AAAA-MM-DD); nula si el cronograma no tiene fin definido.
+  endsOn         DateTime?       @map("ends_on") @db.Date
+  workTeam       WorkTeam        @relation(fields: [denominationId, workTeamId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  scheduleTopics ScheduleTopic[]
+
+  @@unique([denominationId, id])
+  @@index([workTeamId])
+  @@map("schedules")
+}
+
+/// Tema que puede programarse en los cronogramas (enseñanza o contenido a tratar). Catálogo por denominación, compartido por todas sus sedes.
+/// Título único dentro de la denominación. Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model Topic {
+  /// Identificador interno autoincremental.
+  id             Int             @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int             @map("denomination_id")
+  /// Título del tema, único dentro de la denominación (máx. 150 caracteres).
+  title          String          @db.VarChar(150)
+  /// Descripción o contenido del tema en texto libre; nula si no se registró.
+  description    String?         @db.Text
+  denomination   Denomination    @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scheduleTopics ScheduleTopic[]
+
+  @@unique([denominationId, title])
+  @@unique([denominationId, id])
+  @@map("topics")
+}
+
+/// Programación de un tema en una fecha concreta de un cronograma, con un miembro responsable opcional. Ámbito por denominación (cronograma, tema y responsable de la misma).
+/// Estructura provisional (hipótesis) pendiente de validar con el cliente.
+model ScheduleTopic {
+  /// Identificador interno autoincremental.
+  id             Int      @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (referencia denominations.id mediante las FK compuestas a schedules, topics y members).
+  denominationId Int      @map("denomination_id")
+  /// Cronograma en el que se programa el tema (FK compuesta a schedules.id junto con denomination_id).
+  scheduleId     Int      @map("schedule_id")
+  /// Tema que se programa (FK compuesta a topics.id junto con denomination_id).
+  topicId        Int      @map("topic_id")
+  /// Fecha en que se tratará el tema (fecha calendario AAAA-MM-DD, sin hora).
+  scheduledOn    DateTime @map("scheduled_on") @db.Date
+  /// Miembro responsable de dictar o dirigir el tema (FK compuesta a members.id junto con denomination_id); nulo si aún no se asignó.
+  responsibleId  Int?     @map("responsible_id")
+  schedule       Schedule @relation(fields: [denominationId, scheduleId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  topic          Topic    @relation(fields: [denominationId, topicId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  responsible    Member?  @relation(fields: [denominationId, responsibleId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([scheduleId, scheduledOn])
+  @@map("schedule_topics")
+}

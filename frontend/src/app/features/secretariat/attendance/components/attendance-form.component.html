@@ -1,0 +1,148 @@
+<section class="card" aria-labelledby="attendance-form-title">
+  <header class="card__header">
+    <div class="head">
+      <app-icon-chip icon="calendar-check" tone="indigo" size="lg" [solid]="true" />
+      <div>
+        <h2 id="attendance-form-title">{{ editing() ? 'Corregir sesión' : 'Registrar sesión' }}</h2>
+        <p class="text-muted text-small">
+          {{ contextLabel() ?? 'Elige la sede y la reunión arriba.' }}
+        </p>
+      </div>
+    </div>
+    @if (editing()) {
+      <span class="badge badge--info">Editando sesión registrada</span>
+    }
+  </header>
+
+  <form class="stack" [formGroup]="form()" (ngSubmit)="submitted.emit()" novalidate>
+    <div class="field date-field">
+      <label for="att-date">Fecha *</label>
+      <input
+        id="att-date"
+        class="input"
+        type="date"
+        formControlName="sessionDate"
+        [max]="today()"
+        aria-describedby="att-date-help"
+        [attr.aria-invalid]="dateError() ? true : null"
+      />
+      <span id="att-date-help" class="field__hint">
+        @if (value().sessionDate && !dateError()) {
+          Seleccionado: {{ value().sessionDate | date: "EEEE d 'de' MMMM 'de' y" }}
+        } @else {
+          Formato dd/mm/aaaa
+        }
+      </span>
+    </div>
+
+    @if (dateError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    } @else if (dateWarning(); as warning) {
+      <div class="alert alert--warning">
+        <app-icon name="info" />
+        <span>{{ warning }}</span>
+      </div>
+    }
+
+    <fieldset class="categories" formGroupName="counts">
+      <legend>Asistentes por categoría</legend>
+      <div class="categories__grid">
+        @for (category of categories(); track category.code; let index = $index) {
+          <div class="field">
+            <label [for]="'att-' + category.code">
+              <span [class]="'swatch swatch--' + (index % 5)" aria-hidden="true"></span>
+              {{ category.name }}
+            </label>
+            <input
+              class="input mono"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              [max]="maxHeadcount()"
+              step="1"
+              placeholder="0"
+              [id]="'att-' + category.code"
+              [formControlName]="category.code"
+              [attr.aria-describedby]="'att-' + category.code + '-help'"
+              [attr.aria-invalid]="countError(category.code) ? true : null"
+            />
+            @if (countError(category.code); as error) {
+              <span class="field__error" [id]="'att-' + category.code + '-help'">{{ error }}</span>
+            } @else {
+              <span class="field__hint" [id]="'att-' + category.code + '-help'">{{
+                hints[category.code] ?? ''
+              }}</span>
+            }
+          </div>
+        }
+      </div>
+    </fieldset>
+
+    <div class="total" aria-live="polite">
+      <div>
+        <p class="total__label">Total de asistentes</p>
+        <p class="text-muted text-small">Se calcula sumando las categorías.</p>
+      </div>
+      <p class="total__value">{{ total() }}</p>
+    </div>
+
+    <div>
+      <div class="distribution" aria-hidden="true">
+        @for (segment of segments(); track segment.code) {
+          <span
+            [class]="'distribution__part swatch--' + (segment.index % 5)"
+            [style.width.%]="segment.percent"
+          ></span>
+        }
+      </div>
+      <ul class="legend text-small">
+        @for (segment of segments(); track segment.code) {
+          <li>
+            <span [class]="'swatch swatch--' + (segment.index % 5)" aria-hidden="true"></span>
+            {{ segment.name }}
+            <span class="text-muted">{{
+              total() > 0 ? (segment.percent | number: '1.0-0') + ' %' : '—'
+            }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="alert" role="note">
+      <app-icon name="info" />
+      <div>
+        <strong>Solo una sesión por sede, tipo de reunión y fecha</strong>
+        <p class="text-small">
+          Si ya existe, carga la sesión registrada y corrígela en lugar de crear otra.
+        </p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="cluster">
+        @if (editing()) {
+          <button type="button" class="btn btn--secondary" (click)="editCancelled.emit()">
+            Cancelar corrección
+          </button>
+        } @else {
+          <button type="button" class="btn btn--secondary" (click)="cleared.emit()">Limpiar</button>
+        }
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="pending() || blockedReason() !== null"
+          [attr.aria-describedby]="blockedReason() ? 'att-save-blocked' : null"
+        >
+          <app-icon name="check" />
+          {{ pending() ? 'Guardando…' : editing() ? 'Guardar corrección' : 'Guardar asistencia' }}
+        </button>
+      </div>
+    </div>
+    @if (blockedReason(); as reason) {
+      <p id="att-save-blocked" class="text-muted text-small text-right">{{ reason }}</p>
+    }
+  </form>
+</section>

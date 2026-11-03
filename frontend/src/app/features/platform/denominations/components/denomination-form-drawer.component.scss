@@ -1,0 +1,15 @@
+@use 'tokens' as *;
+
+.defaults {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+
+  ul {
+    gap: $space-1;
+    margin: $space-1 0 0;
+    padding: 0;
+    list-style: none;
+  }
+}

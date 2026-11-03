@@ -1,0 +1,75 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
+
+    h2 {
+      font-size: $font-size-lg;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding-top: $space-4;
+    border-top: 1px solid $color-border;
+
+    h3 {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2 $space-3;
+    padding: $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-control;
+    background: $color-surface;
+  }
+
+  &__history-title {
+    gap: $space-2;
+  }
+
+  &__blocked {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: $space-1;
+  }
+}
+
+.panel__access {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-3;
+}

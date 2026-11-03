@@ -1,0 +1,53 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.form-layout {
+  display: grid;
+  gap: $space-5;
+
+  @include from($breakpoint-md) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.form-column {
+  align-content: start;
+}
+
+.type-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.donor {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vow-field {
+  grid-column: 1 / -1;
+}
+
+.form-error {
+  margin-top: $space-4;
+}
+
+.form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-top: $space-5;
+  padding-top: $space-4;
+  border-top: 1px dashed $color-border;
+}
+
+.form-card {
+  padding: $space-5;
+}

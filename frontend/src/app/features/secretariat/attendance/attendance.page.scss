@@ -1,0 +1,22 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.layout {
+  display: grid;
+  gap: $space-5;
+  align-items: start;
+
+  @include from($breakpoint-lg) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.context {
+  .field {
+    min-width: 11rem;
+  }
+}
+
+.grow {
+  flex: 1;
+}

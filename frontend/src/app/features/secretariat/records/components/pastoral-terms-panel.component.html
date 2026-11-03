@@ -1,0 +1,81 @@
+<div class="stack">
+  <div class="alert" role="note">
+    <app-icon name="info" />
+    <div>
+      <strong>Las fechas no se pueden solapar</strong>
+      <p class="text-small">
+        Cada sede tiene un solo periodo abierto. Para registrar un nuevo pastor, el periodo actual
+        se cierra el día anterior al inicio del nuevo.
+      </p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="stack">
+      @for (timeline of timelines(); track timeline.congregation.id) {
+        <section class="card" [attr.aria-labelledby]="'terms-sede-' + timeline.congregation.id">
+          <header class="card__header">
+            <h2 [id]="'terms-sede-' + timeline.congregation.id">
+              {{ timeline.congregation.name }}
+            </h2>
+            <span class="text-muted text-small">{{ timeline.terms.length }} periodos</span>
+          </header>
+          @if (timeline.terms.length === 0) {
+            <app-empty-state
+              icon="church"
+              title="Sin periodos registrados"
+              description="Registra el periodo del pastor de esta sede."
+            />
+          } @else {
+            <ol class="timeline">
+              @for (term of timeline.terms; track term.id) {
+                <li class="timeline__item" [class.timeline__item--current]="term.endedOn === null">
+                  <span class="timeline__dot" aria-hidden="true"></span>
+                  <div class="timeline__card">
+                    <div class="cluster">
+                      <strong>{{ term.pastor.fullName }}</strong>
+                      @if (term.endedOn === null) {
+                        <span class="badge badge--info">Periodo actual</span>
+                      }
+                    </div>
+                    <p class="text-small">
+                      <span class="text-muted">Desde</span>
+                      {{ term.startedOn | date: 'dd/MM/yyyy' }}
+                      <span class="text-muted"> · Hasta</span>
+                      {{
+                        term.endedOn ? (term.endedOn | date: 'dd/MM/yyyy') : 'hoy (periodo abierto)'
+                      }}
+                    </p>
+                    <p class="text-muted text-small">{{ durationOf(term) }}</p>
+                    @if (term.endedOn === null) {
+                      <button
+                        type="button"
+                        class="btn btn--danger-ghost btn--sm"
+                        [attr.aria-label]="'Cerrar el periodo de ' + term.pastor.fullName"
+                        (click)="closeTerm.emit(term)"
+                      >
+                        Cerrar periodo
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          }
+        </section>
+      }
+    </div>
+
+    <aside class="card rules" aria-label="Alcance y reglas">
+      <h3>Reglas de validación</h3>
+      <ul class="text-small">
+        <li>Un periodo no puede empezar antes de que termine el anterior.</li>
+        <li>Solo un periodo sin fecha de fin por sede.</li>
+        <li>La fecha de fin no puede ser anterior a la de inicio.</li>
+        <li>Los periodos cerrados no se eliminan: quedan como historial de la sede.</li>
+      </ul>
+      <h3>Alcance de tu rol</h3>
+      <p class="text-small text-muted">{{ scopeNote() }}</p>
+    </aside>
+  </div>
+</div>

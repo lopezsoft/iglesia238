@@ -1,0 +1,103 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.application-detail {
+  h2 {
+    font-size: $font-size-lg;
+  }
+
+  p {
+    margin: $space-1 0 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-4;
+    padding: $space-5;
+    border-bottom: 1px solid $color-border;
+    background: $color-surface-tint;
+    border-radius: $radius-card $radius-card 0 0;
+  }
+
+  &__title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    padding: $space-5;
+  }
+
+  &__figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: $space-3;
+  }
+
+  &__note {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-3;
+    border-radius: $radius-control;
+    background: $color-surface-2;
+    color: $color-ink-muted;
+  }
+
+  &__resolution {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__wrap {
+    overflow-wrap: anywhere;
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-top: 1px solid $color-border;
+    border-radius: 0 0 $radius-card $radius-card;
+    background: $color-ground;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  &__hint {
+    display: flex;
+    flex: 1 1 16rem;
+    align-items: flex-start;
+    gap: $space-2;
+    margin: 0;
+  }
+
+  &__blocked {
+    margin: 0;
+    color: $color-warning;
+    text-align: right;
+  }
+
+  &__consequences {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    margin: $space-3 0 0;
+    padding-left: $space-5;
+  }
+}

@@ -1,0 +1,80 @@
+<app-auth-frame labelledBy="auth-title">
+  <app-greeting-pill />
+
+  <div class="login__heading">
+    <h1 id="auth-title" class="login__title">Bienvenido de nuevo</h1>
+    <p class="login__lead">Ingresa con tu cuenta para continuar con tu iglesia.</p>
+  </div>
+
+  @if (reason() === 'expired' && !failure()) {
+    <div class="alert alert--warning" role="status">
+      <app-icon name="clock" [size]="18" />
+      <p>Tu sesión expiró. Ingresa de nuevo para continuar.</p>
+    </div>
+  }
+
+  @if (failure(); as failed) {
+    <div class="alert alert--danger login__alert" role="alert">
+      <app-icon [name]="failed.locked ? 'lock' : 'alert'" />
+      <div>
+        <p class="login__alert-title">{{ failed.message }}</p>
+        @if (!failed.locked) {
+          <p class="text-small">
+            Revisa tus datos e inténtalo de nuevo. Tras {{ maxFailedAttempts }} intentos fallidos la cuenta se
+            bloquea {{ lockMinutes }} minutos y, mientras dure, verás este mismo mensaje aunque la contraseña sea
+            correcta.
+          </p>
+        }
+      </div>
+    </div>
+  }
+
+  <form class="login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <app-text-field
+      label="Correo electrónico"
+      type="email"
+      icon="mail"
+      size="lg"
+      formControlName="email"
+      placeholder="nombre@iglesia.org"
+      autocomplete="username"
+      inputmode="email"
+      [required]="true"
+      [error]="emailError()"
+    />
+
+    <app-text-field
+      label="Contraseña"
+      type="password"
+      icon="lock"
+      size="lg"
+      formControlName="password"
+      placeholder="Tu contraseña"
+      autocomplete="current-password"
+      [required]="true"
+      [error]="passwordError()"
+    >
+      <a field-aside class="link-strong" routerLink="/login/recover-password">¿La olvidaste?</a>
+    </app-text-field>
+
+    <button type="submit" class="btn btn--primary btn--lg btn--block" [class.is-loading]="pending()" [disabled]="pending()">
+      @if (pending()) {
+        <app-spinner />
+        Ingresando…
+      } @else {
+        Iniciar sesión
+        <app-icon name="arrow-right" [size]="18" />
+      }
+    </button>
+  </form>
+
+  <p class="divider-text">¿Aún no tienes cuenta?</p>
+  <div class="login__alternatives">
+    <a class="btn btn--secondary btn--lg btn--block" routerLink="/apply">Inscríbete como miembro</a>
+    <a class="btn btn--secondary btn--lg btn--block" routerLink="/register-congregation">Registrar mi sede</a>
+  </div>
+  <p class="login__help text-small text-muted">
+    ¿Tu iglesia aún no está en el sistema? Registra tu sede y crea tu usuario de administración; si ya tiene
+    sede, pide tu acceso a quien la administra.
+  </p>
+</app-auth-frame>

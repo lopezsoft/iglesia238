@@ -1,0 +1,41 @@
+@use 'tokens' as *;
+
+// Estilos comunes de las pantallas cortas de autenticación (restablecer, invitación).
+.auth-page {
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__title {
+    font-size: $font-size-xl + 0.25rem;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+
+  &__notice {
+    align-items: flex-start;
+  }
+
+  &__notice-title {
+    font-weight: $font-weight-bold;
+  }
+
+  &__identity {
+    padding: $space-3 $space-4;
+    background: $color-surface-2;
+    border-radius: $radius-input-lg;
+  }
+
+  &__back {
+    align-self: center;
+    font-weight: $font-weight-bold;
+  }
+}

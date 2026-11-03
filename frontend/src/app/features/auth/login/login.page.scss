@@ -1,0 +1,44 @@
+@use 'tokens' as *;
+
+.login {
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__title {
+    font-size: $font-size-auth-title;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  &__lead {
+    color: $color-ink-muted;
+  }
+
+  &__alert {
+    align-items: flex-start;
+    color: $color-danger;
+  }
+
+  &__alert-title {
+    font-weight: $font-weight-bold;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+
+  &__alternatives {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &__help {
+    text-align: center;
+  }
+}

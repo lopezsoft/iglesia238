@@ -1,61 +1,25 @@
-# ==========================================
-# Multi-Stage Dockerfile - Frontend Angular
-# Optimizado para Producción con Nginx
-# ==========================================
+# Frontend Angular: build con Node y servido por Nginx.
 
-# ==========================================
-# STAGE 1: Build
-# ==========================================
-FROM node:20-alpine AS builder
-
-# Metadata
-LABEL maintainer="Arquitecto de Software Senior"
-LABEL description="Frontend Angular - Build Stage"
-
-# Establecer directorio de trabajo
+# Etapa 1: build
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package*.json ./
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
-# Instalar Angular CLI y dependencias
-RUN npm ci --quiet
-
-# Copiar el código fuente completo
 COPY . .
+RUN npm run build -- --configuration=production
 
-# Compilar la aplicación Angular en modo producción
-# --configuration=production: Habilita optimizaciones (AOT, minificación, tree-shaking)
-# --output-path: Especifica el directorio de salida
-RUN npm run build -- --configuration=production --output-path=dist/frontend
+# Etapa 2: Nginx
+FROM nginx:1.29-alpine AS production
 
-# ==========================================
-# STAGE 2: Production (Nginx)
-# ==========================================
-FROM nginx:alpine AS production
-
-# Metadata
-LABEL maintainer="Arquitecto de Software Senior"
-LABEL description="Frontend Angular servido con Nginx Alpine"
-
-# Instalar curl para healthchecks
-RUN apk add --no-cache curl
-
-# Eliminar la configuración por defecto de Nginx
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copiar el build de Angular desde el stage anterior
-COPY --from=builder /app/dist/frontend /usr/share/nginx/html
-
-# Copiar la configuración personalizada de Nginx
+# El builder de Angular deja el sitio en dist/<proyecto>/browser.
+COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Exponer puerto 80
 EXPOSE 80
 
-# Configurar Nginx para ejecutarse en primer plano
-CMD ["nginx", "-g", "daemon off;"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

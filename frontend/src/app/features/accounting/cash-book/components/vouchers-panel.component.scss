@@ -1,0 +1,70 @@
+@use 'tokens' as *;
+
+.vouchers {
+  &__header {
+    padding: $space-5 $space-5 0;
+  }
+
+  &__filters {
+    align-items: flex-end;
+    padding: $space-4 $space-5;
+
+    .field {
+      flex: 0 1 11rem;
+    }
+  }
+
+  &__state {
+    padding: $space-4 $space-5;
+  }
+
+  &__download-error {
+    margin: $space-3 $space-5 0;
+  }
+
+  &__actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+    justify-content: flex-end;
+  }
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+  margin: 0;
+
+  dt {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-control;
+  }
+}
+
+.amount.is-out {
+  color: $color-danger;
+}

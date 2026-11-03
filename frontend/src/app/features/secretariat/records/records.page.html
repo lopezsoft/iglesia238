@@ -1,0 +1,148 @@
+<app-page-header
+  breadcrumb="Secretaría"
+  title="Registros de secretaría"
+  [description]="
+    'Presentaciones de niños, matrimonios y periodos pastorales de ' + scopeName() + '.'
+  "
+>
+  <button type="button" class="btn btn--primary" [disabled]="!contextData()" (click)="openNew()">
+    <app-icon name="plus" />
+    {{ activeTab().newLabel }}
+  </button>
+</app-page-header>
+
+<div class="stack">
+  <div role="status" aria-live="polite">
+    @if (toast(); as message) {
+      <div class="alert alert--success">
+        <app-icon name="check" />
+        <span class="grow">{{ message }}</span>
+        <button
+          type="button"
+          class="btn btn--ghost btn--icon btn--sm"
+          aria-label="Cerrar aviso"
+          (click)="toast.set(null)"
+        >
+          <app-icon name="x" />
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (context.error()) {
+    <app-error-banner [message]="loadError()" (retry)="context.reload()" />
+  } @else if (!contextData()) {
+    <app-loading label="Cargando registros…" />
+  } @else {
+    <section class="kpi-grid" aria-label="Resumen de registros">
+      <app-stat-card
+        icon="heart"
+        tone="indigo"
+        [label]="'Presentaciones en ' + (summaryData()?.year ?? 'el año')"
+        [value]="summaryData()?.dedicationsThisYear ?? '—'"
+        [hint]="'Total histórico: ' + (summaryData()?.dedicationsTotal ?? '—')"
+      />
+      <app-stat-card
+        icon="users"
+        tone="green"
+        label="Matrimonios vigentes"
+        [value]="summaryData()?.marriagesActive ?? '—'"
+        [hint]="(summaryData()?.marriagesDissolved ?? '—') + ' disueltos registrados'"
+      />
+      <app-stat-card
+        icon="church"
+        tone="cyan"
+        [label]="pastorCard().label"
+        [value]="pastorCard().value"
+        [hint]="pastorCard().hint"
+      />
+      <app-stat-card
+        icon="book"
+        tone="orange"
+        label="Periodos pastorales"
+        [value]="summaryData()?.termsTotal ?? '—'"
+        hint="Abiertos y cerrados"
+      />
+    </section>
+
+    <app-tab-cards
+      ariaLabel="Tipo de registro"
+      idPrefix="records"
+      [items]="tabs"
+      [(selected)]="tab"
+    />
+
+    <div
+      role="tabpanel"
+      [id]="'records-panel-' + tab()"
+      [attr.aria-labelledby]="'records-tab-' + tab()"
+    >
+      @switch (tab()) {
+        @case ('dedications') {
+          <app-dedications-panel
+            [version]="version()"
+            [congregations]="congregations()"
+            [scopeName]="scopeName()"
+          />
+        }
+        @case ('marriages') {
+          <app-marriages-panel
+            [version]="version()"
+            [scopeName]="scopeName()"
+            (dissolve)="openDissolution($event)"
+          />
+        }
+        @case ('pastoral') {
+          @if (terms.error()) {
+            <app-error-banner
+              message="No fue posible cargar los periodos pastorales."
+              (retry)="terms.reload()"
+            />
+          } @else if (terms.hasValue()) {
+            <app-pastoral-terms-panel
+              [terms]="termRows()"
+              [congregations]="congregations()"
+              [today]="today()"
+              (closeTerm)="openCloseTerm($event)"
+            />
+          } @else {
+            <app-loading label="Cargando periodos pastorales…" />
+          }
+        }
+      }
+    </div>
+  }
+</div>
+
+@if (contextData(); as ctx) {
+  <app-dedication-dialog
+    [(open)]="dedicationOpen"
+    [context]="ctx"
+    [currentPastors]="currentPastors()"
+    (saved)="onSaved($event)"
+  />
+  <app-marriage-dialog
+    [(open)]="marriageOpen"
+    [context]="ctx"
+    [defaultOfficiant]="defaultOfficiant()"
+    (saved)="onSaved($event)"
+  />
+  <app-dissolution-dialog
+    [(open)]="dissolutionOpen"
+    [marriage]="dissolving()"
+    [today]="ctx.today"
+    (saved)="onSaved($event)"
+  />
+  <app-pastoral-term-dialog
+    [(open)]="termOpen"
+    [context]="ctx"
+    [terms]="termRows()"
+    (saved)="onSaved($event)"
+  />
+  <app-close-term-dialog
+    [(open)]="closeTermOpen"
+    [term]="closing()"
+    [today]="ctx.today"
+    (saved)="onSaved($event)"
+  />
+}

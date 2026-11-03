@@ -1,0 +1,356 @@
+{
+  "source": "Oficina Nacional de Estadística (ONE), República Dominicana: \"División Territorial 2021\" (ISBN 978-9945-8984-4-6, publicada el 30 de diciembre de 2021), \"Listado de Códigos de Provincias (P), Municipios (M) y Distritos Municipales (DM)\", pp. 507-511. https://www.one.gob.do/publicaciones/2021/division-territorial-2021/ (PDF https://www.one.gob.do/media/zsrmjfzp/división-territorial-2021.pdf, obtenido de la copia de archivo web.archive.org 20231118060101 porque one.gob.do bloquea descargas automatizadas). Recuperado 2026-11-03. Municipio = municipio (código PPMM); el Distrito Nacional figura como región con su único municipio Santo Domingo de Guzmán; los distritos municipales no se incluyen.",
+  "countryIsoAlpha2": "DO",
+  "regions": [
+    {
+      "code": "01",
+      "name": "Distrito Nacional",
+      "municipalities": [
+        {"code":"0101","name":"Santo Domingo de Guzmán"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "Azua",
+      "municipalities": [
+        {"code":"0201","name":"Azua"},
+        {"code":"0202","name":"Las Charcas"},
+        {"code":"0203","name":"Las Yayas de Viajama"},
+        {"code":"0204","name":"Padre Las Casas"},
+        {"code":"0205","name":"Peralta"},
+        {"code":"0206","name":"Sabana Yegua"},
+        {"code":"0207","name":"Pueblo Viejo"},
+        {"code":"0208","name":"Tábara Arriba"},
+        {"code":"0209","name":"Guayabal"},
+        {"code":"0210","name":"Estebanía"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Baoruco",
+      "municipalities": [
+        {"code":"0301","name":"Neiba"},
+        {"code":"0302","name":"Galván"},
+        {"code":"0303","name":"Tamayo"},
+        {"code":"0304","name":"Villa Jaragua"},
+        {"code":"0305","name":"Los Ríos"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Barahona",
+      "municipalities": [
+        {"code":"0401","name":"Barahona"},
+        {"code":"0402","name":"Cabral"},
+        {"code":"0403","name":"Enriquillo"},
+        {"code":"0404","name":"Paraíso"},
+        {"code":"0405","name":"Vicente Noble"},
+        {"code":"0406","name":"El Peñón"},
+        {"code":"0407","name":"La Ciénaga"},
+        {"code":"0408","name":"Fundación"},
+        {"code":"0409","name":"Las Salinas"},
+        {"code":"0410","name":"Polo"},
+        {"code":"0411","name":"Jaquimeyes"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Dajabón",
+      "municipalities": [
+        {"code":"0501","name":"Dajabón"},
+        {"code":"0502","name":"Loma de Cabrera"},
+        {"code":"0503","name":"Partido"},
+        {"code":"0504","name":"Restauración"},
+        {"code":"0505","name":"El Pino"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Duarte",
+      "municipalities": [
+        {"code":"0601","name":"San Francisco de Macorís"},
+        {"code":"0602","name":"Arenoso"},
+        {"code":"0603","name":"Castillo"},
+        {"code":"0604","name":"Pimentel"},
+        {"code":"0605","name":"Villa Riva"},
+        {"code":"0606","name":"Las Guáranas"},
+        {"code":"0607","name":"Eugenio María de Hostos"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "Elías Piña",
+      "municipalities": [
+        {"code":"0701","name":"Comendador"},
+        {"code":"0702","name":"Bánica"},
+        {"code":"0703","name":"El Llano"},
+        {"code":"0704","name":"Hondo Valle"},
+        {"code":"0705","name":"Pedro Santana"},
+        {"code":"0706","name":"Juan Santiago"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "El Seibo",
+      "municipalities": [
+        {"code":"0801","name":"El Seibo"},
+        {"code":"0802","name":"Miches"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Espaillat",
+      "municipalities": [
+        {"code":"0901","name":"Moca"},
+        {"code":"0902","name":"Cayetano Germosén"},
+        {"code":"0903","name":"Gaspar Hernández"},
+        {"code":"0904","name":"Jamao al Norte"},
+        {"code":"0905","name":"San Víctor"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Independencia",
+      "municipalities": [
+        {"code":"1001","name":"Jimaní"},
+        {"code":"1002","name":"Duvergé"},
+        {"code":"1003","name":"La Descubierta"},
+        {"code":"1004","name":"Postrer Río"},
+        {"code":"1005","name":"Cristóbal"},
+        {"code":"1006","name":"Mella"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "La Altagracia",
+      "municipalities": [
+        {"code":"1101","name":"Higüey"},
+        {"code":"1102","name":"San Rafael del Yuma"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "La Romana",
+      "municipalities": [
+        {"code":"1201","name":"La Romana"},
+        {"code":"1202","name":"Guaymate"},
+        {"code":"1203","name":"Villa Hermosa"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "La Vega",
+      "municipalities": [
+        {"code":"1301","name":"La Vega"},
+        {"code":"1302","name":"Constanza"},
+        {"code":"1303","name":"Jarabacoa"},
+        {"code":"1304","name":"Jima Abajo"}
+      ]
+    },
+    {
+      "code": "14",
+      "name": "María Trinidad Sánchez",
+      "municipalities": [
+        {"code":"1401","name":"Nagua"},
+        {"code":"1402","name":"Cabrera"},
+        {"code":"1403","name":"El Factor"},
+        {"code":"1404","name":"Río San Juan"}
+      ]
+    },
+    {
+      "code": "15",
+      "name": "Monte Cristi",
+      "municipalities": [
+        {"code":"1501","name":"Monte Cristi"},
+        {"code":"1502","name":"Castañuelas"},
+        {"code":"1503","name":"Guayubín"},
+        {"code":"1504","name":"Las Matas de Santa Cruz"},
+        {"code":"1505","name":"Pepillo Salcedo (Manzanillo)"},
+        {"code":"1506","name":"Villa Vásquez"}
+      ]
+    },
+    {
+      "code": "16",
+      "name": "Pedernales",
+      "municipalities": [
+        {"code":"1601","name":"Pedernales"},
+        {"code":"1602","name":"Oviedo"}
+      ]
+    },
+    {
+      "code": "17",
+      "name": "Peravia",
+      "municipalities": [
+        {"code":"1701","name":"Baní"},
+        {"code":"1702","name":"Nizao"},
+        {"code":"1703","name":"Matanzas"}
+      ]
+    },
+    {
+      "code": "18",
+      "name": "Puerto Plata",
+      "municipalities": [
+        {"code":"1801","name":"Puerto Plata"},
+        {"code":"1802","name":"Altamira"},
+        {"code":"1803","name":"Guananico"},
+        {"code":"1804","name":"Imbert"},
+        {"code":"1805","name":"Los Hidalgos"},
+        {"code":"1806","name":"Luperón"},
+        {"code":"1807","name":"Sosúa"},
+        {"code":"1808","name":"Villa Isabela"},
+        {"code":"1809","name":"Villa Montellano"}
+      ]
+    },
+    {
+      "code": "19",
+      "name": "Hermanas Mirabal",
+      "municipalities": [
+        {"code":"1901","name":"Salcedo"},
+        {"code":"1902","name":"Tenares"},
+        {"code":"1903","name":"Villa Tapia"}
+      ]
+    },
+    {
+      "code": "20",
+      "name": "Samaná",
+      "municipalities": [
+        {"code":"2001","name":"Samaná"},
+        {"code":"2002","name":"Sánchez"},
+        {"code":"2003","name":"Las Terrenas"}
+      ]
+    },
+    {
+      "code": "21",
+      "name": "San Cristóbal",
+      "municipalities": [
+        {"code":"2101","name":"San Cristóbal"},
+        {"code":"2102","name":"Sabana Grande de Palenque"},
+        {"code":"2103","name":"Bajos de Haina"},
+        {"code":"2104","name":"Cambita Garabitos"},
+        {"code":"2105","name":"Villa Altagracia"},
+        {"code":"2106","name":"Yaguate"},
+        {"code":"2107","name":"San Gregorio de Nigua"},
+        {"code":"2108","name":"Los Cacaos"}
+      ]
+    },
+    {
+      "code": "22",
+      "name": "San Juan",
+      "municipalities": [
+        {"code":"2201","name":"San Juan"},
+        {"code":"2202","name":"Bohechío"},
+        {"code":"2203","name":"El Cercado"},
+        {"code":"2204","name":"Juan de Herrera"},
+        {"code":"2205","name":"Las Matas de Farfán"},
+        {"code":"2206","name":"Vallejuelo"}
+      ]
+    },
+    {
+      "code": "23",
+      "name": "San Pedro de Macorís",
+      "municipalities": [
+        {"code":"2301","name":"San Pedro de Macorís"},
+        {"code":"2302","name":"Los Llanos"},
+        {"code":"2303","name":"Ramón Santana"},
+        {"code":"2304","name":"Consuelo"},
+        {"code":"2305","name":"Quisqueya"},
+        {"code":"2306","name":"Guayacanes"}
+      ]
+    },
+    {
+      "code": "24",
+      "name": "Sánchez Ramírez",
+      "municipalities": [
+        {"code":"2401","name":"Cotuí"},
+        {"code":"2402","name":"Cevicos"},
+        {"code":"2403","name":"Fantino"},
+        {"code":"2404","name":"La Mata"}
+      ]
+    },
+    {
+      "code": "25",
+      "name": "Santiago",
+      "municipalities": [
+        {"code":"2501","name":"Santiago"},
+        {"code":"2502","name":"Bisonó"},
+        {"code":"2503","name":"Jánico"},
+        {"code":"2504","name":"Licey al Medio"},
+        {"code":"2505","name":"San José de las Matas"},
+        {"code":"2506","name":"Tamboril"},
+        {"code":"2507","name":"Villa González"},
+        {"code":"2508","name":"Puñal"},
+        {"code":"2509","name":"Sabana Iglesia"},
+        {"code":"2510","name":"Baitoa"}
+      ]
+    },
+    {
+      "code": "26",
+      "name": "Santiago Rodríguez",
+      "municipalities": [
+        {"code":"2601","name":"San Ignacio de Sabaneta"},
+        {"code":"2602","name":"Villa Los Almácigos"},
+        {"code":"2603","name":"Monción"}
+      ]
+    },
+    {
+      "code": "27",
+      "name": "Valverde",
+      "municipalities": [
+        {"code":"2701","name":"Mao"},
+        {"code":"2702","name":"Esperanza"},
+        {"code":"2703","name":"Laguna Salada"}
+      ]
+    },
+    {
+      "code": "28",
+      "name": "Monseñor Nouel",
+      "municipalities": [
+        {"code":"2801","name":"Bonao"},
+        {"code":"2802","name":"Maimón"},
+        {"code":"2803","name":"Piedra Blanca"}
+      ]
+    },
+    {
+      "code": "29",
+      "name": "Monte Plata",
+      "municipalities": [
+        {"code":"2901","name":"Monte Plata"},
+        {"code":"2902","name":"Bayaguana"},
+        {"code":"2903","name":"Sabana Grande de Boyá"},
+        {"code":"2904","name":"Yamasá"},
+        {"code":"2905","name":"Peralvillo"}
+      ]
+    },
+    {
+      "code": "30",
+      "name": "Hato Mayor",
+      "municipalities": [
+        {"code":"3001","name":"Hato Mayor"},
+        {"code":"3002","name":"Sabana de la Mar"},
+        {"code":"3003","name":"El Valle"}
+      ]
+    },
+    {
+      "code": "31",
+      "name": "San José de Ocoa",
+      "municipalities": [
+        {"code":"3101","name":"San José de Ocoa"},
+        {"code":"3102","name":"Sabana Larga"},
+        {"code":"3103","name":"Rancho Arriba"}
+      ]
+    },
+    {
+      "code": "32",
+      "name": "Santo Domingo",
+      "municipalities": [
+        {"code":"3201","name":"Santo Domingo Este"},
+        {"code":"3202","name":"Santo Domingo Oeste"},
+        {"code":"3203","name":"Santo Domingo Norte"},
+        {"code":"3204","name":"Boca Chica"},
+        {"code":"3205","name":"San Antonio de Guerra"},
+        {"code":"3206","name":"Los Alcarrizos"},
+        {"code":"3207","name":"Pedro Brand"}
+      ]
+    }
+  ]
+}

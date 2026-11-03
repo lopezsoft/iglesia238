@@ -38,8 +38,6 @@ frontend/.angular/
 # ==========================================
 # Prisma
 # ==========================================
-backend/prisma/migrations/
-!backend/prisma/migrations/.gitkeep
 *.db
 *.db-journal
 
@@ -97,7 +95,6 @@ junit.xml
 # Docker
 # ==========================================
 docker-compose.override.yml
-.dockerignore
 
 # ==========================================
 # Temporary Files
@@ -112,7 +109,6 @@ temp/
 # Package Managers
 # ==========================================
 yarn.lock
-package-lock.json
 pnpm-lock.yaml
 .pnp.*
 .yarn/*
@@ -150,3 +146,9 @@ frontend/typings/
 .turbo
 *.tsbuildinfo
 .eslintcache
+
+# Resource folders
+/resources/
+
+# Generated Prisma client
+backend/src/generated/

@@ -1,0 +1,306 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: block;
+}
+
+.skip-link {
+  @include visually-hidden;
+
+  &:focus {
+    position: fixed;
+    top: $space-2;
+    left: $space-2;
+    z-index: 40;
+    width: auto;
+    height: auto;
+    clip: auto;
+    padding: $space-2 $space-3;
+    background: $color-surface;
+    border-radius: $radius-control;
+  }
+}
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+// Riel de iconos de 76 px con etiqueta corta; en móvil es un cajón con etiquetas completas.
+.rail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 $sidebar-width;
+  width: $sidebar-width;
+  height: 100vh;
+  background: $color-sidebar;
+  border-right: 1px solid $color-border;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__brand {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    height: $topbar-height;
+    color: $color-ink;
+    text-decoration: none;
+  }
+
+  &__logo {
+    @include icon-chip(2.5rem);
+    --tone-soft: #{$color-primary-soft};
+    --tone-fg: #{$color-brand-mark};
+  }
+
+  &__brand-text {
+    display: none;
+  }
+
+  &__scroll {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: $space-1;
+    padding: $space-1 0 $space-4;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  // Los grupos se separan con una línea; el encabezado solo se muestra en el cajón móvil.
+  &__group + &__group {
+    margin-top: $space-1;
+    padding-top: $space-2;
+    border-top: 1px solid $color-border;
+  }
+
+  &__heading,
+  &__label-full,
+  &__locked-note {
+    display: none;
+  }
+
+  &__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    padding: $space-1 2px;
+    color: $color-sidebar-text;
+    text-decoration: none;
+
+    &:hover {
+      color: $color-primary;
+
+      .rail__icon {
+        background: $color-surface-2;
+      }
+    }
+
+    &.is-active {
+      color: $color-primary;
+
+      .rail__icon {
+        position: relative;
+        background: $color-sidebar-active;
+        color: $color-primary;
+      }
+
+      .rail__label {
+        font-weight: $font-weight-bold;
+      }
+    }
+  }
+
+  &__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: $radius-control;
+    color: $color-sidebar-icon;
+    transition: background-color 120ms ease;
+  }
+
+  &__label {
+    max-width: 100%;
+    font-size: $font-size-3xs + 0.03125rem;
+    font-weight: $font-weight-medium;
+    line-height: 1.2;
+    text-align: center;
+  }
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  height: $topbar-height;
+  padding: 0 $space-5;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+
+  &__menu {
+    display: none;
+  }
+
+  &__end {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: $content-max-width;
+  margin: 0 auto;
+  padding: $space-5 $space-5 $space-6;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.shell__backdrop {
+  display: none;
+}
+
+@include until($breakpoint-md) {
+  // Closed: off-screen AND hidden, so its links leave the tab order and the accessibility tree.
+  // Visibility switches after the slide-out and at once on the slide-in.
+  .rail {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min($sidebar-width-expanded, 85vw);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 160ms ease,
+      visibility 0s linear 160ms;
+
+    &__brand {
+      justify-content: flex-start;
+      gap: $space-3;
+      padding: 0 $space-4;
+    }
+
+    &__brand-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    &__product {
+      font-size: $font-size-md;
+      font-weight: $font-weight-extrabold;
+    }
+
+    &__scope {
+      overflow: hidden;
+      color: $color-sidebar-muted;
+      font-size: $font-size-xs;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__group + &__group {
+      margin-top: $space-2;
+    }
+
+    &__locked-note {
+      display: block;
+      margin: $space-2 $space-4 0;
+      color: $color-sidebar-muted;
+    }
+
+    &__heading {
+      display: block;
+      padding: $space-2 $space-4 $space-1;
+      color: $color-sidebar-muted;
+      font-size: $font-size-2xs;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    &__link {
+      flex-direction: row;
+      gap: $space-3;
+      margin: 0 $space-2;
+      padding: 0 $space-2;
+      border-radius: $radius-control;
+
+      &.is-active {
+        background: $color-sidebar-active;
+      }
+    }
+
+    &__icon {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    &__label {
+      display: none;
+    }
+
+    &__label-full {
+      display: block;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  .shell--menu-open .rail {
+    transform: none;
+    visibility: visible;
+    box-shadow: $shadow-overlay;
+    transition: transform 160ms ease;
+  }
+
+  .shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: $color-backdrop;
+  }
+
+  .topbar {
+    gap: $space-2;
+    padding: 0 $space-3;
+
+    &__menu {
+      display: inline-flex;
+    }
+  }
+
+  .content {
+    padding: $space-4 $space-4 $space-6;
+  }
+}

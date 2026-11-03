@@ -1,0 +1,87 @@
+@use 'tokens' as *;
+
+.notice {
+  align-items: flex-start;
+
+  > div {
+    flex: 1;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.rule-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+  margin: 0;
+  color: $color-ink-muted;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: $font-size-sm;
+  color: $color-ink-muted;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+
+    &--active {
+      color: $color-ink;
+      font-weight: $font-weight-semibold;
+
+      .steps__number {
+        background: $color-primary;
+        color: $color-on-primary;
+      }
+    }
+
+    &--done {
+      color: $color-ink;
+
+      .steps__number {
+        background: $color-success;
+        color: $color-on-primary;
+      }
+    }
+  }
+
+  &__number {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: $radius-pill;
+    background: $color-surface;
+    font-size: $font-size-xs;
+  }
+}
+
+.range-card {
+  padding: $space-4;
+  background: $color-surface;
+  border-radius: $radius-control;
+  box-shadow: $shadow-card;
+}
+
+.toolbar .field {
+  flex: 0 1 12rem;
+}
+
+.range-help {
+  margin: $space-3 0 0;
+}
+
+.range-card .alert {
+  margin-top: $space-3;
+}

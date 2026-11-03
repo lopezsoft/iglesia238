@@ -1,0 +1,92 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: inline-block;
+  min-width: 0;
+}
+
+.user {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+  min-width: 0;
+  color: $color-ink-muted;
+
+  &__who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  &__name {
+    max-width: 14rem;
+    overflow: hidden;
+    color: $color-ink;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__scope {
+    max-width: 14rem;
+    overflow: hidden;
+    color: $color-ink-subtle;
+    font-size: $font-size-3xs;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__role {
+    margin-top: 2px;
+    font-size: $font-size-3xs;
+  }
+
+  &__avatar {
+    position: relative;
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: $radius-pill;
+    background: $color-primary-soft;
+    color: $color-primary-strong;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-extrabold;
+  }
+
+  &__presence {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 2px solid $color-surface;
+    border-radius: $radius-pill;
+    background: $color-online;
+  }
+}
+
+.user-card {
+  padding: $space-2 $space-3;
+
+  &__name {
+    font-weight: $font-weight-bold;
+  }
+
+  &__email {
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    overflow-wrap: anywhere;
+  }
+}
+
+@include until($breakpoint-md) {
+  .user__who {
+    @include visually-hidden;
+  }
+}

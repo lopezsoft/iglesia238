@@ -1,0 +1,78 @@
+<section class="card" aria-labelledby="attendance-trend-title">
+  <header class="card__header">
+    <div>
+      <h2 id="attendance-trend-title">{{ title() }}</h2>
+      <p class="text-muted text-small">{{ subtitle() }}</p>
+    </div>
+    <div class="trend-controls"><ng-content select="[trend-controls]" /></div>
+  </header>
+
+  @if (points().length === 0 && !draft()) {
+    <p class="text-muted">Aún no hay sesiones registradas para mostrar la tendencia.</p>
+  } @else {
+    <dl class="kpis">
+      <div>
+        <dt>Promedio</dt>
+        <dd>{{ average() }}</dd>
+      </div>
+      <div>
+        <dt>Máximo</dt>
+        <dd>{{ maximum().total }}</dd>
+        @if (maximum().label; as label) {
+          <dd class="text-muted text-small">{{ label }}</dd>
+        }
+      </div>
+      <div>
+        <dt>Borrador vs. anterior</dt>
+        @if (delta(); as delta) {
+          <dd [class.is-up]="delta.value > 0" [class.is-down]="delta.value < 0">
+            {{ delta.value > 0 ? '+' : delta.value < 0 ? '−' : ''
+            }}{{ delta.value < 0 ? -delta.value : delta.value }}
+          </dd>
+          <dd class="text-muted text-small">Frente a {{ delta.against }}</dd>
+        } @else {
+          <dd>—</dd>
+          <dd class="text-muted text-small">Sin borrador válido</dd>
+        }
+      </div>
+    </dl>
+
+    <div class="chart" aria-hidden="true">
+      @for (bar of bars(); track bar.key) {
+        <div class="chart__column">
+          <div class="chart__track">
+            <span class="chart__value">{{ bar.total }}</span>
+            <span
+              class="chart__bar"
+              [class.chart__bar--draft]="bar.isDraft"
+              [style.height.%]="bar.height"
+            ></span>
+          </div>
+          <span class="chart__label">{{ bar.label }}</span>
+        </div>
+      }
+    </div>
+
+    <table class="visually-hidden">
+      <caption>
+        {{
+          title()
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Periodo</th>
+          <th scope="col">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (bar of bars(); track bar.key) {
+          <tr>
+            <td>{{ bar.label }}{{ bar.isDraft ? ' (borrador sin guardar)' : '' }}</td>
+            <td>{{ bar.total }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

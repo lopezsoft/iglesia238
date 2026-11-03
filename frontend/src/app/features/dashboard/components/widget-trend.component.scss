@@ -1,0 +1,68 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.trend {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4 $space-5;
+
+  &__header h2 {
+    font-size: $font-size-md;
+  }
+
+  &__chart {
+    display: flex;
+    gap: $space-2;
+    height: 11rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__column {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__track {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__bar {
+    width: min(100%, 2.75rem);
+    min-height: 2px;
+    border-radius: $radius-xs $radius-xs 0 0;
+    background: $tone-soft;
+  }
+
+  &__column--current &__bar {
+    background: $tone-fg;
+  }
+
+  &__value,
+  &__label {
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__column--current &__value,
+  &__column--current &__label {
+    color: $color-ink;
+    font-weight: $font-weight-bold;
+  }
+}

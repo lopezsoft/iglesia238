@@ -1,0 +1,78 @@
+<div class="table-wrap">
+  <table class="table">
+    <caption class="visually-hidden">Eventos de auditoría, página {{ page() }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Fecha y hora</th>
+        <th scope="col">Usuario</th>
+        <th scope="col">Acción</th>
+        <th scope="col">Entidad</th>
+        <th scope="col">Sede</th>
+        <th scope="col">IP</th>
+        <th scope="col">Cambios</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (entry of entries(); track entry.id) {
+        @let expanded = expandedId() === entry.id;
+        @let entity = entityLabel(entry.entity) + ' ' + entry.entityId;
+        <tr [class.is-selected]="expanded">
+          <td class="code text-small">{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>{{ entry.userName }}</td>
+          <td><app-status-badge [label]="actionLabel(entry.action)" [tone]="actionTone(entry.action)" /></td>
+          <td>
+            <p>{{ entityLabel(entry.entity) }}</p>
+            <p class="mono text-small text-muted">{{ entry.entityId }}</p>
+          </td>
+          <td>{{ entry.scopeLabel }}</td>
+          <td class="code text-small">{{ entry.ipAddress }}</td>
+          <td>
+            @if (entry.changes.length > 0) {
+              <button
+                type="button"
+                class="btn btn--ghost btn--sm"
+                [attr.aria-expanded]="expanded"
+                [attr.aria-controls]="'audit-diff-' + entry.id"
+                [attr.aria-label]="(expanded ? 'Ocultar cambios de ' : 'Ver cambios de ') + entity"
+                (click)="toggle(entry.id)"
+              >
+                {{ expanded ? 'Ocultar cambios' : 'Ver cambios' }}
+              </button>
+            } @else {
+              <span class="text-muted text-small">Sin cambios de datos</span>
+            }
+          </td>
+        </tr>
+        @if (expanded) {
+          <tr class="diff-row">
+            <td colspan="7">
+              <div class="diff" [id]="'audit-diff-' + entry.id" role="region" [attr.aria-label]="'Cambios registrados en ' + entity">
+                <div class="diff__header">
+                  <p>
+                    <strong>Cambios registrados</strong>
+                    <span class="text-muted text-small"> · Evento <span class="mono">{{ entry.id }}</span></span>
+                  </p>
+                  <span class="badge badge--info">Los cambios nunca incluyen datos personales</span>
+                </div>
+                <ul class="diff__list" aria-label="Campos modificados">
+                  @for (change of entry.changes; track change.field) {
+                    <li class="diff__item">
+                      <span class="mono diff__field">{{ change.field }}</span>
+                      <span class="mono diff__from">{{ change.from }}</span>
+                      <span class="text-muted text-small">cambió a</span>
+                      <span class="mono diff__to">{{ change.to }}</span>
+                    </li>
+                  }
+                </ul>
+                <p class="text-muted text-small">
+                  Solo se registran campos de estado, códigos y montos. Nombres, documentos, teléfonos, direcciones y la
+                  ficha socioeconómica se excluyen del registro.
+                </p>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

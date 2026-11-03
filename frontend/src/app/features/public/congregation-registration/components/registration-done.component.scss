@@ -1,0 +1,47 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-6 $space-5;
+  text-align: center;
+
+  @include until($breakpoint-sm) {
+    padding: $space-5 $space-4;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: $radius-pill;
+    background: $color-success-soft;
+    color: $color-success;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+
+    // Focused by script after sending (tabindex="-1"): not an interactive control.
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__notice {
+    align-items: flex-start;
+    max-width: 36rem;
+    text-align: left;
+  }
+
+  &__dev {
+    align-self: stretch;
+    max-width: 36rem;
+    margin: 0 auto;
+  }
+}

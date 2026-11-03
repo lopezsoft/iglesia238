@@ -1,0 +1,101 @@
+<app-dialog [(open)]="open" title="Nuevo matrimonio" variant="wide">
+  <form id="marriage-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <p class="text-muted text-small">
+      Los cónyuges deben ser mayores de edad el día del matrimonio y al menos uno, miembro de la
+      sede activa. No se ofrecen las personas con un matrimonio vigente.
+    </p>
+    <div class="form-grid">
+      <app-person-picker
+        formControlName="spouse1"
+        label="Cónyuge 1"
+        eligibleFor="spouse"
+        [required]="true"
+        [exclude]="excludeForFirst()"
+        [error]="invalid(form.controls.spouse1) ? 'Selecciona el primer cónyuge.' : null"
+      />
+      <app-person-picker
+        formControlName="spouse2"
+        label="Cónyuge 2"
+        eligibleFor="spouse"
+        [required]="true"
+        [exclude]="excludeForSecond()"
+        [error]="
+          invalid(form.controls.spouse2)
+            ? 'Selecciona el segundo cónyuge.'
+            : sameSpouse()
+              ? 'Los cónyuges deben ser personas distintas.'
+              : null
+        "
+      />
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="mar-date">Fecha del matrimonio *</label>
+        <input
+          id="mar-date"
+          class="input"
+          type="date"
+          formControlName="marriedOn"
+          [max]="context().today"
+          aria-describedby="mar-date-error"
+        />
+        @if (invalid(form.controls.marriedOn)) {
+          <span id="mar-date-error" class="field__error">
+            {{
+              form.controls.marriedOn.hasError('futureDate')
+                ? 'No puede ser una fecha futura.'
+                : 'Indica la fecha del matrimonio.'
+            }}
+          </span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="mar-registry">Registro *</label>
+        <select id="mar-registry" class="select" formControlName="registeredWith">
+          @for (registry of registries; track registry) {
+            <option [value]="registry">{{ registryLabels[registry] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="mar-place">Lugar *</label>
+        <input
+          id="mar-place"
+          class="input"
+          type="text"
+          formControlName="place"
+          [maxlength]="maxPlaceLength"
+          aria-describedby="mar-place-error"
+        />
+        @if (invalid(form.controls.place)) {
+          <span id="mar-place-error" class="field__error">Indica el lugar de la ceremonia.</span>
+        }
+      </div>
+    </div>
+
+    <app-person-picker
+      formControlName="officiant"
+      label="Oficiante"
+      eligibleFor="officiant"
+      [exclude]="excludeForOfficiant()"
+      hint="Si la sede tiene un pastor vigente, se propone solo."
+    />
+
+    @if (error(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+  </form>
+
+  <div dialog-footer>
+    <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
+    <button type="submit" form="marriage-form" class="btn btn--primary" [disabled]="pending()">
+      {{ pending() ? 'Registrando…' : 'Registrar matrimonio' }}
+    </button>
+  </div>
+</app-dialog>

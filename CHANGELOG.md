@@ -1,0 +1,147 @@
+<!-- markdownlint-configure-file { "MD024": { "siblings_only": true } } -->
+
+# Changelog
+
+Todos los cambios relevantes del proyecto se registran en este archivo.
+
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa [versionado semántico](https://semver.org/lang/es/). Backend y frontend comparten una única versión: ver «Versionado» en el [README](README.md).
+
+## Sin publicar
+
+## 0.5.0 - 2026-11-03
+
+### Added
+
+- Registro público de sedes (`/register-congregation`): asistente de tres pasos (iglesia, sede y usuario) que crea la sede activa y el usuario responsable con los roles de Pastor, Secretario y Tesorero. Sin razones sociales cargadas, la página lo explica en lugar de mostrar el formulario.
+- Confirmación de correo: el usuario nuevo puede entrar, pero la API responde `403 EMAIL_NOT_VERIFIED` y la app solo muestra «Confirma tu correo» hasta que confirma (`/login/verify-email`, reenvío y enlace de desarrollo sin SMTP).
+- Razones sociales administradas por la plataforma (`/api/platform/legal-entities`), con país obligatorio; pestañas «Razones sociales» y «Países» en Denominaciones.
+- País en la razón social (`legal_entities.country_id`) y municipio obligatorio en la sede, que debe ser del país de su razón social (`MUNICIPALITY_COUNTRY_MISMATCH`).
+- Países activos (`countries.is_active`): los 18 hispanohablantes de Latinoamérica quedan activos; `GET /api/geo/countries` y `GET/PATCH /api/platform/countries`. La búsqueda de municipios acepta `countryId`.
+- Divisiones administrativas de 17 países más (AR, BO, CL, CR, CU, DO, EC, GT, HN, MX, NI, PA, PE, PY, SV, UY, VE): 363 regiones y 9229 municipios en total, tomados de fuentes oficiales y verificados; procedencia y advertencias en `backend/prisma/seed-data/divisions/SOURCES.md`.
+- Diccionario de datos: comentario en español en cada tabla y columna, guardado en MariaDB (`COMMENT`). Comandos `db:comments:check`, `db:comments:inject` y `db:dictionary`, y modelado en `docs/2026-11-02-2339-modelo-de-datos.md`.
+- Animaciones en el panel de marca del login (respetan «reducir movimiento»).
+- Descarga en PDF de recibos y comprobantes (`GET /api/accounting/vouchers/:id/pdf`), con botón en Aportes, en el aviso de registro y en Comprobantes. El aporte ahora trae `voucherId`.
+- El reporte financiero informa los aportes registrados que el libro de caja aún no consolida (`pendingConsolidation`) y la pantalla lo avisa.
+- Comando `npm run admin:reset-password` para el administrador de plataforma que olvidó su contraseña sin SMTP.
+- Variable `REFRESH_MAX_LIFETIME` (duración absoluta de la sesión, 30 días) y `TRUST_PROXY` como número de saltos o lista de proxies.
+- Aviso en Sedes cuando la denominación no tiene política de datos publicada, y recarga de la sesión tras cambiar roles o sedes.
+
+### Changed
+
+- Las migraciones se unificaron en una sola, `20261103000000_init`, con las 24 reglas `CHECK` y los comentarios; la base de desarrollo se reconstruye desde cero.
+- Espaciado más compacto en tarjetas, formularios, diálogos y cabeceras de página.
+- El seed carga un archivo de divisiones por país (`seed-data/divisions/<ISO>.json`); `DEFAULT_COUNTRY_ISO` (por defecto `CO`) resuelve los códigos de municipio que llegan sin país.
+- Nadie puede otorgarse roles a sí mismo (`409 SELF_GRANT`). Invitar un correo que ya tiene cuenta responde `409 DUPLICATE_EMAIL` y no vincula la cuenta; invitar tiene límite por IP.
+- El enlace de recuperación de otra cuenta se niega si la cuenta tuvo roles fuera de la denominación o es de otro administrador, y avisa a la persona por correo sin enlace.
+- Cerrar sesión, cambiar la contraseña o detectar un refresh token robado invalida también el access token (`JwtAuthGuard` comprueba la sesión). El access token dura 30 minutos como máximo.
+- Los roles de una sede desactivada o borrada dejan de servir en la API, no solo en el menú.
+- Una cuenta bloqueada por intentos responde `401 INVALID_CREDENTIALS` como cualquier credencial incorrecta (ya no `423`).
+- La invitación se valida con `POST /api/auth/invitations/lookup` (token en el cuerpo) y las páginas de enlace quitan el token de la URL.
+- La cookie del refresh token lleva `Secure` también en cualquier entorno con `APP_BASE_URL` https; la sesión tiene duración absoluta.
+- Los errores de descargas (PDF, CSV) conservan el código y el mensaje de la API; las fechas «de hoy» del frontend usan la hora de Bogotá; los textos de solo lectura hablan de lo que no se puede hacer, no de códigos de permiso.
+- Se quitó del texto inicial de la política de datos la frase de borrador, y el Nginx del frontend reemplaza `X-Forwarded-For`.
+
+### Fixed
+
+- Páginas de caja, configuración contable, certificados y solicitud pública ya no quedan en blanco cuando una consulta falla: muestran el aviso con «Reintentar».
+- El nombre del archivo CSV de asistencia ya no admite texto libre del filtro; el widget de auditoría del tablero oculta los nombres del equipo de plataforma a las denominaciones.
+- El límite del número de documento del formulario de miembros coincide con el de la API (30).
+
+## 0.4.0 - 2026-11-02
+
+### Added
+
+- **Acceso real:** inicio de sesión con correo y contraseña, token de acceso solo en memoria, refresh token en cookie `HttpOnly` con rotación y detección de reutilización, bloqueo tras 5 intentos fallidos, recuperación de contraseña, invitaciones de un solo uso y cambio de contraseña. Las contraseñas se guardan con `scrypt`.
+- **Alcance y permisos por petición:** cabecera `X-Scope` (`P`, `D:<id>` o `C:<id>`) validada contra los roles vigentes; los permisos se calculan en cada petición y la sesión los devuelve desde la base de datos.
+- **API de todos los módulos del MVP:** denominaciones (con aprovisionamiento transaccional), sedes, razones sociales, distritos, usuarios y roles, auditoría, catálogos y municipios, inscripción pública, solicitudes y políticas de datos, miembros (alta manual, estado, traslados, familia, estudios, cargos, ficha socioeconómica, consentimientos y anonimización), certificados y carnés con PDF, asistencia, registros de secretaría, configuración contable, libro de caja, aportes, votos, liquidación del diezmo, presupuesto, reportes y dashboard.
+- Tablero de inicio compuesto por proveedores de widgets de cada área (miembros, solicitudes, certificados, asistencia, sedes, ingresos, saldos y diezmo).
+- Migración `20261102150000_api_support_fields`: código de sede, estado de la política, datos del carné, emisor y motivo de anulación del certificado, lugar y oficiante del matrimonio, institución y año de estudios, autor de la asistencia e índice de caja. **Hay que aplicarla** con `npm run prisma:migrate:deploy` y luego `npm run prisma:seed`.
+- Comando `npm run admin:create` para el primer administrador de plataforma, y variables `JWT_SECRET`, `JWT_EXPIRATION`, `REFRESH_TTL`, `APP_BASE_URL` y `SMTP_*` (ver backend/README.md).
+- Diseño del frontend renovado: barra lateral de iconos, barra superior, tarjeta principal, indicadores, paneles por sección y pestañas, e ingreso en dos paneles.
+
+### Changed
+
+- El frontend ya no tiene modo demostración: todas las pantallas usan el adaptador HTTP de su módulo, con listas paginadas en el servidor donde crecen. Un interceptor convierte los errores de la API en mensajes en español.
+- Los porcentajes del diezmo nunca tienen valores por defecto: se ingresan por denominación en Contabilidad > Configuración. El primer periodo contable de una sede se crea desde la misma pantalla.
+- Un único buscador de personas (`SearchPeopleUseCase`) atiende certificados, aportes, secretaría y familia, con el documento siempre enmascarado en el servidor.
+- Numeración de documentos con un único servicio (`MEMBER`, `VOUCHER:<TIPO>`, `CERT:<CÓDIGO>`), sin reinicio anual.
+- El build de la API excluye los auxiliares de prueba `src/**/testing`.
+
+### Removed
+
+- Adaptadores y datos de demostración del frontend (`core/demo`, almacenes en memoria, la contraseña común de demostración y el aviso «Modo demostración»).
+- Las rutas duplicadas `GET /api/members/lookup` y `GET /api/members/lookup/:memberId`, y las constantes de catálogos del frontend (ahora vienen de `GET /api/catalogs`).
+- Las promesas de adjuntos y de logotipo en las pantallas: no hay almacenamiento de archivos.
+
+## 0.3.0 - 2026-11-02
+
+### Added
+
+- Prototipo navegable del frontend en Claude Design, [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5): 21 pantallas con la navegación de cada rol y el mapa de acceso por permiso.
+- Aplicación Angular con todas las pantallas del MVP del plan, en modo demostración con datos ficticios en memoria mientras la API no expone los módulos:
+  - **Acceso:** ingreso con bloqueo tras 5 intentos fallidos y recuperación de contraseña sin revelar si el correo existe.
+  - **Inscripción pública:** formulario por pasos con acudiente para menores, autorización de datos según la política vigente, campo trampa contra bots, límite de envíos y consulta del estado por código.
+  - **Organización:** denominaciones, sedes, razones sociales (NIT único), distritos, usuarios y roles por alcance, y auditoría.
+  - **Membresía:** revisión de solicitudes con detección de duplicados por documento. La aprobación crea en una sola operación la persona, el miembro, el número de carné y la autorización de datos. La ficha del miembro incluye familia, estudios, cargos, ficha socioeconómica con permiso propio, traslados y revocación de la autorización.
+  - **Secretaría:** certificados con consecutivo sin huecos por sede, tipo y año, anulación sin borrado y vista de impresión; carnés con vencimiento; asistencia por reunión y categoría; presentaciones de niños, matrimonios y periodos pastorales sin solapes.
+  - **Contabilidad:** fondos, plan de cuentas y tipos de aporte; aportes nominales o anónimos; votos con abonos y saldo; libro de caja con periodos, consolidación de aportes y reversas; liquidación del diezmo sin solapes y con componentes que suman el bruto; presupuesto fijo y por comités con su ejecución.
+  - **Inicio y reportes:** el inicio se adapta a los permisos de cada rol; reportes de ingresos, egresos, saldos por fondo y aportes por tipo, exportables a CSV.
+- Acceso por rol y alcance:
+  - Menú y rutas protegidos por permiso. Las rutas usan `canMatch`, así que el código de un módulo prohibido ni se descarga.
+  - Selector «Actuar en» para quien tiene roles en varias sedes. La sede elegida se conserva al recargar la página.
+- Cada módulo declara un puerto y un adaptador de demostración. Los adaptadores simulan el `TenantContext` de la API: nunca devuelven datos de otra denominación y filtran por sede.
+- `DebugService` como único canal de logs: es silencioso en producción y redacta los datos personales.
+- 316 pruebas unitarias con Vitest: reglas de negocio, aislamiento entre denominaciones y sedes, y permisos.
+
+### Changed
+
+- Angular 20 → 22.2 con TypeScript 6. La detección de cambios ya no usa zone.js, y las pruebas pasan de Karma y Jasmine a Vitest.
+- Estilos con tokens SCSS en `src/assets/scss`: paleta «Plex institucional», tipografías IBM Plex Sans y Mono, y ningún color literal en los componentes.
+- Imagen del frontend:
+  - Node 22 y Nginx 1.29.
+  - Sirve `dist/frontend/browser`, que es la ruta real del build.
+  - Añade `.dockerignore`.
+  - Cabeceras de seguridad con CSP, proxy de `/api/` hacia el backend, `/api/health/ready` bloqueado desde fuera y `/healthz` para el healthcheck.
+- El build de producción ya no incrusta CSS crítico: ese paso necesita un script en línea que la CSP bloquea.
+
+## 0.2.0 - 2026-11-02
+
+### Added
+
+- Migración inicial `init`: 71 tablas en seis contextos, 135 claves foráneas (todas `ON UPDATE RESTRICT`) y 19 reglas `CHECK`. Las claves compuestas sobre `denominationId` impiden en la base de datos referencias entre denominaciones.
+- Catálogo de 245 países con códigos ISO 3166-1 alfa-2 y alfa-3, nombre en español e indicativo telefónico (`prisma/seed-data/countries.json`).
+- División político-administrativa de Colombia (DIVIPOLA del DANE): 33 departamentos y 1122 municipios con su código oficial (`prisma/seed-data/colombia-divipola.json`).
+- `CHANGELOG.md` y política de versionado único para backend y frontend.
+
+### Changed
+
+- `countries`: `iso_code` se reemplaza por `iso_alpha2`, `iso_alpha3` y `phone_code`. La migración `add_location_codes` conserva las filas existentes.
+- `regions` y `municipalities`: nuevo campo `code`, único dentro de su país o departamento.
+- El seed identifica departamentos y municipios por su código: inserta los nuevos en un lote por departamento y solo actualiza los renombrados.
+- Swagger toma la versión de la API de `package.json` en lugar de un valor fijo.
+- Plan Scrum: flujo GitHub Flow con ramas cortas por historia, *squash merge* y etiquetas por sprint.
+
+## 0.1.0 - 2026-11-02
+
+### Added
+
+- Modelo de datos multi-iglesia en Prisma, dividido por contexto: organización, identidad, membresía, secretaría, ministerios y contabilidad.
+- Seed idempotente de catálogos globales, roles y permisos. Nunca crea usuarios.
+- `SmartLogger` con redacción de datos sensibles, filtro único de errores con traductores enchufables y validación de variables de entorno.
+- Módulo de salud: *liveness* y *readiness* de MariaDB y Redis.
+- Docker: MariaDB 11.8 y Redis 8 para desarrollo; en producción, migrador de una sola ejecución y usuario de base de datos con permisos mínimos.
+- Auditoría técnica del estado del proyecto y plan de implementación Scrum en `docs/`.
+
+### Changed
+
+- Backend actualizado a NestJS 12 (ESM) sobre Fastify 5, Prisma 7 con el adaptador de MariaDB, TypeScript 6, Vitest y ESLint 10.
+
+### Removed
+
+- `resources/` deja de versionarse porque contiene datos personales reales.
+
+## 0.0.1 - 2025-11-19
+
+### Added
+
+- Monorepo inicial: backend NestJS con Fastify y Prisma, frontend Angular 20 con componentes *standalone*, Dockerfiles multietapa y Docker Compose.

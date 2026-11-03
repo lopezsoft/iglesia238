@@ -1,0 +1,132 @@
+{
+  "source": "Comisión Nacional de División Territorial Administrativa / Instituto Geográfico Nacional: División Territorial Administrativa de la República 2025, Decreto Ejecutivo N.° 44882-MGP, La Gaceta Alcance N.° 12, 28-01-2025, https://www.imprentanacional.go.cr/pub/2025/01/28/ALCA12_28_01_2025.pdf (escritura verificada con INEC, Anuario Estadístico 2024-2025, Cuadro 9.1)",
+  "countryIsoAlpha2": "CR",
+  "regions": [
+    {
+      "code": "1",
+      "name": "San José",
+      "municipalities": [
+        {"code":"101","name":"San José"},
+        {"code":"102","name":"Escazú"},
+        {"code":"103","name":"Desamparados"},
+        {"code":"104","name":"Puriscal"},
+        {"code":"105","name":"Tarrazú"},
+        {"code":"106","name":"Aserrí"},
+        {"code":"107","name":"Mora"},
+        {"code":"108","name":"Goicoechea"},
+        {"code":"109","name":"Santa Ana"},
+        {"code":"110","name":"Alajuelita"},
+        {"code":"111","name":"Vázquez de Coronado"},
+        {"code":"112","name":"Acosta"},
+        {"code":"113","name":"Tibás"},
+        {"code":"114","name":"Moravia"},
+        {"code":"115","name":"Montes de Oca"},
+        {"code":"116","name":"Turrubares"},
+        {"code":"117","name":"Dota"},
+        {"code":"118","name":"Curridabat"},
+        {"code":"119","name":"Pérez Zeledón"},
+        {"code":"120","name":"León Cortés Castro"}
+      ]
+    },
+    {
+      "code": "2",
+      "name": "Alajuela",
+      "municipalities": [
+        {"code":"201","name":"Alajuela"},
+        {"code":"202","name":"San Ramón"},
+        {"code":"203","name":"Grecia"},
+        {"code":"204","name":"San Mateo"},
+        {"code":"205","name":"Atenas"},
+        {"code":"206","name":"Naranjo"},
+        {"code":"207","name":"Palmares"},
+        {"code":"208","name":"Poás"},
+        {"code":"209","name":"Orotina"},
+        {"code":"210","name":"San Carlos"},
+        {"code":"211","name":"Zarcero"},
+        {"code":"212","name":"Sarchí"},
+        {"code":"213","name":"Upala"},
+        {"code":"214","name":"Los Chiles"},
+        {"code":"215","name":"Guatuso"},
+        {"code":"216","name":"Río Cuarto"}
+      ]
+    },
+    {
+      "code": "3",
+      "name": "Cartago",
+      "municipalities": [
+        {"code":"301","name":"Cartago"},
+        {"code":"302","name":"Paraíso"},
+        {"code":"303","name":"La Unión"},
+        {"code":"304","name":"Jiménez"},
+        {"code":"305","name":"Turrialba"},
+        {"code":"306","name":"Alvarado"},
+        {"code":"307","name":"Oreamuno"},
+        {"code":"308","name":"El Guarco"}
+      ]
+    },
+    {
+      "code": "4",
+      "name": "Heredia",
+      "municipalities": [
+        {"code":"401","name":"Heredia"},
+        {"code":"402","name":"Barva"},
+        {"code":"403","name":"Santo Domingo"},
+        {"code":"404","name":"Santa Bárbara"},
+        {"code":"405","name":"San Rafael"},
+        {"code":"406","name":"San Isidro"},
+        {"code":"407","name":"Belén"},
+        {"code":"408","name":"Flores"},
+        {"code":"409","name":"San Pablo"},
+        {"code":"410","name":"Sarapiquí"}
+      ]
+    },
+    {
+      "code": "5",
+      "name": "Guanacaste",
+      "municipalities": [
+        {"code":"501","name":"Liberia"},
+        {"code":"502","name":"Nicoya"},
+        {"code":"503","name":"Santa Cruz"},
+        {"code":"504","name":"Bagaces"},
+        {"code":"505","name":"Carrillo"},
+        {"code":"506","name":"Cañas"},
+        {"code":"507","name":"Abangares"},
+        {"code":"508","name":"Tilarán"},
+        {"code":"509","name":"Nandayure"},
+        {"code":"510","name":"La Cruz"},
+        {"code":"511","name":"Hojancha"}
+      ]
+    },
+    {
+      "code": "6",
+      "name": "Puntarenas",
+      "municipalities": [
+        {"code":"601","name":"Puntarenas"},
+        {"code":"602","name":"Esparza"},
+        {"code":"603","name":"Buenos Aires"},
+        {"code":"604","name":"Montes de Oro"},
+        {"code":"605","name":"Osa"},
+        {"code":"606","name":"Quepos"},
+        {"code":"607","name":"Golfito"},
+        {"code":"608","name":"Coto Brus"},
+        {"code":"609","name":"Parrita"},
+        {"code":"610","name":"Corredores"},
+        {"code":"611","name":"Garabito"},
+        {"code":"612","name":"Monteverde"},
+        {"code":"613","name":"Puerto Jiménez"}
+      ]
+    },
+    {
+      "code": "7",
+      "name": "Limón",
+      "municipalities": [
+        {"code":"701","name":"Limón"},
+        {"code":"702","name":"Pococí"},
+        {"code":"703","name":"Siquirres"},
+        {"code":"704","name":"Talamanca"},
+        {"code":"705","name":"Matina"},
+        {"code":"706","name":"Guácimo"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.register {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  max-width: 54rem;
+  margin: 0 auto;
+
+  &__hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    padding: $space-4 $space-5;
+    overflow: hidden;
+    border-radius: $radius-hero;
+    background:
+      radial-gradient(circle at 90% 0, $glass-glow, transparent 50%),
+      $gradient-hero;
+    box-shadow: $shadow-hero;
+    color: $color-on-brand;
+
+    h1 {
+      color: $color-on-brand;
+      font-size: $font-size-hero-title;
+      letter-spacing: -0.02em;
+    }
+
+    @include until($breakpoint-sm) {
+      padding: $space-3 $space-4;
+    }
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    align-self: flex-start;
+    padding: 0.125rem $space-3;
+    border: 1px solid $glass-border;
+    border-radius: $radius-pill;
+    background: $glass-bg;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+  }
+
+  &__lead {
+    max-width: 42rem;
+    color: $color-on-brand-muted;
+    font-size: $font-size-sm;
+  }
+
+  &__card {
+    min-width: 0;
+  }
+
+  &__steps {
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid $color-border;
+    background: $color-surface-tint;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-4;
+  }
+
+  &__counter {
+    margin: 0;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  &__legend {
+    padding: 0;
+    margin: 0 0 $space-1;
+    font-size: $font-size-md + 0.0625rem;
+    font-weight: $font-weight-semibold;
+  }
+
+  // Resumen de lo elegido en los pasos anteriores, encima de los datos del usuario.
+  &__summary {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin: 0;
+    padding: $space-2 $space-3;
+    border-radius: $radius-control;
+    background: $color-surface-tint;
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+
+    strong {
+      color: $color-ink;
+    }
+  }
+
+  // Etiqueta del municipio con el país de la razón social (solo lectura) a su lado.
+  &__field-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0 $space-2;
+  }
+
+  &__country {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__error {
+    align-items: flex-start;
+    margin: 0;
+    color: $color-danger;
+  }
+
+  &__nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding-top: $space-3;
+    border-top: 1px solid $color-border;
+  }
+
+  &__state {
+    padding: $space-4;
+  }
+
+  // Sin razones sociales no hay nada que elegir: se explica qué falta en lugar de ofrecer el formulario.
+  &__blocked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-5 $space-4;
+    text-align: center;
+
+    h3 {
+      font-size: $font-size-lg;
+    }
+
+    p {
+      max-width: 34rem;
+      margin: 0;
+    }
+  }
+
+  &__blocked-icon {
+    @include icon-chip(3.5rem);
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+
+  &__blocked-steps {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    max-width: 34rem;
+    margin: 0;
+    padding: $space-3 $space-4 $space-3 $space-6;
+    border-radius: $radius-control;
+    background: $color-surface-tint;
+    text-align: left;
+    font-size: $font-size-sm;
+  }
+
+  &__blocked-actions {
+    justify-content: center;
+  }
+}

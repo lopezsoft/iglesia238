@@ -1,0 +1,55 @@
+@use 'tokens' as *;
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__title {
+    margin-bottom: $space-4;
+    font-size: $font-size-md;
+  }
+
+  &__link {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-3;
+    height: 100%;
+    padding: $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-card;
+    color: $color-ink;
+    text-decoration: none;
+
+    &:hover {
+      border-color: $color-primary;
+      background: $color-primary-soft;
+      color: $color-ink;
+    }
+  }
+
+  &__icon {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: $radius-chip;
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__label {
+    font-weight: $font-weight-medium;
+  }
+}

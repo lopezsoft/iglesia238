@@ -1,0 +1,88 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: $color-ground;
+  color: $color-ink;
+  font-family: $font-sans;
+  font-size: $font-size-sm;
+  line-height: $line-height;
+  font-feature-settings: 'cv11' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.015em;
+}
+
+h3 {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+a {
+  color: $color-primary;
+
+  &:hover {
+    color: $color-primary-hover;
+  }
+}
+
+:focus-visible {
+  @include focus-ring;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+code,
+.mono {
+  font-family: $font-mono;
+}
+
+.visually-hidden {
+  @include visually-hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

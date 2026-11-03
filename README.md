@@ -1,319 +1,54 @@
-# Monorepo FullStack - NestJS + Angular + Docker
+# Iglesia 238: gestión multi-iglesia
 
-Arquitectura Monorepo de producción con Backend (NestJS + Fastify + Prisma) y Frontend (Angular).
+**Versión 0.5.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
 
-## 📋 Stack Tecnológico
+Plataforma para administrar varias denominaciones con sus sedes: membresía, secretaría y contabilidad. Cada denominación ve solo sus datos.
 
-### Backend
-- **Framework:** NestJS (última versión)
-- **HTTP Adapter:** Fastify
-- **ORM:** Prisma
-- **Base de Datos:** MariaDB
-- **Autenticación:** Passport + JWT
-- **Documentación:** Swagger/OpenAPI
+| Parte | Tecnología | Estado | Detalle |
+| --- | --- | --- | --- |
+| [backend/](backend/) | NestJS 12 (ESM) sobre Fastify 5, Prisma 7, MariaDB 11.8, Redis 8 | API de los módulos del MVP: acceso, organización, membresía, secretaría y contabilidad | [backend/README.md](backend/README.md) |
+| [frontend/](frontend/) | Angular 22 sin zone.js, señales y Vitest | Todas las pantallas del MVP por rol y permiso, conectadas a la API real | [frontend/README.md](frontend/README.md) |
+| [docker/](docker/) | Docker Compose | Desarrollo: MariaDB y Redis. Producción: [docker-compose.prod.yml](docker-compose.prod.yml) | |
 
-### Frontend
-- **Framework:** Angular (v20+)
-- **Arquitectura:** Standalone Components
-- **Reactividad:** Signals
-- **Estilos:** SCSS
-- **Server:** Nginx (Producción)
+El diseño aprobado de la aplicación es el prototipo navegable [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5) en Claude Design, privado mientras no se comparta.
 
-### Infraestructura
-- **Contenedores:** Docker
-- **Orquestación:** Docker Compose
-- **Proxy:** Nginx
+El plan, las decisiones de arquitectura y el backlog están en [docs/2026-11-02-0215-plan-implementacion-scrum.md](docs/2026-11-02-0215-plan-implementacion-scrum.md). La auditoría del punto de partida, en [docs/2026-11-02-0058-auditoria-estado-proyecto.md](docs/2026-11-02-0058-auditoria-estado-proyecto.md).
 
-## 🚀 Inicio Rápido
+## Puesta en marcha local
 
-### 1. Ejecutar Script de Inicialización
+Requisitos: Node.js 22 y Docker.
 
 ```bash
-# Dar permisos de ejecución al script
-chmod +x init.sh
-
-# Ejecutar el script
-./init.sh
+cp .env.example .env               # credenciales y puertos de MariaDB y Redis
+docker compose up -d               # solo MariaDB y Redis; la API corre en el equipo
 ```
 
-Este script automatiza:
-- Creación del proyecto NestJS con Fastify
-- Instalación de dependencias de seguridad (Passport, JWT)
-- Configuración de Prisma ORM
-- Creación del proyecto Angular con Standalone Components
-- Generación de estructura de directorios
+Los pasos de la API (dependencias, migraciones, seed y primer administrador con `npm run admin:create`) están en [backend/README.md](backend/README.md#puesta-en-marcha-local). Los del frontend, en [frontend/README.md](frontend/README.md).
 
-### 2. Configurar Variables de Entorno
+## Versionado
 
-```bash
-# Copiar archivos de ejemplo
-cp .env.example .env
-cp backend/.env.example backend/.env
+- Backend y frontend comparten una única versión, la del proyecto, en el campo `version` de `backend/package.json` y `frontend/package.json`.
+- Se sigue [versionado semántico](https://semver.org/lang/es/). Mientras la versión sea `0.x`: un `feat` sube la versión menor (`0.2.0` → `0.3.0`) y un `fix`, `refactor` o `perf` sube el parche (`0.2.0` → `0.2.1`). Un cambio incompatible sube la menor hasta llegar a `1.0.0`.
+- Todo commit que cambia el código de una aplicación actualiza a la vez la versión de ambos `package.json` (y sus `package-lock.json`), el [CHANGELOG](CHANGELOG.md) y este README. Los commits que solo tocan documentación o CI registran su cambio en «Sin publicar» del CHANGELOG sin subir la versión.
+- Para subir la versión: `npm version <x.y.z> --no-git-tag-version` en `backend/` y en `frontend/`.
+- Mientras no haya ramas fusionadas en `main`, backend y frontend se desarrollan juntos en `feat/backend-frontend`.
+- La API publica su versión en Swagger (`/api/docs`), leída de `backend/package.json`.
+- Al cerrar un sprint que se despliega, se etiqueta `main` con la versión vigente (`v0.2.0`).
 
-# Editar las variables según tu entorno
-nano .env
-nano backend/.env
+## Flujo de trabajo con Git
+
+GitHub Flow: `main` protegida, una rama corta por historia (`feat/a-01-login`), commits en [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) y *squash merge*. El detalle está en la sección «Flujo de trabajo con Git» del plan.
+
+## Estructura
+
+```text
+backend/              API NestJS (ver su README)
+frontend/             aplicación Angular (ver su README)
+docker/               scripts de inicialización de MariaDB (desarrollo y producción)
+docs/                 auditoría, plan Scrum y guías
+docker-compose.yml    MariaDB y Redis para desarrollo
+docker-compose.prod.yml
+CHANGELOG.md
 ```
 
-### 3. Configurar Base de Datos
-
-```bash
-cd backend
-
-# Editar el esquema de Prisma
-nano prisma/schema.prisma
-
-# Crear migración inicial
-npx prisma migrate dev --name init
-
-# Generar cliente de Prisma
-npx prisma generate
-```
-
-### 4. Desarrollo Local
-
-#### Backend
-```bash
-cd backend
-npm run start:dev
-```
-
-#### Frontend
-```bash
-cd frontend
-npm start
-# o con proxy
-ng serve --proxy-config proxy.conf.json
-```
-
-### 5. Producción con Docker
-
-```bash
-# Construir imágenes
-docker-compose build
-
-# Iniciar servicios
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener servicios
-docker-compose down
-```
-
-## 📁 Estructura del Proyecto
-
-```
-iglesia238-curso-fullstack/
-├── backend/                    # Backend NestJS
-│   ├── src/
-│   ├── prisma/
-│   │   └── schema.prisma      # Esquema de base de datos
-│   ├── Dockerfile             # Multi-stage build
-│   ├── .env.example
-│   └── package.json
-├── frontend/                   # Frontend Angular
-│   ├── src/
-│   ├── Dockerfile             # Multi-stage build
-│   ├── nginx.conf             # Configuración Nginx
-│   ├── proxy.conf.json        # Proxy para desarrollo
-│   └── package.json
-├── docs/                       # Documentación
-├── resources/                  # Recursos del proyecto
-├── docker-compose.yml          # Orquestación de servicios
-├── .gitignore
-├── .env.example
-├── init.sh                     # Script de inicialización
-└── README.md
-```
-
-## 🔧 Comandos Útiles
-
-### Backend (NestJS)
-
-```bash
-# Desarrollo
-npm run start:dev
-
-# Build
-npm run build
-
-# Tests
-npm run test
-npm run test:e2e
-
-# Linting
-npm run lint
-
-# Prisma
-npx prisma studio              # UI para ver datos
-npx prisma generate            # Generar cliente
-npx prisma migrate dev         # Crear migración
-npx prisma migrate deploy      # Aplicar en producción
-```
-
-### Frontend (Angular)
-
-```bash
-# Desarrollo
-ng serve
-ng serve --proxy-config proxy.conf.json
-
-# Build
-ng build --configuration=production
-
-# Tests
-ng test
-
-# Linting
-ng lint
-
-# Generar componente
-ng generate component nombre
-```
-
-### Docker
-
-```bash
-# Construir servicios
-docker-compose build
-
-# Iniciar servicios
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f [servicio]
-
-# Ejecutar comandos en contenedor
-docker-compose exec backend sh
-docker-compose exec frontend sh
-
-# Detener y eliminar
-docker-compose down
-
-# Limpiar volúmenes
-docker-compose down -v
-```
-
-## 🏗️ Arquitectura
-
-### Flujo de Datos
-```
-Cliente (Browser)
-    ↓
-Frontend (Angular/Nginx:80)
-    ↓
-Backend (NestJS/Fastify:3000)
-    ↓
-Database (MariaDB:3306)
-```
-
-### Principios Aplicados
-- **Clean Architecture:** Separación clara de responsabilidades
-- **SOLID:** Principios de diseño orientado a objetos
-- **DRY:** No repetir código
-- **Security First:** Validación, sanitización, JWT
-- **Container-First:** Todo compatible con Docker
-
-## 🔐 Seguridad
-
-- ✅ Validación de DTOs con `class-validator`
-- ✅ JWT para autenticación
-- ✅ CORS configurado
-- ✅ Sanitización de inputs en Frontend
-- ✅ Variables de entorno para secretos
-- ✅ Usuario no-root en contenedores
-- ✅ Health checks en servicios
-
-## 📚 Documentación API
-
-Una vez iniciado el backend, la documentación Swagger está disponible en:
-
-```
-http://localhost:3000/api/docs
-```
-
-## 🤝 Convenciones de Código
-
-### Backend (NestJS)
-- Controllers: Solo manejan HTTP requests/responses
-- Services: Contienen lógica de negocio
-- DTOs: Validación con decoradores
-- Prisma: Para todas las operaciones de BD
-- Logger: Usar `@nestjs/common` Logger
-
-### Frontend (Angular)
-- Standalone Components preferidos
-- Signals para estado local
-- Services con BehaviorSubject para estado global
-- `ChangeDetectionStrategy.OnPush` por defecto
-- Lazy Loading en rutas principales
-
-## 📝 Git Workflow
-
-```bash
-# Crear rama de feature
-git checkout -b feat/nombre-feature
-
-# Commit usando Conventional Commits
-git commit -m "feat(backend): implement user authentication"
-git commit -m "fix(frontend): resolve routing issue"
-git commit -m "docs: update README with deployment steps"
-
-# Push y crear Pull Request
-git push origin feat/nombre-feature
-```
-
-### Formato de Commits
-- `feat`: Nueva funcionalidad
-- `fix`: Corrección de bug
-- `docs`: Cambios en documentación
-- `style`: Formato, sin cambios de código
-- `refactor`: Refactorización de código
-- `test`: Agregar o modificar tests
-- `chore`: Tareas de mantenimiento
-
-## 🐛 Troubleshooting
-
-### Puerto en uso
-```bash
-# Linux/Mac
-lsof -i :3000
-kill -9 <PID>
-
-# Windows
-netstat -ano | findstr :3000
-taskkill /PID <PID> /F
-```
-
-### Problemas con Prisma
-```bash
-# Regenerar cliente
-npx prisma generate
-
-# Reset base de datos (desarrollo)
-npx prisma migrate reset
-```
-
-### Problemas con Docker
-```bash
-# Limpiar todo
-docker-compose down -v
-docker system prune -a
-
-# Reconstruir sin caché
-docker-compose build --no-cache
-```
-
-## 📄 Licencia
-
-[Especificar licencia del proyecto]
-
-## 👥 Contribuidores
-
-[Lista de contribuidores]
-
----
-
-**Última Actualización:** 2025-11-19
+`resources/` guarda localmente los archivos de origen con datos personales reales y no se versiona.

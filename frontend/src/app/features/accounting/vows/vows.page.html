@@ -1,0 +1,150 @@
+<app-page-header
+  title="Promesas de voto"
+  breadcrumb="Inicio / Contabilidad / Votos"
+  [description]="
+    'Compromisos de aporte tipo Voto de ' + (overview()?.scopeLabel ?? 'la sede') + ', con sus abonos y el saldo por recaudar.'
+  "
+>
+  <app-export-actions [formats]="['csv']" [disabled]="!overview() || exporting()" (export)="exportCsv()" />
+  @if (canCreate()) {
+    <button type="button" class="btn btn--primary" (click)="newOpen.set(true)">
+      <app-icon name="plus" />
+      Nueva promesa
+    </button>
+  }
+</app-page-header>
+
+<div class="stack">
+  <div role="status" aria-live="polite">
+    @if (flash(); as message) {
+      <div class="alert alert--success flash">
+        <app-icon name="check" />
+        <span>{{ message }}</span>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="flash.set(null)">
+          <app-icon name="x" [size]="16" />
+        </button>
+      </div>
+    }
+  </div>
+  @if (exportError()) {
+    <div class="alert alert--danger" role="alert">{{ exportError() }}</div>
+  }
+
+  @if (overviewResource.error() && !overview()) {
+    <app-error-banner message="No fue posible cargar las promesas de voto." (retry)="overviewResource.reload()" />
+  } @else if (!overview()) {
+    <app-loading label="Cargando promesas de voto…" />
+  } @else {
+    @let data = overview()!;
+
+    <section class="kpi-grid" aria-label="Resumen de promesas">
+      @for (kpi of kpis(); track kpi.label) {
+        <app-stat-card
+          [label]="kpi.label"
+          [value]="kpi.value"
+          [hint]="kpi.hint"
+          [icon]="kpi.icon"
+          [tone]="kpi.tone"
+          [comparison]="kpi.comparison"
+        />
+      }
+    </section>
+
+    @if (!canWrite()) {
+      <app-read-only-notice permission="contributions.write" detail="Puedes consultar las promesas y sus abonos." />
+    }
+    @if (!data.congregationScoped) {
+      <div class="alert" role="note">
+        <app-icon name="info" />
+        <span>Vista consolidada de todas las sedes, solo lectura. Selecciona una sede para registrar promesas.</span>
+      </div>
+    }
+
+    <section class="card filters" aria-label="Filtros de promesas">
+      <div class="cluster" role="group" aria-label="Filtrar por estado">
+        @for (chip of statusChips(); track chip.key) {
+          <button
+            type="button"
+            class="btn btn--sm"
+            [class.btn--primary]="status() === chip.key"
+            [class.btn--secondary]="status() !== chip.key"
+            [attr.aria-pressed]="status() === chip.key"
+            (click)="status.set(chip.key)"
+          >
+            {{ chip.label }} <span class="chip chip--mono">{{ chip.count }}</span>
+          </button>
+        }
+      </div>
+      <div class="toolbar">
+        <div class="field">
+          <label for="vow-type-filter">Tipo de aporte</label>
+          <select id="vow-type-filter" class="select" (change)="onType($event)">
+            <option value="" [selected]="typeId() === null">Todos</option>
+            @for (type of data.vowTypes; track type.id) {
+              <option [value]="type.id" [selected]="typeId() === type.id">{{ type.name }}</option>
+            }
+          </select>
+        </div>
+        <label class="checkbox overdue" for="vow-overdue">
+          <input id="vow-overdue" type="checkbox" [checked]="overdueOnly()" (change)="onOverdue($event)" />
+          Solo vencidas ({{ data.kpis.overdueCount }})
+        </label>
+        <div class="field grow">
+          <label for="vow-search">Buscar</label>
+          <input
+            id="vow-search"
+            class="input"
+            type="search"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="Persona, código de miembro (SC-0148) o código de promesa"
+            [value]="searchText()"
+            (input)="onSearch($event)"
+          />
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+          <app-icon name="x" [size]="14" />
+          Limpiar
+        </button>
+      </div>
+    </section>
+
+    @if (overviewResource.error()) {
+      <app-error-banner message="No fue posible actualizar las promesas." (retry)="overviewResource.reload()" />
+    }
+
+    <app-vows-table
+      [rows]="data.items"
+      [total]="data.total"
+      [page]="data.page"
+      [pageSize]="pageSize"
+      [selectedId]="detailOpen() ? selectedId() : null"
+      [showCongregation]="!data.congregationScoped"
+      [canPay]="canCreate()"
+      [loading]="overviewResource.isLoading()"
+      (pageChange)="page.set($event)"
+      (detailRequested)="showDetail($event)"
+    />
+  }
+</div>
+
+<app-vow-detail-drawer
+  [(open)]="detailOpen"
+  [pledgeId]="selectedId()"
+  [canWrite]="canCreate()"
+  [refresh]="detailVersion()"
+  (editRequested)="askEdit($event)"
+  (cancelRequested)="askCancel($event)"
+/>
+<app-edit-vow-dialog [(open)]="editOpen" [pledge]="target()" (updated)="onUpdated($event)" />
+<app-cancel-vow-dialog [(open)]="cancelOpen" [pledge]="target()" (cancelled)="onCancelled($event)" />
+
+@if (overview(); as data) {
+  <app-new-vow-dialog
+    [(open)]="newOpen"
+    [vowTypes]="data.vowTypes"
+    [today]="data.today"
+    [scopeLabel]="data.scopeLabel"
+    (created)="onCreated($event)"
+  />
+}

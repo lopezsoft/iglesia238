@@ -1,0 +1,208 @@
+<div class="tab__header">
+  <h2>Familia</h2>
+  @if (canWrite()) {
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      aria-haspopup="dialog"
+      (click)="openAdd()"
+    >
+      <app-icon name="plus" />
+      Agregar parentesco
+    </button>
+  }
+</div>
+
+<div class="alert" role="note">
+  <app-icon name="info" />
+  <p>
+    El cónyuge se registra únicamente a través de un <strong>Matrimonio</strong> en
+    @if (canOpenRecords()) {
+      <a routerLink="/secretariat-records">Registros de secretaría</a>.
+    } @else {
+      Registros de secretaría.
+    }
+    Desde esta ficha solo se agregan padres, hijos y acudientes.
+  </p>
+</div>
+
+<div aria-live="polite">
+  @if (command.message(); as text) {
+    <p class="alert alert--success" role="status">{{ text }}</p>
+  }
+  @if (!addOpen() && command.error(); as text) {
+    <p class="alert alert--danger" role="alert">{{ text }}</p>
+  }
+</div>
+
+@if (loadError(); as text) {
+  <app-error-banner [message]="text" (retry)="relations.reload()" />
+} @else if (relations.isLoading() && !relations.hasValue()) {
+  <app-loading label="Cargando familia…" />
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="users"
+    title="Sin parentescos registrados"
+    description="Agrega padres, hijos o acudientes que también estén registrados en la denominación."
+  />
+} @else {
+  <div class="table-wrap tab__table">
+    <table class="table">
+      <caption class="visually-hidden">
+        Parentescos registrados
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Nombre</th>
+          <th scope="col">Parentesco</th>
+          <th scope="col">Documento</th>
+          <th scope="col" class="text-right">Edad</th>
+          <th scope="col">Vínculo con la iglesia</th>
+          @if (canWrite()) {
+            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>
+              @if (row.memberId) {
+                <a [routerLink]="['/members', row.memberId]">{{ row.fullName }}</a>
+              } @else {
+                {{ row.fullName }}
+              }
+            </td>
+            <td>{{ relationLabels[row.type] }}</td>
+            <td class="code">{{ row.maskedDocument ?? '—' }}</td>
+            <td class="num">{{ row.age === null ? '—' : row.age + ' años' }}</td>
+            <td>
+              @if (row.memberCode && row.memberStatus) {
+                Miembro <span class="mono">{{ row.memberCode }}</span> ·
+                {{ row.congregationName }} ·
+                {{ statusLabels[row.memberStatus] }}
+              } @else {
+                Sin membresía
+              }
+            </td>
+            @if (canWrite()) {
+              <td class="text-right">
+                @if (confirmingId() === row.id) {
+                  <span class="cluster">
+                    <span class="text-small">¿Quitar?</span>
+                    <button
+                      type="button"
+                      class="btn btn--danger btn--sm"
+                      [disabled]="command.pending()"
+                      (click)="remove(row.id)"
+                    >
+                      Sí, quitar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      (click)="confirmingId.set(null)"
+                    >
+                      No
+                    </button>
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn--danger-ghost btn--sm"
+                    [attr.aria-label]="'Quitar parentesco con ' + row.fullName"
+                    (click)="confirmingId.set(row.id)"
+                  >
+                    Quitar
+                  </button>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<app-dialog [(open)]="addOpen" title="Agregar parentesco">
+  <form id="family-add-form" class="stack" [formGroup]="form" (ngSubmit)="add()" novalidate>
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <div class="field">
+      <label for="relative-type">Parentesco *</label>
+      <select
+        id="relative-type"
+        class="select"
+        formControlName="type"
+        aria-describedby="relative-type-hint"
+      >
+        @for (type of relationTypes; track type) {
+          <option [value]="type">{{ relationLabels[type] }}</option>
+        }
+      </select>
+      <span id="relative-type-hint" class="field__hint"
+        >Qué es la persona elegida para este miembro.</span
+      >
+    </div>
+    <div class="field">
+      <label for="relative-search">Buscar persona de la denominación *</label>
+      <input
+        id="relative-search"
+        class="input"
+        type="search"
+        placeholder="Nombre o número de documento"
+        [value]="searchText()"
+        (input)="onSearch($any($event.target).value)"
+      />
+      <span class="field__hint">Escribe al menos 2 caracteres.</span>
+    </div>
+    <fieldset class="stack">
+      <legend class="visually-hidden">Resultados de la búsqueda</legend>
+      @if (candidates.isLoading()) {
+        <app-loading label="Buscando…" />
+      } @else if (searchError(); as text) {
+        <div class="cluster" role="alert">
+          <span class="field__error">No se pudo completar la búsqueda: {{ text }}</span>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="candidates.reload()">
+            Reintentar
+          </button>
+        </div>
+      } @else if (searchText().trim().length >= 2 && options().length === 0) {
+        <p class="text-muted text-small">No hay personas que coincidan.</p>
+      }
+      @for (option of options(); track option.id) {
+        <label class="checkbox">
+          <input type="radio" formControlName="relativeId" [value]="option.id" />
+          <span>
+            {{ option.fullName }}
+            <span class="text-muted text-small mono">{{
+              option.maskedDocument ?? 'Sin documento'
+            }}</span>
+            @if (option.memberCode) {
+              <span class="text-muted text-small mono"> · {{ option.memberCode }}</span>
+            }
+            @if (option.congregationName) {
+              <span class="text-muted text-small"> · {{ option.congregationName }}</span>
+            }
+          </span>
+        </label>
+      }
+      @if (form.controls.relativeId.touched && form.controls.relativeId.invalid) {
+        <span class="field__error">Selecciona una persona.</span>
+      }
+    </fieldset>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="addOpen.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="family-add-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Agregar' }}
+    </button>
+  </div>
+</app-dialog>

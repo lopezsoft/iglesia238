@@ -1,0 +1,272 @@
+{
+  "source": "INE Uruguay (Instituto Nacional de Estadística), Censo 2023 (vers. mayo 2026): departamentos from \"Codificador de departamentos\" (https://www5.ine.gub.uy/documents/Cartografía/Censo%202023/CODIFICADORES/Codificador%20de%20departamentos.xlsx); municipios (Ley 19.272) from \"Cuadro 14: Población por departamento y municipio. Total país\" (https://www5.ine.gub.uy/documents/CENSO%202023/Tabulados/Personas/Cuadro_14_CAR_2023.xlsx), cross-checked with Corte Electoral, Elecciones Departamentales y Municipales 2025, plan circuital (https://catalogodatos.gub.uy/dataset/2d5eb299-0d95-478b-9271-c62f601e7bc1). Municipio code = INE departamento code + 2-digit position of its official letter (A, B, C, CH, D, …, LL, …, Ñ, …, Z, AB, AC, AD); XX99 = territory of the departamento without municipio (\"SIN MUNICIPIO\" in Cuadro 14). Retrieved 2026-11-03.",
+  "countryIsoAlpha2": "UY",
+  "regions": [
+    {
+      "code": "01",
+      "name": "Montevideo",
+      "municipalities": [
+        {"code":"0101","name":"Municipio A"},
+        {"code":"0102","name":"Municipio B"},
+        {"code":"0103","name":"Municipio C"},
+        {"code":"0104","name":"Municipio CH"},
+        {"code":"0105","name":"Municipio D"},
+        {"code":"0106","name":"Municipio E"},
+        {"code":"0107","name":"Municipio F"},
+        {"code":"0108","name":"Municipio G"}
+      ]
+    },
+    {
+      "code": "02",
+      "name": "Artigas",
+      "municipalities": [
+        {"code":"0201","name":"Bella Unión"},
+        {"code":"0202","name":"Tomás Gomensoro"},
+        {"code":"0203","name":"Baltasar Brum"},
+        {"code":"0299","name":"Artigas (sin municipio)"}
+      ]
+    },
+    {
+      "code": "03",
+      "name": "Canelones",
+      "municipalities": [
+        {"code":"0301","name":"Ciudad de la Costa"},
+        {"code":"0302","name":"Las Piedras"},
+        {"code":"0303","name":"Pando"},
+        {"code":"0304","name":"La Paz"},
+        {"code":"0305","name":"Canelones"},
+        {"code":"0306","name":"Santa Lucía"},
+        {"code":"0307","name":"Progreso"},
+        {"code":"0308","name":"Paso Carrasco"},
+        {"code":"0309","name":"Barros Blancos"},
+        {"code":"0310","name":"Colonia Nicolich"},
+        {"code":"0311","name":"San Ramón"},
+        {"code":"0312","name":"Salinas"},
+        {"code":"0313","name":"Joaquín Suárez"},
+        {"code":"0314","name":"Parque del Plata"},
+        {"code":"0315","name":"Sauce"},
+        {"code":"0316","name":"Tala"},
+        {"code":"0317","name":"Atlántida"},
+        {"code":"0318","name":"Toledo"},
+        {"code":"0319","name":"Empalme Olmos"},
+        {"code":"0320","name":"San Jacinto"},
+        {"code":"0321","name":"Santa Rosa"},
+        {"code":"0322","name":"La Floresta"},
+        {"code":"0323","name":"Migues"},
+        {"code":"0324","name":"Los Cerrillos"},
+        {"code":"0325","name":"San Bautista"},
+        {"code":"0326","name":"Soca"},
+        {"code":"0327","name":"Montes"},
+        {"code":"0328","name":"San Antonio"},
+        {"code":"0329","name":"Aguas Corrientes"},
+        {"code":"0330","name":"18 de Mayo"},
+        {"code":"0331","name":"Del Andaluz"},
+        {"code":"0332","name":"Juanicó"}
+      ]
+    },
+    {
+      "code": "04",
+      "name": "Cerro Largo",
+      "municipalities": [
+        {"code":"0401","name":"Río Branco"},
+        {"code":"0402","name":"Fraile Muerto"},
+        {"code":"0403","name":"Isidoro Noblía"},
+        {"code":"0404","name":"Aceguá"},
+        {"code":"0405","name":"Tupambaé"},
+        {"code":"0406","name":"Plácido Rosas"},
+        {"code":"0407","name":"Arévalo"},
+        {"code":"0408","name":"Arbolito"},
+        {"code":"0409","name":"Ramón Trigo"},
+        {"code":"0410","name":"Bañado de Medina"},
+        {"code":"0411","name":"Las Cañas"},
+        {"code":"0412","name":"Cerro de las Cuentas"},
+        {"code":"0413","name":"Centurión"},
+        {"code":"0415","name":"Tres Islas"},
+        {"code":"0416","name":"Quebracho"},
+        {"code":"0418","name":"Laguna Merín"},
+        {"code":"0499","name":"Cerro Largo (sin municipio)"}
+      ]
+    },
+    {
+      "code": "05",
+      "name": "Colonia",
+      "municipalities": [
+        {"code":"0501","name":"Carmelo"},
+        {"code":"0502","name":"Juan Lacaze"},
+        {"code":"0503","name":"Nueva Helvecia"},
+        {"code":"0504","name":"Rosario"},
+        {"code":"0505","name":"Nueva Palmira"},
+        {"code":"0506","name":"Tarariras"},
+        {"code":"0507","name":"Ombúes de Lavalle"},
+        {"code":"0508","name":"Colonia Valdense"},
+        {"code":"0509","name":"Florencio Sánchez"},
+        {"code":"0510","name":"Colonia Miguelete"},
+        {"code":"0511","name":"La Paz"},
+        {"code":"0512","name":"Conchillas"},
+        {"code":"0513","name":"Cufré"},
+        {"code":"0599","name":"Colonia (sin municipio)"}
+      ]
+    },
+    {
+      "code": "06",
+      "name": "Durazno",
+      "municipalities": [
+        {"code":"0601","name":"Sarandí del Yí"},
+        {"code":"0602","name":"Villa del Carmen"},
+        {"code":"0699","name":"Durazno (sin municipio)"}
+      ]
+    },
+    {
+      "code": "07",
+      "name": "Flores",
+      "municipalities": [
+        {"code":"0701","name":"Ismael Cortinas"},
+        {"code":"0799","name":"Flores (sin municipio)"}
+      ]
+    },
+    {
+      "code": "08",
+      "name": "Florida",
+      "municipalities": [
+        {"code":"0801","name":"Sarandí Grande"},
+        {"code":"0802","name":"Casupá"},
+        {"code":"0803","name":"Fray Marcos"},
+        {"code":"0899","name":"Florida (sin municipio)"}
+      ]
+    },
+    {
+      "code": "09",
+      "name": "Lavalleja",
+      "municipalities": [
+        {"code":"0901","name":"José Pedro Varela"},
+        {"code":"0902","name":"Solís de Mataojo"},
+        {"code":"0903","name":"José Batlle y Ordóñez"},
+        {"code":"0904","name":"Mariscala"},
+        {"code":"0905","name":"Zapicán"},
+        {"code":"0906","name":"Pirarajá"},
+        {"code":"0999","name":"Lavalleja (sin municipio)"}
+      ]
+    },
+    {
+      "code": "10",
+      "name": "Maldonado",
+      "municipalities": [
+        {"code":"1001","name":"Maldonado"},
+        {"code":"1002","name":"San Carlos"},
+        {"code":"1003","name":"Piriápolis"},
+        {"code":"1004","name":"Punta del Este"},
+        {"code":"1005","name":"Pan de Azúcar"},
+        {"code":"1006","name":"Aiguá"},
+        {"code":"1007","name":"Solís Grande"},
+        {"code":"1008","name":"Garzón"}
+      ]
+    },
+    {
+      "code": "11",
+      "name": "Paysandú",
+      "municipalities": [
+        {"code":"1101","name":"Guichón"},
+        {"code":"1102","name":"Quebracho"},
+        {"code":"1103","name":"Porvenir"},
+        {"code":"1104","name":"Piedras Coloradas"},
+        {"code":"1105","name":"Lorenzo Geyres"},
+        {"code":"1106","name":"Tambores"},
+        {"code":"1107","name":"Chapicuy"},
+        {"code":"1108","name":"Cerro Chato"},
+        {"code":"1109","name":"El Eucalipto"},
+        {"code":"1199","name":"Paysandú (sin municipio)"}
+      ]
+    },
+    {
+      "code": "12",
+      "name": "Río Negro",
+      "municipalities": [
+        {"code":"1201","name":"Young"},
+        {"code":"1202","name":"Nuevo Berlín"},
+        {"code":"1203","name":"San Javier"},
+        {"code":"1299","name":"Río Negro (sin municipio)"}
+      ]
+    },
+    {
+      "code": "13",
+      "name": "Rivera",
+      "municipalities": [
+        {"code":"1301","name":"Tranqueras"},
+        {"code":"1302","name":"Vichadero"},
+        {"code":"1303","name":"Minas de Corrales"},
+        {"code":"1399","name":"Rivera (sin municipio)"}
+      ]
+    },
+    {
+      "code": "14",
+      "name": "Rocha",
+      "municipalities": [
+        {"code":"1401","name":"Chuy"},
+        {"code":"1402","name":"Castillos"},
+        {"code":"1403","name":"Lascano"},
+        {"code":"1404","name":"La Paloma"},
+        {"code":"1499","name":"Rocha (sin municipio)"}
+      ]
+    },
+    {
+      "code": "15",
+      "name": "Salto",
+      "municipalities": [
+        {"code":"1501","name":"Villa Constitución"},
+        {"code":"1502","name":"Pueblo Belén"},
+        {"code":"1503","name":"Pueblo Rincón de Valentín"},
+        {"code":"1504","name":"Colonia Lavalleja"},
+        {"code":"1505","name":"Pueblo San Antonio"},
+        {"code":"1506","name":"Mataojo"},
+        {"code":"1599","name":"Salto (sin municipio)"}
+      ]
+    },
+    {
+      "code": "16",
+      "name": "San José",
+      "municipalities": [
+        {"code":"1601","name":"Ciudad del Plata"},
+        {"code":"1602","name":"Libertad"},
+        {"code":"1603","name":"Rodríguez"},
+        {"code":"1604","name":"Ecilda Paullier"},
+        {"code":"1699","name":"San José (sin municipio)"}
+      ]
+    },
+    {
+      "code": "17",
+      "name": "Soriano",
+      "municipalities": [
+        {"code":"1701","name":"Dolores"},
+        {"code":"1702","name":"Cardona"},
+        {"code":"1703","name":"José Enrique Rodó"},
+        {"code":"1704","name":"Palmitas"},
+        {"code":"1705","name":"Villa de Santo Domingo de Soriano"},
+        {"code":"1799","name":"Soriano (sin municipio)"}
+      ]
+    },
+    {
+      "code": "18",
+      "name": "Tacuarembó",
+      "municipalities": [
+        {"code":"1801","name":"Paso de los Toros"},
+        {"code":"1802","name":"San Gregorio de Polanco"},
+        {"code":"1803","name":"Ansina"},
+        {"code":"1804","name":"Villa Caraguatá"},
+        {"code":"1899","name":"Tacuarembó (sin municipio)"}
+      ]
+    },
+    {
+      "code": "19",
+      "name": "Treinta y Tres",
+      "municipalities": [
+        {"code":"1901","name":"Vergara"},
+        {"code":"1902","name":"Santa Clara de Olimar"},
+        {"code":"1903","name":"Cerro Chato"},
+        {"code":"1904","name":"General Enrique Martínez"},
+        {"code":"1905","name":"Villa Sara"},
+        {"code":"1906","name":"Rincón"},
+        {"code":"1999","name":"Treinta y Tres (sin municipio)"}
+      ]
+    }
+  ]
+}

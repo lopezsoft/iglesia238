@@ -1,0 +1,305 @@
+<div class="stack">
+  <app-page-header
+    title="Miembros"
+    breadcrumb="Inicio / Membresía / Miembros"
+    [description]="
+      'Registro de membresía de ' +
+      scopeName() +
+      ': consulta fichas, filtra por estado o cargo y exporta listados.'
+    "
+  >
+    @if (canReviewApplications()) {
+      <a class="btn btn--secondary" routerLink="/applications">
+        <app-icon name="inbox" />
+        Ver solicitudes
+      </a>
+    }
+    @if (canWrite()) {
+      <button
+        type="button"
+        class="btn btn--primary"
+        aria-haspopup="dialog"
+        (click)="createOpen.set(true)"
+      >
+        <app-icon name="user-plus" />
+        Registrar miembro
+      </button>
+    }
+  </app-page-header>
+
+  @if (transferred() && !noticeDismissed()) {
+    <div class="alert alert--success" role="status">
+      <app-icon name="check" />
+      <div class="cluster">
+        <span>
+          <strong>Traslado registrado.</strong>
+          El miembro ya no aparece en este listado porque ahora pertenece a la sede destino.
+        </span>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="noticeDismissed.set(true)">
+          Cerrar aviso
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="members__bar">
+    <app-tab-cards
+      class="members__tabs"
+      [items]="statusTabs()"
+      [selected]="filters().status"
+      (selectedChange)="onStatus($event)"
+      ariaLabel="Filtrar por estado"
+      idPrefix="members-status"
+    />
+    @if (canWrite()) {
+      <app-export-actions
+        [formats]="['csv']"
+        [disabled]="exporting() || total() === 0"
+        (export)="exportCsv()"
+      />
+    }
+  </div>
+
+  <div aria-live="polite">
+    @if (exportMessage(); as message) {
+      <p class="alert alert--success" role="status">{{ message }}</p>
+    }
+    @if (exportError(); as message) {
+      <p class="alert alert--danger" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <section
+    class="card card--flush"
+    role="tabpanel"
+    [id]="'members-status-panel-' + filters().status"
+    [attr.aria-labelledby]="'members-status-tab-' + filters().status"
+  >
+    <div class="members__toolbar">
+      <h2 id="members-table-title" class="visually-hidden">Listado de miembros</h2>
+
+      <div class="toolbar">
+        <div class="field members__search">
+          <label for="member-search">Buscar</label>
+          <div class="input-group input-group--icon">
+            <app-icon class="input-group__icon" name="search" [size]="18" />
+            <input
+              id="member-search"
+              class="input"
+              type="search"
+              placeholder="Nombre, documento o código (SC-0130)"
+              [value]="filters().text"
+              (input)="onText($any($event.target).value)"
+            />
+          </div>
+        </div>
+        @if (isDenominationWide() && congregations().length > 1) {
+          <div class="field">
+            <label for="filter-congregation">Sede</label>
+            <select
+              id="filter-congregation"
+              class="select"
+              (change)="onCongregation($any($event.target).value)"
+            >
+              <option value="" [selected]="filters().congregationId === null">
+                Todas las sedes
+              </option>
+              @for (option of congregations(); track option.id) {
+                <option [value]="option.id" [selected]="filters().congregationId === option.id">
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+        <div class="field">
+          <label for="filter-sex">Sexo</label>
+          <select
+            id="filter-sex"
+            class="select"
+            [value]="filters().sex"
+            (change)="onSex($any($event.target).value)"
+          >
+            <option value="ALL">Todos</option>
+            <option value="FEMALE">Femenino</option>
+            <option value="MALE">Masculino</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filter-age">Rango de edad</label>
+          <select id="filter-age" class="select" (change)="onAgeRange($any($event.target).value)">
+            @for (range of ageRanges; track range.value) {
+              <option [value]="range.value" [selected]="range.value === filters().ageRange">
+                {{ range.label }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="filter-position">Cargo</label>
+          <select
+            id="filter-position"
+            class="select"
+            (change)="onPosition($any($event.target).value)"
+          >
+            <option value="ALL" [selected]="filters().position === 'ALL'">Todos los cargos</option>
+            @for (position of positions(); track position.id) {
+              <option [value]="position.id" [selected]="filters().position === position.id">
+                {{ position.name }}
+              </option>
+            }
+            <option value="NONE" [selected]="filters().position === 'NONE'">Sin cargo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sort-by">Ordenar por</label>
+          <select id="sort-by" class="select" (change)="onSort($any($event.target).value)">
+            @for (option of sortOptions; track option.value) {
+              <option [value]="option.value" [selected]="option.value === sortBy()">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (hasFilters()) {
+        <div class="members__notes">
+          <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+            Limpiar filtros
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (loadError(); as message) {
+      <div class="members__state">
+        <app-error-banner [message]="message" (retry)="members.reload()" />
+      </div>
+    } @else if (members.isLoading() && !members.hasValue()) {
+      <div class="members__state"><app-loading label="Cargando miembros…" /></div>
+    } @else if (rows().length === 0) {
+      <app-empty-state
+        icon="users"
+        title="No hay miembros para mostrar"
+        [description]="
+          hasFilters()
+            ? 'Ningún miembro coincide con los filtros. Prueba con otros criterios.'
+            : 'Aún no hay miembros. Se crean al aprobar solicitudes de inscripción o al registrarlos aquí.'
+        "
+      >
+        @if (hasFilters()) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="clearFilters()">
+            Limpiar filtros
+          </button>
+        } @else if (canWrite()) {
+          <button type="button" class="btn btn--primary btn--sm" (click)="createOpen.set(true)">
+            Registrar miembro
+          </button>
+        }
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap" [attr.aria-busy]="members.isLoading()">
+        <table class="table">
+          <caption class="visually-hidden">
+            Miembros de
+            {{
+              scopeName()
+            }}, página
+            {{
+              page()
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Carné</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('name')">
+                <button type="button" class="members__sort" (click)="toggleSort('name')">
+                  Nombre
+                  @if (sortBy() === 'name') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
+              <th scope="col">Documento</th>
+              <th scope="col" class="text-right" [attr.aria-sort]="ariaSort('age')">
+                <button type="button" class="members__sort" (click)="toggleSort('age')">
+                  Edad
+                  @if (sortBy() === 'age') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
+              <th scope="col">Teléfono</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('joinedOn')">
+                <button type="button" class="members__sort" (click)="toggleSort('joinedOn')">
+                  Fecha de ingreso
+                  @if (sortBy() === 'joinedOn') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
+              @if (isDenominationWide()) {
+                <th scope="col">Sede</th>
+              }
+              <th scope="col">Cargo</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.id) {
+              <tr>
+                <td class="code">{{ row.code }}</td>
+                <td>{{ row.fullName }}</td>
+                <td class="code">{{ documentLabel(row.documentTypeCode, row.documentNumber) }}</td>
+                <td class="num">{{ row.age ?? '—' }}</td>
+                <td class="code">{{ row.phone ?? '—' }}</td>
+                <td>{{ row.joinedOn ? (row.joinedOn | date: 'dd/MM/yyyy') : '—' }}</td>
+                @if (isDenominationWide()) {
+                  <td>{{ row.congregationName }}</td>
+                }
+                <td>{{ row.positions.length ? row.positions.join(', ') : 'Sin cargo' }}</td>
+                <td>
+                  <app-status-badge
+                    [label]="statusLabels[row.status]"
+                    [tone]="statusTones[row.status]"
+                  />
+                </td>
+                <td class="text-right">
+                  <a
+                    class="btn btn--ghost btn--sm"
+                    [routerLink]="['/members', row.id]"
+                    [attr.aria-label]="'Ver ficha de ' + row.fullName"
+                  >
+                    Ver ficha
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize"
+        [total]="total()"
+        (pageChange)="page.set($event)"
+      />
+    }
+  </section>
+
+  <p class="text-muted text-small members__note">
+    <app-icon name="info" [size]="14" />
+    @if (canWrite()) {
+      Tu rol puede consultar, registrar y editar fichas. La exportación incluye solo miembros de
+      {{ scopeName() }} y no la ficha socioeconómica.
+    } @else {
+      Tu rol solo puede consultar fichas.
+    }
+  </p>
+</div>
+
+@if (canWrite()) {
+  <app-member-create-dialog [(open)]="createOpen" (created)="onCreated($event)" />
+}

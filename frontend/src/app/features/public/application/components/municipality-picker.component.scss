@@ -1,0 +1,75 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+}
+
+.search {
+  position: relative;
+}
+
+// País sin municipios cargados: el campo queda deshabilitado con la explicación debajo.
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.picked {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: $control-height;
+  padding: 0 $space-2 0 $space-3;
+  border: 1px solid $color-primary;
+  border-radius: $radius-control;
+  background: $color-primary-soft;
+  color: $color-primary-strong;
+
+  &__label {
+    flex: 1;
+    min-width: 0;
+    font-weight: $font-weight-semibold;
+    overflow-wrap: anywhere;
+  }
+}
+
+.results {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + #{$space-1});
+  right: 0;
+  left: 0;
+  max-height: 15rem;
+  margin: 0;
+  padding: $space-1;
+  overflow-y: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  background: $color-surface;
+  box-shadow: $shadow-overlay;
+  list-style: none;
+
+  &__option {
+    display: flex;
+    flex-direction: column;
+    padding: $space-2 $space-3;
+    border-radius: $radius-xs;
+    cursor: pointer;
+
+    &:hover,
+    &[aria-selected='true'] {
+      background: $color-primary-soft;
+    }
+  }
+
+  &__note {
+    padding: $space-2 $space-3;
+    color: $color-ink-muted;
+    font-size: $font-size-sm;
+
+    &--error {
+      color: $color-danger;
+    }
+  }
+}

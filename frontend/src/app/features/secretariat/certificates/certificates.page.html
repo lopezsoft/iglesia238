@@ -1,0 +1,106 @@
+<app-page-header
+  breadcrumb="Secretaría"
+  title="Certificados y carnés"
+  [description]="description()"
+>
+  @if (canReadMembers()) {
+    <a class="btn btn--secondary" routerLink="/members">
+      <app-icon name="users" />
+      Ver miembros
+    </a>
+  }
+</app-page-header>
+
+<div class="stack">
+  @if (!canIssue()) {
+    <app-read-only-notice permission="certificates.issue" />
+  }
+
+  <section class="kpi-grid" aria-label="Resumen">
+    @if (summaryStats(); as stats) {
+      <app-stat-card
+        icon="certificate"
+        tone="indigo"
+        [label]="'Certificados emitidos en ' + stats.year"
+        [value]="stats.issued"
+        [hint]="'Todas las series, ' + (hasSede() ? scopeLabel() : 'todas las sedes')"
+      />
+      <app-stat-card
+        icon="ban"
+        tone="red"
+        label="Certificados anulados"
+        [value]="stats.voided"
+        hint="Conservan su número y el motivo"
+      />
+      <app-stat-card
+        icon="id-card"
+        tone="green"
+        label="Carnés vigentes"
+        [value]="stats.cardsValid"
+        [hint]="cardsHint()"
+      />
+      <app-stat-card
+        icon="clock"
+        tone="orange"
+        label="Carnés vencidos"
+        [value]="stats.cardsExpired"
+        hint="Pendientes de renovación"
+      />
+    } @else if (summary.error()) {
+      <app-error-banner message="No fue posible cargar el resumen." (retry)="summary.reload()" />
+    } @else {
+      <app-loading label="Cargando resumen…" />
+    }
+  </section>
+
+  <app-tab-cards ariaLabel="Tipo de documento" idPrefix="certs" [items]="tabs" [(selected)]="tab" />
+
+  @if (tab() === 'certificates') {
+    <div
+      class="stack"
+      role="tabpanel"
+      id="certs-panel-certificates"
+      aria-labelledby="certs-tab-certificates"
+    >
+      @if (!hasSede()) {
+        <div class="alert alert--warning" role="note">
+          <app-icon name="info" />
+          <span>
+            Estás viendo toda la denominación. Selecciona una sede en el selector superior para
+            emitir certificados: se emiten en la sede actual del miembro.
+          </span>
+        </div>
+      } @else if (canIssue()) {
+        @if (preselectedError(); as message) {
+          <div class="alert alert--warning" role="alert">
+            <app-icon name="alert" />
+            <span>No se pudo preseleccionar el miembro: {{ message }}</span>
+          </div>
+        }
+        @if (issuingContext(); as issuing) {
+          <app-certificate-issue
+            [context]="issuing"
+            [preselectedMember]="preselectedMember()"
+            (issued)="onCertificateIssued()"
+          />
+        } @else if (context.error()) {
+          <app-error-banner [message]="contextError()" (retry)="context.reload()" />
+        } @else {
+          <app-loading label="Preparando el formulario de emisión…" />
+        }
+      }
+
+      <app-certificates-table [types]="types()" [reloadKey]="reloadKey()" (voided)="onChanged()" />
+    </div>
+  } @else {
+    <div role="tabpanel" id="certs-panel-cards" aria-labelledby="certs-tab-cards">
+      @if (!hasSede()) {
+        <div class="alert alert--warning cards-scope-note" role="note">
+          <app-icon name="info" />
+          <span>Selecciona una sede en el selector superior para emitir carnés.</span>
+        </div>
+      }
+      <app-membership-cards [today]="summaryStats()?.today ?? null" (changed)="onChanged()" />
+    </div>
+  }
+</div>

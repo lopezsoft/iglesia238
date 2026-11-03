@@ -1,0 +1,167 @@
+// Not encapsulated (see the component): every selector starts with .cert-doc.
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.cert-doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-6 $space-5;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  color: $color-ink;
+  line-height: 1.6;
+
+  @include from($breakpoint-sm) {
+    padding: $space-7 $space-6;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $space-4;
+    padding-bottom: $space-4;
+    border-bottom: 2px solid $color-primary;
+  }
+
+  &__brand {
+    display: flex;
+    gap: $space-3;
+    min-width: 0;
+  }
+
+  &__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: $radius-control;
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+
+  &__denomination {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__meta {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  &__number {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+
+    strong {
+      font-size: $font-size-sm;
+      color: $color-ink;
+    }
+  }
+
+  &__title {
+    text-align: center;
+
+    h3 {
+      margin: 0;
+      font-size: $font-size-lg;
+      letter-spacing: 0.06em;
+    }
+
+    p {
+      color: $color-ink-muted;
+    }
+  }
+
+  &__body {
+    text-align: justify;
+  }
+
+  &__placeholder {
+    padding: $space-5 0;
+    text-align: center;
+    color: $color-ink-muted;
+  }
+
+  &__signatures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: $space-6;
+    margin-top: $space-6;
+  }
+
+  &__signature {
+    padding-top: $space-2;
+    border-top: 1px solid $color-ink;
+    text-align: center;
+  }
+
+  &__footer {
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+
+  &__stamp {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    padding: $space-1 $space-4;
+    border: 3px solid $color-danger;
+    border-radius: $radius-control;
+    color: $color-danger;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+}
+
+// Printing: only the printable certificate and its ancestors stay; the dialog that holds it is
+// reset to a plain block so the browser prints the whole document on a letter page.
+@media print {
+  body:has(.cert-doc--printable)
+    *:not(:has(.cert-doc--printable)):not(.cert-doc--printable):not(.cert-doc--printable *) {
+    display: none !important;
+  }
+
+  dialog:has(.cert-doc--printable) {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+
+    &::backdrop {
+      background: transparent;
+    }
+
+    * {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+  }
+
+  .cert-doc--printable {
+    padding: 0;
+    border: 0;
+    color: $color-ink;
+  }
+}

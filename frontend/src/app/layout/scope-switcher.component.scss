@@ -1,0 +1,51 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  display: inline-block;
+  min-width: 0;
+}
+
+.scope-pill__content {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+}
+
+.scope-pill__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.scope-pill__caption {
+  color: $color-ink-subtle;
+  font-size: $font-size-3xs;
+  font-weight: $font-weight-semibold;
+}
+
+.scope-pill__label {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@include until($breakpoint-lg) {
+  .scope-pill__caption {
+    display: none;
+  }
+
+  .scope-pill__label {
+    max-width: 9rem;
+  }
+}
+
+@include until($breakpoint-md) {
+  .scope-pill__label {
+    @include visually-hidden;
+  }
+}
