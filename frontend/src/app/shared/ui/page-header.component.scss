@@ -16,8 +16,11 @@
   }
 
   &__breadcrumb {
-    font-size: $font-size-xs;
-    color: $color-ink-muted;
+    color: $color-ink-subtle;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   &__description {

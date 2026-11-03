@@ -74,6 +74,14 @@ import { VowsRepository } from '../data/vows.repository';
           </div>
         </div>
         <div class="field">
+          <label for="new-vow-due">Fecha límite</label>
+          <input id="new-vow-due" class="input" type="date" formControlName="dueOn" [attr.min]="form.controls.pledgedOn.value || null" aria-describedby="new-vow-due-help" />
+          <span id="new-vow-due-help" class="field__hint">Opcional. Con fecha límite, la promesa se marca como vencida si pasa sin cumplirse.</span>
+          @if (form.controls.dueOn.touched && form.controls.dueOn.invalid) {
+            <span class="field__error">La fecha límite no puede ser anterior a la fecha de la promesa.</span>
+          }
+        </div>
+        <div class="field">
           <label for="new-vow-notes">Observaciones</label>
           <textarea id="new-vow-notes" class="textarea" rows="3" maxlength="255" formControlName="description" placeholder="Ej.: Voto para la construcción del templo, abonos mensuales."></textarea>
         </div>
@@ -113,6 +121,7 @@ export class NewVowDialogComponent {
     contributionTypeId: this.fb.control<number | null>(null, Validators.required),
     pledgedAmount: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     pledgedOn: ['', [Validators.required, (control: AbstractControl<string>) => this.notAfterToday(control)]],
+    dueOn: ['', (control: AbstractControl<string>) => this.notBeforePledge(control)],
     description: ['', Validators.maxLength(255)],
   });
 
@@ -141,6 +150,7 @@ export class NewVowDialogComponent {
           contributionTypeId: value.contributionTypeId,
           pledgedAmount: Number(value.pledgedAmount),
           pledgedOn: value.pledgedOn,
+          dueOn: value.dueOn || null,
           description: value.description.trim() || null,
         }),
       );
@@ -157,6 +167,11 @@ export class NewVowDialogComponent {
     return control.value && control.value > this.today() ? { future: true } : null;
   }
 
+  private notBeforePledge(control: AbstractControl<string>): ValidationErrors | null {
+    const pledgedOn = this.form?.controls.pledgedOn.value;
+    return control.value && pledgedOn && control.value < pledgedOn ? { beforePledge: true } : null;
+  }
+
   private reset(): void {
     this.submitted.set(false);
     this.error.set(null);
@@ -165,6 +180,7 @@ export class NewVowDialogComponent {
       contributionTypeId: this.vowTypes()[0]?.id ?? null,
       pledgedAmount: null,
       pledgedOn: this.today(),
+      dueOn: '',
       description: '',
     });
   }

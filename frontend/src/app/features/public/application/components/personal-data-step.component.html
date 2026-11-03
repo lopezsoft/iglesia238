@@ -35,7 +35,7 @@
     <div class="field">
       <label for="documentTypeCode">Tipo de documento *</label>
       <select id="documentTypeCode" class="select" formControlName="documentTypeCode" required>
-        @for (type of documentTypes; track type.code) {
+        @for (type of documentTypes(); track type.code) {
           <option [value]="type.code">{{ type.code }} · {{ type.name }}</option>
         }
       </select>
@@ -89,7 +89,7 @@
       <select id="maritalStatusCode" class="select" formControlName="maritalStatusCode" required
         [attr.aria-describedby]="errorId('maritalStatusCode')" [attr.aria-invalid]="ariaInvalid('maritalStatusCode')">
         <option value="" disabled>Selecciona…</option>
-        @for (status of maritalStatuses; track status.code) {
+        @for (status of maritalStatuses(); track status.code) {
           <option [value]="status.code">{{ status.name }}</option>
         }
       </select>
@@ -127,17 +127,55 @@
     </div>
 
     <div class="field">
-      <label for="municipalityCode">Municipio *</label>
-      <select id="municipalityCode" class="select" formControlName="municipalityCode" required
-        [attr.aria-describedby]="errorId('municipalityCode')" [attr.aria-invalid]="ariaInvalid('municipalityCode')">
-        <option value="" disabled>Selecciona…</option>
-        @for (municipality of municipalities; track municipality.code) {
-          <option [value]="municipality.code">{{ municipality.label }}</option>
+      <label for="municipality-search">Municipio *</label>
+      <app-municipality-picker
+        inputId="municipality-search"
+        [codeControl]="group().controls.municipalityCode"
+        [nameControl]="group().controls.municipalityName"
+        [invalid]="invalid('municipalityCode')"
+        [describedBy]="errorId('municipalityCode')"
+      />
+      @if (invalid('municipalityCode')) {
+        <p id="municipalityCode-error" class="field__error">Busca y selecciona tu municipio.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="neighborhood">Barrio</label>
+      <input id="neighborhood" class="input" type="text" formControlName="neighborhood" autocomplete="off"
+        [attr.aria-invalid]="ariaInvalid('neighborhood')" />
+      @if (invalid('neighborhood')) {
+        <p id="neighborhood-error" class="field__error">Máximo 120 caracteres.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="occupation">Ocupación u oficio</label>
+      <input id="occupation" class="input" type="text" formControlName="occupation" autocomplete="organization-title"
+        [attr.aria-invalid]="ariaInvalid('occupation')" />
+      @if (invalid('occupation')) {
+        <p id="occupation-error" class="field__error">Máximo 120 caracteres.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="baptism">¿Estás bautizado(a)?</label>
+      <select id="baptism" class="select" formControlName="baptism">
+        @for (option of baptismOptions; track option.value) {
+          <option [value]="option.value">{{ option.name }}</option>
         }
       </select>
-      @if (invalid('municipalityCode')) {
-        <p id="municipalityCode-error" class="field__error">Selecciona tu municipio.</p>
+    </div>
+
+    <div class="field">
+      <label for="previousCongregationName">Iglesia de la que vienes</label>
+      <input id="previousCongregationName" class="input" type="text" formControlName="previousCongregationName"
+        autocomplete="off" [attr.aria-describedby]="describedBy('previousCongregationName', 'previousCongregationName-hint')"
+        [attr.aria-invalid]="ariaInvalid('previousCongregationName')" />
+      @if (invalid('previousCongregationName')) {
+        <p id="previousCongregationName-error" class="field__error">Máximo 150 caracteres.</p>
       }
+      <p id="previousCongregationName-hint" class="field__hint">Opcional. Déjalo vacío si no asistías a ninguna.</p>
     </div>
   </div>
 </fieldset>

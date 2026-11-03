@@ -74,7 +74,7 @@
               }
             </td>
             <td>{{ relationLabels[row.type] }}</td>
-            <td class="code">{{ documentLabel(row.documentTypeCode, row.documentNumber) }}</td>
+            <td class="code">{{ row.maskedDocument ?? '—' }}</td>
             <td class="num">{{ row.age === null ? '—' : row.age + ' años' }}</td>
             <td>
               @if (row.memberCode && row.memberStatus) {
@@ -178,8 +178,11 @@
           <span>
             {{ option.fullName }}
             <span class="text-muted text-small mono">{{
-              documentLabel(option.documentTypeCode, option.documentNumber)
+              option.maskedDocument ?? 'Sin documento'
             }}</span>
+            @if (option.memberCode) {
+              <span class="text-muted text-small mono"> · {{ option.memberCode }}</span>
+            }
             @if (option.congregationName) {
               <span class="text-muted text-small"> · {{ option.congregationName }}</span>
             }

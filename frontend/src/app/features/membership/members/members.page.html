@@ -19,9 +19,9 @@
         type="button"
         class="btn btn--primary"
         aria-haspopup="dialog"
-        (click)="registerInfoOpen.set(true)"
+        (click)="createOpen.set(true)"
       >
-        <app-icon name="plus" />
+        <app-icon name="user-plus" />
         Registrar miembro
       </button>
     }
@@ -42,36 +42,76 @@
     </div>
   }
 
-  <section class="card card--flush" aria-labelledby="members-table-title">
+  <div class="members__bar">
+    <app-tab-cards
+      class="members__tabs"
+      [items]="statusTabs()"
+      [selected]="filters().status"
+      (selectedChange)="onStatus($event)"
+      ariaLabel="Filtrar por estado"
+      idPrefix="members-status"
+    />
+    @if (canWrite()) {
+      <app-export-actions
+        [formats]="['csv']"
+        [disabled]="exporting() || total() === 0"
+        (export)="exportCsv()"
+      />
+    }
+  </div>
+
+  <div aria-live="polite">
+    @if (exportMessage(); as message) {
+      <p class="alert alert--success" role="status">{{ message }}</p>
+    }
+    @if (exportError(); as message) {
+      <p class="alert alert--danger" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <section
+    class="card card--flush"
+    role="tabpanel"
+    [id]="'members-status-panel-' + filters().status"
+    [attr.aria-labelledby]="'members-status-tab-' + filters().status"
+  >
     <div class="members__toolbar">
       <h2 id="members-table-title" class="visually-hidden">Listado de miembros</h2>
-
-      <div class="cluster" role="group" aria-label="Filtrar por estado">
-        @for (option of statusOptions; track option.value) {
-          <button
-            type="button"
-            class="members__chip"
-            [attr.aria-pressed]="filters().status === option.value"
-            (click)="onStatus(option.value)"
-          >
-            <span>{{ option.label }}</span>
-            <span class="members__chip-count">{{ statusCounts()?.[option.value] ?? '…' }}</span>
-          </button>
-        }
-      </div>
 
       <div class="toolbar">
         <div class="field members__search">
           <label for="member-search">Buscar</label>
-          <input
-            id="member-search"
-            class="input"
-            type="search"
-            placeholder="Buscar miembro por nombre o documento"
-            [value]="filters().text"
-            (input)="onText($any($event.target).value)"
-          />
+          <div class="input-group input-group--icon">
+            <app-icon class="input-group__icon" name="search" [size]="18" />
+            <input
+              id="member-search"
+              class="input"
+              type="search"
+              placeholder="Nombre, documento o código (SC-0130)"
+              [value]="filters().text"
+              (input)="onText($any($event.target).value)"
+            />
+          </div>
         </div>
+        @if (isDenominationWide() && congregations().length > 1) {
+          <div class="field">
+            <label for="filter-congregation">Sede</label>
+            <select
+              id="filter-congregation"
+              class="select"
+              (change)="onCongregation($any($event.target).value)"
+            >
+              <option value="" [selected]="filters().congregationId === null">
+                Todas las sedes
+              </option>
+              @for (option of congregations(); track option.id) {
+                <option [value]="option.id" [selected]="filters().congregationId === option.id">
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+          </div>
+        }
         <div class="field">
           <label for="filter-sex">Sexo</label>
           <select
@@ -96,7 +136,7 @@
           </select>
         </div>
         <div class="field">
-          <label for="filter-position">Grado o cargo</label>
+          <label for="filter-position">Cargo</label>
           <select
             id="filter-position"
             class="select"
@@ -111,43 +151,25 @@
             <option value="NONE" [selected]="filters().position === 'NONE'">Sin cargo</option>
           </select>
         </div>
-        @if (canWrite()) {
-          <button
-            type="button"
-            class="btn btn--secondary"
-            aria-describedby="export-note"
-            [disabled]="exporting() || total() === 0"
-            (click)="exportCsv()"
-          >
-            <app-icon name="download" />
-            {{ exporting() ? 'Exportando…' : 'Exportar CSV' }}
-          </button>
-        }
+        <div class="field">
+          <label for="sort-by">Ordenar por</label>
+          <select id="sort-by" class="select" (change)="onSort($any($event.target).value)">
+            @for (option of sortOptions; track option.value) {
+              <option [value]="option.value" [selected]="option.value === sortBy()">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </div>
       </div>
 
-      <div class="members__notes">
-        @if (canWrite()) {
-          <span id="export-note" class="text-muted text-small members__note">
-            <app-icon name="lock" [size]="14" />
-            Exportación limitada por rol: solo miembros de {{ scopeName() }}, sin ficha
-            socioeconómica.
-          </span>
-        }
-        @if (hasFilters()) {
+      @if (hasFilters()) {
+        <div class="members__notes">
           <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
             Limpiar filtros
           </button>
-        }
-      </div>
-
-      <div aria-live="polite">
-        @if (exportMessage(); as message) {
-          <p class="alert alert--success" role="status">{{ message }}</p>
-        }
-        @if (exportError(); as message) {
-          <p class="alert alert--danger" role="alert">{{ message }}</p>
-        }
-      </div>
+        </div>
+      }
     </div>
 
     @if (loadError(); as message) {
@@ -163,12 +185,16 @@
         [description]="
           hasFilters()
             ? 'Ningún miembro coincide con los filtros. Prueba con otros criterios.'
-            : 'Los miembros se crean al aprobar solicitudes de inscripción.'
+            : 'Aún no hay miembros. Se crean al aprobar solicitudes de inscripción o al registrarlos aquí.'
         "
       >
         @if (hasFilters()) {
           <button type="button" class="btn btn--secondary btn--sm" (click)="clearFilters()">
             Limpiar filtros
+          </button>
+        } @else if (canWrite()) {
+          <button type="button" class="btn btn--primary btn--sm" (click)="createOpen.set(true)">
+            Registrar miembro
           </button>
         }
       </app-empty-state>
@@ -187,11 +213,32 @@
           <thead>
             <tr>
               <th scope="col">Carné</th>
-              <th scope="col">Nombre</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('name')">
+                <button type="button" class="members__sort" (click)="toggleSort('name')">
+                  Nombre
+                  @if (sortBy() === 'name') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
               <th scope="col">Documento</th>
-              <th scope="col" class="text-right">Edad</th>
+              <th scope="col" class="text-right" [attr.aria-sort]="ariaSort('age')">
+                <button type="button" class="members__sort" (click)="toggleSort('age')">
+                  Edad
+                  @if (sortBy() === 'age') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
               <th scope="col">Teléfono</th>
-              <th scope="col">Fecha de ingreso</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('joinedOn')">
+                <button type="button" class="members__sort" (click)="toggleSort('joinedOn')">
+                  Fecha de ingreso
+                  @if (sortBy() === 'joinedOn') {
+                    <app-icon [name]="order() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12" />
+                  }
+                </button>
+              </th>
               @if (isDenominationWide()) {
                 <th scope="col">Sede</th>
               }
@@ -245,37 +292,14 @@
   <p class="text-muted text-small members__note">
     <app-icon name="info" [size]="14" />
     @if (canWrite()) {
-      Tu rol puede consultar y editar fichas (<code>members.read</code>,
-      <code>members.write</code>).
+      Tu rol puede consultar, registrar y editar fichas. La exportación incluye solo miembros de
+      {{ scopeName() }} y no la ficha socioeconómica.
     } @else {
-      Tu rol solo puede consultar fichas (<code>members.read</code>).
+      Tu rol solo puede consultar fichas.
     }
-    Los miembros nuevos solo se crean al aprobar una solicitud.
   </p>
 </div>
 
-<app-dialog [(open)]="registerInfoOpen" title="Los miembros se registran desde una solicitud">
-  <div class="stack members__dialog">
-    <p>
-      Para evitar registros duplicados, un miembro nuevo nace de una solicitud de inscripción
-      aprobada. Al aprobarla, el sistema:
-    </p>
-    <ul>
-      <li>verifica que el número de documento no exista en la denominación;</li>
-      <li>crea la persona y el miembro con su número de carné;</li>
-      <li>conserva la aceptación de la política de datos (Ley 1581 de 2012).</li>
-    </ul>
-    <p>
-      Si la persona está presente, pídele que diligencie el formulario público de inscripción y
-      luego apruébalo en Solicitudes.
-    </p>
-  </div>
-  <div dialog-footer class="cluster">
-    <button type="button" class="btn btn--secondary" (click)="registerInfoOpen.set(false)">
-      Cerrar
-    </button>
-    @if (canReviewApplications()) {
-      <a class="btn btn--primary" routerLink="/applications">Ver solicitudes</a>
-    }
-  </div>
-</app-dialog>
+@if (canWrite()) {
+  <app-member-create-dialog [(open)]="createOpen" (created)="onCreated($event)" />
+}

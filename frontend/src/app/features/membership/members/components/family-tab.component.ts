@@ -16,7 +16,6 @@ import {
   FAMILY_RELATION_LABELS,
   FAMILY_RELATION_TYPES,
   FamilyRelationType,
-  documentLabel,
 } from '../data/members.models';
 import { MembersRepository } from '../data/members.repository';
 import { CommandState } from './command-state';
@@ -45,7 +44,6 @@ export class FamilyTabComponent {
   protected readonly relationLabels = FAMILY_RELATION_LABELS;
   protected readonly relationTypes = FAMILY_RELATION_TYPES;
   protected readonly statusLabels = MEMBER_STATUS_LABELS;
-  protected readonly documentLabel = documentLabel;
 
   protected readonly canWrite = computed(() => this.auth.can('members.write'));
   /** Registros de secretaría (where Matrimonio lives) requires the same permission. */

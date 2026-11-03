@@ -1,0 +1,63 @@
+@use 'tokens' as *;
+
+:host {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: $space-1;
+  max-width: 100%;
+  padding: $space-1;
+  overflow-x: auto;
+  background: $color-surface-2;
+  border-radius: $radius-input-lg;
+  scrollbar-width: none;
+
+  &__option {
+    flex-shrink: 0;
+    min-height: 2rem;
+    padding: 0 $space-3;
+    border: 0;
+    border-radius: $radius-control - 1px;
+    background: transparent;
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+
+    &:hover {
+      color: $color-ink;
+    }
+
+    &[aria-checked='true'] {
+      background: $color-surface;
+      color: $color-primary;
+      box-shadow: $shadow-card;
+    }
+  }
+}
+
+:host(.segmented--on-brand) {
+  .segmented {
+    background: $glass-bg-strong;
+  }
+
+  .segmented__option {
+    color: $color-on-brand;
+
+    &:hover {
+      color: $color-on-brand;
+      background: $glass-bg;
+    }
+
+    &[aria-checked='true'] {
+      background: $color-surface;
+      color: $color-primary;
+    }
+  }
+}

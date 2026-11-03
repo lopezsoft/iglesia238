@@ -6,6 +6,11 @@ const SENSITIVE_KEY_PATTERN =
 
 const SENSITIVE_KEY = new RegExp(SENSITIVE_KEY_PATTERN, 'i');
 
+/** True for field names that hold credentials or personal data (also used to keep them out of audit changes). */
+export function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_KEY.test(key);
+}
+
 const SENSITIVE_TEXT_PATTERNS: ReadonlyArray<[RegExp, string]> = [
   [/\b(Bearer|Basic)\s+[\w\-.~+/=]+/gi, `$1 ${REDACTED}`],
   // Credentials in URLs, including an empty user (redis://:password@host).

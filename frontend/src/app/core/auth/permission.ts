@@ -1,5 +1,6 @@
-// Mirrors PERMISSIONS in backend/prisma/seed.ts. The API is the source of truth: when it
-// issues sessions, the permissions come from the token and this list only types them.
+// Mirrors PERMISSIONS in backend/prisma/seed.ts. The API is the source of truth: the session
+// (`assignments[].permissions`) carries what each role grants, computed from the database, and
+// this list only types the codes and describes them for the profile screen.
 export const PERMISSIONS = [
   'denominations.manage',
   'congregations.manage',

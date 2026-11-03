@@ -20,6 +20,7 @@ import {
 } from '../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
 import {
@@ -53,6 +54,7 @@ const PAGE_SIZE = 10;
     PageHeaderComponent,
     PaginationComponent,
     RouterLink,
+    SectionPanelComponent,
     StatCardComponent,
     StatusBadgeComponent,
   ],
@@ -87,6 +89,10 @@ export class DenominationsPage {
   protected readonly stats = rxResource({ stream: () => this.repository.stats() });
   /** Stats, or null while loading or after an error (`value()` throws in that state). */
   protected readonly summary = computed(() => (this.stats.hasValue() ? this.stats.value() : null));
+  protected readonly averageCongregations = computed(() => {
+    const stats = this.summary();
+    return stats && stats.total > 0 ? (stats.congregations / stats.total).toFixed(1) : '—';
+  });
 
   protected readonly formOpen = signal(false);
   protected readonly editing = signal<DenominationSummary | null>(null);
@@ -144,7 +150,7 @@ export class DenominationsPage {
   protected onSaved({ denomination, created }: DenominationSaved): void {
     this.notice.set(
       created
-        ? `Denominación «${denomination.name}» creada con la política de datos en borrador.`
+        ? `Denominación «${denomination.name}» creada con su plantilla inicial y la política de datos en borrador.`
         : `Cambios guardados en «${denomination.name}».`,
     );
     this.reload();

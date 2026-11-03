@@ -11,8 +11,8 @@
       <div class="alert alert--warning" role="note">
         <app-icon name="alert" />
         <span
-          >La sede no tiene un pastor vigente que firme. Asígnalo en Usuarios y roles antes de
-          emitir.</span
+          >La sede no tiene un pastor vigente que firme. Regístralo en Registros de secretaría,
+          periodos pastorales, antes de emitir.</span
         >
       </div>
     }
@@ -107,8 +107,30 @@
   <section class="card stack" aria-labelledby="preview-title">
     <div class="card__header preview-header">
       <h2 id="preview-title">Vista previa</h2>
-      <span class="text-muted text-small">Formato carta vertical</span>
+      <span class="text-muted text-small">Formato carta vertical · la genera el servidor</span>
     </div>
-    <app-certificate-document [snapshot]="preview()" label="Vista previa del certificado impreso" />
+    @if (preview(); as result) {
+      @for (warning of result.warnings; track warning) {
+        <div class="alert alert--warning" role="note">
+          <app-icon name="alert" />
+          <span>{{ warning }}</span>
+        </div>
+      }
+      <app-certificate-document
+        [snapshot]="result.snapshot"
+        label="Vista previa del certificado impreso"
+      />
+    } @else if (previewError(); as message) {
+      <div class="alert alert--danger" role="alert">
+        <app-icon name="alert" />
+        <span>{{ message }}</span>
+      </div>
+    } @else if (previewResource.isLoading()) {
+      <p class="text-muted" role="status">Preparando la vista previa…</p>
+    } @else {
+      <p class="text-muted preview-empty">
+        Selecciona un miembro y un tipo de certificado para ver cómo quedará impreso.
+      </p>
+    }
   </section>
 </div>

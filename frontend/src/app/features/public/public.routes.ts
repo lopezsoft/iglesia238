@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoPublicApplicationRepository } from './application/data/demo-public-application.repository';
+import { HttpPublicApplicationRepository } from './application/data/http-public-application.repository';
 import { PublicApplicationRepository } from './application/data/public-application.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: PublicApplicationRepository, useClass: DemoPublicApplicationRepository }],
+    providers: [{ provide: PublicApplicationRepository, useClass: HttpPublicApplicationRepository }],
     children: [
       {
         path: '',

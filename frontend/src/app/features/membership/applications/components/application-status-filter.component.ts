@@ -1,30 +1,35 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { IconName } from '../../../../shared/ui/icon.component';
+import { TabCardItem, TabCardsComponent } from '../../../../shared/ui/tab-cards.component';
 import {
   APPLICATION_FILTERS,
   APPLICATION_FILTER_LABELS,
   ApplicationCounts,
   ApplicationFilter,
+  parseApplicationFilter,
 } from '../data/applications.models';
 
-/** Status chips with their counts; a pressed chip filters the queue. */
+const FILTER_ICONS: Readonly<Record<ApplicationFilter, IconName>> = {
+  PENDING: 'clock',
+  DUPLICATE: 'copy',
+  APPROVED: 'check',
+  REJECTED: 'ban',
+  ALL: 'inbox',
+};
+
+/** Status of the queue as tab cards with their counts; the selected card filters the queue. */
 @Component({
   selector: 'app-application-status-filter',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './application-status-filter.component.scss',
+  imports: [TabCardsComponent],
   template: `
-    <div class="status-filter" role="group" aria-label="Filtrar por estado">
-      @for (filter of filters; track filter) {
-        <button
-          type="button"
-          class="status-filter__chip"
-          [attr.aria-pressed]="filter === active()"
-          (click)="selected.emit(filter)"
-        >
-          <span>{{ labels[filter] }}</span>
-          <span class="status-filter__count">{{ counts()?.[filter] ?? '–' }}</span>
-        </button>
-      }
-    </div>
+    <app-tab-cards
+      ariaLabel="Filtrar solicitudes por estado"
+      idPrefix="application-status"
+      [items]="items()"
+      [selected]="active()"
+      (selectedChange)="select($event)"
+    />
   `,
 })
 export class ApplicationStatusFilterComponent {
@@ -32,6 +37,19 @@ export class ApplicationStatusFilterComponent {
   readonly counts = input<ApplicationCounts | null>(null);
   readonly selected = output<ApplicationFilter>();
 
-  protected readonly filters = APPLICATION_FILTERS;
-  protected readonly labels = APPLICATION_FILTER_LABELS;
+  protected readonly items = computed<readonly TabCardItem[]>(() =>
+    APPLICATION_FILTERS.map((filter) => {
+      const count = this.counts()?.[filter];
+      return {
+        id: filter,
+        title: APPLICATION_FILTER_LABELS[filter],
+        subtitle: count === undefined ? '—' : count === 1 ? '1 solicitud' : `${count} solicitudes`,
+        icon: FILTER_ICONS[filter],
+      };
+    }),
+  );
+
+  protected select(id: string): void {
+    this.selected.emit(parseApplicationFilter(id));
+  }
 }

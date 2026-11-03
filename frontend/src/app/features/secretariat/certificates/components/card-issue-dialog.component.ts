@@ -10,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   NonNullableFormBuilder,
@@ -18,14 +18,21 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, switchMap, timer } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { ErrorBannerComponent, LoadingComponent } from '../../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { addYears } from '../data/certificate-document';
-import { CardListItem, DEFAULT_CARD_VALIDITY_YEARS } from '../data/certificates.models';
+import {
+  CardCandidate,
+  CardListItem,
+  DEFAULT_CARD_VALIDITY_YEARS,
+} from '../data/certificates.models';
 import { CertificatesRepository } from '../data/certificates.repository';
+
+const CANDIDATE_PAGE_SIZE = 8;
+const SEARCH_DEBOUNCE_MS = 250;
 
 function expiryAfterIssue(group: AbstractControl): ValidationErrors | null {
   const issuedOn = group.get('issuedOn')?.value as string;
@@ -54,7 +61,7 @@ function datesAroundToday(today: () => string) {
   };
 }
 
-/** Issues a membership card to an active member of the sede without a valid card. */
+/** Issues a membership card to an active, registered member of the sede without a valid card. */
 @Component({
   selector: 'app-card-issue-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,10 +73,11 @@ function datesAroundToday(today: () => string) {
     ErrorBannerComponent,
   ],
   templateUrl: './card-issue-dialog.component.html',
+  styleUrl: './card-issue-dialog.component.scss',
 })
 export class CardIssueDialogComponent {
   readonly open = model(false);
-  /** Today of the data source (YYYY-MM-DD): default issue date. */
+  /** Today of the server (YYYY-MM-DD): default issue date. */
   readonly today = input.required<string>();
   readonly issued = output<CardListItem>();
 
@@ -87,20 +95,25 @@ export class CardIssueDialogComponent {
   protected readonly pending = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly search = signal('');
+  protected readonly selected = signal<CardCandidate | null>(null);
+
+  /** The first page of candidates, narrowed by what the person types (the server searches). */
   protected readonly candidates = rxResource({
-    params: () => (this.open() ? { open: true } : undefined),
-    stream: () => this.repo.cardCandidates(),
+    params: () => (this.open() ? { q: this.search().trim() || null } : undefined),
+    stream: ({ params }) =>
+      timer(params.q === null ? 0 : SEARCH_DEBOUNCE_MS).pipe(
+        switchMap(() =>
+          this.repo.cardCandidates({ q: params.q, page: 1, pageSize: CANDIDATE_PAGE_SIZE }),
+        ),
+      ),
   });
   protected readonly candidatesError = computed(() => userMessage(this.candidates.error()));
-
-  private readonly memberId = toSignal(this.form.controls.memberId.valueChanges, {
-    initialValue: 0,
-  });
-  protected readonly selected = computed(() =>
-    this.candidates.hasValue()
-      ? (this.candidates.value().find((candidate) => candidate.memberId === this.memberId()) ??
-        null)
-      : null,
+  protected readonly noCandidatesAtAll = computed(
+    () =>
+      this.candidates.hasValue() &&
+      this.candidates.value().total === 0 &&
+      this.search().trim() === '',
   );
 
   constructor() {
@@ -112,6 +125,8 @@ export class CardIssueDialogComponent {
           issuedOn: today,
           expiresOn: addYears(today, DEFAULT_CARD_VALIDITY_YEARS),
         });
+        this.selected.set(null);
+        this.search.set('');
         this.error.set(null);
       }
     });
@@ -121,6 +136,17 @@ export class CardIssueDialogComponent {
         this.form.controls.expiresOn.setValue(addYears(issuedOn, DEFAULT_CARD_VALIDITY_YEARS));
       }
     });
+  }
+
+  protected pick(candidate: CardCandidate): void {
+    this.selected.set(candidate);
+    this.form.controls.memberId.setValue(candidate.memberId);
+    this.form.controls.memberId.markAsTouched();
+  }
+
+  protected clearPick(): void {
+    this.selected.set(null);
+    this.form.controls.memberId.setValue(0);
   }
 
   protected showError(control: 'memberId' | 'issuedOn' | 'expiresOn'): boolean {

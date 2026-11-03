@@ -24,6 +24,16 @@
     }
   }
 
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__time {
+    font-variant-numeric: tabular-nums;
+  }
+
   &__footer {
     border-top: 1px solid $color-border;
   }

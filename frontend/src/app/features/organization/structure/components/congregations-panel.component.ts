@@ -10,9 +10,9 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { municipalityLabel } from '../../../../core/models/catalogs';
 import {
   EmptyStateComponent,
   ErrorBannerComponent,
@@ -22,7 +22,7 @@ import {
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import { paginate } from '../../../../shared/utils/pagination';
-import { CongregationRow } from '../data/organization.models';
+import { CongregationRow, placeLabel } from '../data/organization.models';
 import { OrganizationRepository } from '../data/organization.repository';
 import {
   CongregationFormDialogComponent,
@@ -44,6 +44,7 @@ const PAGE_SIZE = 10;
     IconComponent,
     LoadingComponent,
     PaginationComponent,
+    RouterLink,
     StatusBadgeComponent,
   ],
   templateUrl: './congregations-panel.component.html',
@@ -64,6 +65,14 @@ export class CongregationsPanelComponent {
     params: () => this.auth.tenant(),
     stream: () => this.repository.listCongregations(),
   });
+  /** Without a published policy the public form lists no sede, whatever their switch says. */
+  protected readonly policyInForce = rxResource({
+    params: () => (this.canManage() ? this.auth.tenant() : undefined),
+    stream: () => this.repository.hasPolicyInForce(),
+  });
+  protected readonly policyMissing = computed(
+    () => this.policyInForce.hasValue() && !this.policyInForce.value(),
+  );
   protected readonly page = linkedSignal({
     source: () => this.congregations.value()?.length ?? 0,
     computation: () => 1,
@@ -83,8 +92,8 @@ export class CongregationsPanelComponent {
   protected readonly pendingId = signal<number | null>(null);
   protected readonly actionError = signal<string | null>(null);
 
-  protected municipality(code: string | null): string {
-    return municipalityLabel(code);
+  protected place(row: CongregationRow): string {
+    return placeLabel(row);
   }
 
   openCreate(): void {
@@ -106,7 +115,7 @@ export class CongregationsPanelComponent {
   protected onSaved({ congregation, created }: CongregationSaved): void {
     this.changed.emit(
       created
-        ? `Sede «${congregation.name}» creada en ${municipalityLabel(congregation.municipalityCode)}.`
+        ? `Sede «${congregation.name}» creada en ${placeLabel(congregation)} con el código ${congregation.code}.`
         : `Cambios guardados en «${congregation.name}».`,
     );
     this.congregations.reload();

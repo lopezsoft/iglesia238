@@ -1,8 +1,14 @@
 @use 'sass:list';
 @use 'tokens' as *;
 
-// One color per attendance category, in ATTENDANCE_CATEGORIES order.
-$category-colors: ($color-primary, $color-brand-mark, $color-success, $color-warning, $color-ink-muted);
+// One tone per category, in the order of the catalog (it repeats if the catalog grows).
+$category-colors: (
+  $color-primary,
+  $color-brand-accent,
+  $color-success,
+  $color-warning,
+  $color-ink-subtle
+);
 
 @for $i from 1 through list.length($category-colors) {
   .swatch--#{$i - 1} {
@@ -16,6 +22,21 @@ $category-colors: ($color-primary, $color-brand-mark, $color-success, $color-war
   height: 0.625rem;
   margin-right: $space-1;
   border-radius: 2px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+
+  h2,
+  p {
+    margin: 0;
+  }
+}
+
+.date-field {
+  max-width: 20rem;
 }
 
 .categories {
@@ -53,9 +74,9 @@ $category-colors: ($color-primary, $color-brand-mark, $color-success, $color-war
   }
 
   &__value {
-    font-family: $font-mono;
     font-size: $font-size-kpi;
-    font-weight: $font-weight-semibold;
+    font-weight: $font-weight-extrabold;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -78,10 +99,7 @@ $category-colors: ($color-primary, $color-brand-mark, $color-success, $color-war
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-3;
+  justify-content: flex-end;
   padding-top: $space-4;
   border-top: 1px solid $color-border;
 }

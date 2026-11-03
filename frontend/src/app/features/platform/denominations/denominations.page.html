@@ -35,31 +35,49 @@
     }
   </div>
 
-  <section class="grid-auto" aria-label="Resumen">
+  <section class="kpi-grid" aria-label="Resumen">
     <app-stat-card
       label="Denominaciones registradas"
       icon="landmark"
+      tone="cyan"
       [value]="summary()?.total ?? '—'"
     />
-    <app-stat-card label="Activas" icon="check" [value]="summary()?.active ?? '—'" />
+    <app-stat-card
+      label="Activas"
+      icon="check"
+      tone="green"
+      [value]="summary()?.active ?? '—'"
+      [hint]="summary() ? (summary()!.total - summary()!.active) + ' inactivas' : null"
+    />
     <app-stat-card
       label="Sedes en total"
       icon="building"
+      tone="indigo"
       [value]="summary()?.congregations ?? '—'"
+    />
+    <app-stat-card
+      label="Promedio de sedes"
+      icon="church"
+      tone="orange"
+      [value]="averageCongregations()"
+      hint="Por denominación registrada"
     />
   </section>
 
-  <div class="alert" role="note">
-    <app-icon name="lock" />
-    <div>
-      <strong>Aislamiento por denominación</strong>
-      <p class="text-small">
-        Como administrador de plataforma gestionas las denominaciones y sus administradores, pero no
-        puedes ver miembros, solicitudes ni información financiera de ninguna denominación. Esos
-        datos solo son visibles para los roles asignados dentro de cada una.
-      </p>
-    </div>
-  </div>
+  <app-section-panel
+    tone="indigo"
+    icon="lock"
+    title="Aislamiento por denominación"
+    subtitle="La plataforma administra denominaciones y administradores, nunca sus datos."
+    layout="stack"
+  >
+    <p class="text-small">
+      Como administrador de plataforma no puedes ver miembros, solicitudes ni información financiera
+      de ninguna denominación. Esos datos solo son visibles para los roles asignados dentro de cada
+      una. Al crear una denominación se prepara su plantilla inicial (fondo, plan de cuentas, tipos
+      de aporte, certificados y política de datos en borrador).
+    </p>
+  </app-section-panel>
 
   <section class="card card--flush" aria-labelledby="denominations-list-title">
     <div class="card__header list-header">

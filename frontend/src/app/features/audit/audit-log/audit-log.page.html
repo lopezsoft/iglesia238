@@ -1,22 +1,48 @@
 <app-page-header breadcrumb="Control" title="Registro de auditoría" [description]="description()" />
 
 <div class="stack">
-  <p class="text-muted text-small">
-    Solo lectura: tu rol tiene <code>audit-logs.read</code>. Los eventos no se pueden editar ni eliminar.
-  </p>
+  <app-section-panel
+    tone="slate"
+    icon="shield"
+    layout="stack"
+    title="Registro de solo lectura"
+    subtitle="Los eventos no se pueden editar ni eliminar."
+  >
+    <p class="text-small">
+      Cada cambio sensible guarda quién lo hizo, qué cambió, cuándo y desde qué red. Los datos personales
+      nunca se almacenan en el detalle del cambio y las direcciones IP se muestran enmascaradas.
+    </p>
+  </app-section-panel>
 
   @if (entries.hasValue()) {
     @let result = entries.value();
-    <section class="grid-auto" aria-label="Resumen del rango seleccionado">
+    <section class="kpi-grid" aria-label="Resumen del rango seleccionado">
       <app-stat-card
         label="Eventos en el rango"
         icon="clock"
+        tone="cyan"
         [value]="result.summary.total"
         [hint]="rangeHint()"
       />
-      <app-stat-card label="Cambios de rol" icon="users" [value]="result.summary.roleChanges" hint="Otorgados, revocados e invitaciones" />
-      <app-stat-card label="Anulaciones de aporte" icon="ban" [value]="result.summary.contributionVoids" />
-      <app-stat-card label="Cierres de periodo" icon="lock" [value]="result.summary.periodClosures" />
+      <app-stat-card
+        label="Cambios de rol"
+        icon="users"
+        tone="orange"
+        [value]="result.summary.roleChanges"
+        hint="Otorgados, revocados e invitaciones"
+      />
+      <app-stat-card
+        label="Anulaciones de aporte"
+        icon="ban"
+        tone="red"
+        [value]="result.summary.contributionVoids"
+      />
+      <app-stat-card
+        label="Cierres de periodo"
+        icon="lock"
+        tone="indigo"
+        [value]="result.summary.periodClosures"
+      />
     </section>
   }
 

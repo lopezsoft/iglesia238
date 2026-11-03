@@ -4,9 +4,11 @@ import {
   InternalServerErrorException,
   Module,
 } from '@nestjs/common';
+import { Public } from '../src/common/security/public.decorator.js';
 import { Prisma } from '../src/generated/prisma/client.js';
 
 /** Test-only routes that throw the errors the global filter must translate. */
+@Public()
 @Controller('test-errors')
 class ErrorProbeController {
   @Get('duplicate')

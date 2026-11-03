@@ -1,105 +1,143 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
-import { EmptyStateComponent, PaginationComponent } from '../../../../shared/ui/feedback.components';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { userMessage } from '../../../../core/errors/domain-error';
+import { DialogComponent } from '../../../../shared/ui/dialog.component';
+import {
+  EmptyStateComponent,
+  ErrorBannerComponent,
+  LoadingComponent,
+  PaginationComponent,
+} from '../../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { paginate } from '../../../../shared/utils/pagination';
-import { ChildDedication, ParentReference } from '../data/records.models';
+import {
+  ChildDedication,
+  ParentReference,
+  RECORDS_PAGE_SIZE,
+  RecordsCongregation,
+} from '../data/records.models';
+import { RecordsRepository } from '../data/records.repository';
+import { debounced } from './debounced';
 
-const PAGE_SIZE = 10;
-
-/** D-04: presentations of children of the active scope, most recent first. */
+/** D-04: presentations of children of the active scope, most recent first, filtered and paged on the server. */
 @Component({
   selector: 'app-dedications-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, IconComponent, EmptyStateComponent, PaginationComponent],
-  template: `
-    <div class="stack">
-      <div class="alert alert--warning" role="note">
-        <app-icon name="lock" />
-        <div>
-          <strong>Datos de menores: acceso restringido</strong>
-          <p class="text-small">
-            Información protegida por la Ley 1581 de 2012. Solo los roles con members.write la consultan; los
-            documentos se muestran enmascarados y cada registro queda en auditoría.
-          </p>
-        </div>
-      </div>
-
-      <section class="card card--flush" aria-labelledby="dedications-title">
-        <header class="card__header panel__header">
-          <h2 id="dedications-title">Presentación de niños</h2>
-          <span class="text-muted text-small">Ordenado por fecha de presentación, más reciente primero</span>
-        </header>
-        @if (rows().length === 0) {
-          <app-empty-state
-            icon="book"
-            title="Sin presentaciones registradas"
-            description="Las presentaciones de niños de la sede aparecerán aquí."
-          />
-        } @else {
-          <div class="table-wrap">
-            <table class="table">
-              <caption class="visually-hidden">Presentaciones de niños registradas en {{ scopeName() }}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Niño(a)</th>
-                  <th scope="col">Fecha de nacimiento</th>
-                  <th scope="col">Padres o acudientes</th>
-                  <th scope="col">Fecha de presentación</th>
-                  <th scope="col">Oficiante</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of page().items; track row.id) {
-                  <tr>
-                    <td>
-                      <div>{{ row.child.fullName }}</div>
-                      <div class="text-muted text-small mono">{{ row.child.maskedDocument ?? 'Sin documento' }}</div>
-                    </td>
-                    <td>{{ row.child.birthDate ? (row.child.birthDate | date: 'dd/MM/yyyy') : '—' }}</td>
-                    <td>
-                      @for (parent of parents(row); track $index) {
-                        <div>
-                          {{ parent.name }}
-                          @if (parent.memberCode) {
-                            <span class="chip chip--mono">{{ parent.memberCode }}</span>
-                          } @else {
-                            <span class="text-muted text-small">(sin registro)</span>
-                          }
-                        </div>
-                      } @empty {
-                        <span class="text-muted">—</span>
-                      }
-                    </td>
-                    <td>{{ row.dedicatedOn | date: 'dd/MM/yyyy' }}</td>
-                    <td>{{ row.pastor?.fullName ?? 'Sin registrar' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          <app-pagination [page]="pageNumber()" [pageSize]="pageSize" [total]="rows().length" (pageChange)="pageNumber.set($event)" />
-        }
-      </section>
-    </div>
-  `,
-  styles: `
-    .panel__header {
-      padding: 1rem 1.25rem 0;
-    }
-  `,
+  imports: [
+    DatePipe,
+    IconComponent,
+    DialogComponent,
+    EmptyStateComponent,
+    ErrorBannerComponent,
+    LoadingComponent,
+    PaginationComponent,
+  ],
+  templateUrl: './dedications-panel.component.html',
+  styleUrl: './records-panel.scss',
 })
 export class DedicationsPanelComponent {
-  readonly rows = input.required<readonly ChildDedication[]>();
+  private readonly repository = inject(RecordsRepository);
+
+  /** Changes after a record is created, so the list reloads. */
+  readonly version = input(0);
+  readonly congregations = input.required<readonly RecordsCongregation[]>();
   readonly scopeName = input.required<string>();
 
-  protected readonly pageSize = PAGE_SIZE;
-  protected readonly pageNumber = linkedSignal({ source: this.rows, computation: () => 1 });
-  protected readonly page = computed(() =>
-    paginate(this.rows(), { page: this.pageNumber(), pageSize: PAGE_SIZE }),
+  protected readonly search = signal('');
+  protected readonly congregationId = signal<number | null>(null);
+  protected readonly from = signal<string | null>(null);
+  protected readonly to = signal<string | null>(null);
+  private readonly query = debounced(this.search);
+
+  protected readonly pageNumber = linkedSignal<unknown, number>({
+    source: () => [this.query(), this.congregationId(), this.from(), this.to()],
+    computation: () => 1,
+  });
+  protected readonly pageSize = RECORDS_PAGE_SIZE;
+  protected readonly hasFilters = computed(
+    () =>
+      this.search() !== '' ||
+      this.congregationId() !== null ||
+      this.from() !== null ||
+      this.to() !== null,
   );
 
-  protected parents(row: ChildDedication): ParentReference[] {
-    return [row.father, row.mother].filter((parent): parent is ParentReference => parent !== null);
+  protected readonly list = rxResource({
+    params: () => ({
+      version: this.version(),
+      page: this.pageNumber(),
+      q: this.query(),
+      congregationId: this.congregationId(),
+      from: this.from(),
+      to: this.to(),
+    }),
+    stream: ({ params }) =>
+      this.repository.dedications({
+        page: params.page,
+        pageSize: RECORDS_PAGE_SIZE,
+        q: params.q,
+        congregationId: params.congregationId,
+        from: params.from,
+        to: params.to,
+      }),
+  });
+  protected readonly result = computed(() => (this.list.hasValue() ? this.list.value() : null));
+  protected readonly loadError = computed(() => userMessage(this.list.error()));
+
+  // Detail of one record. Opening it is audited by the API (records about minors are restricted).
+  protected readonly detailId = signal<number | null>(null);
+  protected readonly detailOpen = linkedSignal<number | null, boolean>({
+    source: this.detailId,
+    computation: (id) => id !== null,
+  });
+  protected readonly detail = rxResource({
+    params: () => this.detailId() ?? undefined,
+    stream: ({ params }) => this.repository.dedication(params),
+  });
+  protected readonly detailData = computed(() =>
+    this.detail.hasValue() ? this.detail.value() : null,
+  );
+  protected readonly detailError = computed(() => userMessage(this.detail.error()));
+
+  protected parents(row: ChildDedication): { role: string; parent: ParentReference }[] {
+    return [
+      { role: 'Padre', parent: row.father },
+      { role: 'Madre', parent: row.mother },
+      { role: 'Acudiente', parent: row.guardian },
+    ].filter((item): item is { role: string; parent: ParentReference } => item.parent !== null);
+  }
+
+  protected setDate(which: 'from' | 'to', raw: string): void {
+    (which === 'from' ? this.from : this.to).set(raw === '' ? null : raw);
+  }
+
+  protected setCongregation(raw: string): void {
+    this.congregationId.set(raw === '' ? null : Number(raw));
+  }
+
+  protected clearFilters(): void {
+    this.search.set('');
+    this.congregationId.set(null);
+    this.from.set(null);
+    this.to.set(null);
+  }
+
+  protected open(row: ChildDedication): void {
+    this.detailId.set(row.id);
+  }
+
+  protected closeDetail(open: boolean): void {
+    this.detailOpen.set(open);
+    if (!open) {
+      this.detailId.set(null);
+    }
   }
 }

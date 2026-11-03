@@ -5,10 +5,7 @@
     <a routerLink="/members">Miembros</a>
     @if (detail(); as member) {
       <span aria-hidden="true"> / </span>
-      <span aria-current="page"
-        >{{ member.person.firstName }} {{ member.person.lastName }}
-        {{ member.person.secondLastName }}</span
-      >
+      <span aria-current="page">{{ fullName() }}</span>
     }
   </nav>
 
@@ -50,29 +47,21 @@
       }
     </div>
 
-    <section class="card member__header" aria-labelledby="member-name">
+    <section class="member__hero" aria-labelledby="member-name">
       <div class="member__avatar" aria-hidden="true">{{ initials() }}</div>
       <div class="member__identity">
-        <div class="cluster">
-          <h1 id="member-name">
-            {{ member.person.firstName }} {{ member.person.lastName }}
-            {{ member.person.secondLastName }}
-          </h1>
-          <span class="chip chip--mono">{{ member.code }}</span>
+        <div class="member__title">
+          <h1 id="member-name">{{ fullName() }}</h1>
+          <span class="member__chip mono">{{ member.code }}</span>
           <app-status-badge
             [label]="statusLabels[member.status]"
             [tone]="statusTones[member.status]"
           />
         </div>
-        <dl class="details member__facts">
+        <dl class="member__facts">
           <div>
             <dt>Sede actual</dt>
-            <dd>
-              {{ member.congregationName }}
-              @if (member.congregationMunicipalityCode) {
-                · {{ municipalityLabel(member.congregationMunicipalityCode) }}
-              }
-            </dd>
+            <dd>{{ congregationPlace() }}</dd>
           </div>
           <div>
             <dt>Fecha de ingreso</dt>
@@ -83,6 +72,10 @@
             <dd class="mono">
               {{ documentLabel(member.person.documentTypeCode, member.person.documentNumber) }}
             </dd>
+          </div>
+          <div>
+            <dt>Celular</dt>
+            <dd class="mono">{{ member.person.phone ?? '—' }}</dd>
           </div>
         </dl>
       </div>
@@ -111,7 +104,17 @@
           </button>
           <button
             type="button"
-            class="btn btn--primary"
+            class="btn btn--secondary"
+            aria-haspopup="dialog"
+            [disabled]="!canChangeStatus()"
+            (click)="statusOpen.set(true)"
+          >
+            <app-icon name="sliders" />
+            Cambiar estado
+          </button>
+          <button
+            type="button"
+            class="btn btn--secondary"
             aria-haspopup="dialog"
             (click)="editOpen.set(true)"
           >
@@ -121,68 +124,61 @@
         }
       </div>
       @if (canWrite() && !canTransfer()) {
-        <p id="transfer-hint" class="text-muted text-small member__hint">
-          Solo se trasladan miembros en estado Activo.
-        </p>
+        <p id="transfer-hint" class="member__hint">Solo se trasladan miembros en estado Activo.</p>
       }
     </section>
 
-    <section class="card">
-      <div
-        class="tabs member__tabs"
-        role="tablist"
-        aria-label="Secciones de la ficha"
-        (keydown)="onTabKeydown($event)"
-      >
-        @for (tab of tabs; track tab.id) {
-          <button
-            type="button"
-            role="tab"
-            [id]="'member-tab-' + tab.id"
-            [attr.aria-selected]="activeTab() === tab.id"
-            [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
-            aria-controls="member-tabpanel"
-            (click)="selectTab(tab.id)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
+    <app-tab-cards
+      [items]="tabs"
+      [(selected)]="activeTab"
+      ariaLabel="Secciones de la ficha"
+      idPrefix="member"
+    />
 
-      <div
-        id="member-tabpanel"
-        role="tabpanel"
-        tabindex="0"
-        [attr.aria-labelledby]="'member-tab-' + activeTab()"
-      >
-        @switch (activeTab()) {
-          @case ('personal') {
-            <app-personal-data-tab [member]="member" />
-          }
-          @case ('family') {
-            <app-family-tab [memberId]="member.id" />
-          }
-          @case ('studies') {
-            <app-studies-tab [memberId]="member.id" />
-          }
-          @case ('positions') {
-            <app-positions-tab [memberId]="member.id" />
-          }
-          @case ('socioeconomic') {
-            <app-socioeconomic-tab [memberId]="member.id" />
-          }
-          @case ('registry') {
-            <app-registry-tab [memberId]="member.id" [revision]="revision()" />
-          }
-          @case ('consent') {
-            <app-consent-tab [memberId]="member.id" />
-          }
+    <section
+      class="card member__panel"
+      role="tabpanel"
+      tabindex="0"
+      [id]="'member-panel-' + activeTab()"
+      [attr.aria-labelledby]="'member-tab-' + activeTab()"
+    >
+      @switch (activeTab()) {
+        @case ('personal') {
+          <app-personal-data-tab [member]="member" (editMembership)="membershipOpen.set(true)" />
         }
-      </div>
+        @case ('family') {
+          <app-family-tab [memberId]="member.id" />
+        }
+        @case ('studies') {
+          <app-studies-tab [memberId]="member.id" />
+        }
+        @case ('positions') {
+          <app-positions-tab [memberId]="member.id" />
+        }
+        @case ('socioeconomic') {
+          <app-socioeconomic-tab [memberId]="member.id" />
+        }
+        @case ('registry') {
+          <app-registry-tab [memberId]="member.id" [revision]="revision()" />
+        }
+        @case ('consent') {
+          <app-consent-tab
+            [memberId]="member.id"
+            [memberStatus]="member.status"
+            (anonymizedDone)="onAnonymized()"
+          />
+        }
+      }
     </section>
 
     @if (canWrite()) {
       <app-person-edit-dialog [(open)]="editOpen" [member]="member" (saved)="onPersonSaved()" />
+      <app-membership-edit-dialog
+        [(open)]="membershipOpen"
+        [member]="member"
+        (saved)="onMembershipSaved()"
+      />
+      <app-status-dialog [(open)]="statusOpen" [member]="member" (changed)="onStatusChanged()" />
       <app-transfer-dialog
         [(open)]="transferOpen"
         [member]="member"

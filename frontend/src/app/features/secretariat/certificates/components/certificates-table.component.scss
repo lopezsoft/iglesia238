@@ -24,3 +24,25 @@
   flex-wrap: nowrap;
   gap: $space-2;
 }
+
+.table-filters {
+  padding: 0 $space-5 $space-4;
+}
+
+.filter-search {
+  flex: 1 1 18rem;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}

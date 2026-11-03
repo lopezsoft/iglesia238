@@ -18,6 +18,8 @@ body {
   font-family: $font-sans;
   font-size: $font-size-sm;
   line-height: $line-height;
+  font-feature-settings: 'cv11' 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -30,18 +32,20 @@ p {
 
 h1 {
   font-size: $font-size-xl;
-  font-weight: $font-weight-semibold;
-  line-height: 1.25;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 h2 {
   font-size: $font-size-md;
-  font-weight: $font-weight-semibold;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.015em;
 }
 
 h3 {
   font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
+  font-weight: $font-weight-bold;
 }
 
 a {
@@ -78,6 +82,7 @@ code,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

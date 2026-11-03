@@ -1,4 +1,4 @@
-// Shared part of the membership context, mirroring backend/prisma/schema/membership.prisma.
+// Shared part of the membership context (the API shapes live next to each feature).
 // Contacts and addresses live in their own tables in the API; the frontend view flattens the
 // primary ones into the person.
 
@@ -27,31 +27,6 @@ export interface Person {
   readonly municipalityCode: string | null;
 }
 
-export interface Member {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly personId: number;
-  readonly congregationId: number;
-  readonly status: MemberStatus;
-  readonly joinedOn: string | null;
-  readonly isBaptized: boolean | null;
-  readonly waterBaptismOn: string | null;
-  readonly previousCongregationName: string | null;
-}
-
-/** Book, folio and member number of a member in a congregation. */
-export interface MemberRegistryEntry {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly memberId: number;
-  readonly congregationId: number;
-  readonly memberNumber: number;
-  readonly registryBook: string | null;
-  readonly registryFolio: string | null;
-  readonly startedOn: string;
-  readonly endedOn: string | null;
-}
-
 export interface PrivacyPolicy {
   readonly id: number;
   readonly denominationId: number;
@@ -61,58 +36,6 @@ export interface PrivacyPolicy {
 }
 
 export type ConsentChannel = 'WEB_FORM' | 'PAPER';
-
-/** Authorization to process personal data (Ley 1581 de 2012). Revoking never deletes it. */
-export interface DataConsent {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly personId: number;
-  /** Person who authorizes on behalf of a minor. */
-  readonly guardianId: number | null;
-  readonly policyId: number;
-  readonly channel: ConsentChannel;
-  readonly grantedAt: string;
-  readonly revokedAt: string | null;
-}
-
-/** Answers of the public form that have no column of their own (formData in the API). */
-export interface ApplicationFormData {
-  readonly secondLastName: string | null;
-  readonly sex: Sex | null;
-  readonly maritalStatusCode: string | null;
-  readonly address: string | null;
-  readonly municipalityCode: string | null;
-  readonly guardianRelationship: string | null;
-  readonly guardianPhone: string | null;
-  readonly previousCongregationName: string | null;
-}
-
-export interface MembershipApplication {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly congregationId: number;
-  readonly policyId: number;
-  /** Demo only: the API returns the code once and stores only its hash. */
-  readonly trackingCode: string;
-  readonly status: ApplicationStatus;
-  readonly documentTypeCode: string | null;
-  readonly documentNumber: string | null;
-  readonly firstName: string;
-  readonly lastName: string;
-  readonly email: string | null;
-  readonly phone: string | null;
-  readonly birthDate: string | null;
-  readonly guardianName: string | null;
-  readonly guardianDocument: string | null;
-  readonly formData: ApplicationFormData;
-  readonly consentedAt: string;
-  readonly reviewerId: number | null;
-  readonly reviewedAt: string | null;
-  readonly rejectionReason: string | null;
-  readonly matchedPersonId: number | null;
-  readonly memberId: number | null;
-  readonly createdAt: string;
-}
 
 export const MEMBER_STATUS_LABELS: Readonly<Record<MemberStatus, string>> = {
   ACTIVE: 'Activo',

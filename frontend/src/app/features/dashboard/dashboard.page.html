@@ -7,63 +7,146 @@
   }
 </app-page-header>
 
-@if (loadError(); as message) {
-  <app-error-banner [message]="message" (retry)="summary.reload()" />
-} @else if (summary.isLoading() && !data()) {
-  <app-loading label="Cargando el resumen…" />
-}
+<ng-template #periodControl>
+  <app-segmented-control
+    ariaLabel="Periodo del resumen"
+    [options]="periods"
+    [value]="period()"
+    (valueChange)="setPeriod($event)"
+  />
+</ng-template>
 
-<div class="dashboard">
-  @if (data(); as data) {
-    @if (kpis().length > 0) {
-      <section aria-labelledby="kpi-title">
-        <h2 id="kpi-title" class="visually-hidden">Indicadores de {{ scopeLabel() }}</h2>
-        <p class="text-muted text-small dashboard__as-of">
-          Cifras al {{ data.asOf | date: 'dd/MM/yyyy' }}
-        </p>
-        <div class="grid-auto">
-          @for (kpi of kpis(); track kpi.key) {
-            <app-stat-card
-              [label]="kpi.label"
-              [value]="kpi.value"
-              [hint]="kpi.hint"
-              [icon]="kpi.icon"
-              [link]="kpi.link"
-            />
-          }
-        </div>
-      </section>
-    }
-  }
-
-  <div class="dashboard__grid">
-    <div class="dashboard__main">
-      @if (data(); as data) {
-        @if (data.pendingApplications; as applications) {
-          <app-pending-applications-widget [overview]="applications" [scopeLabel]="scopeLabel()" />
-        }
-        @if (data.monthlyIncome; as income) {
-          <app-monthly-income-widget
-            [overview]="income"
-            [scopeLabel]="scopeLabel()"
-            [readOnly]="!auth.can('contributions.write')"
-            [canOpenReports]="auth.can('reports.read')"
+<!-- KPI, panels, lists and trends of one tab, in that order. -->
+<ng-template #widgets let-slice>
+  @if (slice.kpis.length > 0) {
+    <section aria-label="Indicadores principales">
+      <div class="kpi-grid">
+        @for (kpi of slice.kpis; track kpi.key) {
+          <app-stat-card
+            [label]="kpi.label"
+            [value]="kpi.value"
+            [hint]="kpi.hint"
+            [icon]="kpi.icon"
+            [tone]="kpi.tone"
+            [link]="kpi.link"
+            [comparison]="kpi.comparison"
+            [compareLabel]="kpi.compareLabel"
+            [compareValue]="kpi.compareValue"
           />
         }
-        @if (data.cashBook; as cashBook) {
-          <app-cash-book-widget [overview]="cashBook" />
-        }
-        @if (data.congregations; as congregations) {
-          <app-congregations-widget [congregations]="congregations" />
-        }
-        @if (data.recentAudit; as entries) {
-          <app-recent-audit-widget [entries]="entries" />
-        }
+      </div>
+    </section>
+  }
+  @for (panel of slice.panels; track panel.key) {
+    <app-widget-panel [widget]="panel" />
+  }
+  @if (slice.trends.length > 0) {
+    <div class="dash__columns">
+      @for (trend of slice.trends; track trend.key) {
+        <app-widget-trend [widget]="trend" />
       }
-      <app-quick-access />
     </div>
-    <div class="dashboard__side">
-      <app-role-summary [denominationName]="data()?.denominationName ?? null" />
+  }
+  @if (slice.lists.length > 0) {
+    <div class="dash__columns">
+      @for (list of slice.lists; track list.key) {
+        <app-widget-list [widget]="list" />
+      }
     </div>
+  }
+</ng-template>
+
+<div class="dash" [class.dash--refreshing]="refreshing()" [attr.aria-busy]="summary.isLoading()">
+  <div class="dash__bar">
+    <app-tab-cards
+      class="dash__tabs"
+      ariaLabel="Secciones del inicio"
+      idPrefix="dash"
+      [items]="tabs"
+      [selected]="tab()"
+      (selectedChange)="setTab($event)"
+    />
+    <app-export-actions [formats]="['csv']" [disabled]="!data()" (export)="exportCsv()" />
   </div>
+
+  @if (loadError(); as message) {
+    <app-error-banner [message]="message" (retry)="summary.reload()" />
+  }
+
+  @if (data(); as summary) {
+    @if (summary.unavailable.length > 0) {
+      <div class="alert alert--warning" role="status">
+        <app-icon name="alert" />
+        <div class="cluster">
+          <span>No se pudieron cargar algunas cifras, así que los totales pueden estar incompletos.</span>
+          <button type="button" class="btn btn--secondary btn--sm" (click)="reload()">Reintentar</button>
+        </div>
+      </div>
+    }
+
+    @if (tab() === 'general') {
+      <div class="dash__panel" role="tabpanel" id="dash-panel-general" aria-labelledby="dash-tab-general">
+        @if (hero(); as view) {
+          <app-hero-card
+            [eyebrow]="view.eyebrow"
+            [title]="view.title"
+            [label]="view.label"
+            [value]="view.value"
+            [comparison]="view.comparison"
+            [compareLabel]="view.compareLabel"
+            [date]="view.date"
+            [series]="view.series"
+          >
+            <div hero-controls class="dash__hero-controls">
+              <app-segmented-control
+                variant="on-brand"
+                ariaLabel="Periodo del resumen"
+                [options]="periods"
+                [value]="period()"
+                (valueChange)="setPeriod($event)"
+              />
+              <button type="button" class="dash__refresh" aria-label="Actualizar cifras" (click)="reload()">
+                <app-icon name="refresh" [size]="16" />
+              </button>
+            </div>
+          </app-hero-card>
+        } @else {
+          <div class="dash__toolbar"><ng-container [ngTemplateOutlet]="periodControl" /></div>
+        }
+
+        @if (isGeneralEmpty()) {
+          <app-empty-state
+            icon="bar-chart"
+            title="Aún no hay cifras para tu rol"
+            description="Cuando las áreas que consultas registren actividad en este alcance, sus indicadores aparecerán aquí."
+          />
+        } @else {
+          <ng-container [ngTemplateOutlet]="widgets" [ngTemplateOutletContext]="{ $implicit: general() }" />
+        }
+        <app-quick-access />
+      </div>
+    } @else {
+      <div class="dash__panel" role="tabpanel" id="dash-panel-indicators" aria-labelledby="dash-tab-indicators">
+        <div class="dash__toolbar"><ng-container [ngTemplateOutlet]="periodControl" /></div>
+        @if (indicators().kpis.length + indicators().panels.length + indicators().lists.length + indicators().trends.length === 0) {
+          <app-empty-state
+            icon="pie-chart"
+            title="Aún no hay indicadores"
+            description="Las tendencias y los indicadores de seguridad aparecen aquí según los permisos de tu rol."
+          />
+        } @else {
+          <ng-container [ngTemplateOutlet]="widgets" [ngTemplateOutletContext]="{ $implicit: indicators() }" />
+        }
+      </div>
+    }
+  } @else if (!loadError()) {
+    <div class="dash__panel" role="status" aria-label="Cargando el resumen">
+      <app-skeleton height="14.5rem" />
+      <div class="kpi-grid">
+        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+          <app-skeleton height="8rem" />
+        }
+      </div>
+    </div>
+  }
 </div>

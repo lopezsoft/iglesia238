@@ -1,13 +1,38 @@
 @use 'tokens' as *;
-
-.period-field {
-  min-width: 12rem;
-}
+@use 'mixins' as *;
 
 .flash {
   align-items: center;
 
   span {
     flex: 1;
+  }
+}
+
+.hero-controls {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+// Round glass button that sits on the gradient of the hero.
+.hero-refresh {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: $radius-control;
+  background: $glass-bg;
+  color: $color-on-brand;
+  cursor: pointer;
+
+  &:hover {
+    background: $glass-bg-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
   }
 }

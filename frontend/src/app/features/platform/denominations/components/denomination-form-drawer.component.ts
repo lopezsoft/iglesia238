@@ -18,7 +18,7 @@ import { DomainError, userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import {
-  DENOMINATION_DEFAULT_CONTRIBUTION_TYPES,
+  DENOMINATION_TEMPLATE_ITEMS,
   DENOMINATION_NAME_MAX_LENGTH,
   DenominationSummary,
 } from '../data/denominations.models';
@@ -46,7 +46,7 @@ export class DenominationFormDrawerComponent {
   readonly saved = output<DenominationSaved>();
 
   protected readonly maxLength = DENOMINATION_NAME_MAX_LENGTH;
-  protected readonly contributionTypes = DENOMINATION_DEFAULT_CONTRIBUTION_TYPES;
+  protected readonly templateItems = DENOMINATION_TEMPLATE_ITEMS;
   protected readonly isCreate = computed(() => this.denomination() === null);
   protected readonly pending = signal(false);
   protected readonly nameError = signal<string | null>(null);

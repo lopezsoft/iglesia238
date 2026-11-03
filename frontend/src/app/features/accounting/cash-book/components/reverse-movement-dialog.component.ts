@@ -152,10 +152,11 @@ export class ReverseMovementDialogComponent {
   }
 
   private insideOpenRange(control: AbstractControl<string>): ValidationErrors | null {
-    const range = this.openRange();
+    // The form is built before the inputs are bound: read them only once there is a date to check.
     if (!control.value) {
       return null;
     }
+    const range = this.openRange();
     return !range || control.value < range.min || control.value > range.max ? { closedPeriod: true } : null;
   }
 

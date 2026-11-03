@@ -1,5 +1,14 @@
 import { Observable } from 'rxjs';
-import { BudgetLineRow, BudgetOverview, SaveBudgetLineCommand } from './budget.models';
+import { BudgetStatus } from '../../data/accounting.models';
+import {
+  BudgetHead,
+  BudgetLineDetail,
+  BudgetLineRow,
+  BudgetOverview,
+  CopyBudgetCommand,
+  CopyBudgetResult,
+  SaveBudgetLineCommand,
+} from './budget.models';
 
 /**
  * Port of Presupuesto (E-06): fixed and committee budgets of a sede per year, with the real
@@ -11,4 +20,11 @@ export abstract class BudgetRepository {
   /** Adds or edits a line; the first line of a year and type creates its budget as a draft. */
   abstract saveLine(command: SaveBudgetLineCommand): Observable<BudgetLineRow>;
   abstract deleteLine(lineId: number): Observable<void>;
+  abstract lineDetail(lineId: number): Observable<BudgetLineDetail>;
+  /** Draft → approved → closed; an approved budget can go back to draft. */
+  abstract changeStatus(budgetId: number, status: BudgetStatus): Observable<BudgetHead>;
+  /** Expected growth of the income as a fraction; null clears it. */
+  abstract setIncomeIncreaseRate(budgetId: number, rate: number | null): Observable<BudgetHead>;
+  /** Starts the budget of a year from another one, as a draft. */
+  abstract copy(command: CopyBudgetCommand): Observable<CopyBudgetResult>;
 }

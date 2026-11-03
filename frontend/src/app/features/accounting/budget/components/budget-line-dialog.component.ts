@@ -18,7 +18,7 @@ import { userMessage } from '../../../../core/errors/domain-error';
 import { formatMoney } from '../../../../shared/pipes/money.pipe';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { BUDGET_TYPE_LABELS, BudgetType } from '../../data/accounting.models';
-import { BudgetLineRow, BudgetOption } from '../data/budget.models';
+import { BudgetAccountOption, BudgetLineRow, BudgetOption } from '../data/budget.models';
 import { BudgetRepository } from '../data/budget.repository';
 
 /** Add or edit a budget line: account + fund (the committee on a committee budget), annual > 0. */
@@ -97,7 +97,7 @@ export class BudgetLineDialogComponent {
   readonly line = input<BudgetLineRow | null>(null);
   readonly type = input.required<BudgetType>();
   readonly year = input.required<number>();
-  readonly accounts = input.required<readonly BudgetOption[]>();
+  readonly accounts = input.required<readonly BudgetAccountOption[]>();
   readonly funds = input.required<readonly BudgetOption[]>();
   readonly saved = output<BudgetLineRow>();
 

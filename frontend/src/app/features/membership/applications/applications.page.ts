@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
-  linkedSignal,
   signal,
+  untracked,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -20,19 +22,18 @@ import {
 } from '../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
-import { paginate } from '../../../shared/utils/pagination';
 import { ApplicationDetailComponent } from './components/application-detail.component';
 import { ApplicationListComponent } from './components/application-list.component';
 import { ApplicationStatusFilterComponent } from './components/application-status-filter.component';
 import {
+  APPLICATIONS_PAGE_SIZE,
   APPLICATION_FILTER_TITLES,
   ApplicationDetail,
   ApplicationFilter,
+  ApplicationListQuery,
   parseApplicationFilter,
 } from './data/applications.models';
 import { ApplicationsRepository } from './data/applications.repository';
-
-const PAGE_SIZE = 8;
 
 /** Feedback of the last command, shown above the detail in a live region. */
 type ReviewNotice =
@@ -44,15 +45,22 @@ type ReviewNotice =
     }
   | { readonly kind: 'info'; readonly text: string };
 
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+function isoDayOrNull(value: string | undefined): string | null {
+  return value && ISO_DAY.test(value) ? value : null;
+}
+
 /**
  * C-03/C-04: queue of applications of the active sede (or of every sede of the denomination)
- * with a master/detail review. The chip and the selected application live in the URL
- * (?status=…&id=…) so a review can be shared or reloaded.
+ * with a master/detail review. The filters, the page and the selected application live in the URL
+ * (?status=…&q=…&page=…&id=…) so a review can be shared or reloaded.
  */
 @Component({
   selector: 'app-applications-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ReactiveFormsModule,
     RouterLink,
     PageHeaderComponent,
     IconComponent,
@@ -76,8 +84,15 @@ export class ApplicationsPage {
   /** Query params, bound by withComponentInputBinding. */
   readonly status = input<string>();
   readonly id = input<string>();
+  readonly q = input<string>();
+  readonly from = input<string>();
+  readonly to = input<string>();
+  readonly order = input<string>();
+  readonly page = input<string>();
+  readonly sede = input<string>();
 
   protected readonly userMessage = userMessage;
+  protected readonly pageSize = APPLICATIONS_PAGE_SIZE;
   protected readonly filter = computed(() => parseApplicationFilter(this.status()));
   protected readonly canReview = computed(() => this.auth.can('applications.review'));
   protected readonly reviewerName = computed(() => this.auth.user()?.displayName ?? '');
@@ -88,24 +103,59 @@ export class ApplicationsPage {
       : (this.auth.activeScope()?.label ?? 'tu sede'),
   );
 
-  protected readonly queue = rxResource({
-    params: () => ({ filter: this.filter(), tenant: this.auth.tenant() }),
-    stream: ({ params }) => this.repository.list(params.filter),
+  /** Sedes of the denomination the reviewer can narrow the queue to (denomination scope only). */
+  protected readonly sedes = computed(() => {
+    const { denominationId } = this.auth.tenant();
+    return (this.auth.user()?.selectableScopes ?? []).filter(
+      (scope) =>
+        scope.kind === 'CONGREGATION' &&
+        scope.denominationId === denominationId &&
+        scope.congregationId !== null,
+    );
   });
 
-  protected readonly page = linkedSignal({ source: this.filter, computation: () => 1 });
-  protected readonly pageSize = PAGE_SIZE;
+  protected readonly query = computed<ApplicationListQuery>(() => {
+    const requestedPage = Number(this.page());
+    const sedeId = Number(this.sede());
+    return {
+      filter: this.filter(),
+      search: this.q()?.trim() ?? '',
+      congregationId: this.denominationWide() && Number.isInteger(sedeId) && sedeId > 0 ? sedeId : null,
+      from: isoDayOrNull(this.from()),
+      to: isoDayOrNull(this.to()),
+      order: this.order() === 'asc' ? 'asc' : 'desc',
+      page: Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1,
+      pageSize: APPLICATIONS_PAGE_SIZE,
+    };
+  });
+
+  protected readonly filtersActive = computed(() => {
+    const query = this.query();
+    return query.search !== '' || query.congregationId !== null || !!query.from || !!query.to;
+  });
+
+  protected readonly filterForm = inject(NonNullableFormBuilder).group({
+    q: [''],
+    from: [''],
+    to: [''],
+    sede: [''],
+    order: ['desc'],
+  });
+
+  protected readonly queue = rxResource({
+    params: () => ({ query: this.query(), tenant: this.auth.tenant() }),
+    stream: ({ params }) => this.repository.list(params.query),
+  });
+
   protected readonly items = computed(() =>
     this.queue.hasValue() ? this.queue.value().items : [],
   );
-  protected readonly pagedItems = computed(
-    () => paginate(this.items(), { page: this.page(), pageSize: PAGE_SIZE }).items,
-  );
+  protected readonly total = computed(() => (this.queue.hasValue() ? this.queue.value().total : 0));
   protected readonly listTitle = computed(
-    () => `${this.items().length} ${APPLICATION_FILTER_TITLES[this.filter()]}`,
+    () => `${this.total()} ${APPLICATION_FILTER_TITLES[this.filter()]}`,
   );
 
-  /** The application in the URL, or the first one of the queue. */
+  /** The application in the URL, or the first one of the page. */
   protected readonly selectedId = computed<number | null>(() => {
     const fromUrl = Number(this.id());
     if (Number.isInteger(fromUrl) && fromUrl > 0) {
@@ -126,9 +176,9 @@ export class ApplicationsPage {
   protected readonly commandError = signal<string | null>(null);
   protected readonly notice = signal<ReviewNotice | null>(null);
   /**
-   * "No es la misma persona" decisions of this review session, by application id. Approval stays
-   * blocked: two persons of the denomination cannot share a document, so the reviewer rejects
-   * the application for the applicant to correct the document.
+   * "No es la misma persona" decisions of this review session, by application id. A plain
+   * approval stays blocked: two persons of the denomination cannot share a document, so the
+   * reviewer rejects the application for the applicant to correct the document.
    */
   private readonly dismissedMatches = signal<ReadonlySet<number>>(new Set());
   protected readonly duplicateDismissed = computed(() => {
@@ -136,14 +186,56 @@ export class ApplicationsPage {
     return id !== null && this.dismissedMatches().has(id);
   });
 
+  constructor() {
+    // Mirror the URL in the filter form, so a shared link shows what it filters.
+    effect(() => {
+      const query = this.query();
+      untracked(() =>
+        this.filterForm.reset(
+          {
+            q: query.search,
+            from: query.from ?? '',
+            to: query.to ?? '',
+            sede: query.congregationId?.toString() ?? '',
+            order: query.order,
+          },
+          { emitEvent: false },
+        ),
+      );
+    });
+  }
+
   protected selectFilter(filter: ApplicationFilter): void {
     this.clearFeedback();
-    void this.navigate({ status: filter === 'PENDING' ? null : filter.toLowerCase(), id: null });
+    void this.navigate({ status: filter === 'PENDING' ? null : filter.toLowerCase(), id: null, page: null });
   }
 
   protected selectApplication(id: number): void {
     this.clearFeedback();
     void this.navigate({ id });
+  }
+
+  protected changePage(page: number): void {
+    void this.navigate({ page: page === 1 ? null : page, id: null });
+  }
+
+  protected applyFilters(): void {
+    const { q, from, to, sede, order } = this.filterForm.getRawValue();
+    this.clearFeedback();
+    void this.navigate({
+      q: q.trim() || null,
+      from: from || null,
+      to: to || null,
+      sede: sede || null,
+      order: order === 'asc' ? 'asc' : null,
+      page: null,
+      id: null,
+    });
+  }
+
+  protected clearFilters(): void {
+    this.filterForm.reset({ q: '', from: '', to: '', sede: '', order: 'desc' });
+    this.applyFilters();
   }
 
   protected dismissDuplicate(application: ApplicationDetail): void {
@@ -160,14 +252,14 @@ export class ApplicationsPage {
   protected reject(application: ApplicationDetail, reason: string): void {
     void this.run(application, this.repository.reject(application.id, reason), () => ({
       kind: 'info',
-      text: `Solicitud rechazada. El solicitante verá el motivo al consultar el código ${application.trackingCode}.`,
+      text: 'Solicitud rechazada. El solicitante verá que no fue aprobada y que debe comunicarse con la secretaría; el motivo queda como nota interna.',
     }));
   }
 
   protected markDuplicate(application: ApplicationDetail, personId: number): void {
     void this.run(application, this.repository.markDuplicate(application.id, personId), () => ({
       kind: 'info',
-      text: `Solicitud marcada como duplicada y enlazada a Persona #${personId}. No se creó un miembro nuevo.`,
+      text: 'Solicitud marcada como duplicada y enlazada a la persona que ya tenía el documento. No se creó un miembro nuevo.',
     }));
   }
 
@@ -175,17 +267,29 @@ export class ApplicationsPage {
     void this.run(
       application,
       this.repository.approve(application.id),
-      (result) => ({
-        kind: 'approved',
-        memberId: result.memberId,
-        memberCode: result.memberCode,
-        text: `${application.fullName} ya figura en Miembros de ${application.congregationName} con su autorización de datos registrada.`,
-      }),
+      (result) => this.approvedNotice(application, result.memberId, result.memberCode),
+    );
+  }
+
+  protected approveLinked(application: ApplicationDetail, personId: number): void {
+    void this.run(
+      application,
+      this.repository.approve(application.id, { linkToPersonId: personId }),
+      (result) => this.approvedNotice(application, result.memberId, result.memberCode),
     );
   }
 
   protected dismissNotice(): void {
     this.notice.set(null);
+  }
+
+  private approvedNotice(application: ApplicationDetail, memberId: number, memberCode: string): ReviewNotice {
+    return {
+      kind: 'approved',
+      memberId,
+      memberCode,
+      text: `${application.fullName} ya figura en Miembros de ${application.congregationName} con su autorización de datos registrada.`,
+    };
   }
 
   /** Runs a command, keeps the application selected and refreshes the queue and the detail. */
@@ -204,6 +308,9 @@ export class ApplicationsPage {
       this.detail.reload();
     } catch (error) {
       this.commandError.set(userMessage(error));
+      // The state may have changed under us (another reviewer): show the current one.
+      this.queue.reload();
+      this.detail.reload();
     } finally {
       this.pending.set(false);
     }

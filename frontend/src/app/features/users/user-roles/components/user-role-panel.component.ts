@@ -20,6 +20,7 @@ import {
   ADMIN_ROLES,
   GrantContext,
   ManagedUser,
+  OneTimeLink,
   RoleAssignmentView,
   activeAssignments,
   assignmentLabel,
@@ -28,12 +29,20 @@ import {
 } from '../data/user-roles.models';
 import { UserRolesRepository } from '../data/user-roles.repository';
 import { AssignRoleFormComponent } from './assign-role-form.component';
+import { OneTimeLinkDialogComponent } from './one-time-link-dialog.component';
 
 /** Detail of the selected user: active roles, assign form and revoked history. */
 @Component({
   selector: 'app-user-role-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AssignRoleFormComponent, DatePipe, DialogComponent, IconComponent, RouterLink],
+  imports: [
+    AssignRoleFormComponent,
+    DatePipe,
+    DialogComponent,
+    IconComponent,
+    OneTimeLinkDialogComponent,
+    RouterLink,
+  ],
   templateUrl: './user-role-panel.component.html',
   styleUrl: './user-role-panel.component.scss',
 })
@@ -42,6 +51,8 @@ export class UserRolePanelComponent {
   readonly context = input.required<GrantContext>();
   readonly changed = output<string>();
   readonly closed = output<void>();
+  /** A new one-time link was generated (the dialog shows it; the page refreshes the list). */
+  readonly linkIssued = output<void>();
 
   private readonly repository = inject(UserRolesRepository);
   private readonly auth = inject(AuthService);
@@ -64,6 +75,13 @@ export class UserRolePanelComponent {
   protected readonly revoking = signal<RoleAssignmentView | null>(null);
   protected readonly confirmOpen = signal(false);
   protected readonly confirmError = signal<string | null>(null);
+  protected readonly issuedLink = signal<OneTimeLink | null>(null);
+  protected readonly linkOpen = signal(false);
+  protected readonly linkLabel = computed(() =>
+    this.user().status === 'INVITATION_PENDING'
+      ? 'Generar enlace de invitación'
+      : 'Generar enlace de recuperación',
+  );
 
   protected isOwnAdminRole(assignment: RoleAssignmentView): boolean {
     return this.user().isSelf && ADMIN_ROLES.includes(assignment.role);
@@ -71,6 +89,23 @@ export class UserRolePanelComponent {
 
   protected isActiveAgain(assignment: RoleAssignmentView): boolean {
     return hasActiveEquivalent(this.user(), assignment);
+  }
+
+  protected async issueLink(): Promise<void> {
+    if (this.pending()) {
+      return;
+    }
+    this.pending.set(true);
+    this.error.set(null);
+    try {
+      this.issuedLink.set(await firstValueFrom(this.repository.issueLink(this.user().id)));
+      this.linkOpen.set(true);
+      this.linkIssued.emit();
+    } catch (error) {
+      this.error.set(userMessage(error));
+    } finally {
+      this.pending.set(false);
+    }
   }
 
   protected askRevoke(assignment: RoleAssignmentView): void {
@@ -90,7 +125,7 @@ export class UserRolePanelComponent {
       await firstValueFrom(this.repository.revokeRole(assignment.id));
       this.confirmOpen.set(false);
       this.changed.emit(
-        `Se revocó ${assignmentLabel(assignment)} a ${this.user().displayName}. El registro queda en el historial; el cambio aplica en su próximo inicio de sesión.`,
+        `Se revocó ${assignmentLabel(assignment)} a ${this.user().displayName}. El registro queda en el historial y el cambio aplica de inmediato.`,
       );
     } catch (error) {
       this.confirmError.set(userMessage(error));
@@ -115,7 +150,7 @@ export class UserRolePanelComponent {
         }),
       );
       this.changed.emit(
-        `Se otorgó de nuevo ${assignmentLabel(assignment)} a ${this.user().displayName}. Los cambios aplican en su próximo inicio de sesión.`,
+        `Se otorgó de nuevo ${assignmentLabel(assignment)} a ${this.user().displayName}. Aplica de inmediato.`,
       );
     } catch (error) {
       this.error.set(userMessage(error));

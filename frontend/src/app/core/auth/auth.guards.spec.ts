@@ -1,16 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { CanMatchFn, Route, Router, UrlSegment, UrlTree, provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { DEMO_PASSWORD } from '../demo/demo-fixtures';
 import { AuthGateway } from './auth.gateway';
 import { authGuard, permissionGuard } from './auth.guards';
 import { AuthService } from './auth.service';
-import { DemoAuthGateway } from './demo-auth.gateway';
+import { SCRIPTED_PASSWORD, ScriptedAuthGateway } from './testing/scripted-auth.gateway';
+import { SEDE_UNO, sessionOf, treasurer } from './testing/scripted-sessions';
 
 function setup(): { auth: AuthService; router: Router } {
   sessionStorage.clear();
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: AuthGateway, useClass: DemoAuthGateway }],
+    providers: [provideRouter([]), { provide: AuthGateway, useValue: new ScriptedAuthGateway([sessionOf('tesorera@iglesia.example', 'Tesorera Uno', [treasurer(SEDE_UNO)], [SEDE_UNO])]) }],
   });
   return { auth: TestBed.inject(AuthService), router: TestBed.inject(Router) };
 }
@@ -32,7 +32,7 @@ describe('route guards', () => {
 
   it('opens a module only with its permission in the active scope', async () => {
     const { auth, router } = setup();
-    await firstValueFrom(auth.login('jorge.ramirez@montedesion.example', DEMO_PASSWORD));
+    await firstValueFrom(auth.login('tesorera@iglesia.example', SCRIPTED_PASSWORD));
 
     const allowed = await run(permissionGuard('contributions.read'));
     const denied = await run(permissionGuard('members.read'));

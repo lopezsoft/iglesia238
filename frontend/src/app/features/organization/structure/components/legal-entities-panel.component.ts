@@ -12,7 +12,6 @@ import {
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { municipalityLabel } from '../../../../core/models/catalogs';
 import {
   EmptyStateComponent,
   ErrorBannerComponent,
@@ -21,7 +20,7 @@ import {
 } from '../../../../shared/ui/feedback.components';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import { paginate } from '../../../../shared/utils/pagination';
-import { LegalEntityRow } from '../data/organization.models';
+import { LegalEntityRow, placeLabel } from '../data/organization.models';
 import { OrganizationRepository } from '../data/organization.repository';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 import {
@@ -79,8 +78,8 @@ export class LegalEntitiesPanelComponent {
   protected readonly pending = signal(false);
   protected readonly actionError = signal<string | null>(null);
 
-  protected municipality(code: string | null): string {
-    return municipalityLabel(code);
+  protected place(row: LegalEntityRow): string {
+    return placeLabel(row);
   }
 
   openCreate(): void {

@@ -1,20 +1,44 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { firstValueFrom, map } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { PastoralTerm, RecordsContext, currentTerm, personLabel, previousDay } from '../data/records.models';
+import {
+  PastoralTerm,
+  PersonSummary,
+  RecordsContext,
+  currentTerm,
+  previousDay,
+} from '../data/records.models';
 import { RecordsRepository } from '../data/records.repository';
+import { PersonPickerComponent } from './person-picker.component';
 import { dateOrder, showError } from './record-validators';
 
 /** Create dialog of a pastoral term (D-05). Terms of the same sede cannot overlap. */
 @Component({
   selector: 'app-pastoral-term-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, DialogComponent, IconComponent],
+  imports: [ReactiveFormsModule, DatePipe, DialogComponent, IconComponent, PersonPickerComponent],
   templateUrl: './pastoral-term-dialog.component.html',
 })
 export class PastoralTermDialogComponent {
@@ -26,7 +50,6 @@ export class PastoralTermDialogComponent {
   readonly terms = input.required<readonly PastoralTerm[]>();
   readonly saved = output<string>();
 
-  protected readonly label = personLabel;
   protected readonly pending = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly submitted = signal(false);
@@ -34,7 +57,7 @@ export class PastoralTermDialogComponent {
   protected readonly form = this.fb.group(
     {
       congregationId: new FormControl<number | null>(null, Validators.required),
-      pastorId: new FormControl<number | null>(null, Validators.required),
+      pastor: new FormControl<PersonSummary | null>(null, Validators.required),
       startedOn: this.fb.control('', Validators.required),
       endedOn: this.fb.control(''),
       closeCurrent: this.fb.control(true),
@@ -42,9 +65,12 @@ export class PastoralTermDialogComponent {
     { validators: dateOrder('startedOn', 'endedOn') },
   );
 
-  private readonly value = toSignal(this.form.valueChanges.pipe(map(() => this.form.getRawValue())), {
-    initialValue: this.form.getRawValue(),
-  });
+  private readonly value = toSignal(
+    this.form.valueChanges.pipe(map(() => this.form.getRawValue())),
+    {
+      initialValue: this.form.getRawValue(),
+    },
+  );
 
   /** Open term of the chosen sede, which the new term can close. */
   protected readonly openTerm = computed(() => {
@@ -70,7 +96,9 @@ export class PastoralTermDialogComponent {
   }
 
   protected endBeforeStart(): boolean {
-    return this.form.hasError('dateOrder') && (this.form.controls.endedOn.touched || this.submitted());
+    return (
+      this.form.hasError('dateOrder') && (this.form.controls.endedOn.touched || this.submitted())
+    );
   }
 
   protected async submit(): Promise<void> {
@@ -86,7 +114,7 @@ export class PastoralTermDialogComponent {
       const created = await firstValueFrom(
         this.repository.createPastoralTerm({
           congregationId: value.congregationId as number,
-          pastorId: value.pastorId as number,
+          pastorId: (value.pastor as PersonSummary).id,
           startedOn: value.startedOn,
           endedOn: value.endedOn || null,
           closeCurrent: this.openTerm() !== null && value.closeCurrent,
@@ -105,7 +133,7 @@ export class PastoralTermDialogComponent {
     const sedes = this.context().congregations;
     this.form.reset({
       congregationId: sedes.length === 1 ? sedes[0].id : null,
-      pastorId: null,
+      pastor: null,
       startedOn: '',
       endedOn: '',
       closeCurrent: true,

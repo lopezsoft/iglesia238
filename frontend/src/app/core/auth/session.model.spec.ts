@@ -1,4 +1,4 @@
-import { Scope, scopeCovers } from './session.model';
+import { Scope, scopeCovers, scopeHeader } from './session.model';
 
 const platform: Scope = { kind: 'PLATFORM', denominationId: null, congregationId: null, label: 'Plataforma' };
 const denominationA: Scope = { kind: 'DENOMINATION', denominationId: 1, congregationId: null, label: 'A' };
@@ -23,5 +23,13 @@ describe('scopeCovers', () => {
     expect(scopeCovers(sedeA1, sedeA1)).toBe(true);
     expect(scopeCovers(sedeA1, sedeA2)).toBe(false);
     expect(scopeCovers(sedeA1, denominationA)).toBe(false);
+  });
+});
+
+describe('scopeHeader', () => {
+  it('writes the X-Scope value the API validates against UserRole.scopeKey', () => {
+    expect(scopeHeader(platform)).toBe('P');
+    expect(scopeHeader(denominationA)).toBe('D:1');
+    expect(scopeHeader(sedeA2)).toBe('C:2');
   });
 });

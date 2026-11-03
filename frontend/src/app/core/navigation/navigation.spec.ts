@@ -1,6 +1,7 @@
 import { Permission } from '../auth/permission';
-import { ROLE_PERMISSIONS, RoleCode } from '../auth/role';
-import { visibleNavGroups } from './navigation';
+import { RoleCode } from '../auth/role';
+import { ROLE_PERMISSIONS } from '../auth/testing/role-permissions';
+import { NAV_GROUPS, visibleNavGroups, visibleQuickActions } from './navigation';
 
 function menuFor(role: RoleCode): string[] {
   const granted = new Set<Permission>(ROLE_PERMISSIONS[role]);
@@ -33,5 +34,40 @@ describe('visibleNavGroups', () => {
   it('drops groups that end up empty', () => {
     const groups = visibleNavGroups((permissions) => permissions.length === 0);
     expect(groups.map((group) => group.label)).toEqual(['General']);
+  });
+});
+
+describe('NAV_GROUPS', () => {
+  it('gives every item a short label that fits the icon rail', () => {
+    const items = NAV_GROUPS.flatMap((group) => group.items);
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.shortLabel.length, item.label).toBeGreaterThan(0);
+      expect(item.shortLabel.length, item.label).toBeLessThanOrEqual(12);
+    }
+  });
+
+  it('has one route per item', () => {
+    const paths = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.path));
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+});
+
+describe('visibleQuickActions', () => {
+  it('offers the treasurer money actions and not membership ones', () => {
+    const granted = new Set<Permission>(ROLE_PERMISSIONS.TREASURER);
+    const canAny = (permissions: readonly Permission[]) => permissions.some((p) => granted.has(p));
+    const labels = visibleQuickActions(canAny).map((action) => action.label);
+
+    expect(labels).toContain('Registrar aporte');
+    expect(labels).toContain('Registrar movimiento de caja');
+    expect(labels).not.toContain('Nuevo miembro');
+  });
+
+  it('offers the platform admin only platform actions', () => {
+    const granted = new Set<Permission>(ROLE_PERMISSIONS.PLATFORM_ADMIN);
+    const canAny = (permissions: readonly Permission[]) => permissions.some((p) => granted.has(p));
+
+    expect(visibleQuickActions(canAny).map((action) => action.label)).toEqual(['Invitar usuario', 'Nueva denominación']);
   });
 });

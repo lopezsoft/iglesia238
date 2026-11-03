@@ -105,6 +105,7 @@ export class BudgetLinesTableComponent {
   readonly fundHeader = input('Fondo');
   readonly expectedPct = input(0);
   readonly canEdit = input(false);
+  readonly detail = output<BudgetLineRow>();
   readonly edit = output<BudgetLineRow>();
   readonly remove = output<BudgetLineRow>();
 

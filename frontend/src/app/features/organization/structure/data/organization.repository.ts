@@ -17,6 +17,12 @@ import {
 export abstract class OrganizationRepository {
   abstract overview(): Observable<OrganizationOverview>;
 
+  /**
+   * Whether the denomination has a privacy policy in force. The public form lists only the sedes of a
+   * denomination that has one, so a sede open to applications without it stays invisible.
+   */
+  abstract hasPolicyInForce(): Observable<boolean>;
+
   abstract listCongregations(): Observable<CongregationRow[]>;
   abstract congregationFormOptions(): Observable<CongregationFormOptions>;
   abstract createCongregation(input: CongregationInput): Observable<CongregationRow>;

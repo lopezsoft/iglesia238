@@ -12,12 +12,15 @@ export interface VowPledgeRow {
   readonly description: string | null;
   readonly pledgedAmount: number;
   readonly pledgedOn: string;
+  /** Agreed deadline, if any. */
+  readonly dueOn: string | null;
+  /** Active, past its deadline and still with a balance. */
+  readonly isOverdue: boolean;
   /** Sum of the non-voided linked contributions. */
   readonly paid: number;
   readonly balance: number;
   /** 0–100. */
   readonly progress: number;
-  /** Computed from the stored status and the paid amount. */
   readonly status: VowPledgeStatus;
   readonly lastPaymentOn: string | null;
   readonly paymentCount: number;
@@ -40,6 +43,8 @@ export interface VowPledgeDetail extends VowPledgeRow {
   readonly fundName: string;
   /** Newest first, voided payments included (they do not count). */
   readonly payments: readonly VowPayment[];
+  /** Why it was cancelled, when it was. */
+  readonly cancelReason: string | null;
 }
 
 export interface VowTypeOption {
@@ -47,13 +52,47 @@ export interface VowTypeOption {
   readonly name: string;
 }
 
+/** Indicators of the pledges that are not cancelled, for the whole scope (not only the page). */
+export interface VowKpis {
+  readonly pledgedTotal: number;
+  readonly paidTotal: number;
+  readonly balanceTotal: number;
+  readonly pledgeCount: number;
+  readonly withBalanceCount: number;
+  readonly activeCount: number;
+  /** Active pledges without a payment in the last 90 days. */
+  readonly staleCount: number;
+  readonly overdueCount: number;
+}
+
+export type VowStatusCounts = Readonly<Record<VowPledgeStatus | 'ALL', number>>;
+
+/** One page of pledges plus everything the screen needs around it. */
 export interface VowsOverview {
   readonly today: string;
   readonly congregationScoped: boolean;
   readonly scopeLabel: string;
-  readonly rows: readonly VowPledgeRow[];
   /** Active contribution types of category VOW. */
   readonly vowTypes: readonly VowTypeOption[];
+  readonly kpis: VowKpis;
+  readonly statusCounts: VowStatusCounts;
+  readonly items: readonly VowPledgeRow[];
+  readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+}
+
+export interface VowFilters {
+  readonly status?: VowPledgeStatus | null;
+  readonly contributionTypeId?: number | null;
+  readonly search?: string | null;
+  readonly overdueOnly?: boolean;
+}
+
+export interface VowsQuery extends VowFilters {
+  /** 1-based. */
+  readonly page: number;
+  readonly pageSize: number;
 }
 
 export interface CreateVowPledgeCommand {
@@ -61,5 +100,13 @@ export interface CreateVowPledgeCommand {
   readonly contributionTypeId: number;
   readonly pledgedAmount: number;
   readonly pledgedOn: string;
+  readonly dueOn: string | null;
   readonly description: string | null;
+}
+
+/** Only what is sent changes; null clears the deadline and the observations. */
+export interface UpdateVowPledgeCommand {
+  readonly pledgedAmount?: number;
+  readonly dueOn?: string | null;
+  readonly description?: string | null;
 }

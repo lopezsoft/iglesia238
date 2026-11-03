@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
-import { DashboardSummary } from './dashboard.models';
+import { DashboardPeriod, DashboardSummary } from './dashboard.models';
 
 /**
- * Port to the dashboard API (GET /dashboard). The summary is computed for the active scope and
- * only carries the widgets the permissions of that scope allow; the rest come as null.
+ * Port to the dashboard API (GET /api/dashboard/summary). The API computes the summary for the active
+ * scope (the `X-Scope` header) and only carries the widgets the permissions of that scope allow.
  */
 export abstract class DashboardRepository {
-  abstract summary(): Observable<DashboardSummary>;
+  abstract summary(period: DashboardPeriod): Observable<DashboardSummary>;
 }

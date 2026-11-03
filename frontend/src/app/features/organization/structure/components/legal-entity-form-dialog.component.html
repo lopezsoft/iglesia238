@@ -88,16 +88,14 @@
 
       <div class="field">
         <label for="legal-entity-municipality">Municipio *</label>
-        <select id="legal-entity-municipality" class="select" formControlName="municipalityCode">
-          <option value="">Selecciona un municipio</option>
-          @for (group of municipalityGroups; track group.regionName) {
-            <optgroup [label]="group.regionName">
-              @for (municipality of group.municipalities; track municipality.code) {
-                <option [value]="municipality.code">{{ municipality.name }}</option>
-              }
-            </optgroup>
-          }
-        </select>
+        <app-municipality-select
+          inputId="legal-entity-municipality"
+          [code]="form.controls.municipalityCode.value"
+          [label]="municipalityText()"
+          [invalid]="showError('municipalityCode', 'required')"
+          (picked)="onMunicipalityPicked($event)"
+          (cleared)="onMunicipalityCleared()"
+        />
         @if (showError('municipalityCode', 'required')) {
           <span class="field__error">Selecciona el municipio.</span>
         }

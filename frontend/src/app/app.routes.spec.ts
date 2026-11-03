@@ -3,14 +3,14 @@ import { Router, provideRouter, withComponentInputBinding } from '@angular/route
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 import { AuthGateway } from './core/auth/auth.gateway';
-import { DemoAuthGateway } from './core/auth/demo-auth.gateway';
+import { ScriptedAuthGateway } from './core/auth/testing/scripted-auth.gateway';
 
 async function navigateAsGuest(url: string) {
   sessionStorage.clear();
   TestBed.configureTestingModule({
     providers: [
       provideRouter(routes, withComponentInputBinding()),
-      { provide: AuthGateway, useClass: DemoAuthGateway },
+      { provide: AuthGateway, useValue: new ScriptedAuthGateway([]) },
     ],
   });
   const harness = await RouterTestingHarness.create();

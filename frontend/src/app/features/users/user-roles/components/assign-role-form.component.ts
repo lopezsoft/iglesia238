@@ -64,7 +64,7 @@ export class AssignRoleFormComponent {
       );
       this.form.reset({ role: '', scope: '' });
       this.granted.emit(
-        `Se asignó ${ROLE_NAMES[grant.role]} · ${grant.scope.label} a ${user.displayName}. Los cambios aplican en su próximo inicio de sesión.`,
+        `Se asignó ${ROLE_NAMES[grant.role]} · ${grant.scope.label} a ${user.displayName}. Aplica de inmediato.`,
       );
     } catch (error) {
       this.error.set(userMessage(error));

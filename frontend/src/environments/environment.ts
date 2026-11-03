@@ -1,10 +1,6 @@
 export const environment = {
-  /**
-   * Until the API exposes each module (Sprints 1 to 6 of the plan), repositories use in-memory
-   * demo adapters with fictional data, and the shell shows a "Modo demostración" banner.
-   */
-  demoMode: true,
-  /** Simulated network latency of the demo adapters, so loading states are visible. */
-  demoLatencyMs: 250,
+  /** Base path of the REST API (the dev server proxies it to the backend; same origin in production). */
   apiBaseUrl: '/api',
+  /** Shown in the footer and the login screen; keep in sync with frontend/package.json. */
+  appVersion: '0.4.0',
 } as const;

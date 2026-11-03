@@ -12,19 +12,33 @@ import {
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth/auth.service';
-import { ROLE_NAMES } from '../core/auth/role';
-import { scopeKey } from '../core/auth/session.model';
-import { DebugService } from '../core/debug/debug.service';
 import { visibleNavGroups } from '../core/navigation/navigation';
 import { IconComponent } from '../shared/ui/icon.component';
+import { AppFooterComponent } from './app-footer.component';
+import { QuickCreateMenuComponent } from './quick-create-menu.component';
+import { ScopeSwitcherComponent } from './scope-switcher.component';
+import { StatusClusterComponent } from './status-cluster.component';
+import { UserMenuComponent } from './user-menu.component';
 
-/** Authenticated layout: sidebar filtered by permissions, scope selector and the page. */
+/**
+ * Authenticated layout: white icon rail filtered by permissions, top bar (quick create, scope
+ * switcher, status icons, user menu), the page and the footer.
+ */
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    IconComponent,
+    AppFooterComponent,
+    QuickCreateMenuComponent,
+    ScopeSwitcherComponent,
+    StatusClusterComponent,
+    UserMenuComponent,
+  ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
   host: { '(document:keydown.escape)': 'closeMenu()' },
@@ -32,32 +46,12 @@ import { IconComponent } from '../shared/ui/icon.component';
 export class ShellComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly debug = inject(DebugService);
 
-  protected readonly demoMode = environment.demoMode;
-  protected readonly user = this.auth.user;
   protected readonly activeScope = this.auth.activeScope;
   protected readonly navGroups = computed(() => {
     this.auth.permissions();
     return visibleNavGroups((permissions) => this.auth.canAny(permissions));
   });
-  protected readonly roleNames = computed(() => this.auth.activeRoles().map((role) => ROLE_NAMES[role]));
-  protected readonly scopes = computed(() =>
-    (this.user()?.selectableScopes ?? []).map((scope) => ({ key: scopeKey(scope), scope })),
-  );
-  protected readonly activeScopeKey = computed(() => {
-    const scope = this.activeScope();
-    return scope ? scopeKey(scope) : '';
-  });
-  protected readonly initials = computed(() =>
-    (this.user()?.displayName ?? '')
-      .replace(/^Pastor(a)?\s+/, '')
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase(),
-  );
   protected readonly menuOpen = signal(false);
 
   private readonly injector = inject(Injector);
@@ -104,22 +98,5 @@ export class ShellComponent {
     }
     this.menuOpen.set(false);
     this.menuToggle().nativeElement.focus();
-  }
-
-  protected changeScope(key: string): void {
-    const target = this.scopes().find((option) => option.key === key);
-    if (!target) {
-      return;
-    }
-    this.auth.selectScope(target.scope);
-    // The current module may not be allowed in the new scope: start again from the home page.
-    void this.router.navigateByUrl('/dashboard');
-  }
-
-  protected logout(): void {
-    this.auth.logout().subscribe({
-      next: () => void this.router.navigateByUrl('/login'),
-      error: (error: unknown) => this.debug.error('Logout failed', error),
-    });
   }
 }

@@ -1,7 +1,7 @@
 // CSV exports of the report tables: semicolon separated (Excel es-CO), BOM for accents, plain
 // numbers without thousand separators so spreadsheets can add them up.
 import { PERIOD_STATUS_LABELS } from '../../accounting/data/accounting.models';
-import { ContributionDetailRow, FinancialReport, ReportQuery } from './reports.models';
+import { FinancialReport, ReportQuery } from './reports.models';
 
 const SEPARATOR = ';';
 /** Cells starting with these characters run as formulas in spreadsheets (CSV injection). */
@@ -20,12 +20,6 @@ function escapeCell(cell: Cell): string {
 export function toCsv(headers: readonly string[], rows: ReadonlyArray<readonly Cell[]>): string {
   const lines = [headers, ...rows].map((row) => row.map(escapeCell).join(SEPARATOR));
   return `﻿${lines.join('\r\n')}\r\n`;
-}
-
-/** 2026-10-25 → 25/10/2026. */
-function day(iso: string): string {
-  const [year, month, date] = iso.split('-');
-  return `${date}/${month}/${year}`;
 }
 
 export function monthsCsv(report: FinancialReport): string {
@@ -92,32 +86,10 @@ export function congregationsCsv(report: FinancialReport): string {
   );
 }
 
-export function contributionDetailCsv(rows: readonly ContributionDetailRow[]): string {
+export function accountsCsv(report: FinancialReport): string {
   return toCsv(
-    [
-      'Fecha',
-      'Recibo',
-      'Sede',
-      'Tipo de aporte',
-      'Aportante',
-      'Medio de pago',
-      'Referencia',
-      'Fondo',
-      'Valor',
-      'Estado',
-    ],
-    rows.map((r) => [
-      day(r.receivedOn),
-      r.receipt,
-      r.congregationName,
-      r.contributionType,
-      r.contributor,
-      r.paymentMethod,
-      r.paymentReference,
-      r.fundName,
-      r.amount,
-      r.status,
-    ]),
+    ['Código', 'Cuenta', 'Naturaleza', 'Valor'],
+    report.accounts.map((a) => [a.code, a.name, a.nature === 'INCOME' ? 'Ingreso' : 'Egreso', a.amount]),
   );
 }
 

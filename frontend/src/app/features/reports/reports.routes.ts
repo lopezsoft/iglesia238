@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoReportsRepository } from './data/demo-reports.repository';
+import { HttpReportsRepository } from './data/http-reports.repository';
 import { ReportsRepository } from './data/reports.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: ReportsRepository, useClass: DemoReportsRepository }],
+    providers: [{ provide: ReportsRepository, useClass: HttpReportsRepository }],
     children: [
       {
         path: '',

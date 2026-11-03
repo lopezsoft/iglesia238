@@ -6,6 +6,13 @@ import { todayIso } from './data/public-application.models';
 export const DOCUMENT_NUMBER_PATTERN = /^[A-Za-z0-9]{3,20}$/;
 export const PHONE_PATTERN = /^[0-9+\s-]{7,20}$/;
 
+/** What the applicant says about their baptism; 'unknown' is sent as null. */
+export type BaptismAnswer = 'yes' | 'no' | 'unknown';
+
+export function baptismToFlag(answer: BaptismAnswer): boolean | null {
+  return answer === 'yes' ? true : answer === 'no' ? false : null;
+}
+
 /** Why a birth date is not plausible: in the future, or an age above 120 years. */
 export type BirthDateProblem = 'future' | 'tooOld';
 
@@ -62,10 +69,18 @@ export function createApplicationForm(fb: NonNullableFormBuilder) {
       email: ['', [Validators.email, Validators.maxLength(254)]],
       address: ['', [Validators.required, Validators.maxLength(120)]],
       municipalityCode: ['', Validators.required],
+      /** Label of the chosen municipality: shown in the summary, never sent. */
+      municipalityName: [''],
+      neighborhood: ['', Validators.maxLength(120)],
+      occupation: ['', Validators.maxLength(120)],
+      previousCongregationName: ['', Validators.maxLength(150)],
+      baptism: fb.control<BaptismAnswer>('unknown'),
     }),
     guardian: fb.group({
-      name: ['', [Validators.required, Validators.maxLength(120)]],
-      document: ['', [Validators.required, Validators.maxLength(30)]],
+      firstName: ['', [Validators.required, Validators.maxLength(80)]],
+      lastName: ['', [Validators.required, Validators.maxLength(80)]],
+      documentTypeCode: ['CC', Validators.required],
+      documentNumber: ['', [Validators.required, Validators.pattern(DOCUMENT_NUMBER_PATTERN)]],
       relationship: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern(PHONE_PATTERN)]],
     }),

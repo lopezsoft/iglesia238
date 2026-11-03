@@ -1,31 +1,19 @@
 <app-page-header breadcrumb="Control / Reportes" title="Reportes" [description]="description()">
   <div class="reports__export">
     @if (canExportDetail()) {
-      <button
-        type="button"
-        class="btn btn--primary"
-        [disabled]="exportingDetail() || !data()"
-        (click)="exportDetail()"
-      >
+      <button type="button" class="btn btn--primary" [disabled]="exportingDetail() || !data()" (click)="exportDetail()">
         <app-icon name="download" />
         {{ exportingDetail() ? 'Preparando detalle…' : 'Exportar detalle de aportes' }}
       </button>
     }
-    <p class="text-muted text-small">
-      La exportación depende de tu rol: el Pastor exporta resúmenes, Tesorería el detalle.
-    </p>
+    <p class="text-muted text-small">La exportación depende de tu rol: el Pastor exporta resúmenes, Tesorería el detalle.</p>
   </div>
 </app-page-header>
 
 <div class="stack">
   @if (reportOptions(); as reportOptions) {
     @if (query(); as current) {
-      <app-report-filters
-        [options]="reportOptions"
-        [query]="current"
-        [pending]="report.isLoading()"
-        (apply)="applyFilters($event)"
-      />
+      <app-report-filters [options]="reportOptions" [query]="current" [pending]="report.isLoading()" (apply)="applyFilters($event)" />
     }
   }
 
@@ -47,41 +35,73 @@
   }
 
   @if (loadError(); as message) {
-    <app-error-banner
-      [message]="message"
-      (retry)="options.error() ? options.reload() : report.reload()"
-    />
+    <app-error-banner [message]="message" (retry)="options.error() ? options.reload() : report.reload()" />
   } @else if (!data() && (options.isLoading() || report.isLoading())) {
     <app-loading label="Cargando el reporte…" />
   }
 
   @if (data(); as data) {
-    <section class="grid-auto" aria-label="Indicadores del periodo">
-      @for (card of cards(); track card.key) {
-        <app-stat-card [label]="card.label" [value]="card.value" [hint]="card.hint" />
-      }
-    </section>
+    @if (pendingConsolidation(); as pending) {
+      <div class="alert alert--warning" role="status">
+        <app-icon name="alert" [size]="18" />
+        <p>
+          Hay {{ pending.count }} {{ pending.count === 1 ? 'aporte registrado' : 'aportes registrados' }} por
+          {{ pending.amount }} sin consolidar en el libro de caja. Los ingresos, los saldos de los fondos y el flujo
+          mensual cuentan solo lo que ya está en caja; la sección «Tipos de aporte» sí los incluye.
+          @if (canConsolidate()) {
+            <a routerLink="/accounting/cash-book">Consolidar en el libro de caja</a>
+          } @else {
+            Pide a Tesorería que los consolide.
+          }
+        </p>
+      </div>
+    }
 
-    <app-monthly-flow [report]="data" (exportCsv)="exportTable(data, 'months')" />
-
-    @if (data.congregations; as congregations) {
-      <app-congregation-breakdown
-        [report]="data"
-        [congregations]="congregations"
-        (exportCsv)="exportTable(data, 'congregations')"
+    @if (hero(); as view) {
+      <app-hero-card
+        eyebrow="Reportes financieros"
+        title="Resultado del periodo"
+        label="Saldo · ingresos menos egresos"
+        [value]="view.value"
+        [comparison]="view.comparison"
+        [compareLabel]="view.compareLabel"
+        [date]="view.date"
+        [series]="view.series"
       />
     }
 
-    <app-fund-balances
-      [report]="data"
-      [canOpenCashBook]="auth.can('cash-transactions.write')"
-      (exportCsv)="exportTable(data, 'funds')"
-    />
+    <section class="kpi-grid" aria-label="Indicadores del periodo">
+      @for (card of cards(); track card.key) {
+        <app-stat-card [icon]="card.icon" [tone]="card.tone" [label]="card.label" [value]="card.value" [hint]="card.hint" />
+      }
+    </section>
 
-    <app-contribution-types
-      [report]="data"
-      [canOpenContributions]="auth.can('contributions.read')"
-      (exportCsv)="exportTable(data, 'contribution-types')"
-    />
+    <app-tab-cards ariaLabel="Secciones del reporte" idPrefix="rep" [items]="tabs" [selected]="tab()" (selectedChange)="setTab($event)" />
+
+    @switch (tab()) {
+      @case ('summary') {
+        <div class="stack" role="tabpanel" id="rep-panel-summary" aria-labelledby="rep-tab-summary">
+          <app-monthly-flow [report]="data" (exportCsv)="exportTable(data, 'months')" />
+          @if (data.congregations; as congregations) {
+            <app-congregation-breakdown [report]="data" [congregations]="congregations" (exportCsv)="exportTable(data, 'congregations')" />
+          }
+        </div>
+      }
+      @case ('funds') {
+        <div class="stack" role="tabpanel" id="rep-panel-funds" aria-labelledby="rep-tab-funds">
+          <app-fund-balances [report]="data" [canOpenCashBook]="auth.can('cash-transactions.write')" (exportCsv)="exportTable(data, 'funds')" />
+          <app-account-statement [report]="data" (exportCsv)="exportTable(data, 'accounts')" />
+        </div>
+      }
+      @case ('contributions') {
+        <div class="stack" role="tabpanel" id="rep-panel-contributions" aria-labelledby="rep-tab-contributions">
+          <app-contribution-types
+            [report]="data"
+            [canOpenContributions]="auth.can('contributions.read')"
+            (exportCsv)="exportTable(data, 'contribution-types')"
+          />
+        </div>
+      }
+    }
   }
 </div>

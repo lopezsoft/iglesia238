@@ -14,15 +14,54 @@
   }
 }
 
-.tabs-row {
+.bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: $space-3;
 
-  .tabs {
-    margin-bottom: $space-4;
+  &__tabs {
+    flex: 1 1 24rem;
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: $space-4;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+}
+
+.rate-field {
+  max-width: 22rem;
+}
+
+.rate-input {
+  display: flex;
+  gap: $space-2;
+}
+
+.filters {
+  &__search {
+    flex: 1 1 14rem;
+    max-width: 24rem;
+  }
+
+  &__over {
+    align-self: center;
   }
 }
 
@@ -30,27 +69,12 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  margin: 0 0 $space-4;
+  margin: 0 0 0 auto;
 
   &__mark {
     width: 2px;
     height: 0.875rem;
     background: $color-ink-muted;
-  }
-}
-
-.committee {
-  &__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $space-3;
-    margin-bottom: $space-2;
-
-    h3 {
-      margin: 0;
-      font-size: $font-size-md;
-    }
   }
 }
 

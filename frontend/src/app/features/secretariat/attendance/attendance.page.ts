@@ -1,4 +1,4 @@
-import { DOCUMENT, formatDate } from '@angular/common';
+import { formatDate } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,46 +6,78 @@ import {
   computed,
   effect,
   inject,
+  linkedSignal,
   signal,
   untracked,
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom, map } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { DomainError, userMessage } from '../../../core/errors/domain-error';
-import { ATTENDANCE_CATEGORIES, MEETING_TYPES, catalogName } from '../../../core/models/catalogs';
-import { ErrorBannerComponent, LoadingComponent, ReadOnlyNoticeComponent } from '../../../shared/ui/feedback.components';
+import { DialogComponent } from '../../../shared/ui/dialog.component';
+import { ExportActionsComponent } from '../../../shared/ui/export-actions.component';
+import { ErrorBannerComponent, LoadingComponent } from '../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
-import { buildAttendanceForm, formCounts, formTotal } from './attendance-form';
+import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
+import {
+  SegmentedControlComponent,
+  SegmentOption,
+} from '../../../shared/ui/segmented-control.component';
+import { StatCardComponent } from '../../../shared/ui/stat-card.component';
+import { FileDownloadService } from '../../../shared/utils/file-download.service';
+import {
+  buildAttendanceForm,
+  configureAttendanceForm,
+  formCounts,
+  formTotal,
+} from './attendance-form';
 import { AttendanceFormComponent } from './components/attendance-form.component';
 import { AttendanceHistoryComponent } from './components/attendance-history.component';
-import { AttendanceDraft, AttendanceTrendComponent } from './components/attendance-trend.component';
 import {
+  AttendanceDraft,
+  AttendanceTrendComponent,
+  TrendPoint,
+} from './components/attendance-trend.component';
+import {
+  AttendanceFilter,
   AttendanceSession,
   AttendanceSessionKey,
-  HISTORY_SIZE,
+  HISTORY_PAGE_SIZE,
+  TREND_SESSIONS,
   WEEKDAY_NAMES,
   headcountOf,
-  sessionTotal,
+  periodLabel,
   weekdayOf,
 } from './data/attendance.models';
 import { AttendanceRepository } from './data/attendance.repository';
 
+type TrendMode = 'sessions' | 'month' | 'year';
+
 const SUNDAY = 0;
-const EXPORT_LIMIT = 10_000;
+
+const TREND_MODES: readonly SegmentOption[] = [
+  { value: 'sessions', label: 'Sesiones' },
+  { value: 'month', label: 'Mensual' },
+  { value: 'year', label: 'Anual' },
+];
 
 /** D-03: headcount per category of each meeting, one session per sede, type and date. */
 @Component({
   selector: 'app-attendance-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ReactiveFormsModule,
     PageHeaderComponent,
+    StatCardComponent,
+    SectionPanelComponent,
+    SegmentedControlComponent,
+    ExportActionsComponent,
     IconComponent,
+    DialogComponent,
     LoadingComponent,
     ErrorBannerComponent,
-    ReadOnlyNoticeComponent,
     AttendanceFormComponent,
     AttendanceTrendComponent,
     AttendanceHistoryComponent,
@@ -57,52 +89,127 @@ export class AttendancePage {
   private readonly repository = inject(AttendanceRepository);
   private readonly auth = inject(AuthService);
   private readonly locale = inject(LOCALE_ID);
-  private readonly document = inject(DOCUMENT);
+  private readonly downloads = inject(FileDownloadService);
 
   protected readonly form = buildAttendanceForm(inject(NonNullableFormBuilder));
   protected readonly value = toSignal(
     this.form.valueChanges.pipe(map(() => this.form.getRawValue())),
-    { initialValue: this.form.getRawValue() },
+    {
+      initialValue: this.form.getRawValue(),
+    },
   );
 
-  protected readonly canWrite = computed(() => this.auth.can('attendance.write'));
+  protected readonly trendModes = TREND_MODES;
+  protected readonly trendMode = signal<TrendMode>('sessions');
   protected readonly editing = signal<AttendanceSession | null>(null);
   protected readonly pending = signal(false);
   protected readonly commandError = signal<string | null>(null);
   protected readonly duplicateKey = signal<AttendanceSessionKey | null>(null);
   protected readonly savedMessage = signal<string | null>(null);
   protected readonly highlightedId = signal<number | null>(null);
+  protected readonly exporting = signal(false);
 
-  protected readonly congregations = rxResource({
+  protected readonly from = signal<string | null>(null);
+  protected readonly to = signal<string | null>(null);
+  protected readonly deleting = signal<AttendanceSession | null>(null);
+  protected readonly deleteOpen = signal(false);
+  protected readonly deletePending = signal(false);
+  protected readonly deleteError = signal<string | null>(null);
+
+  protected readonly options = rxResource({
     params: () => this.auth.tenant(),
-    stream: () => this.repository.congregations(),
+    stream: () => this.repository.options(),
   });
 
-  private readonly congregationId = computed(() => this.value().congregationId);
-  private readonly meetingTypeCode = computed(() => this.value().meetingTypeCode);
+  /** The values of the resources, null while loading or when the call failed (reading a failed resource throws). */
+  protected readonly optionsData = computed(() =>
+    this.options.hasValue() ? this.options.value() : null,
+  );
+  protected readonly historyData = computed(() =>
+    this.history.hasValue() ? this.history.value() : null,
+  );
+  protected readonly statsData = computed(() =>
+    this.stats.hasValue() ? this.stats.value() : null,
+  );
+
+  protected readonly congregationId = computed(() => this.value().congregationId);
+  protected readonly meetingTypeCode = computed(() => this.value().meetingTypeCode || null);
+  private readonly ready = computed(
+    () => this.congregationId() !== null && this.meetingTypeCode() !== null,
+  );
+
+  /** Sede and meeting type: they scope the form, the history, the trend and the export. */
+  private readonly scopeFilter = computed<AttendanceFilter>(() => ({
+    congregationId: this.congregationId(),
+    meetingTypeCode: this.meetingTypeCode(),
+  }));
+  protected readonly rangeFilter = computed<AttendanceFilter>(() => ({
+    ...this.scopeFilter(),
+    from: this.from(),
+    to: this.to(),
+  }));
+  protected readonly hasRange = computed(() => this.from() !== null || this.to() !== null);
+
+  protected readonly historyPage = linkedSignal<AttendanceFilter, number>({
+    source: this.rangeFilter,
+    computation: () => 1,
+  });
 
   protected readonly history = rxResource({
-    params: () => {
-      const congregationId = this.congregationId();
-      return congregationId === null
-        ? undefined
-        : { congregationId, meetingTypeCode: this.meetingTypeCode(), limit: HISTORY_SIZE };
-    },
-    stream: ({ params }) => this.repository.history(params),
+    params: () =>
+      this.ready()
+        ? { ...this.rangeFilter(), page: this.historyPage(), pageSize: HISTORY_PAGE_SIZE }
+        : undefined,
+    stream: ({ params }) => this.repository.list(params),
   });
 
+  /** The latest sessions of the sede and meeting type, whatever the date range, for the trend. */
+  protected readonly recent = rxResource({
+    params: () =>
+      this.ready() ? { ...this.scopeFilter(), page: 1, pageSize: TREND_SESSIONS } : undefined,
+    stream: ({ params }) => this.repository.list(params),
+  });
+
+  protected readonly stats = rxResource({
+    params: () =>
+      this.ready()
+        ? {
+            ...this.rangeFilter(),
+            groupBy: this.trendMode() === 'year' ? ('year' as const) : ('month' as const),
+          }
+        : undefined,
+    stream: ({ params }) => this.repository.stats(params),
+  });
+
+  protected readonly categories = computed(() => this.optionsData()?.categories ?? []);
+  protected readonly maxHeadcount = computed(() => this.optionsData()?.maxHeadcount ?? 2000);
+  protected readonly today = computed(() => this.optionsData()?.today ?? '');
   protected readonly congregationName = computed(() => {
     const id = this.congregationId();
-    const sedes = this.congregations.hasValue() ? this.congregations.value() : [];
-    return sedes.find((sede) => sede.id === id)?.name ?? null;
+    return this.optionsData()?.congregations.find((sede) => sede.id === id)?.name ?? null;
+  });
+  protected readonly meetingTypeName = computed(() => {
+    const code = this.meetingTypeCode();
+    return this.optionsData()?.meetingTypes.find((type) => type.code === code)?.name ?? null;
+  });
+  protected readonly contextLabel = computed(() => {
+    const parts = [this.congregationName(), this.meetingTypeName()].filter(
+      (part): part is string => !!part,
+    );
+    return parts.length === 2 ? parts.join(' · ') : null;
   });
 
-  protected readonly meetingTypeName = computed(() => catalogName(MEETING_TYPES, this.meetingTypeCode()));
-  protected readonly total = computed(() => formTotal(this.value()));
+  protected readonly total = computed(() =>
+    formTotal(this.value(), this.categories(), this.maxHeadcount()),
+  );
 
   protected readonly dateWarning = computed(() => {
     const { sessionDate, meetingTypeCode } = this.value();
-    if (!sessionDate || meetingTypeCode !== 'SUNDAY_SCHOOL' || this.form.controls.sessionDate.invalid) {
+    if (
+      !sessionDate ||
+      meetingTypeCode !== 'SUNDAY_SCHOOL' ||
+      this.form.controls.sessionDate.invalid
+    ) {
       return null;
     }
     const weekday = weekdayOf(sessionDate);
@@ -114,11 +221,11 @@ export class AttendancePage {
   protected readonly blockedReason = computed(() => {
     this.value();
     const controls = this.form.controls;
-    if (!this.canWrite()) {
-      return 'Tu rol no tiene el permiso attendance.write.';
-    }
     if (controls.congregationId.invalid) {
       return 'Selecciona la sede de la reunión.';
+    }
+    if (controls.meetingTypeCode.invalid) {
+      return 'Selecciona el tipo de reunión.';
     }
     if (controls.sessionDate.invalid) {
       return 'Corrige la fecha para poder guardar.';
@@ -130,28 +237,80 @@ export class AttendancePage {
   });
 
   protected readonly draft = computed<AttendanceDraft | null>(() =>
-    this.blockedReason() === null && this.editing() === null
-      ? { sessionDate: this.value().sessionDate, total: this.total() }
+    this.blockedReason() === null && this.editing() === null && this.trendMode() === 'sessions'
+      ? { label: formatDate(this.value().sessionDate, 'd MMM', this.locale), total: this.total() }
       : null,
   );
 
+  protected readonly trendPoints = computed<TrendPoint[]>(() => {
+    if (this.trendMode() === 'sessions') {
+      const sessions = this.recent.hasValue() ? [...this.recent.value().items].reverse() : [];
+      return sessions.map((session) => ({
+        key: String(session.id),
+        label: formatDate(session.sessionDate, 'd MMM', this.locale),
+        total: session.total,
+      }));
+    }
+    const series = this.statsData()?.series ?? [];
+    return series.map((point) => ({
+      key: point.period,
+      label: periodLabel(point.period),
+      total: point.total,
+    }));
+  });
+
+  protected readonly trendTitle = computed(() => {
+    const name = this.meetingTypeName() ?? 'la reunión';
+    return this.trendMode() === 'sessions'
+      ? `Tendencia · ${name}`
+      : `Evolución ${this.trendMode() === 'month' ? 'mensual' : 'anual'} · ${name}`;
+  });
+  protected readonly trendSubtitle = computed(() => {
+    const mode = this.trendMode();
+    if (mode === 'sessions') {
+      return `Total de asistentes en las últimas ${this.trendPoints().length} sesiones registradas`;
+    }
+    return mode === 'month'
+      ? 'Suma de asistentes por mes en el rango elegido'
+      : 'Suma de asistentes por año';
+  });
+
+  protected readonly yearComparison = computed(() => {
+    const comparison = this.statsData()?.yearOverYear ?? null;
+    if (!comparison || comparison.changePercent === null) {
+      return 'Sin comparativo';
+    }
+    const sign = comparison.changePercent > 0 ? '+' : '';
+    return `${sign}${comparison.changePercent.toLocaleString(this.locale)} %`;
+  });
+
   constructor() {
-    // Keeps the sede valid for the active scope: fixed for a sede role, chosen otherwise.
+    // Adapts the form to the options of the API and keeps the sede valid for the active scope.
     effect(() => {
-      if (!this.congregations.hasValue()) {
+      const options = this.optionsData();
+      if (!options) {
         return;
       }
-      const sedes = this.congregations.value();
       untracked(() => {
+        configureAttendanceForm(this.form, options);
         this.stopEditing();
         const control = this.form.controls.congregationId;
-        if (sedes.length === 1) {
-          control.setValue(sedes[0].id);
-        } else if (!sedes.some((sede) => sede.id === control.value)) {
+        if (options.congregations.length === 1) {
+          control.setValue(options.congregations[0].id);
+        } else if (!options.congregations.some((sede) => sede.id === control.value)) {
           control.setValue(null);
         }
       });
     });
+  }
+
+  protected setDate(which: 'from' | 'to', raw: string): void {
+    (which === 'from' ? this.from : this.to).set(raw === '' ? null : raw);
+  }
+
+  protected clearRange(): void {
+    this.from.set(null);
+    this.to.set(null);
   }
 
   protected async save(): Promise<void> {
@@ -161,7 +320,7 @@ export class AttendancePage {
     }
     const value = this.form.getRawValue();
     const editing = this.editing();
-    const counts = formCounts(value);
+    const counts = formCounts(value, this.categories(), this.maxHeadcount());
     this.pending.set(true);
     this.commandError.set(null);
     this.duplicateKey.set(null);
@@ -178,11 +337,11 @@ export class AttendancePage {
             }),
           );
       this.savedMessage.set(
-        `Asistencia de ${this.meetingTypeName()} del ${this.formatDay(saved.sessionDate)} ${editing ? 'corregida' : 'guardada'}: ${sessionTotal(saved)} asistentes.`,
+        `Asistencia de ${saved.meetingTypeName} del ${this.formatDay(saved.sessionDate)} ${editing ? 'corregida' : 'guardada'}: ${saved.total} asistentes.`,
       );
       this.highlightedId.set(saved.id);
       this.stopEditing();
-      this.history.reload();
+      this.reloadAll();
     } catch (error) {
       if (error instanceof DomainError && error.code === 'DUPLICATE_SESSION') {
         this.duplicateKey.set({
@@ -224,7 +383,7 @@ export class AttendancePage {
     controls.meetingTypeCode.setValue(session.meetingTypeCode);
     controls.sessionDate.setValue(session.sessionDate);
     controls.congregationId.setValue(session.congregationId);
-    for (const category of ATTENDANCE_CATEGORIES) {
+    for (const category of this.categories()) {
       controls.counts.controls[category.code]?.setValue(headcountOf(session, category.code));
     }
     controls.meetingTypeCode.disable();
@@ -250,39 +409,62 @@ export class AttendancePage {
     this.duplicateKey.set(null);
   }
 
-  /** Downloads every session of the sede and meeting type as CSV (Excel-friendly, UTF-8 BOM). */
-  protected async exportHistory(): Promise<void> {
-    const congregationId = this.congregationId();
-    if (congregationId === null) {
+  protected askDelete(session: AttendanceSession): void {
+    this.deleteError.set(null);
+    this.deleting.set(session);
+    this.deleteOpen.set(true);
+  }
+
+  protected async confirmDelete(): Promise<void> {
+    const session = this.deleting();
+    if (!session || this.deletePending()) {
       return;
     }
+    this.deletePending.set(true);
+    this.deleteError.set(null);
     try {
-      const { sessions } = await firstValueFrom(
-        this.repository.history({ congregationId, meetingTypeCode: this.meetingTypeCode(), limit: EXPORT_LIMIT }),
-      );
-      const header = ['Fecha', ...ATTENDANCE_CATEGORIES.map((category) => category.name), 'Total'];
-      const rows = sessions.map((session) => [
-        session.sessionDate,
-        ...ATTENDANCE_CATEGORIES.map((category) => String(headcountOf(session, category.code))),
-        String(sessionTotal(session)),
-      ]);
-      const csv = [header, ...rows].map((row) => row.join(';')).join('\r\n');
-      this.download(`asistencia-${this.meetingTypeCode().toLowerCase()}.csv`, `﻿${csv}`);
+      await firstValueFrom(this.repository.remove(session.id));
+      this.deleteOpen.set(false);
+      if (this.editing()?.id === session.id) {
+        this.stopEditing();
+      }
+      this.highlightedId.set(null);
+      this.savedMessage.set(`Se eliminó la sesión del ${this.formatDay(session.sessionDate)}.`);
+      this.reloadAll();
     } catch (error) {
-      this.commandError.set(userMessage(error));
+      this.deleteError.set(userMessage(error));
+    } finally {
+      this.deletePending.set(false);
     }
   }
 
-  private download(fileName: string, content: string): void {
-    const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
-    const link = this.document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    URL.revokeObjectURL(url);
+  /** Downloads the sessions that match the filters as CSV (generated by the API). */
+  protected async exportCsv(): Promise<void> {
+    if (this.exporting()) {
+      return;
+    }
+    this.exporting.set(true);
+    this.commandError.set(null);
+    try {
+      const blob = await firstValueFrom(this.repository.exportCsv(this.rangeFilter()));
+      this.downloads.save(
+        blob,
+        `asistencia-${(this.meetingTypeCode() ?? 'todas').toLowerCase()}.csv`,
+      );
+    } catch (error) {
+      this.commandError.set(userMessage(error));
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
-  private formatDay(isoDate: string): string {
+  protected formatDay(isoDate: string): string {
     return formatDate(isoDate, 'dd/MM/yyyy', this.locale);
+  }
+
+  private reloadAll(): void {
+    this.history.reload();
+    this.recent.reload();
+    this.stats.reload();
   }
 }

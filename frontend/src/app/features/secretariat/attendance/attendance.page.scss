@@ -11,6 +11,12 @@
   }
 }
 
+.context {
+  .field {
+    min-width: 11rem;
+  }
+}
+
 .grow {
   flex: 1;
 }

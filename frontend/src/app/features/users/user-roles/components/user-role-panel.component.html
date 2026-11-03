@@ -11,8 +11,18 @@
 
   <p class="alert text-small" role="note">
     <app-icon name="info" />
-    <span>Los cambios aplican en el próximo inicio de sesión del usuario.</span>
+    <span>Los cambios de rol aplican de inmediato: el API valida los permisos en cada petición.</span>
   </p>
+
+  <div class="panel__access">
+    <button type="button" class="btn btn--secondary btn--sm" [disabled]="pending()" (click)="issueLink()">
+      <app-icon name="mail" />
+      <span>{{ linkLabel() }}</span>
+    </button>
+    <span class="text-muted text-small">
+      Genera un enlace de un solo uso para que {{ user().displayName }} cree su contraseña.
+    </span>
+  </div>
 
   @if (error(); as message) {
     <p class="alert alert--danger" role="alert">{{ message }}</p>
@@ -65,7 +75,14 @@
 
   <section class="panel__section" aria-labelledby="assign-role-title">
     <h3 id="assign-role-title">Asignar rol</h3>
-    <app-assign-role-form [user]="user()" [context]="context()" (granted)="changed.emit($event)" />
+    @if (user().isSelf) {
+      <p class="text-muted text-small" role="note">
+        No puedes asignarte roles a ti mismo: así nadie amplía su propio acceso. Pídeselo a otro administrador, o invita
+        una cuenta distinta para que opere la tesorería o la secretaría de la sede.
+      </p>
+    } @else {
+      <app-assign-role-form [user]="user()" [context]="context()" (granted)="changed.emit($event)" />
+    }
   </section>
 
   <section class="panel__section" aria-labelledby="role-history-title">
@@ -86,7 +103,7 @@
             </div>
             @if (isActiveAgain(assignment)) {
               <span class="text-muted text-small">Ya está activo de nuevo</span>
-            } @else {
+            } @else if (!user().isSelf) {
               <button
                 type="button"
                 class="btn btn--secondary btn--sm"
@@ -121,7 +138,7 @@
         ¿Revocar <strong>{{ label(assignment) }}</strong> a {{ user().displayName }}?
       </p>
       <p class="text-muted text-small">
-        Perderá los permisos de este rol en su próximo inicio de sesión. La asignación no se borra: queda en el
+        Perderá los permisos de este rol de inmediato. La asignación no se borra: queda en el
         historial y puedes otorgarla de nuevo.
       </p>
       @if (confirmError(); as message) {
@@ -136,3 +153,5 @@
     </button>
   </div>
 </app-dialog>
+
+<app-one-time-link-dialog [(open)]="linkOpen" [link]="issuedLink()" [recipient]="user().displayName" />

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { municipalityLabel } from '../../../../core/models/catalogs';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { OpenCongregation } from '../data/public-application.models';
 import { showsError } from '../application-form';
@@ -30,7 +29,7 @@ import { showsError } from '../application-form';
               <span class="text-muted text-small">{{ congregation.denominationName }}</span>
               <span class="sede__place text-small">
                 <app-icon name="home" [size]="14" />
-                {{ municipality(congregation.municipalityCode) }}
+                {{ placeOf(congregation) }}
               </span>
               @if (congregation.address) {
                 <span class="text-muted text-small">{{ addressOf(congregation) }}</span>
@@ -51,7 +50,11 @@ export class CongregationStepComponent {
   readonly control = input.required<FormControl<number | null>>();
   readonly revealErrors = input(false);
 
-  protected readonly municipality = municipalityLabel;
+  protected placeOf(congregation: OpenCongregation): string {
+    return congregation.municipalityName
+      ? [congregation.municipalityName, congregation.regionName].filter(Boolean).join(', ')
+      : 'Municipio no indicado';
+  }
 
   protected addressOf(congregation: OpenCongregation): string {
     return [congregation.address, congregation.neighborhood].filter(Boolean).join(', ');

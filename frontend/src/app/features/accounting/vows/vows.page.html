@@ -2,9 +2,10 @@
   title="Promesas de voto"
   breadcrumb="Inicio / Contabilidad / Votos"
   [description]="
-    'Compromisos de aporte tipo Voto de ' + (overview.value()?.scopeLabel ?? 'la sede') + ', con sus abonos y el saldo por recaudar.'
+    'Compromisos de aporte tipo Voto de ' + (overview()?.scopeLabel ?? 'la sede') + ', con sus abonos y el saldo por recaudar.'
   "
 >
+  <app-export-actions [formats]="['csv']" [disabled]="!overview() || exporting()" (export)="exportCsv()" />
   @if (canCreate()) {
     <button type="button" class="btn btn--primary" (click)="newOpen.set(true)">
       <app-icon name="plus" />
@@ -25,118 +26,120 @@
       </div>
     }
   </div>
+  @if (exportError()) {
+    <div class="alert alert--danger" role="alert">{{ exportError() }}</div>
+  }
 
-  @if (overview.error()) {
-    <app-error-banner [message]="'No fue posible cargar las promesas de voto.'" (retry)="overview.reload()" />
-  } @else if (!overview.value()) {
+  @if (overviewResource.error() && !overview()) {
+    <app-error-banner message="No fue posible cargar las promesas de voto." (retry)="overviewResource.reload()" />
+  } @else if (!overview()) {
     <app-loading label="Cargando promesas de voto…" />
   } @else {
-    <section class="grid-auto" aria-label="Resumen de promesas">
+    @let data = overview()!;
+
+    <section class="kpi-grid" aria-label="Resumen de promesas">
       @for (kpi of kpis(); track kpi.label) {
-        <app-stat-card [label]="kpi.label" [value]="kpi.value" [hint]="kpi.hint" />
+        <app-stat-card
+          [label]="kpi.label"
+          [value]="kpi.value"
+          [hint]="kpi.hint"
+          [icon]="kpi.icon"
+          [tone]="kpi.tone"
+          [comparison]="kpi.comparison"
+        />
       }
     </section>
 
-    @if (canWrite()) {
-      <p class="alert" role="note">
-        <app-icon name="info" />
-        <span>
-          Tu rol tiene <code>contributions.read</code> y <code>contributions.write</code>: puedes crear promesas y registrar
-          abonos. Lo abonado se calcula con los aportes no anulados de cada promesa.
-        </span>
-      </p>
-    } @else {
+    @if (!canWrite()) {
       <app-read-only-notice permission="contributions.write" detail="Puedes consultar las promesas y sus abonos." />
     }
-    @if (!overview.value()!.congregationScoped) {
+    @if (!data.congregationScoped) {
       <div class="alert" role="note">
         <app-icon name="info" />
         <span>Vista consolidada de todas las sedes, solo lectura. Selecciona una sede para registrar promesas.</span>
       </div>
     }
 
-    <section class="card card--flush" aria-labelledby="vows-table-title">
-      <div class="card__header table-header">
-        <h2 id="vows-table-title">Promesas {{ year() }}</h2>
-        <div class="toolbar">
-          <div class="cluster" role="group" aria-label="Filtrar por estado">
-            @for (filter of filters(); track filter.key) {
-              <button
-                type="button"
-                class="btn btn--sm"
-                [class.btn--primary]="status() === filter.key"
-                [class.btn--secondary]="status() !== filter.key"
-                [attr.aria-pressed]="status() === filter.key"
-                (click)="status.set(filter.key)"
-              >
-                {{ filter.label }} <span class="chip chip--mono">{{ filter.count }}</span>
-              </button>
+    <section class="card filters" aria-label="Filtros de promesas">
+      <div class="cluster" role="group" aria-label="Filtrar por estado">
+        @for (chip of statusChips(); track chip.key) {
+          <button
+            type="button"
+            class="btn btn--sm"
+            [class.btn--primary]="status() === chip.key"
+            [class.btn--secondary]="status() !== chip.key"
+            [attr.aria-pressed]="status() === chip.key"
+            (click)="status.set(chip.key)"
+          >
+            {{ chip.label }} <span class="chip chip--mono">{{ chip.count }}</span>
+          </button>
+        }
+      </div>
+      <div class="toolbar">
+        <div class="field">
+          <label for="vow-type-filter">Tipo de aporte</label>
+          <select id="vow-type-filter" class="select" (change)="onType($event)">
+            <option value="" [selected]="typeId() === null">Todos</option>
+            @for (type of data.vowTypes; track type.id) {
+              <option [value]="type.id" [selected]="typeId() === type.id">{{ type.name }}</option>
             }
-          </div>
-          <div class="field">
-            <label for="vow-search" class="visually-hidden">Buscar promesa por persona</label>
-            <input id="vow-search" class="input" type="search" placeholder="Buscar por persona o código" [value]="query()" (input)="onSearch($event)" />
-          </div>
+          </select>
         </div>
+        <label class="checkbox overdue" for="vow-overdue">
+          <input id="vow-overdue" type="checkbox" [checked]="overdueOnly()" (change)="onOverdue($event)" />
+          Solo vencidas ({{ data.kpis.overdueCount }})
+        </label>
+        <div class="field grow">
+          <label for="vow-search">Buscar</label>
+          <input
+            id="vow-search"
+            class="input"
+            type="search"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="Persona, código de miembro (SC-0148) o código de promesa"
+            [value]="searchText()"
+            (input)="onSearch($event)"
+          />
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+          <app-icon name="x" [size]="14" />
+          Limpiar
+        </button>
       </div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">Persona</th>
-              <th scope="col">Tipo de aporte</th>
-              <th scope="col">Fecha de promesa</th>
-              <th scope="col" class="text-right">Prometido</th>
-              <th scope="col" class="text-right">Abonado</th>
-              <th scope="col" class="text-right">Saldo</th>
-              <th scope="col">Avance</th>
-              <th scope="col">Estado</th>
-              <th scope="col"><span class="visually-hidden">Acciones</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of page().items; track row.id) {
-              <tr [class.is-selected]="detailOpen() && selectedId() === row.id">
-                <td>
-                  <button type="button" class="link-button" (click)="showDetail(row)">{{ row.personName }}</button>
-                  <div class="text-muted text-small"><span class="mono">{{ row.memberCode }}</span> · {{ row.code }}</div>
-                </td>
-                <td><span class="badge badge--info">{{ row.typeName }}</span></td>
-                <td>{{ row.pledgedOn | date: 'dd/MM/yyyy' }}</td>
-                <td class="num">{{ row.pledgedAmount | money }}</td>
-                <td class="num">{{ row.paid | money }}</td>
-                <td class="num">{{ row.balance | money }}</td>
-                <td>
-                  <div class="progress-cell">
-                    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="row.progress" [attr.aria-label]="'Avance de la promesa ' + row.code">
-                      <div class="progress__bar" [class.progress__bar--success]="row.status === 'FULFILLED'" [style.width.%]="row.progress"></div>
-                    </div>
-                    <span class="text-small mono">{{ row.progress }} %</span>
-                  </div>
-                </td>
-                <td><app-status-badge [label]="statusLabels[row.status]" [tone]="statusTones[row.status]" /></td>
-                <td>
-                  <button type="button" class="btn btn--secondary btn--sm" [attr.aria-label]="'Ver abonos de ' + row.code" (click)="showDetail(row)">
-                    Ver abonos
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="9" class="text-muted">No hay promesas con esos criterios.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <app-pagination [page]="pageNumber()" [pageSize]="pageSize" [total]="filtered().length" (pageChange)="pageNumber.set($event)" />
     </section>
+
+    @if (overviewResource.error()) {
+      <app-error-banner message="No fue posible actualizar las promesas." (retry)="overviewResource.reload()" />
+    }
+
+    <app-vows-table
+      [rows]="data.items"
+      [total]="data.total"
+      [page]="data.page"
+      [pageSize]="pageSize"
+      [selectedId]="detailOpen() ? selectedId() : null"
+      [showCongregation]="!data.congregationScoped"
+      [canPay]="canCreate()"
+      [loading]="overviewResource.isLoading()"
+      (pageChange)="page.set($event)"
+      (detailRequested)="showDetail($event)"
+    />
   }
 </div>
 
-<app-vow-detail-drawer [(open)]="detailOpen" [pledgeId]="selectedId()" [canWrite]="canCreate()" />
+<app-vow-detail-drawer
+  [(open)]="detailOpen"
+  [pledgeId]="selectedId()"
+  [canWrite]="canCreate()"
+  [refresh]="detailVersion()"
+  (editRequested)="askEdit($event)"
+  (cancelRequested)="askCancel($event)"
+/>
+<app-edit-vow-dialog [(open)]="editOpen" [pledge]="target()" (updated)="onUpdated($event)" />
+<app-cancel-vow-dialog [(open)]="cancelOpen" [pledge]="target()" (cancelled)="onCancelled($event)" />
 
-@if (overview.value(); as data) {
+@if (overview(); as data) {
   <app-new-vow-dialog
     [(open)]="newOpen"
     [vowTypes]="data.vowTypes"

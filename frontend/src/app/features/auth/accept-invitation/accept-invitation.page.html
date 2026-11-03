@@ -1,0 +1,87 @@
+<app-auth-frame labelledBy="invitation-title">
+  <div class="auth-page__heading">
+    <h1 id="invitation-title" class="auth-page__title">Activa tu cuenta</h1>
+    <p class="text-muted">Te invitaron a Iglesia 238. Crea tu contraseña para empezar.</p>
+  </div>
+
+  @switch (state()) {
+    @case ('checking') {
+      <p class="text-muted" role="status"><app-spinner /> Verificando la invitación…</p>
+    }
+    @case ('invalid') {
+      <div class="alert alert--danger auth-page__notice" role="alert">
+        <app-icon name="alert" [size]="18" />
+        <div>
+          <p class="auth-page__notice-title">No pudimos abrir la invitación</p>
+          <p>{{ invalidMessage() }} Pide a quien te invitó que genere un enlace nuevo.</p>
+        </div>
+      </div>
+      <a class="btn btn--secondary btn--lg btn--block" routerLink="/login">Ir a iniciar sesión</a>
+    }
+    @case ('done') {
+      <div class="alert alert--success auth-page__notice" role="status">
+        <app-icon name="check" [size]="18" />
+        <div>
+          <p class="auth-page__notice-title">Cuenta activada</p>
+          <p>Ya puedes iniciar sesión con tu correo y la contraseña que acabas de crear.</p>
+        </div>
+      </div>
+      @if (signedIn()) {
+        <p class="text-small text-muted">
+          Tienes otra sesión abierta en este navegador: ciérrala para ingresar con la cuenta nueva.
+        </p>
+        <button type="button" class="btn btn--primary btn--lg btn--block" (click)="signOutAndContinue()">
+          Cerrar sesión e ingresar
+        </button>
+      } @else {
+        <a class="btn btn--primary btn--lg btn--block" routerLink="/login">Iniciar sesión</a>
+      }
+    }
+    @default {
+      @if (invitation(); as info) {
+        <div class="auth-page__identity">
+          @if (info.displayName) {
+            <p>
+              <strong>{{ info.displayName }}</strong>
+            </p>
+          }
+          <p class="text-small text-muted">{{ info.email }}</p>
+        </div>
+      }
+      <form class="auth-page__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <app-text-field
+          label="Contraseña"
+          type="password"
+          icon="lock"
+          size="lg"
+          formControlName="password"
+          autocomplete="new-password"
+          [hint]="hint"
+          [required]="true"
+          [error]="passwordError()"
+        />
+        <app-text-field
+          label="Repite la contraseña"
+          type="password"
+          icon="lock"
+          size="lg"
+          formControlName="confirm"
+          autocomplete="new-password"
+          [required]="true"
+          [error]="confirmError()"
+        />
+        @if (errorMessage(); as message) {
+          <p class="alert alert--danger" role="alert">{{ message }}</p>
+        }
+        <button type="submit" class="btn btn--primary btn--lg btn--block" [class.is-loading]="pending()" [disabled]="pending()">
+          @if (pending()) {
+            <app-spinner />
+            Activando…
+          } @else {
+            Activar mi cuenta
+          }
+        </button>
+      </form>
+    }
+  }
+</app-auth-frame>

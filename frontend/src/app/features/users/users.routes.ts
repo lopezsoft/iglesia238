@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoUserRolesRepository } from './user-roles/data/demo-user-roles.repository';
+import { HttpUserRolesRepository } from './user-roles/data/http-user-roles.repository';
 import { UserRolesRepository } from './user-roles/data/user-roles.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: UserRolesRepository, useClass: DemoUserRolesRepository }],
+    providers: [{ provide: UserRolesRepository, useClass: HttpUserRolesRepository }],
     children: [
       {
         path: '',

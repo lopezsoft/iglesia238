@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { BudgetRepository } from './budget/data/budget.repository';
-import { DemoBudgetRepository } from './budget/data/demo-budget.repository';
+import { HttpBudgetRepository } from './budget/data/http-budget.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: BudgetRepository, useClass: DemoBudgetRepository }],
+    providers: [{ provide: BudgetRepository, useClass: HttpBudgetRepository }],
     children: [
       {
         path: '',

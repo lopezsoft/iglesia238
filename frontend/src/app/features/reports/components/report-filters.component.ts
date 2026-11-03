@@ -57,18 +57,30 @@ export function rangeValidator(group: AbstractControl): ValidationErrors | null 
             [attr.aria-invalid]="showError('to')"
           />
         </div>
-        <div class="field">
-          <label for="report-scope">Alcance</label>
-          <input
-            id="report-scope"
-            class="input"
-            type="text"
-            [value]="options().scopeLabel"
-            readonly
-            aria-describedby="report-scope-hint"
-          />
-          <span id="report-scope-hint" class="field__hint">Cámbialo en «Actuar en»</span>
-        </div>
+        @if (options().congregations.length > 0) {
+          <div class="field">
+            <label for="report-congregation">Sede</label>
+            <select id="report-congregation" class="select" formControlName="congregationId">
+              <option value="">Todas las sedes</option>
+              @for (congregation of options().congregations; track congregation.id) {
+                <option [value]="congregation.id">{{ congregation.name }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <div class="field">
+            <label for="report-scope">Alcance</label>
+            <input
+              id="report-scope"
+              class="input"
+              type="text"
+              [value]="options().scopeLabel"
+              readonly
+              aria-describedby="report-scope-hint"
+            />
+            <span id="report-scope-hint" class="field__hint">Cámbialo en «Actuar en»</span>
+          </div>
+        }
         <div class="field">
           <label for="report-fund">Fondo</label>
           <select id="report-fund" class="select" formControlName="fundId">
@@ -109,6 +121,7 @@ export class ReportFiltersComponent {
       from: ['', Validators.required],
       to: ['', Validators.required],
       fundId: [''],
+      congregationId: [''],
     },
     { validators: rangeValidator },
   );
@@ -121,6 +134,7 @@ export class ReportFiltersComponent {
           from: query.from,
           to: query.to,
           fundId: query.fundId === null ? '' : String(query.fundId),
+          congregationId: query.congregationId === null ? '' : String(query.congregationId),
         },
         { emitEvent: false },
       );
@@ -157,7 +171,12 @@ export class ReportFiltersComponent {
     if (this.form.invalid) {
       return;
     }
-    const { from, to, fundId } = this.form.getRawValue();
-    this.apply.emit({ from, to, fundId: fundId === '' ? null : Number(fundId) });
+    const { from, to, fundId, congregationId } = this.form.getRawValue();
+    this.apply.emit({
+      from,
+      to,
+      fundId: fundId === '' ? null : Number(fundId),
+      congregationId: congregationId === '' ? null : Number(congregationId),
+    });
   }
 }

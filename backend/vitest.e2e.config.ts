@@ -12,6 +12,11 @@ export default defineConfig({
       NODE_ENV: 'test',
       DATABASE_URL: 'mysql://test:test@localhost:3306/test',
       REDIS_URL: 'redis://localhost:6379',
+      // Fake secret: the e2e tests sign their own tokens with it.
+      JWT_SECRET: 'e2e-test-secret-with-at-least-32-characters-long',
+      JWT_EXPIRATION: '15m',
+      REFRESH_TTL: '7d',
+      APP_BASE_URL: 'http://localhost:4200',
       SWAGGER_ENABLED: 'false',
       LOG_LEVEL: 'error',
     },

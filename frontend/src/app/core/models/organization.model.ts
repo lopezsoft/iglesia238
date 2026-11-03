@@ -3,7 +3,6 @@
 export interface Denomination {
   readonly id: number;
   readonly name: string;
-  readonly logoPath: string | null;
   readonly isActive: boolean;
   readonly createdAt: string;
 }

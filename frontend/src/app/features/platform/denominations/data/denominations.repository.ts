@@ -9,12 +9,10 @@ import {
 
 /**
  * Port of the denominations module (B-01). Every operation requires `denominations.manage`.
- * Creating a denomination also creates its defaults on the server: the "Fondo Local" fund,
- * the default contribution types and the first privacy policy draft (not in force until the
- * denomination admin publishes it).
- *
- * The demo adapter only creates the policy draft: the accounting tables belong to the
- * accounting slice, which exposes no port to seed a new denomination yet.
+ * Creating a denomination also creates its template on the server in one transaction: the
+ * "Fondo Local" fund, a starting chart of accounts, the contribution and certificate types, the
+ * pastoral ranks and positions, and the first privacy policy as a draft. Tithe percentages are not
+ * part of it: the denomination admin enters them in the accounting setup.
  */
 export abstract class DenominationsRepository {
   abstract list(query: DenominationQuery): Observable<Page<DenominationSummary>>;

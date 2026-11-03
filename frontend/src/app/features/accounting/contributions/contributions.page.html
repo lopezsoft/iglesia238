@@ -3,21 +3,22 @@
   breadcrumb="Inicio / Contabilidad / Aportes"
   [description]="
     'Diezmos, ofrendas, primicias y abonos a votos de ' +
-    (options.value()?.scopeLabel ?? 'la sede') +
+    (optionsData()?.scopeLabel ?? 'la sede') +
     '. Los aportes no se eliminan: se anulan con motivo.'
   "
 >
-  @if (options.value(); as opts) {
-    <div class="field period-field">
-      <label for="period-select">Periodo</label>
-      <select id="period-select" class="select" [value]="selectedMonth()" (change)="onMonthChange($event)">
-        @for (period of opts.periods; track period.year + '-' + period.month) {
-          <option [value]="period.year + '-' + period.month" [selected]="selectedMonth() === period.year + '-' + period.month">
-            {{ period.label }}{{ opts.congregationScoped ? ' · ' + periodStatusLabels[period.status] : '' }}
-          </option>
-        }
-      </select>
-    </div>
+  <app-export-actions [formats]="['csv']" [disabled]="!filters() || exporting()" (export)="exportCsv()" />
+  @if (showForm()) {
+    <button
+      type="button"
+      class="btn btn--primary"
+      aria-controls="contribution-form-panel"
+      [attr.aria-expanded]="formOpen()"
+      (click)="formOpen.set(!formOpen())"
+    >
+      <app-icon [name]="formOpen() ? 'chevron-up' : 'plus'" />
+      {{ formOpen() ? 'Ocultar formulario' : 'Nuevo aporte' }}
+    </button>
   }
   <a class="btn btn--secondary" routerLink="/accounting/vows">
     <app-icon name="gift" />
@@ -26,7 +27,7 @@
 </app-page-header>
 
 <div class="stack">
-  @if (options.value(); as opts) {
+  @if (optionsData(); as opts) {
     @if (!opts.congregationScoped) {
       <div class="alert" role="note">
         <app-icon name="info" />
@@ -41,7 +42,7 @@
   @if (!canWrite()) {
     <app-read-only-notice
       permission="contributions.write"
-      detail="Puedes consultar los aportes y totales de la sede; el registro y la anulación los hace Tesorería."
+      detail="Puedes consultar los aportes y totales; el registro y la anulación los hace Tesorería."
     />
   }
 
@@ -50,7 +51,13 @@
       <div class="alert alert--success flash">
         <app-icon name="check" />
         <span>{{ message }}</span>
-        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar mensaje" (click)="flash.set(null)">
+        @if (flashReceipt(); as receipt) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="downloadReceipt(receipt)">
+            <app-icon name="download" [size]="14" />
+            Descargar recibo
+          </button>
+        }
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar mensaje" (click)="closeFlash()">
           <app-icon name="x" [size]="16" />
         </button>
       </div>
@@ -60,35 +67,114 @@
   @if (presetError()) {
     <div class="alert alert--warning" role="alert">{{ presetError() }}</div>
   }
+  @if (exportError()) {
+    <div class="alert alert--danger" role="alert">{{ exportError() }}</div>
+  }
+  @if (receiptError()) {
+    <div class="alert alert--danger" role="alert">{{ receiptError() }}</div>
+  }
 
   @if (options.error()) {
-    <app-error-banner [message]="'No fue posible cargar los aportes.'" (retry)="options.reload()" />
-  } @else if (month.error()) {
-    <app-error-banner [message]="'No fue posible cargar los aportes del periodo.'" (retry)="month.reload()" />
-  } @else if (!month.value()) {
+    <app-error-banner message="No fue posible cargar las opciones de aportes." (retry)="options.reload()" />
+  } @else if (!optionsData()) {
     <app-loading label="Cargando aportes…" />
   } @else {
-    <app-contribution-summary [month]="month.value()!" />
+    @let opts = optionsData()!;
 
-    @if (showForm() && options.value(); as opts) {
-      <app-contribution-form [options]="opts" [preset]="preset.value() ?? null" (recorded)="onRecorded($event)" />
+    @if (listing(); as data) {
+      <app-hero-card
+        eyebrow="Aportes"
+        eyebrowIcon="coins"
+        [title]="'Recaudo de ' + data.label.toLowerCase()"
+        [label]="'Total vigente · ' + opts.scopeLabel"
+        [value]="heroValue()"
+        [comparison]="heroComparison()"
+        [compareLabel]="heroNote()"
+        [date]="data.periodStatus === 'CLOSED' ? 'Periodo cerrado' : data.periodStatus === 'OPEN' ? 'Periodo abierto' : null"
+      >
+        <div hero-controls class="hero-controls">
+          <button type="button" class="hero-refresh" aria-label="Actualizar cifras" (click)="listingResource.reload()">
+            <app-icon name="refresh" [size]="16" />
+          </button>
+        </div>
+      </app-hero-card>
+
+      <app-contribution-summary [summary]="data.summary" />
     }
 
-    @if (month.value()!.periodStatus === 'CLOSED') {
-      <div class="alert alert--warning" role="note">
-        <app-icon name="lock" />
-        <span>El periodo de {{ month.value()!.label.toLowerCase() }} está cerrado: sus aportes se consultan. Anular un aporte con movimiento propio registra su reversa con fecha de hoy; uno consolidado se corrige desde el Libro de caja.</span>
+    @if (showForm() && formOpen()) {
+      <app-section-panel
+        id="contribution-form-panel"
+        tone="green"
+        icon="receipt"
+        layout="stack"
+        title="Registrar aporte"
+        [subtitle]="
+          opts.nextReceiptNumber
+            ? 'Siguiente recibo: ' + opts.nextReceiptNumber + '. Al registrar se emite el recibo; el Libro de caja lo consolida después.'
+            : 'Se emite el recibo al registrar.'
+        "
+      >
+        <app-contribution-form [options]="opts" [preset]="preset() ?? null" (recorded)="onRecorded($event)" />
+      </app-section-panel>
+    }
+
+    <app-contribution-filters
+      [options]="opts"
+      [(periodKey)]="periodKey"
+      [(from)]="from"
+      [(to)]="to"
+      [(category)]="category"
+      [(typeId)]="typeId"
+      [(method)]="method"
+      [(status)]="status"
+      [(search)]="searchText"
+      (cleared)="clearFilters()"
+    />
+
+    @if (invalidRange()) {
+      <div class="alert alert--warning" role="alert">
+        <app-icon name="alert" />
+        <span>La fecha inicial no puede ser posterior a la final.</span>
       </div>
     }
 
-    <app-contributions-table
-      [rows]="month.value()!.rows"
-      [monthLabel]="month.value()!.label.toLowerCase()"
-      [canWrite]="showForm()"
-      [showCongregation]="!(options.value()?.congregationScoped ?? true)"
-      (voidRequested)="askVoid($event)"
-    />
+    @if (!filters()) {
+      <div class="alert" role="note">
+        <app-icon name="calendar" />
+        <span>Indica el rango de fechas (desde y hasta) para ver los aportes.</span>
+      </div>
+    } @else if (listingResource.error()) {
+      <app-error-banner message="No fue posible cargar los aportes del periodo." (retry)="listingResource.reload()" />
+    } @else if (!listing()) {
+      <app-loading label="Cargando aportes…" />
+    } @else {
+      @if (listing()!.periodStatus === 'CLOSED') {
+        <div class="alert alert--warning" role="note">
+          <app-icon name="lock" />
+          <span>El periodo de {{ listing()!.label.toLowerCase() }} está cerrado: sus aportes solo se consultan.</span>
+        </div>
+      }
+      <app-contributions-table
+        [listing]="listing()!"
+        [canWrite]="showForm()"
+        [showCongregation]="!opts.congregationScoped"
+        [canDownloadReceipt]="opts.congregationScoped"
+        [loading]="listingResource.isLoading()"
+        (pageChange)="page.set($event)"
+        (detailRequested)="showDetail($event)"
+        (voidRequested)="askVoid($event)"
+        (receiptRequested)="downloadReceipt($event)"
+      />
+    }
   }
 </div>
 
+<app-contribution-detail-drawer
+  [(open)]="detailOpen"
+  [contributionId]="detailId()"
+  [canWrite]="showForm()"
+  [refresh]="detailVersion()"
+  (voidRequested)="askVoid($event)"
+/>
 <app-void-contribution-dialog [(open)]="voidOpen" [contribution]="voidTarget()" (voided)="onVoided($event)" />

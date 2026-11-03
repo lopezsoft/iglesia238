@@ -1,49 +1,47 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
-import { MoneyPipe, formatMoney } from '../../../shared/pipes/money.pipe';
-import {
-  ErrorBannerComponent,
-  LoadingComponent,
-  PaginationComponent,
-  ReadOnlyNoticeComponent,
-} from '../../../shared/ui/feedback.components';
+import { userMessage } from '../../../core/errors/domain-error';
+import { formatMoney } from '../../../shared/pipes/money.pipe';
+import { ErrorBannerComponent, LoadingComponent, ReadOnlyNoticeComponent } from '../../../shared/ui/feedback.components';
+import { ExportActionsComponent } from '../../../shared/ui/export-actions.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
-import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
-import { matchesText, paginate } from '../../../shared/utils/pagination';
+import { FileDownloadService } from '../../../shared/utils/file-download.service';
 import { VOW_PLEDGE_STATUS_LABELS, VowPledgeStatus } from '../data/accounting.models';
+import { CancelVowDialogComponent } from './components/cancel-vow-dialog.component';
+import { EditVowDialogComponent } from './components/edit-vow-dialog.component';
 import { NewVowDialogComponent } from './components/new-vow-dialog.component';
 import { VowDetailDrawerComponent } from './components/vow-detail-drawer.component';
-import { VowPledgeRow } from './data/vows.models';
+import { VowsTableComponent } from './components/vows-table.component';
+import { VowFilters, VowPledgeRow, VowsOverview } from './data/vows.models';
 import { VowsRepository } from './data/vows.repository';
-import { VOW_STATUS_TONES } from './vow-status';
 
 type StatusFilter = VowPledgeStatus | 'ALL';
 
 const PAGE_SIZE = 10;
 const STALE_DAYS = 90;
-const DAY_MS = 86_400_000;
+const SEARCH_DEBOUNCE_MS = 300;
 
-/** E-03 Votos: pledges with computed payments, balance and progress. */
+/** E-03 Votos: pledges with computed payments, balance and progress, filtered and paginated by the server. */
 @Component({
   selector: 'app-vows-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DatePipe,
+    CancelVowDialogComponent,
+    EditVowDialogComponent,
     ErrorBannerComponent,
+    ExportActionsComponent,
     IconComponent,
     LoadingComponent,
-    MoneyPipe,
     NewVowDialogComponent,
     PageHeaderComponent,
-    PaginationComponent,
     ReadOnlyNoticeComponent,
     StatCardComponent,
-    StatusBadgeComponent,
     VowDetailDrawerComponent,
+    VowsTableComponent,
   ],
   templateUrl: './vows.page.html',
   styleUrl: './vows.page.scss',
@@ -51,74 +49,128 @@ const DAY_MS = 86_400_000;
 export class VowsPage {
   private readonly repository = inject(VowsRepository);
   private readonly auth = inject(AuthService);
+  private readonly downloads = inject(FileDownloadService);
 
   protected readonly pageSize = PAGE_SIZE;
   protected readonly statusLabels = VOW_PLEDGE_STATUS_LABELS;
-  protected readonly statusTones = VOW_STATUS_TONES;
   protected readonly canWrite = computed(() => this.auth.can('contributions.write'));
 
-  protected readonly overview = rxResource({
-    params: () => this.auth.tenant(),
-    stream: () => this.repository.overview(),
+  // --- Filters (the server applies them) ---------------------------------------------------------
+  protected readonly status = signal<StatusFilter>('ALL');
+  protected readonly typeId = signal<number | null>(null);
+  protected readonly overdueOnly = signal(false);
+  protected readonly searchText = signal('');
+  private readonly search = toSignal(
+    toObservable(this.searchText).pipe(debounceTime(SEARCH_DEBOUNCE_MS), distinctUntilChanged()),
+    { initialValue: '' },
+  );
+
+  protected readonly filters = computed<VowFilters>(() => ({
+    status: this.status() === 'ALL' ? null : (this.status() as VowPledgeStatus),
+    contributionTypeId: this.typeId(),
+    search: this.search().trim() || null,
+    overdueOnly: this.overdueOnly(),
+  }));
+
+  /** Back to the first page whenever a filter changes. */
+  protected readonly page = linkedSignal<VowFilters, number>({ source: this.filters, computation: () => 1 });
+
+  protected readonly overviewResource = rxResource({
+    params: () => ({ filters: this.filters(), page: this.page(), tenant: this.auth.tenant() }),
+    stream: ({ params }) =>
+      this.repository.overview({ ...params.filters, page: params.page, pageSize: PAGE_SIZE }),
   });
 
-  protected readonly canCreate = computed(() => this.canWrite() && (this.overview.value()?.congregationScoped ?? false));
-  protected readonly status = signal<StatusFilter>('ALL');
-  protected readonly query = signal('');
-  protected readonly flash = signal<string | null>(null);
-  protected readonly newOpen = signal(false);
-  protected readonly detailOpen = signal(false);
-  protected readonly selectedId = signal<number | null>(null);
+  /** Keeps the last page on screen while the next one loads. */
+  protected readonly overview = linkedSignal<VowsOverview | undefined, VowsOverview | undefined>({
+    source: () => (this.overviewResource.hasValue() ? this.overviewResource.value() : undefined),
+    computation: (value, previous) => value ?? previous?.value,
+  });
 
-  private readonly rows = computed(() => this.overview.value()?.rows ?? []);
+  protected readonly canCreate = computed(() => this.canWrite() && (this.overview()?.congregationScoped ?? false));
 
-  protected readonly filters = computed(() => {
-    const rows = this.rows();
+  protected readonly statusChips = computed(() => {
+    const counts = this.overview()?.statusCounts;
     const options: StatusFilter[] = ['ALL', 'ACTIVE', 'FULFILLED', 'CANCELLED'];
     return options.map((key) => ({
       key,
       label: key === 'ALL' ? 'Todas' : this.statusLabels[key],
-      count: key === 'ALL' ? rows.length : rows.filter((r) => r.status === key).length,
+      count: counts?.[key] ?? 0,
     }));
   });
 
-  protected readonly filtered = computed(() =>
-    this.rows().filter(
-      (row) =>
-        (this.status() === 'ALL' || row.status === this.status()) &&
-        matchesText([row.personName, row.memberCode, row.code], this.query()),
-    ),
-  );
-  protected readonly pageNumber = linkedSignal({ source: this.filtered, computation: () => 1 });
-  protected readonly page = computed(() => paginate(this.filtered(), { page: this.pageNumber(), pageSize: PAGE_SIZE }));
-
   protected readonly kpis = computed(() => {
-    const rows = this.rows().filter((r) => r.status !== 'CANCELLED');
-    const pledged = rows.reduce((sum, r) => sum + r.pledgedAmount, 0);
-    const paid = rows.reduce((sum, r) => sum + r.paid, 0);
-    const active = rows.filter((r) => r.status === 'ACTIVE');
-    const today = this.overview.value()?.today ?? '';
-    const stale = active.filter((r) => daysBetween(r.lastPaymentOn ?? r.pledgedOn, today) > STALE_DAYS).length;
+    const kpis = this.overview()?.kpis;
+    if (!kpis) {
+      return [];
+    }
+    const paidShare = kpis.pledgedTotal > 0 ? Math.round((kpis.paidTotal / kpis.pledgedTotal) * 100) : 0;
     return [
-      { label: 'Total prometido', value: formatMoney(pledged), hint: `${rows.length} promesas vigentes o cumplidas` },
+      {
+        label: 'Total prometido',
+        value: formatMoney(kpis.pledgedTotal),
+        hint: `${kpis.pledgeCount} promesas vigentes o cumplidas`,
+        icon: 'heart' as const,
+        tone: 'indigo' as const,
+        comparison: null,
+      },
       {
         label: 'Total abonado',
-        value: formatMoney(paid),
-        hint: `${pledged > 0 ? Math.round((paid / pledged) * 100) : 0} % del total prometido`,
+        value: formatMoney(kpis.paidTotal),
+        hint: `${paidShare} % del total prometido`,
+        icon: 'coins' as const,
+        tone: 'green' as const,
+        comparison: `${paidShare} %`,
       },
       {
         label: 'Saldo por recaudar',
-        value: formatMoney(pledged - paid),
-        hint: `${rows.filter((r) => r.balance > 0).length} promesas con saldo`,
+        value: formatMoney(kpis.balanceTotal),
+        hint: `${kpis.withBalanceCount} promesas con saldo`,
+        icon: 'wallet' as const,
+        tone: 'orange' as const,
+        comparison: null,
       },
-      { label: 'Promesas activas', value: String(active.length), hint: `${stale} sin abonos en los últimos ${STALE_DAYS} días` },
+      {
+        label: 'Promesas activas',
+        value: String(kpis.activeCount),
+        hint: `${kpis.staleCount} sin abonos en ${STALE_DAYS} días · ${kpis.overdueCount} vencidas`,
+        icon: 'activity' as const,
+        tone: 'cyan' as const,
+        comparison: null,
+      },
     ];
   });
 
-  protected readonly year = computed(() => (this.overview.value()?.today ?? '').slice(0, 4));
+  // --- Dialogs and detail ----------------------------------------------------------------------------
+  protected readonly flash = signal<string | null>(null);
+  protected readonly newOpen = signal(false);
+  protected readonly editOpen = signal(false);
+  protected readonly cancelOpen = signal(false);
+  protected readonly detailOpen = signal(false);
+  protected readonly selectedId = signal<number | null>(null);
+  protected readonly detailVersion = signal(0);
+  protected readonly target = signal<VowPledgeRow | null>(null);
+  protected readonly exporting = signal(false);
+  protected readonly exportError = signal<string | null>(null);
+
+  protected clearFilters(): void {
+    this.status.set('ALL');
+    this.typeId.set(null);
+    this.overdueOnly.set(false);
+    this.searchText.set('');
+  }
+
+  protected onType(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.typeId.set(value === '' ? null : Number(value));
+  }
+
+  protected onOverdue(event: Event): void {
+    this.overdueOnly.set((event.target as HTMLInputElement).checked);
+  }
 
   protected onSearch(event: Event): void {
-    this.query.set((event.target as HTMLInputElement).value);
+    this.searchText.set((event.target as HTMLInputElement).value);
   }
 
   protected showDetail(row: VowPledgeRow): void {
@@ -126,15 +178,51 @@ export class VowsPage {
     this.detailOpen.set(true);
   }
 
+  protected askEdit(row: VowPledgeRow): void {
+    this.target.set(row);
+    this.editOpen.set(true);
+  }
+
+  protected askCancel(row: VowPledgeRow): void {
+    this.target.set(row);
+    this.cancelOpen.set(true);
+  }
+
   protected onCreated(row: VowPledgeRow): void {
     this.flash.set(`Promesa ${row.code} registrada. Los abonos se registran desde Aportes con el tipo Voto.`);
-    this.overview.reload();
+    this.refreshAll();
   }
-}
 
-function daysBetween(from: string, to: string): number {
-  if (!from || !to) {
-    return 0;
+  protected onUpdated(row: VowPledgeRow): void {
+    this.flash.set(`Promesa ${row.code} actualizada.`);
+    this.refreshAll();
   }
-  return Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+
+  protected onCancelled(row: VowPledgeRow): void {
+    this.flash.set(`Promesa ${row.code} cancelada. Sus abonos se conservan.`);
+    this.refreshAll();
+  }
+
+  protected exportCsv(): void {
+    if (this.exporting()) {
+      return;
+    }
+    this.exporting.set(true);
+    this.exportError.set(null);
+    this.repository.exportCsv(this.filters()).subscribe({
+      next: (file) => {
+        this.downloads.save(file.blob, file.filename);
+        this.exporting.set(false);
+      },
+      error: (error: unknown) => {
+        this.exportError.set(userMessage(error));
+        this.exporting.set(false);
+      },
+    });
+  }
+
+  private refreshAll(): void {
+    this.detailVersion.update((version) => version + 1);
+    this.overviewResource.reload();
+  }
 }

@@ -14,10 +14,17 @@
   }
 }
 
-.segmented {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: $space-1;
+.cards-filters {
+  padding: 0 $space-5 $space-4;
+}
+
+.cards-search {
+  flex: 1 1 18rem;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+  gap: $space-2;
 }
 
 .expiry-hint {

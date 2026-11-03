@@ -11,6 +11,7 @@ import {
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
+import { TabCardItem, TabCardsComponent } from '../../../shared/ui/tab-cards.component';
 import { CertificateIssueComponent } from './components/certificate-issue.component';
 import { CertificatesTableComponent } from './components/certificates-table.component';
 import { MembershipCardsComponent } from './components/membership-cards.component';
@@ -18,8 +19,17 @@ import { sedeReference } from './data/certificate-document';
 import { CARD_EXPIRY_WARNING_DAYS } from './data/certificates.models';
 import { CertificatesRepository } from './data/certificates.repository';
 
-const TABS = ['certificates', 'cards'] as const;
-type Tab = (typeof TABS)[number];
+type Tab = 'certificates' | 'cards';
+
+const TABS: readonly TabCardItem<Tab>[] = [
+  {
+    id: 'certificates',
+    title: 'Certificados',
+    subtitle: 'Emisión, consulta y anulación',
+    icon: 'certificate',
+  },
+  { id: 'cards', title: 'Carnés de miembro', subtitle: 'Vigencia y renovación', icon: 'id-card' },
+];
 
 /** D-01 / D-02: certificates with gap-free numbering and membership cards of the active sede. */
 @Component({
@@ -30,6 +40,7 @@ type Tab = (typeof TABS)[number];
     IconComponent,
     PageHeaderComponent,
     StatCardComponent,
+    TabCardsComponent,
     LoadingComponent,
     ErrorBannerComponent,
     ReadOnlyNoticeComponent,
@@ -47,7 +58,8 @@ export class CertificatesPage {
   private readonly repo = inject(CertificatesRepository);
   private readonly auth = inject(AuthService);
 
-  protected readonly tab = signal<Tab>('certificates');
+  protected readonly tabs = TABS;
+  protected readonly tab = signal<string>('certificates');
   protected readonly reloadKey = signal(0);
   protected readonly canIssue = computed(() => this.auth.can('certificates.issue'));
   protected readonly canReadMembers = computed(() => this.auth.can('members.read'));
@@ -58,6 +70,7 @@ export class CertificatesPage {
     return `Emite certificados con numeración consecutiva y controla la vigencia de los carnés de ${sede}.`;
   });
 
+  /** Signers, letterhead and next numbers: only meaningful inside a sede. */
   protected readonly context = rxResource({
     params: () => (this.hasSede() ? { tenant: this.auth.tenant() } : undefined),
     stream: () => this.repo.issuingContext(),
@@ -68,8 +81,17 @@ export class CertificatesPage {
     this.context.hasValue() ? this.context.value() : null,
   );
 
-  protected readonly summary = rxResource({
+  /** Types of the denomination for the list filter; they do not need a sede. */
+  protected readonly typesResource = rxResource({
     params: () => ({ tenant: this.auth.tenant() }),
+    stream: () => this.repo.types(),
+  });
+  protected readonly types = computed(() =>
+    this.typesResource.hasValue() ? this.typesResource.value() : [],
+  );
+
+  protected readonly summary = rxResource({
+    params: () => ({ tenant: this.auth.tenant(), reloadKey: this.reloadKey() }),
     stream: () => this.repo.summary(),
   });
   protected readonly summaryStats = computed(() =>
@@ -106,32 +128,10 @@ export class CertificatesPage {
   protected onCertificateIssued(): void {
     this.reloadKey.update((value) => value + 1);
     this.context.reload();
-    this.summary.reload();
   }
 
+  /** Something changed in a list (void, new card): the counters and the next numbers move too. */
   protected onChanged(): void {
     this.summary.reload();
-  }
-
-  /** WAI-ARIA tabs: arrows, Home and End move the selection and the focus (roving tabindex). */
-  protected onTabKeydown(event: KeyboardEvent): void {
-    const index = TABS.indexOf(this.tab());
-    const target =
-      event.key === 'ArrowRight'
-        ? TABS[(index + 1) % TABS.length]
-        : event.key === 'ArrowLeft'
-          ? TABS[(index - 1 + TABS.length) % TABS.length]
-          : event.key === 'Home'
-            ? TABS[0]
-            : event.key === 'End'
-              ? TABS[TABS.length - 1]
-              : null;
-    if (target === null) {
-      return;
-    }
-    event.preventDefault();
-    this.tab.set(target);
-    const tablist = (event.currentTarget as HTMLElement).parentElement;
-    tablist?.querySelector<HTMLButtonElement>(`#tab-${target}`)?.focus();
   }
 }

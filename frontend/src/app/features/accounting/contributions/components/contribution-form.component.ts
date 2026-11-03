@@ -15,7 +15,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { yearMonthOf } from '../../data/accounting-rules';
+import { yearMonthOf } from '../../data/year-month';
 import {
   CONTRIBUTION_CATEGORY_LABELS,
   METHODS_WITH_REFERENCE,
@@ -116,6 +116,9 @@ export class ContributionFormComponent {
     stream: ({ params }) => this.repository.openPledges(params.personId, params.typeId),
   });
 
+  /** `value()` throws while a resource is in error, so the template reads this instead. */
+  protected readonly pledgeOptions = computed(() => (this.pledges.hasValue() ? this.pledges.value() : []));
+
   protected readonly vowPlaceholder = computed(() => {
     if (this.donorMode() !== 'NOMINAL') {
       return 'Requiere aportante nominal';
@@ -126,7 +129,7 @@ export class ContributionFormComponent {
     if (this.pledges.isLoading()) {
       return 'Cargando promesas…';
     }
-    return (this.pledges.value()?.length ?? 0) === 0 ? 'La persona no tiene promesas con saldo' : 'Selecciona la promesa';
+    return this.pledgeOptions().length === 0 ? 'La persona no tiene promesas con saldo' : 'Selecciona la promesa';
   });
 
   // Field errors, visible after the first submit attempt.

@@ -1,11 +1,18 @@
 <app-dialog [(open)]="open" title="Nuevo periodo pastoral">
   <form id="term-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <p class="text-muted text-small">Las fechas no se pueden solapar con otro periodo de la misma sede.</p>
+    <p class="text-muted text-small">
+      Las fechas no se pueden solapar con otro periodo de la misma sede.
+    </p>
 
     @if (context().congregations.length > 1) {
       <div class="field">
         <label for="term-sede">Sede *</label>
-        <select id="term-sede" class="select" formControlName="congregationId" aria-describedby="term-sede-error">
+        <select
+          id="term-sede"
+          class="select"
+          formControlName="congregationId"
+          aria-describedby="term-sede-error"
+        >
           <option [ngValue]="null" disabled>Selecciona una sede</option>
           @for (sede of context().congregations; track sede.id) {
             <option [ngValue]="sede.id">{{ sede.name }}</option>
@@ -17,32 +24,43 @@
       </div>
     }
 
-    <div class="field">
-      <label for="term-pastor">Pastor(a) *</label>
-      <select id="term-pastor" class="select" formControlName="pastorId" aria-describedby="term-pastor-error">
-        <option [ngValue]="null" disabled>Selecciona una persona</option>
-        @for (person of context().people; track person.id) {
-          <option [ngValue]="person.id">{{ label(person) }}</option>
-        }
-      </select>
-      @if (invalid(form.controls.pastorId)) {
-        <span id="term-pastor-error" class="field__error">Selecciona al pastor o la pastora.</span>
-      }
-    </div>
+    <app-person-picker
+      formControlName="pastor"
+      label="Pastor(a)"
+      eligibleFor="pastor"
+      [required]="true"
+      [error]="invalid(form.controls.pastor) ? 'Selecciona al pastor o la pastora.' : null"
+    />
 
     <div class="form-grid">
       <div class="field">
         <label for="term-from">Desde *</label>
-        <input id="term-from" class="input" type="date" formControlName="startedOn" aria-describedby="term-from-error" />
+        <input
+          id="term-from"
+          class="input"
+          type="date"
+          formControlName="startedOn"
+          aria-describedby="term-from-error"
+        />
         @if (invalid(form.controls.startedOn)) {
-          <span id="term-from-error" class="field__error">Indica la fecha de inicio del periodo.</span>
+          <span id="term-from-error" class="field__error"
+            >Indica la fecha de inicio del periodo.</span
+          >
         }
       </div>
       <div class="field">
         <label for="term-to">Hasta</label>
-        <input id="term-to" class="input" type="date" formControlName="endedOn" aria-describedby="term-to-hint" />
+        <input
+          id="term-to"
+          class="input"
+          type="date"
+          formControlName="endedOn"
+          aria-describedby="term-to-hint"
+        />
         @if (endBeforeStart()) {
-          <span id="term-to-hint" class="field__error">La fecha de fin no puede ser anterior a la de inicio.</span>
+          <span id="term-to-hint" class="field__error"
+            >La fecha de fin no puede ser anterior a la de inicio.</span
+          >
         } @else {
           <span id="term-to-hint" class="field__hint">Déjala vacía si es el periodo actual.</span>
         }
@@ -52,7 +70,12 @@
     @if (openTerm(); as current) {
       <div>
         <label class="checkbox" for="term-close">
-          <input id="term-close" type="checkbox" formControlName="closeCurrent" aria-describedby="term-close-hint" />
+          <input
+            id="term-close"
+            type="checkbox"
+            formControlName="closeCurrent"
+            aria-describedby="term-close-hint"
+          />
           <span>Cerrar el periodo actual el día anterior</span>
         </label>
         <p id="term-close-hint" class="field__hint">

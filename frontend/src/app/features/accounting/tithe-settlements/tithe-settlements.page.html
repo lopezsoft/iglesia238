@@ -1,13 +1,12 @@
 <app-page-header
   title="Liquidación del diezmo"
-  breadcrumb="Inicio / Contabilidad / Liquidación del diezmo"
+  breadcrumb="Contabilidad / Liquidación del diezmo"
   description="Distribuye los diezmos de un rango de fechas entre la denominación, el fondo local y la asignación pastoral."
 >
-  <span class="chip">
-    <app-icon name="shield" [size]="14" />
-    Permiso: <span class="mono">tithe-settlements.write</span>
-  </span>
-  <a class="btn btn--ghost" routerLink="/accounting/setup">Ver porcentajes vigentes</a>
+  <a class="btn btn--secondary" routerLink="/accounting/setup">
+    <app-icon name="sliders" />
+    Porcentajes del diezmo
+  </a>
 </app-page-header>
 
 <div class="stack">
@@ -34,89 +33,117 @@
 
   @if (overview.error(); as error) {
     <app-error-banner [message]="loadErrorMessage(error)" (retry)="overview.reload()" />
-  } @else if (!overview.value()) {
+  } @else if (!overview.hasValue()) {
     <app-loading label="Cargando liquidaciones…" />
-  } @else if (!overview.value()!.congregationScoped) {
+  } @else if (!overview.value().congregationScoped) {
     <app-empty-state
       icon="percent"
       title="Selecciona una sede"
       description="La liquidación del diezmo se hace por sede: elige una sede en el selector superior."
     />
   } @else {
-    @let data = overview.value()!;
-    <section class="card" aria-labelledby="wizard-title">
-      <div class="card__header">
-        <h2 id="wizard-title">Nueva liquidación</h2>
-        <ol class="steps" aria-label="Pasos de la liquidación">
-          @for (label of steps; track label; let index = $index) {
-            <li
-              class="steps__item"
-              [class.steps__item--active]="step() === index + 1"
-              [class.steps__item--done]="step() > index + 1 || (step() === 3 && index === 2)"
-              [attr.aria-current]="step() === index + 1 ? 'step' : null"
-            >
-              <span class="steps__number" aria-hidden="true">{{ index + 1 }}</span>
-              {{ label }}
-            </li>
-          }
-        </ol>
-      </div>
-      <div class="toolbar">
-        <div class="field">
-          <label for="range-from">Desde *</label>
-          <input
-            id="range-from"
-            class="input"
-            type="date"
-            required
-            [value]="from()"
-            [attr.max]="data.today"
-            [attr.aria-invalid]="rangeError() !== null"
-            aria-describedby="range-help"
-            (change)="onFrom($event)"
-          />
-        </div>
-        <div class="field">
-          <label for="range-to">Hasta *</label>
-          <input
-            id="range-to"
-            class="input"
-            type="date"
-            required
-            [value]="to()"
-            [attr.max]="data.today"
-            [attr.aria-invalid]="rangeError() !== null"
-            aria-describedby="range-help"
-            (change)="onTo($event)"
-          />
-        </div>
-        <button type="button" class="btn btn--primary" [disabled]="calculating() || !canWrite()" (click)="calculate()">
-          <app-icon name="percent" />
-          {{ calculating() ? 'Calculando…' : 'Calcular' }}
-        </button>
-        <button type="button" class="btn btn--ghost" (click)="suggest()">Sugerir siguiente rango</button>
-      </div>
-      <p id="range-help" class="field__hint range-help">
-        No puede solaparse con liquidaciones confirmadas (última:
-        @if (data.lastIssued; as last) {
-          {{ last.from | date: 'dd/MM/yyyy' }} – {{ last.to | date: 'dd/MM/yyyy' }}
-        } @else {
-          ninguna
-        }). Solo se incluyen diezmos registrados y no liquidados; los aportes anulados se excluyen.
+    @let data = overview.value();
+
+    @if (summaryCards().length > 0) {
+      <section class="kpi-grid" aria-label="Resumen del año">
+        @for (card of summaryCards(); track card.key) {
+          <app-stat-card [icon]="card.icon" [tone]="card.tone" [label]="card.label" [value]="card.value" [hint]="card.hint" />
+        }
+      </section>
+    }
+
+    @if (data.rule; as rule) {
+      <p class="rule-line text-small">
+        <app-icon name="percent" [size]="16" />
+        <span>
+          Porcentajes vigentes desde el {{ rule.effectiveFrom | date: 'dd/MM/yyyy' }}: participación nacional
+          <strong>{{ percent(rule.nationalShareRate) }}</strong> del bruto y fondo local
+          <strong>{{ percent(rule.localFundRate) }}</strong> del neto.
+        </span>
+        <a class="link-strong" routerLink="/accounting/setup">Cambiar</a>
       </p>
-      @if (rangeError(); as message) {
-        <div class="alert alert--danger" role="alert">
-          <app-icon name="alert" />
-          <span>{{ message }}</span>
+    } @else {
+      <div class="alert alert--warning" role="note">
+        <app-icon name="alert" />
+        <span>
+          La denominación aún no registra sus porcentajes de liquidación. Defínelos en
+          <a class="link-strong" routerLink="/accounting/setup">Configuración contable</a> antes de liquidar.
+        </span>
+      </div>
+    }
+
+    <app-section-panel
+      icon="percent"
+      tone="green"
+      layout="stack"
+      title="Nueva liquidación"
+      [subtitle]="'Sede: ' + data.congregationName"
+    >
+      <ol class="steps" aria-label="Pasos de la liquidación" panel-actions>
+        @for (label of steps; track label; let index = $index) {
+          <li
+            class="steps__item"
+            [class.steps__item--active]="step() === index + 1"
+            [class.steps__item--done]="step() > index + 1 || (step() === 3 && index === 2)"
+            [attr.aria-current]="step() === index + 1 ? 'step' : null"
+          >
+            <span class="steps__number" aria-hidden="true">{{ index + 1 }}</span>
+            {{ label }}
+          </li>
+        }
+      </ol>
+      <div class="range-card">
+        <div class="toolbar">
+          <div class="field">
+            <label for="range-from">Desde *</label>
+            <input
+              id="range-from"
+              class="input"
+              type="date"
+              required
+              [value]="from()"
+              [attr.max]="data.today"
+              [attr.aria-invalid]="rangeError() !== null"
+              aria-describedby="range-help"
+              (change)="onFrom($event)"
+            />
+          </div>
+          <div class="field">
+            <label for="range-to">Hasta *</label>
+            <input
+              id="range-to"
+              class="input"
+              type="date"
+              required
+              [value]="to()"
+              [attr.max]="data.today"
+              [attr.aria-invalid]="rangeError() !== null"
+              aria-describedby="range-help"
+              (change)="onTo($event)"
+            />
+          </div>
+          <button type="button" class="btn btn--primary" [disabled]="calculating() || !canWrite() || !data.rule" (click)="calculate()">
+            <app-icon name="percent" />
+            {{ calculating() ? 'Calculando…' : 'Calcular' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="suggest()">Sugerir siguiente rango</button>
         </div>
-      }
-      @if (!data.rule) {
-        <div class="alert alert--warning" role="note">
-          <app-icon name="alert" />
-          <span>La denominación no tiene porcentajes de liquidación vigentes. Configúralos antes de liquidar.</span>
-        </div>
-      }
-    </section>
+        <p id="range-help" class="field__hint range-help">
+          No puede solaparse con liquidaciones confirmadas (última:
+          @if (data.lastIssued; as last) {
+            {{ last.from | date: 'dd/MM/yyyy' }} – {{ last.to | date: 'dd/MM/yyyy' }}
+          } @else {
+            ninguna
+          }). Solo se incluyen diezmos registrados y no liquidados; los aportes anulados se excluyen.
+        </p>
+        @if (rangeError(); as message) {
+          <div class="alert alert--danger" role="alert">
+            <app-icon name="alert" />
+            <span>{{ message }}</span>
+          </div>
+        }
+      </div>
+    </app-section-panel>
 
     @if (preview(); as draft) {
       <app-tithe-preview
@@ -138,13 +165,15 @@
     }
 
     <app-settlement-history
-      [rows]="data.settlements"
       [congregationName]="data.congregationName"
       [canVoid]="canWrite()"
       [highlightId]="highlightId()"
+      [refreshKey]="refreshKey()"
       (voidRequested)="askVoid($event)"
+      (detailRequested)="showDetail($event)"
     />
 
     <app-void-settlement-dialog [(open)]="voidOpen" [settlement]="voidTarget()" (voided)="onVoided($event)" />
+    <app-settlement-detail-dialog [(open)]="detailOpen" [settlement]="detailTarget()" />
   }
 </div>

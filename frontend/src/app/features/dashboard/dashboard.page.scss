@@ -1,31 +1,75 @@
 @use 'tokens' as *;
 @use 'mixins' as *;
 
-.dashboard {
+.dash {
   display: flex;
   flex-direction: column;
-  gap: $space-5;
+  gap: $space-4;
+  transition: opacity 120ms ease;
 
-  &__as-of {
-    margin-bottom: $space-3;
+  &--refreshing {
+    opacity: 0.7;
   }
 
-  &__grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: $space-5;
-    align-items: start;
+  &__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+  }
 
-    @include from($breakpoint-lg) {
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  &__tabs {
+    flex: 1 1 24rem;
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    min-width: 0;
+  }
+
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__hero-controls {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  // Round glass button that sits on the gradient of the hero.
+  &__refresh {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: $radius-control;
+    background: $glass-bg;
+    color: $color-on-brand;
+    cursor: pointer;
+
+    &:hover {
+      background: $glass-bg-strong;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
     }
   }
 
-  &__main,
-  &__side {
-    display: flex;
-    flex-direction: column;
-    gap: $space-5;
-    min-width: 0;
+  &__columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: $space-4;
+
+    @include from($breakpoint-lg) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 }

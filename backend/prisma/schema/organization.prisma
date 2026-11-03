@@ -143,6 +143,8 @@ model Congregation {
   districtId          Int?      @map("district_id")
   municipalityId      Int?      @map("municipality_id")
   neighborhoodId      Int?      @map("neighborhood_id")
+  /// Abreviatura estable de la sede (SC). Prefijo del código de miembro y de carné: no cambia al renombrar la sede.
+  code                String    @db.VarChar(10)
   name                String    @db.VarChar(150)
   address             String?   @db.VarChar(200)
   phone               String?   @db.VarChar(30)
@@ -179,8 +181,10 @@ model Congregation {
   attendanceSessions     AttendanceSession[]
   documentSequences      DocumentSequence[]
   certificates           Certificate[]
+  membershipCards        MembershipCard[]
 
   @@unique([denominationId, name])
+  @@unique([denominationId, code])
   @@unique([denominationId, id])
   @@index([denominationId, acceptsApplications, isActive])
   @@map("congregations")

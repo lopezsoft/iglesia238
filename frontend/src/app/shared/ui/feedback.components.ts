@@ -1,12 +1,25 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Permission } from '../../core/auth/permission';
+import { PERMISSION_DESCRIPTIONS, Permission } from '../../core/auth/permission';
 import { IconComponent, IconName } from './icon.component';
+import { SpinnerComponent } from './spinner.component';
 
 /** Polite live region while data loads. */
 @Component({
   selector: 'app-loading',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<p class="text-muted" role="status" aria-live="polite">{{ label() }}</p>`,
+  imports: [SpinnerComponent],
+  styles: `
+    :host {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+    }
+  `,
+  template: `
+    <app-spinner />
+    <p class="text-muted" role="status" aria-live="polite">{{ label() }}</p>
+  `,
 })
 export class LoadingComponent {
   readonly label = input('Cargando…');
@@ -17,6 +30,8 @@ export class LoadingComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent],
   styles: `
+    @use 'tokens' as *;
+
     :host {
       display: flex;
       flex-direction: column;
@@ -25,9 +40,20 @@ export class LoadingComponent {
       padding: 2rem 1rem;
       text-align: center;
     }
+
+    .empty__icon {
+      display: inline-grid;
+      place-items: center;
+      width: 3.5rem;
+      height: 3.5rem;
+      margin-bottom: 0.25rem;
+      border-radius: $radius-panel;
+      background: $color-primary-soft;
+      color: $color-primary;
+    }
   `,
   template: `
-    <app-icon [name]="icon()" [size]="28" />
+    <span class="empty__icon"><app-icon [name]="icon()" [size]="26" variant="duotone" /></span>
     <h2>{{ title() }}</h2>
     @if (description()) {
       <p class="text-muted">{{ description() }}</p>
@@ -73,7 +99,7 @@ export class ErrorBannerComponent {
     <div class="alert" role="note">
       <app-icon name="lock" />
       <span>
-        Solo lectura: tu rol no tiene el permiso <code>{{ permission() }}</code>.
+        Solo lectura: tu rol no incluye «{{ description() }}». Si lo necesitas, pídelo a tu administrador.
         @if (detail()) {
           {{ detail() }}
         }
@@ -84,6 +110,8 @@ export class ErrorBannerComponent {
 export class ReadOnlyNoticeComponent {
   readonly permission = input.required<Permission>();
   readonly detail = input<string | null>(null);
+  /** What the permission lets you do, in words: the permission code is not for the end user. */
+  protected readonly description = computed(() => PERMISSION_DESCRIPTIONS[this.permission()]);
 }
 
 /** "1–10 de 248" with previous and next buttons. Pages are 1-based. */

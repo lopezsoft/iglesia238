@@ -1,4 +1,3 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
 import {
   ApplicationConfig,
   ErrorHandler,
@@ -9,8 +8,11 @@ import {
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { AuthGateway } from './core/auth/auth.gateway';
-import { DemoAuthGateway } from './core/auth/demo-auth.gateway';
+import { HttpAuthGateway } from './core/auth/http-auth.gateway';
+import { CatalogsRepository } from './core/catalogs/catalogs.repository';
+import { HttpCatalogsRepository } from './core/catalogs/http-catalogs.repository';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
+import { provideApiHttp } from './core/http/http.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,10 +23,10 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
-    provideHttpClient(withFetch()),
+    provideApiHttp(),
     { provide: LOCALE_ID, useValue: 'es-CO' },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
-    // Demo adapter until AuthModule exists in the API (Sprint 1).
-    { provide: AuthGateway, useClass: DemoAuthGateway },
+    { provide: AuthGateway, useClass: HttpAuthGateway },
+    { provide: CatalogsRepository, useClass: HttpCatalogsRepository },
   ],
 };

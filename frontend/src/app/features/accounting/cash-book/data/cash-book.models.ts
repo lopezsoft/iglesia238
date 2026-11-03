@@ -42,6 +42,13 @@ export interface CashBookOptions {
 export interface CashBookQuery {
   readonly fundId: number;
   readonly periodId: number;
+  /** 1-based page of lines; the server pages the book. */
+  readonly page?: number;
+  readonly pageSize?: number;
+  /** Filters on the lines; the running balance stays the true balance of the fund. */
+  readonly direction?: CashDirection;
+  readonly accountId?: number;
+  readonly search?: string;
 }
 
 /** POSTED: a regular line; REVERSED: a line with a reversal; REVERSAL: the reversal itself. */
@@ -94,8 +101,12 @@ export interface CashBookView {
   readonly closing: number;
   readonly inCount: number;
   readonly outCount: number;
-  /** Posting order (date, then registration). */
+  /** The requested page of lines, in posting order (date, then registration). */
   readonly rows: readonly CashBookRow[];
+  /** Lines that match the filters (the pagination total). */
+  readonly totalRows: number;
+  readonly page: number;
+  readonly pageSize: number;
   /** Contributions of today in this fund still pending consolidation. */
   readonly pendingToday: PendingConsolidation;
   /** Null when the period can be closed. */
@@ -168,3 +179,67 @@ export const REVERSAL_BLOCK_LABELS: Readonly<Record<ReversalBlock, string>> = {
   TITHE_SETTLEMENT: 'Se anula en Liquidación',
   CONSOLIDATION_PERIOD_CLOSED: 'Aportes de un periodo cerrado',
 };
+
+// ---------------------------------------------------------------------------------------------
+// Vouchers (comprobantes)
+
+export type VoucherKind = 'REC' | 'CI' | 'CE' | 'LD';
+
+export const VOUCHER_KIND_LABELS: Readonly<Record<VoucherKind, string>> = {
+  REC: 'Recibo de aporte',
+  CI: 'Comprobante de ingreso',
+  CE: 'Comprobante de egreso',
+  LD: 'Liquidación del diezmo',
+};
+
+export interface VoucherQuery {
+  readonly page: number;
+  readonly pageSize: number;
+  readonly type?: VoucherKind;
+  readonly from?: string;
+  readonly to?: string;
+  readonly status?: 'ISSUED' | 'VOIDED';
+  /** Consecutive number of the voucher. */
+  readonly number?: number;
+}
+
+export interface VoucherListItem {
+  readonly id: number;
+  /** REC-2026-01872, CI-2026-00012… */
+  readonly code: string;
+  readonly type: VoucherKind;
+  readonly typeLabel: string;
+  readonly number: number;
+  readonly issuedOn: string;
+  /** Sum of its cash lines, or of its contributions when it has no lines. */
+  readonly amount: number;
+  readonly status: 'ISSUED' | 'VOIDED';
+  readonly voidReason: string | null;
+  readonly movements: number;
+  readonly contributions: number;
+}
+
+export interface VoucherLine {
+  readonly id: number;
+  readonly postedOn: string;
+  readonly accountCode: string;
+  readonly accountName: string;
+  readonly fundName: string;
+  readonly direction: CashDirection;
+  readonly amount: number;
+  readonly description: string;
+  readonly isReversal: boolean;
+}
+
+export interface VoucherContribution {
+  readonly id: number;
+  readonly receivedOn: string;
+  readonly typeName: string;
+  readonly amount: number;
+  readonly status: 'RECORDED' | 'VOIDED';
+}
+
+export interface VoucherDetail extends VoucherListItem {
+  readonly lines: readonly VoucherLine[];
+  readonly contributionRows: readonly VoucherContribution[];
+}

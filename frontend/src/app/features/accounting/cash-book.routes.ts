@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { CashBookRepository } from './cash-book/data/cash-book.repository';
-import { DemoCashBookRepository } from './cash-book/data/demo-cash-book.repository';
+import { HttpCashBookRepository } from './cash-book/data/http-cash-book.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: CashBookRepository, useClass: DemoCashBookRepository }],
+    providers: [{ provide: CashBookRepository, useClass: HttpCashBookRepository }],
     children: [
       {
         path: '',

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 // Stroke icons on a 24×24 grid, drawn only with <path> so templates need no innerHTML.
+// Add the icons a screen needs here; never inline SVG markup in templates.
 const ICONS = {
   home: ['M3 10.5 12 3l9 7.5', 'M5 9.5V21h14V9.5', 'M10 21v-6h4v6'],
   church: ['M12 2v4', 'M10 4h4', 'M5 21V11l7-5 7 5v10', 'M9 21v-5a3 3 0 0 1 6 0v5', 'M3 21h18'],
@@ -46,9 +47,80 @@ const ICONS = {
   printer: ['M6 9V2h12v7', 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2', 'M6 14h12v8H6z'],
   mail: ['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'm22 6-10 7L2 6'],
   clock: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 6v6l4 2'],
+  wifi: ['M5 12.55a11 11 0 0 1 14.08 0', 'M1.42 9a16 16 0 0 1 21.16 0', 'M8.53 16.11a6 6 0 0 1 6.95 0', 'M12 20h.01'],
+  refresh: ['M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16', 'M8 16H3v5'],
+  maximize: ['M8 3H5a2 2 0 0 0-2 2v3', 'M21 8V5a2 2 0 0 0-2-2h-3', 'M3 16v3a2 2 0 0 0 2 2h3', 'M16 21h3a2 2 0 0 0 2-2v-3'],
+  minimize: ['M8 3v3a2 2 0 0 1-2 2H3', 'M21 8h-3a2 2 0 0 1-2-2V3', 'M3 16h3a2 2 0 0 1 2 2v3', 'M16 21v-3a2 2 0 0 1 2-2h3'],
+  'help-circle': ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3', 'M12 17h.01'],
+  'file-text': ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M16 13H8', 'M16 17H8', 'M10 9H8'],
+  table: ['M3 5h18v14H3z', 'M3 10h18', 'M3 15h18', 'M9 5v14'],
+  zap: ['M13 2 3 14h9l-1 8 10-12h-9z'],
+  'trending-up': ['m22 7-8.5 8.5-5-5L2 17', 'M16 7h6v6'],
+  'trending-down': ['m22 17-8.5-8.5-5 5L2 7', 'M16 17h6v-6'],
+  receipt: ['M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2z', 'M8 8h8', 'M8 12h8', 'M8 16h5'],
+  calendar: ['M8 2v4', 'M16 2v4', 'M3 8h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'],
+  sun: ['M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M12 2v2', 'M12 20v2', 'm4.93 4.93 1.41 1.41', 'm17.66 17.66 1.41 1.41', 'M2 12h2', 'M20 12h2', 'm6.34 17.66-1.41 1.41', 'm19.07 4.93-1.41 1.41'],
+  moon: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'],
+  'cloud-sun': ['M12 2v2', 'm4.93 4.93 1.41 1.41', 'M20 12h2', 'm19.07 4.93-1.41 1.41', 'M15.95 12.65a4 4 0 0 0-5.93-4.13', 'M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6z'],
+  'arrow-right': ['M5 12h14', 'm12 5 7 7-7 7'],
+  'arrow-up': ['M12 19V5', 'm5 12 7-7 7 7'],
+  'arrow-down': ['M12 5v14', 'm19 12-7 7-7-7'],
+  'chevron-up': ['m18 15-6-6-6 6'],
+  'shield-check': ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'm9 12 2 2 4-4'],
+  settings: [
+    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+    'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
+  ],
+  heart: ['M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'],
+  'layout-grid': ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M14 14h7v7h-7z', 'M3 14h7v7H3z'],
+  activity: ['M22 12h-4l-3 9L9 3l-3 9H2'],
+  banknote: ['M2 6h20v12H2z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M6 12h.01', 'M18 12h.01'],
+  key: ['M21 2l-2 2', 'M11.39 11.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78z', 'M11.39 11.61 15.5 7.5', 'm15.5 7.5 3 3L22 7l-3-3'],
+  'user-plus': ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M19 8v6', 'M22 11h-6'],
+  'user-circle': ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M6.17 19a6 6 0 0 1 11.66 0'],
+  link: ['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'],
+  cross: ['M12 2v20', 'M5 8h14'],
+  sparkles: ['M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z', 'M19 17v4', 'M21 19h-4'],
+  'more-horizontal': ['M12 12h.01', 'M19 12h.01', 'M5 12h.01'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type IconName = keyof typeof ICONS;
+
+/** True when `value` names an icon of the library (the API sends icon names as plain strings). */
+export function isIconName(value: string): value is IconName {
+  return Object.hasOwn(ICONS, value);
+}
+
+/** Index of the path that is filled (at low opacity) in the `duotone` variant: the icon silhouette. */
+const DUOTONE_BODY: Partial<Record<IconName, number>> = {
+  home: 1,
+  church: 2,
+  landmark: 2,
+  building: 0,
+  user: 0,
+  inbox: 1,
+  'id-card': 0,
+  certificate: 0,
+  'calendar-check': 3,
+  book: 0,
+  coins: 0,
+  gift: 1,
+  wallet: 0,
+  'pie-chart': 1,
+  shield: 0,
+  'shield-check': 0,
+  bell: 0,
+  heart: 0,
+  settings: 1,
+  'layout-grid': 0,
+  'file-text': 0,
+  receipt: 0,
+  banknote: 0,
+  calendar: 3,
+  'user-circle': 0,
+};
+
+export type IconVariant = 'line' | 'duotone';
 
 /** Decorative by default; pass `label` when the icon carries meaning on its own. */
 @Component({
@@ -78,7 +150,11 @@ export type IconName = keyof typeof ICONS;
       focusable="false"
     >
       @for (d of paths(); track $index) {
-        <path [attr.d]="d" />
+        <path
+          [attr.d]="d"
+          [attr.fill]="$index === bodyIndex() ? 'currentColor' : null"
+          [attr.fill-opacity]="$index === bodyIndex() ? 0.16 : null"
+        />
       }
     </svg>
   `,
@@ -87,5 +163,10 @@ export class IconComponent {
   readonly name = input.required<IconName>();
   readonly size = input(18);
   readonly label = input<string | null>(null);
-  protected readonly paths = computed(() => ICONS[this.name()]);
+  /** `duotone` fills the silhouette of the icon with a translucent tint of the current color. */
+  readonly variant = input<IconVariant>('line');
+  protected readonly paths = computed<readonly string[]>(() => ICONS[this.name()]);
+  protected readonly bodyIndex = computed(() =>
+    this.variant() === 'duotone' ? (DUOTONE_BODY[this.name()] ?? -1) : -1,
+  );
 }

@@ -1,19 +1,17 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import {
-  EDUCATION_LEVELS,
-  MARITAL_STATUSES,
-  catalogName,
-  municipalityLabel,
-} from '../../../../core/models/catalogs';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { CatalogsStore } from '../../../../core/catalogs/catalogs.store';
+import { catalogName } from '../../../../core/models/catalogs';
 import { ageOn } from '../../../../core/models/membership.model';
+import { IconComponent } from '../../../../shared/ui/icon.component';
 import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/members.models';
 
-/** Read-only personal data; editing happens in the dialog opened from the header. */
+/** Personal and membership data of the file. Editing happens in dialogs opened from here or the header. */
 @Component({
   selector: 'app-personal-data-tab',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, IconComponent],
   styleUrl: './member-tab.scss',
   template: `
     @let person = member().person;
@@ -56,6 +54,10 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dd>{{ educationLevel() }}</dd>
       </div>
       <div>
+        <dt>Profesión</dt>
+        <dd>{{ person.profession ?? '—' }}</dd>
+      </div>
+      <div>
         <dt>Ocupación</dt>
         <dd>{{ person.occupation ?? '—' }}</dd>
       </div>
@@ -75,40 +77,63 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dt>Correo electrónico</dt>
         <dd>{{ person.email ?? '—' }}</dd>
       </div>
+    </dl>
+
+    <div class="tab__header">
+      <h2>Datos de membresía</h2>
+      @if (canWrite()) {
+        <button type="button" class="btn btn--secondary btn--sm" (click)="editMembership.emit()">
+          <app-icon name="edit" [size]="14" />
+          Editar membresía
+        </button>
+      }
+    </div>
+    <dl class="details">
       <div>
         <dt>Bautismo en agua</dt>
         <dd>{{ baptism() }}</dd>
       </div>
+      @if (member().baptismPlace) {
+        <div>
+          <dt>Lugar del bautismo</dt>
+          <dd>{{ member().baptismPlace }}</dd>
+        </div>
+      }
       <div>
         <dt>Fecha de ingreso a la denominación</dt>
         <dd>{{ member().joinedOn ? (member().joinedOn | date: 'dd/MM/yyyy') : '—' }}</dd>
       </div>
-      @if (member().previousCongregationName) {
-        <div>
-          <dt>Iglesia o sede anterior</dt>
-          <dd>{{ member().previousCongregationName }}</dd>
-        </div>
-      }
+      <div>
+        <dt>Iglesia o sede anterior</dt>
+        <dd>{{ member().previousCongregationName ?? '—' }}</dd>
+      </div>
     </dl>
   `,
 })
 export class PersonalDataTabComponent {
+  private readonly auth = inject(AuthService);
+  private readonly catalogs = inject(CatalogsStore);
+
   readonly member = input.required<MemberDetail>();
+  /** The user wants to edit the membership data (join date, baptism). */
+  readonly editMembership = output<void>();
 
   protected readonly sexLabels = SEX_LABELS;
+  protected readonly canWrite = computed(() => this.auth.can('members.write'));
   protected readonly document = computed(() =>
     documentLabel(this.member().person.documentTypeCode, this.member().person.documentNumber),
   );
   protected readonly age = computed(() => ageOn(this.member().person.birthDate, todayIso()));
   protected readonly maritalStatus = computed(() =>
-    catalogName(MARITAL_STATUSES, this.member().person.maritalStatusCode),
+    catalogName(this.catalogs.maritalStatuses(), this.member().person.maritalStatusCode),
   );
   protected readonly educationLevel = computed(() =>
-    catalogName(EDUCATION_LEVELS, this.member().person.educationLevelCode),
+    catalogName(this.catalogs.educationLevels(), this.member().person.educationLevelCode),
   );
-  protected readonly municipality = computed(() =>
-    municipalityLabel(this.member().person.municipalityCode),
-  );
+  protected readonly municipality = computed(() => {
+    const code = this.member().person.municipalityCode;
+    return code ? this.catalogs.municipalityLabel(code) : '—';
+  });
   protected readonly baptism = computed(() => {
     const member = this.member();
     if (member.isBaptized === null) {
@@ -121,6 +146,11 @@ export class PersonalDataTabComponent {
       ? `Sí, el ${formatDate(member.waterBaptismOn)}`
       : 'Sí (fecha sin registrar)';
   });
+
+  constructor() {
+    // The labels come from the API: load the catalogs and resolve the municipality of the person.
+    this.catalogs.load().subscribe({ error: () => undefined });
+  }
 }
 
 function formatDate(iso: string): string {

@@ -1,13 +1,13 @@
 # Iglesia 238: gestión multi-iglesia
 
-**Versión 0.3.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
+**Versión 0.4.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
 
 Plataforma para administrar varias denominaciones con sus sedes: membresía, secretaría y contabilidad. Cada denominación ve solo sus datos.
 
 | Parte | Tecnología | Estado | Detalle |
 | --- | --- | --- | --- |
-| [backend/](backend/) | NestJS 12 (ESM) sobre Fastify 5, Prisma 7, MariaDB 11.8, Redis 8 | Base del Sprint 0: modelo de datos, migraciones y catálogos | [backend/README.md](backend/README.md) |
-| [frontend/](frontend/) | Angular 22 sin zone.js, señales y Vitest | Todas las pantallas del MVP por rol y permiso, en modo demostración hasta que la API exponga cada módulo | [frontend/README.md](frontend/README.md) |
+| [backend/](backend/) | NestJS 12 (ESM) sobre Fastify 5, Prisma 7, MariaDB 11.8, Redis 8 | API de los módulos del MVP: acceso, organización, membresía, secretaría y contabilidad | [backend/README.md](backend/README.md) |
+| [frontend/](frontend/) | Angular 22 sin zone.js, señales y Vitest | Todas las pantallas del MVP por rol y permiso, conectadas a la API real | [frontend/README.md](frontend/README.md) |
 | [docker/](docker/) | Docker Compose | Desarrollo: MariaDB y Redis. Producción: [docker-compose.prod.yml](docker-compose.prod.yml) | |
 
 El diseño aprobado de la aplicación es el prototipo navegable [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5) en Claude Design, privado mientras no se comparta.
@@ -23,7 +23,7 @@ cp .env.example .env               # credenciales y puertos de MariaDB y Redis
 docker compose up -d               # solo MariaDB y Redis; la API corre en el equipo
 ```
 
-Los pasos de la API (dependencias, migraciones y seed) están en [backend/README.md](backend/README.md#puesta-en-marcha-local). Los del frontend y los usuarios de demostración, en [frontend/README.md](frontend/README.md).
+Los pasos de la API (dependencias, migraciones, seed y primer administrador con `npm run admin:create`) están en [backend/README.md](backend/README.md#puesta-en-marcha-local). Los del frontend, en [frontend/README.md](frontend/README.md).
 
 ## Versionado
 

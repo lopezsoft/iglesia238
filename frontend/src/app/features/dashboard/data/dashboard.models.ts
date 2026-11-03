@@ -1,151 +1,154 @@
-// Dashboard (E-01 Inicio) view models. Every widget is null when the active role cannot read
-// it: the API (and the demo adapter) never sends data the permissions of the scope do not grant.
-import { ApplicationStatus } from '../../../core/models/membership.model';
+// View models of GET /api/dashboard/summary. The API decides which widgets the role of the active
+// scope can read and every area contributes its own: the page renders what arrives, nothing else.
+import { ChipTone } from '../../../shared/ui/icon-chip.component';
+import { SegmentOption } from '../../../shared/ui/segmented-control.component';
 
-/** denominations.manage (platform scope). */
-export interface DenominationsOverview {
-  readonly active: number;
-  readonly inactive: number;
+export type DashboardPeriod = 'today' | 'yesterday' | '7d' | 'month';
+export const DEFAULT_PERIOD: DashboardPeriod = 'today';
+
+export const PERIOD_OPTIONS: readonly SegmentOption<DashboardPeriod>[] = [
+  { value: 'today', label: 'Hoy' },
+  { value: 'yesterday', label: 'Ayer' },
+  { value: '7d', label: '7 días' },
+  { value: 'month', label: 'Mes' },
+];
+
+export function isDashboardPeriod(value: string): value is DashboardPeriod {
+  return PERIOD_OPTIONS.some((option) => option.value === value);
 }
 
-/** users.manage: users of the platform or of the denomination (or sede) in scope. */
-export interface UsersOverview {
-  readonly active: number;
-  readonly pendingInvitations: number;
+export type DashboardTab = 'general' | 'indicators';
+
+/** currency: pesos; integer: a count; text: already written by the API. */
+export type WidgetFormat = 'currency' | 'integer' | 'text';
+
+export interface DateRange {
+  /** YYYY-MM-DD, inclusive. */
+  readonly from: string;
+  readonly to: string;
 }
 
-/** audit-logs.read: newest entries of the scope, without personal data. */
-export interface AuditHighlight {
-  readonly id: number;
-  readonly createdAt: string;
-  readonly userName: string;
-  readonly actionLabel: string;
-  readonly entityLabel: string;
-  readonly scopeLabel: string;
-}
-
-/** congregations.manage: one row per sede in scope. */
-export interface CongregationOverview {
-  readonly id: number;
-  readonly name: string;
-  readonly isActive: boolean;
-  readonly activeMembers: number;
-  readonly pendingApplications: number;
-}
-
-export interface PendingApplicationItem {
-  readonly id: number;
-  readonly fullName: string;
-  readonly initials: string;
-  readonly congregationName: string;
-  readonly status: ApplicationStatus;
-  readonly createdAt: string;
-  /** "Menor con acudiente", "Viene de Sede Norte"… never a document number. */
-  readonly note: string | null;
-}
-
-/** applications.review: newest unresolved applications. */
-export interface PendingApplicationsOverview {
-  readonly total: number;
-  readonly items: readonly PendingApplicationItem[];
-}
-
-/** members.read. */
-export interface MembershipOverview {
-  readonly year: number;
-  readonly active: number;
-  readonly newThisYear: number;
-}
-
-/** certificates.issue. */
-export interface CertificatesOverview {
-  readonly year: number;
-  readonly issuedThisYear: number;
-  readonly lastNumber: string | null;
-}
-
-export interface AttendanceSessionSummary {
-  readonly sessionDate: string;
-  readonly meetingTypeName: string;
-  readonly congregationName: string;
-  readonly total: number;
-}
-
-/** attendance.write. */
-export interface AttendanceOverview {
-  /** Null when the scope has no session recorded yet. */
-  readonly lastSession: AttendanceSessionSummary | null;
-}
-
-export interface CategoryAmount {
+export interface DashboardScopeInfo {
+  readonly kind: 'PLATFORM' | 'DENOMINATION' | 'CONGREGATION';
   readonly label: string;
-  readonly amount: number;
+  readonly denominationName: string | null;
 }
 
-export interface MonthTotal {
-  readonly year: number;
-  readonly month: number;
-  /** "Noviembre 2026". */
+/** The headline figure: compared with the previous period, with a sparkline when there is history. */
+export interface HeroWidget {
+  readonly key: string;
+  readonly priority: number;
+  readonly eyebrow: string;
+  readonly title: string;
   readonly label: string;
-  /** "Nov". */
-  readonly shortLabel: string;
-  readonly total: number;
+  readonly value: number;
+  readonly format: 'currency' | 'integer';
+  /** Value of the comparison period; null when it cannot be known. */
+  readonly previous: number | null;
+  /** One value per day; empty when there is nothing to draw. */
+  readonly series: readonly number[];
+  readonly link: string | null;
 }
 
-/** contributions.read: non-voided contributions of the scope. */
-export interface MonthlyIncomeOverview {
-  readonly monthLabel: string;
-  readonly total: number;
-  readonly byCategory: readonly CategoryAmount[];
-  /** Last six months, oldest first; the last one is the current month. */
-  readonly trend: readonly MonthTotal[];
+export interface KpiWidget {
+  readonly key: string;
+  readonly order: number;
+  readonly tab: DashboardTab;
+  readonly label: string;
+  readonly value: number | string;
+  readonly format: WidgetFormat;
+  readonly hint: string | null;
+  /** Name of an icon of the library; unknown names fall back to a neutral one. */
+  readonly icon: string;
+  readonly tone: ChipTone;
+  readonly link: string | null;
+  readonly previous: number | null;
 }
 
-export interface FundBalanceItem {
-  readonly fundId: number;
-  readonly name: string;
-  readonly balance: number;
+export interface PanelStat {
+  readonly key: string;
+  readonly label: string;
+  readonly value: number | string;
+  readonly format: WidgetFormat;
+  readonly meta: string | null;
+  readonly icon: string;
+  readonly tone: ChipTone;
 }
 
-/** cash-transactions.write. */
-export interface CashBookOverview {
-  /** "Noviembre 2026"; null when no period is open (or the scope spans several sedes). */
-  readonly openPeriodLabel: string | null;
-  readonly funds: readonly FundBalanceItem[];
-  readonly totalBalance: number;
+export interface PanelWidget {
+  readonly key: string;
+  readonly order: number;
+  readonly tab: DashboardTab;
+  readonly title: string;
+  readonly subtitle: string | null;
+  readonly icon: string;
+  readonly tone: ChipTone;
+  readonly link: string | null;
+  readonly linkLabel: string | null;
+  readonly stats: readonly PanelStat[];
 }
 
-/** tithe-settlements.write. */
-export interface TitheSettlementOverview {
-  readonly lastSettledOn: string | null;
-  readonly daysSince: number | null;
+export interface ListItem {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle: string | null;
+  /** ISO 8601 date-time. */
+  readonly occurredAt: string | null;
+  readonly badge: { readonly label: string; readonly tone: ChipTone } | null;
+}
+
+export interface ListWidget {
+  readonly key: string;
+  readonly order: number;
+  readonly tab: DashboardTab;
+  readonly title: string;
+  readonly subtitle: string | null;
+  readonly icon: string;
+  readonly tone: ChipTone;
+  readonly emptyText: string;
+  readonly link: string | null;
+  readonly linkLabel: string | null;
+  readonly items: readonly ListItem[];
+}
+
+export interface TrendPoint {
+  readonly label: string;
+  readonly value: number;
+}
+
+export interface TrendWidget {
+  readonly key: string;
+  readonly order: number;
+  readonly tab: DashboardTab;
+  readonly title: string;
+  readonly subtitle: string | null;
+  readonly format: 'currency' | 'integer';
+  readonly tone: ChipTone;
+  readonly points: readonly TrendPoint[];
 }
 
 export interface DashboardSummary {
-  /** Date the figures refer to (YYYY-MM-DD). */
+  readonly period: DashboardPeriod;
+  /** "Hoy", "Ayer", "7 días", "Mes". */
+  readonly periodLabel: string;
+  /** How the comparison reads: "ayer", "los 7 días anteriores". */
+  readonly previousLabel: string;
+  /** Today in Bogota (YYYY-MM-DD). */
   readonly asOf: string;
-  /** Denomination of the scope; null on the platform scope. */
-  readonly denominationName: string | null;
-  readonly denominations: DenominationsOverview | null;
-  readonly users: UsersOverview | null;
-  readonly recentAudit: readonly AuditHighlight[] | null;
-  readonly congregations: readonly CongregationOverview[] | null;
-  readonly pendingApplications: PendingApplicationsOverview | null;
-  readonly membership: MembershipOverview | null;
-  readonly certificates: CertificatesOverview | null;
-  readonly attendance: AttendanceOverview | null;
-  readonly monthlyIncome: MonthlyIncomeOverview | null;
-  readonly cashBook: CashBookOverview | null;
-  readonly titheSettlement: TitheSettlementOverview | null;
+  readonly range: DateRange;
+  readonly scope: DashboardScopeInfo;
+  readonly hero: HeroWidget | null;
+  readonly kpis: readonly KpiWidget[];
+  readonly panels: readonly PanelWidget[];
+  readonly lists: readonly ListWidget[];
+  readonly trends: readonly TrendWidget[];
+  /** Areas whose figures could not be loaded: the page says so instead of showing zeros. */
+  readonly unavailable: readonly string[];
 }
-
-export const PENDING_APPLICATIONS_LIMIT = 5;
-export const RECENT_AUDIT_LIMIT = 5;
-export const INCOME_TREND_MONTHS = 6;
 
 /** One-line description of each module for the quick-access grid, by route path. */
 export const MODULE_DESCRIPTIONS: Readonly<Record<string, string>> = {
-  '/denominations': 'Alta, logo y estado de cada denominación',
+  '/denominations': 'Alta y estado de cada denominación',
   '/organization': 'Razones sociales, distritos y sedes',
   '/users': 'Invitar usuarios y asignar roles por sede',
   '/applications': 'Aprobar, rechazar o marcar duplicadas',

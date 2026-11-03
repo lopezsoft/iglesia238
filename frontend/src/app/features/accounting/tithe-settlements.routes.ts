@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoTitheSettlementsRepository } from './tithe-settlements/data/demo-tithe-settlements.repository';
+import { HttpTitheSettlementsRepository } from './tithe-settlements/data/http-tithe-settlements.repository';
 import { TitheSettlementsRepository } from './tithe-settlements/data/tithe-settlements.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: TitheSettlementsRepository, useClass: DemoTitheSettlementsRepository }],
+    providers: [{ provide: TitheSettlementsRepository, useClass: HttpTitheSettlementsRepository }],
     children: [
       {
         path: '',

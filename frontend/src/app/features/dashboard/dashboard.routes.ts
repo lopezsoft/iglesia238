@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { DashboardRepository } from './data/dashboard.repository';
-import { DemoDashboardRepository } from './data/demo-dashboard.repository';
+import { HttpDashboardRepository } from './data/http-dashboard.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: DashboardRepository, useClass: DemoDashboardRepository }],
+    providers: [{ provide: DashboardRepository, useClass: HttpDashboardRepository }],
     children: [
       {
         path: '',

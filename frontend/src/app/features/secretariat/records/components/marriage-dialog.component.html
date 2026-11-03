@@ -1,46 +1,52 @@
 <app-dialog [(open)]="open" title="Nuevo matrimonio" variant="wide">
   <form id="marriage-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <p class="text-muted text-small">
-      Los cónyuges deben ser personas de la denominación y al menos uno, miembro de la sede activa.
+      Los cónyuges deben ser mayores de edad el día del matrimonio y al menos uno, miembro de la
+      sede activa. No se ofrecen las personas con un matrimonio vigente.
     </p>
     <div class="form-grid">
-      <div class="field">
-        <label for="mar-spouse1">Cónyuge 1 *</label>
-        <select id="mar-spouse1" class="select" formControlName="spouse1Id" aria-describedby="mar-spouse1-error">
-          <option [ngValue]="null" disabled>Selecciona una persona</option>
-          @for (person of candidates(); track person.id) {
-            <option [ngValue]="person.id">{{ label(person) }}</option>
-          }
-        </select>
-        @if (invalid(form.controls.spouse1Id)) {
-          <span id="mar-spouse1-error" class="field__error">Selecciona el primer cónyuge.</span>
-        }
-      </div>
-
-      <div class="field">
-        <label for="mar-spouse2">Cónyuge 2 *</label>
-        <select id="mar-spouse2" class="select" formControlName="spouse2Id" aria-describedby="mar-spouse2-error">
-          <option [ngValue]="null" disabled>Selecciona una persona</option>
-          @for (person of candidates(); track person.id) {
-            <option [ngValue]="person.id">{{ label(person) }}</option>
-          }
-        </select>
-        @if (invalid(form.controls.spouse2Id)) {
-          <span id="mar-spouse2-error" class="field__error">Selecciona el segundo cónyuge.</span>
-        } @else if (sameSpouse()) {
-          <span id="mar-spouse2-error" class="field__error">Los cónyuges deben ser personas distintas.</span>
-        }
-      </div>
+      <app-person-picker
+        formControlName="spouse1"
+        label="Cónyuge 1"
+        eligibleFor="spouse"
+        [required]="true"
+        [exclude]="excludeForFirst()"
+        [error]="invalid(form.controls.spouse1) ? 'Selecciona el primer cónyuge.' : null"
+      />
+      <app-person-picker
+        formControlName="spouse2"
+        label="Cónyuge 2"
+        eligibleFor="spouse"
+        [required]="true"
+        [exclude]="excludeForSecond()"
+        [error]="
+          invalid(form.controls.spouse2)
+            ? 'Selecciona el segundo cónyuge.'
+            : sameSpouse()
+              ? 'Los cónyuges deben ser personas distintas.'
+              : null
+        "
+      />
     </div>
-    <p class="field__hint">No aparecen las personas con un matrimonio vigente registrado.</p>
 
     <div class="form-grid">
       <div class="field">
         <label for="mar-date">Fecha del matrimonio *</label>
-        <input id="mar-date" class="input" type="date" formControlName="marriedOn" [max]="today" aria-describedby="mar-date-error" />
+        <input
+          id="mar-date"
+          class="input"
+          type="date"
+          formControlName="marriedOn"
+          [max]="context().today"
+          aria-describedby="mar-date-error"
+        />
         @if (invalid(form.controls.marriedOn)) {
           <span id="mar-date-error" class="field__error">
-            {{ form.controls.marriedOn.hasError('futureDate') ? 'No puede ser una fecha futura.' : 'Indica la fecha del matrimonio.' }}
+            {{
+              form.controls.marriedOn.hasError('futureDate')
+                ? 'No puede ser una fecha futura.'
+                : 'Indica la fecha del matrimonio.'
+            }}
           </span>
         }
       </div>
@@ -56,22 +62,27 @@
 
       <div class="field">
         <label for="mar-place">Lugar *</label>
-        <input id="mar-place" class="input" type="text" formControlName="place" maxlength="150" aria-describedby="mar-place-error" />
+        <input
+          id="mar-place"
+          class="input"
+          type="text"
+          formControlName="place"
+          [maxlength]="maxPlaceLength"
+          aria-describedby="mar-place-error"
+        />
         @if (invalid(form.controls.place)) {
           <span id="mar-place-error" class="field__error">Indica el lugar de la ceremonia.</span>
         }
       </div>
-
-      <div class="field">
-        <label for="mar-officiant">Oficiante</label>
-        <select id="mar-officiant" class="select" formControlName="officiantId">
-          <option [ngValue]="null">Sin registrar</option>
-          @for (person of context().people; track person.id) {
-            <option [ngValue]="person.id">{{ label(person) }}</option>
-          }
-        </select>
-      </div>
     </div>
+
+    <app-person-picker
+      formControlName="officiant"
+      label="Oficiante"
+      eligibleFor="officiant"
+      [exclude]="excludeForOfficiant()"
+      hint="Si la sede tiene un pastor vigente, se propone solo."
+    />
 
     @if (error(); as message) {
       <div class="alert alert--danger" role="alert">

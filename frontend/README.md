@@ -4,30 +4,28 @@ Aplicación Angular 22 del sistema multi-iglesia: membresía, secretaría y cont
 
 El diseño aprobado es el prototipo navegable en Claude Design: [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5). La API y el modelo de datos están en [backend/](../backend/README.md).
 
-## Modo demostración
+## Conexión con la API real
 
-La API todavía no expone autenticación ni módulos de negocio: llegan en los Sprints 1 a 6 del [plan](../docs/2026-11-02-0215-plan-implementacion-scrum.md). Mientras tanto, cada módulo usa un adaptador de demostración en memoria con datos ficticios, y la aplicación muestra el aviso «Modo demostración».
+La aplicación no tiene datos de prueba ni modo demostración: todas las pantallas hablan con la API (`/api`). Para probarla hace falta la API en marcha, la migración aplicada y un administrador de plataforma (ver [backend/README.md](../backend/README.md)):
 
-- Los datos viven solo en la pestaña del navegador: recargar conserva la sesión, cerrar la pestaña lo reinicia todo.
-- La contraseña de todos los usuarios de demostración es `Demo2026!`. La pantalla de ingreso los lista.
+1. En `backend/`: `npm run prisma:migrate:deploy`, `npm run prisma:seed` y `npm run admin:create` (crea el primer administrador de plataforma).
+2. Arranca la API (`npm run start:dev` en `backend/`) y el frontend (`npm start`). El proxy de desarrollo (`proxy.conf.json`) envía `/api` a `http://localhost:3000`.
+3. Ingresa con el correo y la contraseña del administrador. Desde Usuarios y roles invita a los demás usuarios; con SMTP sin configurar, la pantalla muestra el enlace de un solo uso para enviarlo por otro medio.
 
-| Usuario | Rol | Alcance |
-| --- | --- | --- |
-| `laura.gomez@iglesia238.example` | Administrador de plataforma | Plataforma |
-| `andres.molina@montedesion.example` | Administrador de denominación | Iglesia Cristiana Monte de Sion |
-| `daniel.herrera@montedesion.example` | Pastor | Sede Central |
-| `marta.castillo@montedesion.example` | Secretario(a) | Sede Central |
-| `jorge.ramirez@montedesion.example` | Tesorero(a) | Sede Central |
-| `paola.ruiz@montedesion.example` | Secretario(a) y Tesorero(a) | Sede Norte y Sede Soacha: cambia con el selector «Actuar en» |
+Cómo se comunica con la API:
 
-Cuando un endpoint exista, su adaptador HTTP reemplaza al de demostración en los `providers` de la ruta del módulo; los componentes no cambian.
+- **Sesión:** `POST /api/auth/login` devuelve el token de acceso, que vive solo en memoria. El refresh token es una cookie `HttpOnly` que el navegador envía a `/api/auth`; al recargar, la sesión se restaura con `/api/auth/refresh`. Toda petición lleva `X-Requested-With`.
+- **Alcance:** el selector «Actuar en» fija la cabecera `X-Scope` (`P`, `D:<denominaciónId>` o `C:<sedeId>`) de cada petición. La API la valida contra los roles vigentes.
+- **Permisos:** la sesión trae los permisos de cada rol (calculados por la API); el frontend solo los usa para mostrar u ocultar menús y acciones.
+- **Errores:** un interceptor convierte `HttpErrorResponse` en `DomainError` con el mensaje en español y el `code` de la API.
+- **Versión:** `src/environments/environment.ts` (`appVersion`) debe coincidir con `package.json`.
 
 ## Desarrollo
 
 ```bash
 npm install
 npm start                 # http://localhost:4200, con proxy de /api hacia http://localhost:3000
-npm test                  # pruebas unitarias con Vitest
+npm test                  # pruebas unitarias (ng test, Vitest)
 npm run build             # build de producción en dist/frontend/browser
 ```
 
@@ -42,7 +40,8 @@ src/
     core/
       auth/                sesión, roles, permisos, alcance activo y guards
       navigation/          permiso por módulo (ACCESS) y menú
-      demo/                base de datos en memoria y latencia simulada
+      http/                interceptores (alcance, token, errores), mapeo a DomainError y URL de la API
+      catalogs/            catálogos y municipios desde la API
       models/              modelos compartidos, reflejo del esquema Prisma
       debug/               DebugService: único canal de logs, silencioso en producción
       errors/              DomainError y manejador global de errores
@@ -50,18 +49,18 @@ src/
     shared/                componentes de UI, pipes y utilidades
     features/<contexto>/   un módulo por pantalla: página, componentes y data/ (puerto + adaptador)
   assets/scss/             tokens, base y clases globales de componentes
-  environments/            modo demostración y latencia
+  environments/            ruta de la API y versión
 ```
 
-- **Puertos y adaptadores:** cada módulo declara un puerto (`abstract class XRepository`) y un adaptador de demostración. Los componentes dependen solo del puerto.
-- **Aislamiento:** los adaptadores simulan el `TenantContext` de la API. Nunca devuelven datos de otra denominación y filtran por sede cuando el alcance es una sede.
+- **Puertos y adaptadores:** cada módulo declara un puerto (`abstract class XRepository`) y un adaptador HTTP (`HttpXRepository`) que se enlaza en los `providers` de su ruta. Los componentes dependen solo del puerto, y las pruebas lo sustituyen por un doble.
+- **Aislamiento:** lo garantiza la API; el frontend solo envía el alcance activo y no mezcla datos de sedes distintas.
 - **Permisos:** el menú, las rutas (`canMatch`, así que ni se descarga el código de un módulo prohibido) y las acciones de escritura se rigen por los permisos del alcance activo. La API vuelve a validar todo.
 - **Angular moderno:** componentes standalone con `OnPush`, señales, `rxResource`, control de flujo nativo, formularios reactivos tipados y detección de cambios sin zone.js.
 - **Estilos:** tokens en `src/assets/scss/_tokens.scss`. Ningún componente escribe colores literales.
 
 ## Roles y permisos
 
-Los permisos son los del seed del backend (`backend/prisma/seed.ts`), en `core/auth/permission.ts` y `core/auth/role.ts`. El permiso de cada módulo está en `core/navigation/navigation.ts`.
+Los permisos de cada rol los define el seed del backend (`backend/prisma/seed.ts`) y llegan en la sesión; `core/auth/permission.ts` y `core/auth/role.ts` solo tipan los códigos y los nombres. El permiso de cada módulo está en `core/navigation/navigation.ts`.
 
 | Módulo | Permiso |
 | --- | --- |

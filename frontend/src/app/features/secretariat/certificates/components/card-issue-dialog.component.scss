@@ -1,0 +1,46 @@
+@use 'tokens' as *;
+
+.candidate-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  background: $color-primary-soft;
+}
+
+.candidate-list {
+  max-height: 14rem;
+  margin: $space-1 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid $color-border;
+  border-radius: $radius-control;
+  background: $color-surface;
+
+  li + li {
+    border-top: 1px solid $color-border;
+  }
+
+  button {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    width: 100%;
+    padding: $space-2 $space-3;
+    border: 0;
+    background: transparent;
+    color: $color-ink;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: $color-surface-2;
+    }
+  }
+}

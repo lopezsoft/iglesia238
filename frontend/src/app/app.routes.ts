@@ -6,6 +6,19 @@ import { ShellComponent } from './layout/shell.component';
 
 export const routes: Routes = [
   {
+    // Links sent by email or copied by an administrator: they work with or without a session.
+    path: 'login/reset-password',
+    title: 'Nueva contraseña',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
+  {
+    path: 'login/accept-invitation',
+    title: 'Activar cuenta',
+    loadComponent: () =>
+      import('./features/auth/accept-invitation/accept-invitation.page').then((m) => m.AcceptInvitationPage),
+  },
+  {
     path: 'login',
     canMatch: [guestGuard],
     loadChildren: () => import('./features/auth/auth.routes'),
@@ -37,6 +50,12 @@ export const routes: Routes = [
         title: 'Sedes y razones sociales',
         canMatch: [permissionGuard(...ACCESS.organization)],
         loadChildren: () => import('./features/organization/organization.routes'),
+      },
+      {
+        path: 'privacy-policy',
+        title: 'Política de datos',
+        canMatch: [permissionGuard(...ACCESS.privacyPolicy)],
+        loadChildren: () => import('./features/privacy-policy/privacy-policy.routes'),
       },
       {
         path: 'users',
@@ -121,6 +140,11 @@ export const routes: Routes = [
         title: 'Auditoría',
         canMatch: [permissionGuard(...ACCESS.audit)],
         loadChildren: () => import('./features/audit/audit.routes'),
+      },
+      {
+        path: 'profile',
+        title: 'Mi perfil',
+        loadChildren: () => import('./features/profile/profile.routes'),
       },
       {
         path: 'forbidden',

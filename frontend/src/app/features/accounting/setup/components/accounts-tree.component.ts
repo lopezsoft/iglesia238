@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { matchesText } from '../../../../shared/utils/pagination';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import { ACCOUNT_NATURE_LABELS } from '../../data/accounting.models';
@@ -26,6 +27,17 @@ import { AccountRow } from '../data/accounting-setup.models';
       <div class="alert tree-alert" role="note">
         <app-icon name="info" />
         <span>Solo las cuentas imputables reciben movimientos. Las cuentas que agrupan subcuentas no son imputables.</span>
+      </div>
+      <div class="tree-search field">
+        <label class="visually-hidden" for="accounts-search">Buscar cuenta</label>
+        <input
+          id="accounts-search"
+          class="input"
+          type="search"
+          placeholder="Buscar por código o nombre"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
       </div>
       <div class="table-wrap">
         <table class="table">
@@ -60,7 +72,12 @@ import { AccountRow } from '../data/accounting-setup.models';
                     <span [class.tree-group]="row.hasChildren">{{ row.code }}</span>
                   </div>
                 </td>
-                <td [class.tree-group]="row.hasChildren">{{ row.name }}</td>
+                <td [class.tree-group]="row.hasChildren" [class.text-muted]="!row.isActive">
+                  {{ row.name }}
+                  @if (!row.isActive) {
+                    <app-status-badge label="Inactiva" tone="neutral" />
+                  }
+                </td>
                 <td>{{ natureLabels[row.nature] }}</td>
                 <td>
                   <app-status-badge [label]="row.isPostable ? 'Sí' : 'No, agrupa'" [tone]="row.isPostable ? 'success' : 'neutral'" />
@@ -71,6 +88,16 @@ import { AccountRow } from '../data/accounting-setup.models';
                     <div class="cluster row-actions">
                       <button type="button" class="btn btn--ghost btn--sm" [attr.aria-label]="'Nueva subcuenta de ' + row.code" (click)="addChild.emit(row)">
                         <app-icon name="plus" [size]="16" /> Subcuenta
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn--ghost btn--sm"
+                        [disabled]="row.isActive && row.linkedTypes > 0"
+                        [attr.title]="row.isActive && row.linkedTypes > 0 ? 'Alimenta tipos de aporte' : null"
+                        [attr.aria-label]="(row.isActive ? 'Desactivar cuenta ' : 'Activar cuenta ') + row.code"
+                        (click)="toggleActive.emit(row)"
+                      >
+                        {{ row.isActive ? 'Desactivar' : 'Activar' }}
                       </button>
                       <button type="button" class="btn btn--secondary btn--sm" [attr.aria-label]="'Editar cuenta ' + row.code" (click)="edit.emit(row)">
                         Editar
@@ -103,6 +130,10 @@ import { AccountRow } from '../data/accounting-setup.models';
     @use 'tokens' as *;
     .tree-header {
       padding: $space-5 $space-5 0;
+    }
+    .tree-search {
+      padding: 0 $space-5 $space-3;
+      max-width: 24rem;
     }
     .tree-alert {
       margin: 0 $space-5 $space-4;
@@ -140,13 +171,19 @@ export class AccountsTreeComponent {
   readonly edit = output<AccountRow>();
   readonly remove = output<AccountRow>();
   readonly addChild = output<AccountRow>();
+  readonly toggleActive = output<AccountRow>();
 
   protected readonly natureLabels = ACCOUNT_NATURE_LABELS;
   protected readonly collapsed = signal<readonly number[]>([]);
+  protected readonly search = signal('');
   protected readonly postableCount = computed(() => this.accounts().filter((a) => a.isPostable).length);
 
-  /** Rows whose ancestors are all expanded. */
+  /** Rows whose ancestors are all expanded, or the rows that match the search whatever their ancestors. */
   protected readonly visibleRows = computed(() => {
+    const term = this.search().trim();
+    if (term !== '') {
+      return this.accounts().filter((account) => matchesText([account.code, account.name], term));
+    }
     const collapsed = new Set(this.collapsed());
     const byId = new Map(this.accounts().map((a) => [a.id, a]));
     return this.accounts().filter((account) => {

@@ -7,28 +7,50 @@
         miembro.
       </p>
     </div>
-    <div class="cluster">
-      <div class="segmented" role="group" aria-label="Filtrar por estado">
-        @for (option of filters; track option.label) {
-          <button
-            type="button"
-            class="btn btn--sm"
-            [class.btn--primary]="status() === option.value"
-            [class.btn--secondary]="status() !== option.value"
-            [attr.aria-pressed]="status() === option.value"
-            (click)="setFilter(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        }
-      </div>
-      @if (canIssue() && today()) {
-        <button type="button" class="btn btn--primary" (click)="issueOpen.set(true)">
-          <app-icon name="plus" />
-          Emitir carné
-        </button>
-      }
+    @if (canIssue() && today()) {
+      <button type="button" class="btn btn--primary" (click)="issueOpen.set(true)">
+        <app-icon name="plus" />
+        Emitir carné
+      </button>
+    }
+  </div>
+
+  <div class="toolbar cards-filters">
+    <div class="field cards-search">
+      <label for="cards-search">Buscar</label>
+      <input
+        id="cards-search"
+        class="input"
+        type="search"
+        autocomplete="off"
+        placeholder="Nombre del miembro o número de carné (SC-0130)"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
     </div>
+    <app-segmented-control
+      ariaLabel="Filtrar por estado"
+      [options]="filters"
+      [value]="status()"
+      (valueChange)="setStatus($event)"
+    />
+    <button
+      type="button"
+      class="btn btn--sm"
+      [class.btn--primary]="expiringSoon()"
+      [class.btn--secondary]="!expiringSoon()"
+      [attr.aria-pressed]="expiringSoon()"
+      (click)="toggleExpiring()"
+    >
+      <app-icon name="clock" [size]="16" />
+      Vencen en {{ warningDays }} días
+    </button>
+    @if (hasFilters()) {
+      <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+        <app-icon name="x" [size]="16" />
+        Limpiar filtros
+      </button>
+    }
   </div>
 
   <div role="status" aria-live="polite" class="cards-message">
@@ -40,6 +62,15 @@
     }
   </div>
 
+  @if (downloadError(); as text) {
+    <div class="cards-message" role="alert">
+      <div class="alert alert--danger">
+        <app-icon name="alert" />
+        <span>{{ text }}</span>
+      </div>
+    </div>
+  }
+
   @if (cards.error()) {
     <div class="cards-message">
       <app-error-banner [message]="loadError()" (retry)="cards.reload()" />
@@ -50,8 +81,12 @@
     @if (result.total === 0) {
       <app-empty-state
         icon="id-card"
-        title="No hay carnés"
-        description="Ningún carné coincide con el filtro seleccionado."
+        [title]="hasFilters() ? 'Sin resultados' : 'Aún no hay carnés'"
+        [description]="
+          hasFilters()
+            ? 'Ningún carné coincide con los filtros seleccionados.'
+            : 'Los carnés que emitas aparecerán aquí con su vigencia.'
+        "
       />
     } @else {
       <div class="table-wrap" [attr.aria-busy]="cards.isLoading()">
@@ -63,6 +98,9 @@
             <tr>
               <th scope="col">Carné número</th>
               <th scope="col">Miembro</th>
+              @if (!hasSede()) {
+                <th scope="col">Sede</th>
+              }
               <th scope="col">Emisión</th>
               <th scope="col">Vencimiento</th>
               <th scope="col">Estado</th>
@@ -74,6 +112,9 @@
               <tr>
                 <td class="code">{{ card.cardNumber }}</td>
                 <td>{{ card.memberName }}</td>
+                @if (!hasSede()) {
+                  <td>{{ card.congregationName }}</td>
+                }
                 <td>{{ card.issuedOn | date: 'dd/MM/yyyy' }}</td>
                 <td>
                   <div>{{ card.expiresOn | date: 'dd/MM/yyyy' }}</div>
@@ -99,17 +140,29 @@
                   }
                 </td>
                 <td>
-                  @if (canIssue() && card.status === 'VALID') {
+                  <div class="cluster row-actions">
                     <button
                       type="button"
-                      class="btn btn--danger-ghost btn--sm"
-                      [attr.aria-label]="'Anular carné ' + card.cardNumber"
-                      (click)="askVoid(card)"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Descargar PDF del carné ' + card.cardNumber"
+                      [disabled]="downloadingId() === card.id"
+                      (click)="downloadPdf(card)"
                     >
-                      <app-icon name="ban" [size]="16" />
-                      Anular
+                      <app-icon name="file-text" [size]="16" />
+                      PDF
                     </button>
-                  }
+                    @if (canIssue() && card.status === 'VALID') {
+                      <button
+                        type="button"
+                        class="btn btn--danger-ghost btn--sm"
+                        [attr.aria-label]="'Anular carné ' + card.cardNumber"
+                        (click)="askVoid(card)"
+                      >
+                        <app-icon name="ban" [size]="16" />
+                        Anular
+                      </button>
+                    }
+                  </div>
                 </td>
               </tr>
             }

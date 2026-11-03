@@ -9,18 +9,17 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { APPLICATION_STATUS_LABELS } from '../../../../core/models/membership.model';
-import {
-  DOCUMENT_TYPES,
-  MARITAL_STATUSES,
-  catalogName,
-  municipalityLabel,
-} from '../../../../core/models/catalogs';
+import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { ReadOnlyNoticeComponent } from '../../../../shared/ui/feedback.components';
+import { IconChipComponent } from '../../../../shared/ui/icon-chip.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
+import { MiniStatComponent } from '../../../../shared/ui/mini-stat.component';
+import { SectionPanelComponent } from '../../../../shared/ui/section-panel.component';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import {
   APPLICATION_STATUS_TONES,
   ApplicationDetail,
+  PersonMatch,
   SEX_LABELS,
   documentLabel,
   isReviewable,
@@ -36,7 +35,11 @@ import { RejectFormComponent } from './reject-form.component';
     DatePipe,
     RouterLink,
     IconComponent,
+    IconChipComponent,
+    MiniStatComponent,
+    SectionPanelComponent,
     StatusBadgeComponent,
+    DialogComponent,
     ReadOnlyNoticeComponent,
     DuplicateWarningComponent,
     RejectFormComponent,
@@ -60,12 +63,22 @@ export class ApplicationDetailComponent {
   readonly markDuplicate = output<number>();
   readonly dismissDuplicate = output<void>();
   readonly approve = output<void>();
+  /** Approve on top of the existing person that holds the document. */
+  readonly approveLinked = output<number>();
 
   protected readonly statusLabels = APPLICATION_STATUS_LABELS;
   protected readonly statusTones = APPLICATION_STATUS_TONES;
 
-  /** Closes the reject form whenever another application is shown. */
+  /** Closes the reject form and the link confirmation whenever another application is shown. */
   protected readonly rejectOpen = linkedSignal({
+    source: () => this.application().id,
+    computation: () => false,
+  });
+  protected readonly linkCandidate = linkedSignal<number, PersonMatch | null>({
+    source: () => this.application().id,
+    computation: () => null,
+  });
+  protected readonly linkDialogOpen = linkedSignal({
     source: () => this.application().id,
     computation: () => false,
   });
@@ -74,19 +87,15 @@ export class ApplicationDetailComponent {
   protected readonly document = computed(() =>
     documentLabel(this.application().documentTypeCode, this.application().documentNumber),
   );
-  protected readonly documentTypeName = computed(() =>
-    catalogName(DOCUMENT_TYPES, this.application().documentTypeCode),
-  );
-  protected readonly sex = computed(() => {
-    const sex = this.application().formData.sex;
-    return sex ? SEX_LABELS[sex] : '—';
+  protected readonly sex = computed(() => SEX_LABELS[this.application().formData.sex]);
+  protected readonly municipality = computed(() => {
+    const { municipalityName, regionName } = this.application().formData;
+    return municipalityName ? [municipalityName, regionName].filter(Boolean).join(', ') : '—';
   });
-  protected readonly maritalStatus = computed(() =>
-    catalogName(MARITAL_STATUSES, this.application().formData.maritalStatusCode),
-  );
-  protected readonly municipality = computed(() =>
-    municipalityLabel(this.application().formData.municipalityCode),
-  );
+  protected readonly baptism = computed(() => {
+    const flag = this.application().formData.isBaptized;
+    return flag === null ? 'No indicó' : flag ? 'Sí' : 'No';
+  });
   protected readonly showDuplicateWarning = computed(
     () =>
       this.reviewable() && this.application().duplicateMatch !== null && !this.duplicateDismissed(),
@@ -95,8 +104,24 @@ export class ApplicationDetailComponent {
     () =>
       this.reviewable() && this.application().duplicateMatch !== null && this.duplicateDismissed(),
   );
-  /** A person with the same document always blocks approval, even after a dismissal. */
+  /** A person with the same document always blocks a plain approval, even after a dismissal. */
   protected readonly approveBlocked = computed(
     () => this.reviewable() && this.application().duplicateMatch !== null,
   );
+
+  protected askToLink(personId: number): void {
+    const match = this.application().duplicateMatch;
+    if (match && match.personId === personId) {
+      this.linkCandidate.set(match);
+      this.linkDialogOpen.set(true);
+    }
+  }
+
+  protected confirmLink(): void {
+    const candidate = this.linkCandidate();
+    this.linkDialogOpen.set(false);
+    if (candidate) {
+      this.approveLinked.emit(candidate.personId);
+    }
+  }
 }

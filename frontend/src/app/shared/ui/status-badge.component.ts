@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-export type BadgeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type BadgeTone = 'success' | 'warning' | 'danger' | 'info' | 'indigo' | 'cyan' | 'neutral';
 
 @Component({
   selector: 'app-status-badge',

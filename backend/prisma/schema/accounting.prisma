@@ -215,6 +215,7 @@ model CashTransaction {
   @@index([periodId, postedOn])
   @@index([accountId, postedOn])
   @@index([fundId, postedOn])
+  @@index([congregationId, postedOn])
   @@map("cash_transactions")
 }
 

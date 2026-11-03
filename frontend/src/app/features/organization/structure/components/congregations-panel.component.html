@@ -5,6 +5,17 @@
   >
 </div>
 
+@if (policyMissing()) {
+  <div class="alert alert--warning" role="status">
+    <app-icon name="alert" />
+    <span>
+      La denominación no tiene una política de datos publicada: el formulario público no mostrará ninguna sede,
+      aunque tenga las inscripciones abiertas.
+      <a routerLink="/privacy-policy">Revisar y publicar la política</a>
+    </span>
+  </div>
+}
+
 @if (actionError(); as message) {
   @if (!confirmOpen()) {
     <div class="alert alert--danger" role="alert">
@@ -47,7 +58,9 @@
           @for (row of visible().items; track row.id) {
             <tr>
               <td>
-                <div class="cell-title">{{ row.name }}</div>
+                <div class="cell-title">
+                  {{ row.name }} <span class="chip chip--mono">{{ row.code }}</span>
+                </div>
                 <div class="text-muted text-small">
                   {{ row.address ?? 'Sin dirección'
                   }}{{ row.neighborhood ? ', ' + row.neighborhood : '' }}
@@ -55,7 +68,7 @@
               </td>
               <td>{{ row.legalEntityName }}</td>
               <td>{{ row.districtNumber ? 'Distrito ' + row.districtNumber : '—' }}</td>
-              <td>{{ municipality(row.municipalityCode) }}</td>
+              <td>{{ place(row) }}</td>
               <td>
                 <button
                   type="button"

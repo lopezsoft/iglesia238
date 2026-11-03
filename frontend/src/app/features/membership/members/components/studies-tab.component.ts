@@ -3,7 +3,8 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { STUDY_TYPES, catalogName } from '../../../../core/models/catalogs';
+import { CatalogsStore } from '../../../../core/catalogs/catalogs.store';
+import { catalogName } from '../../../../core/models/catalogs';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import {
   EmptyStateComponent,
@@ -36,10 +37,11 @@ const CURRENT_YEAR = Number(todayIso().slice(0, 4));
 export class StudiesTabComponent {
   private readonly repository = inject(MembersRepository);
   private readonly auth = inject(AuthService);
+  private readonly catalogs = inject(CatalogsStore);
 
   readonly memberId = input.required<number>();
 
-  protected readonly studyTypes = STUDY_TYPES;
+  protected readonly studyTypes = this.catalogs.studyTypes;
   protected readonly statusLabels = STUDY_STATUS_LABELS;
   protected readonly currentYear = CURRENT_YEAR;
 
@@ -61,13 +63,17 @@ export class StudiesTabComponent {
     stream: ({ params }) => this.repository.studies(params.memberId),
   });
 
+  constructor() {
+    this.catalogs.load().subscribe({ error: () => undefined });
+  }
+
   protected readonly rows = computed(() => (this.studies.hasValue() ? this.studies.value() : []));
   protected readonly loadError = computed(() =>
     this.studies.error() ? userMessage(this.studies.error()) : null,
   );
 
   protected typeName(code: string): string {
-    return catalogName(STUDY_TYPES, code);
+    return catalogName(this.catalogs.studyTypes(), code);
   }
 
   protected showError(name: 'name' | 'institution' | 'year'): boolean {

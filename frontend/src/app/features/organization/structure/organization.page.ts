@@ -1,13 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   computed,
   inject,
   input,
   signal,
   viewChild,
-  viewChildren,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -15,7 +13,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ReadOnlyNoticeComponent } from '../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
+import { TabCardItem, TabCardsComponent } from '../../../shared/ui/tab-cards.component';
 import { CongregationsPanelComponent } from './components/congregations-panel.component';
 import { DistrictsPanelComponent } from './components/districts-panel.component';
 import { LegalEntitiesPanelComponent } from './components/legal-entities-panel.component';
@@ -39,7 +39,9 @@ const CREATE_LABELS: Readonly<Record<OrganizationTab, string>> = {
     LegalEntitiesPanelComponent,
     PageHeaderComponent,
     ReadOnlyNoticeComponent,
+    SectionPanelComponent,
     StatCardComponent,
+    TabCardsComponent,
   ],
   templateUrl: './organization.page.html',
   styleUrl: './organization.page.scss',
@@ -52,7 +54,12 @@ export class OrganizationPage {
   /** `?tab=` query param, bound by the router. */
   readonly tab = input<string>();
 
-  protected readonly tabs = ORGANIZATION_TABS;
+  protected readonly tabs: readonly TabCardItem[] = ORGANIZATION_TABS.map((tab) => ({
+    id: tab.value,
+    title: tab.label,
+    subtitle: tab.subtitle,
+    icon: tab.icon,
+  }));
   protected readonly activeTab = computed<OrganizationTab>(() => {
     const tab = this.tab();
     return isOrganizationTab(tab) ? tab : 'sedes';
@@ -84,44 +91,19 @@ export class OrganizationPage {
   private readonly congregationsPanel = viewChild(CongregationsPanelComponent);
   private readonly legalEntitiesPanel = viewChild(LegalEntitiesPanelComponent);
   private readonly districtsPanel = viewChild(DistrictsPanelComponent);
-  private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('tabButton');
 
-  protected tabId(tab: OrganizationTab): string {
+  protected tabId(tab: string): string {
     return `organization-tab-${tab}`;
   }
 
-  protected selectTab(tab: OrganizationTab): void {
+  protected selectTab(value: string): void {
+    const tab = isOrganizationTab(value) ? value : 'sedes';
     this.notice.set(null);
     void this.router.navigate([], {
       queryParams: { tab: tab === 'sedes' ? null : tab },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-  }
-
-  /** Arrow keys, Home and End move between tabs (WAI-ARIA tabs pattern). */
-  protected onTabKeydown(event: KeyboardEvent, index: number): void {
-    const last = this.tabs.length - 1;
-    const target =
-      event.key === 'ArrowRight'
-        ? index === last
-          ? 0
-          : index + 1
-        : event.key === 'ArrowLeft'
-          ? index === 0
-            ? last
-            : index - 1
-          : event.key === 'Home'
-            ? 0
-            : event.key === 'End'
-              ? last
-              : null;
-    if (target === null) {
-      return;
-    }
-    event.preventDefault();
-    this.selectTab(this.tabs[target].value);
-    this.tabButtons()[target]?.nativeElement.focus();
   }
 
   protected openCreate(): void {
@@ -141,5 +123,7 @@ export class OrganizationPage {
   protected onChanged(message: string): void {
     this.notice.set(message);
     this.overview.reload();
+    // A sede created, renamed or deactivated changes the sedes the administrator can act on.
+    void this.auth.refreshSession();
   }
 }

@@ -73,8 +73,17 @@ const STUDY_TYPES: CatalogEntry[] = [
   { code: 'OTHER', name: 'Otros' },
 ];
 
+// SUNDAY_SCHOOL se conserva porque la asistencia ya lo referencia; los demás son las reuniones habituales de una sede.
 const MEETING_TYPES: CatalogEntry[] = [
   { code: 'SUNDAY_SCHOOL', name: 'Escuela Dominical' },
+  { code: 'SUNDAY_SERVICE', name: 'Culto dominical' },
+  { code: 'PRAYER_MEETING', name: 'Reunión de oración' },
+  { code: 'MIDWEEK_SERVICE', name: 'Culto de entre semana' },
+  { code: 'YOUTH_MEETING', name: 'Reunión de jóvenes' },
+  { code: 'WOMEN_MEETING', name: 'Reunión de hermanas' },
+  { code: 'MEN_MEETING', name: 'Reunión de hermanos' },
+  { code: 'CHILDREN_MEETING', name: 'Reunión de niños' },
+  { code: 'SPECIAL_SERVICE', name: 'Culto especial' },
 ];
 
 const ATTENDANCE_CATEGORIES: CatalogEntry[] = [

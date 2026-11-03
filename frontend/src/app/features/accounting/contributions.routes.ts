@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { ContributionsRepository } from './contributions/data/contributions.repository';
-import { DemoContributionsRepository } from './contributions/data/demo-contributions.repository';
+import { HttpContributionsRepository } from './contributions/data/http-contributions.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: ContributionsRepository, useClass: DemoContributionsRepository }],
+    providers: [{ provide: ContributionsRepository, useClass: HttpContributionsRepository }],
     children: [
       {
         path: '',

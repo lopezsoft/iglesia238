@@ -38,6 +38,16 @@
 }
 
 .form-footer {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: $space-3;
+  margin-top: $space-5;
+  padding-top: $space-4;
+  border-top: 1px dashed $color-border;
+}
+
+.form-card {
+  padding: $space-5;
 }

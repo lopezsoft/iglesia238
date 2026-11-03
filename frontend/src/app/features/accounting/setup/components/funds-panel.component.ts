@@ -14,7 +14,7 @@ import { FundRow, SetupOverview } from '../data/accounting-setup.models';
   template: `
     <div class="stack">
       @if (overview(); as info) {
-        <div class="grid-auto">
+        <div class="kpi-grid">
           <app-stat-card label="Fondos activos" [value]="info.activeFunds + ' de ' + info.totalFunds" icon="wallet" />
           <app-stat-card
             [label]="'Saldo inicial consolidado ' + info.year"

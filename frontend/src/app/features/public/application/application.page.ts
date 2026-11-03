@@ -13,12 +13,13 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { DomainError, userMessage } from '../../../core/errors/domain-error';
-import { municipalityLabel } from '../../../core/models/catalogs';
 import { Sex, ageOn, personFullName } from '../../../core/models/membership.model';
 import { ErrorBannerComponent, EmptyStateComponent, LoadingComponent } from '../../../shared/ui/feedback.components';
+import { FeatureChipComponent } from '../../../shared/ui/feature-chip.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
+import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
 import { StatusCheckComponent } from '../status/components/status-check.component';
-import { createApplicationForm, resetConsentWhenPolicyChanges } from './application-form';
+import { baptismToFlag, createApplicationForm, resetConsentWhenPolicyChanges } from './application-form';
 import { APPLICATION_STEPS, ApplicationSummary, StepId } from './application-steps';
 import { ApplicationStepperComponent } from './components/application-stepper.component';
 import { CongregationStepComponent } from './components/congregation-step.component';
@@ -51,6 +52,8 @@ interface Receipt {
     ConsentStepComponent,
     SubmissionConfirmationComponent,
     StatusCheckComponent,
+    FeatureChipComponent,
+    SectionPanelComponent,
   ],
   templateUrl: './application.page.html',
   styleUrl: './application.page.scss',
@@ -66,6 +69,10 @@ export class ApplicationPage {
 
   protected readonly congregations = rxResource({
     stream: () => this.repository.listOpenCongregations(),
+  });
+
+  protected readonly catalogs = rxResource({
+    stream: () => this.repository.getCatalogs(),
   });
 
   private readonly congregationId = toSignal(this.form.controls.congregationId.valueChanges, {
@@ -120,6 +127,7 @@ export class ApplicationPage {
   protected readonly receipt = signal<Receipt | null>(null);
 
   protected readonly congregationsError = computed(() => userMessage(this.congregations.error()));
+  protected readonly catalogsError = computed(() => userMessage(this.catalogs.error()));
   protected readonly currentPolicy = computed(() =>
     this.policy.hasValue() ? this.policy.value() : undefined,
   );
@@ -244,10 +252,16 @@ export class ApplicationPage {
       email: personal.email.trim() || null,
       address: personal.address.trim(),
       municipalityCode: personal.municipalityCode,
+      neighborhood: personal.neighborhood.trim() || null,
+      occupation: personal.occupation.trim() || null,
+      previousCongregationName: personal.previousCongregationName.trim() || null,
+      isBaptized: baptismToFlag(personal.baptism),
       guardian: this.isMinor()
         ? {
-            name: guardian.name.trim(),
-            document: guardian.document.trim(),
+            firstName: guardian.firstName.trim(),
+            lastName: guardian.lastName.trim(),
+            documentTypeCode: guardian.documentTypeCode,
+            documentNumber: guardian.documentNumber.trim(),
             relationship: guardian.relationship,
             phone: guardian.phone.trim(),
           }
@@ -268,10 +282,12 @@ export class ApplicationPage {
       }),
       document: `${personal.documentTypeCode} ${personal.documentNumber.trim()}`,
       birthDate: personal.birthDate,
-      municipality: municipalityLabel(personal.municipalityCode),
+      municipality: personal.municipalityName || '—',
       phone: personal.phone.trim(),
       email: personal.email.trim() || null,
-      guardian: this.isMinor() ? `${guardian.name.trim()} (${guardian.relationship})` : null,
+      guardian: this.isMinor()
+        ? `${personFullName({ firstName: guardian.firstName.trim(), lastName: guardian.lastName.trim(), secondLastName: null })} (${guardian.relationship})`
+        : null,
     };
   }
 }

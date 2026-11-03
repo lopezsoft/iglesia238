@@ -1,16 +1,24 @@
 // E-07 Reportes financieros. Aggregated views over the accounting context: they never carry
 // contributors, except the contribution detail that only contributions.write can export.
-import { ContributionCategory, PeriodStatus } from '../../accounting/data/accounting.models';
+import { AccountNature, ContributionCategory, PeriodStatus } from '../../accounting/data/accounting.models';
 
-/** Inclusive date range ('YYYY-MM-DD') of a single calendar year, optionally one fund. */
+/** Inclusive date range ('YYYY-MM-DD') of a single calendar year, optionally one fund or one sede. */
 export interface ReportQuery {
   readonly from: string;
   readonly to: string;
   /** Null: every fund. */
   readonly fundId: number | null;
+  /** Null: every sede of the scope (a denomination-wide session can narrow the report to one sede). */
+  readonly congregationId: number | null;
 }
 
 export interface ReportFundOption {
+  readonly id: number;
+  readonly name: string;
+  readonly isActive: boolean;
+}
+
+export interface ReportCongregationOption {
   readonly id: number;
   readonly name: string;
   readonly isActive: boolean;
@@ -21,7 +29,9 @@ export interface ReportOptions {
   /** True for "Toda la denominación": figures add every sede and come with a per-sede breakdown. */
   readonly denominationWide: boolean;
   readonly funds: readonly ReportFundOption[];
-  /** Demo calendar: the default range is its whole year. */
+  /** Sedes the report can be narrowed to; empty for a session fixed on one sede. */
+  readonly congregations: readonly ReportCongregationOption[];
+  /** Today in Bogota: the default range is its whole year. */
   readonly today: string;
 }
 
@@ -68,6 +78,15 @@ export interface ReportCongregation extends MoneyTotals {
   readonly name: string;
 }
 
+/** One line of the income statement by account. */
+export interface ReportAccount {
+  readonly accountId: number;
+  readonly code: string;
+  readonly name: string;
+  readonly nature: AccountNature;
+  readonly amount: number;
+}
+
 export interface FinancialReport {
   readonly query: ReportQuery;
   readonly scopeLabel: string;
@@ -78,29 +97,19 @@ export interface FinancialReport {
   readonly previous: MoneyTotals & { readonly from: string; readonly to: string };
   readonly months: readonly ReportMonth[];
   readonly funds: readonly ReportFundBalance[];
+  /** Income statement by account, ordered by code. */
+  readonly accounts: readonly ReportAccount[];
   readonly contributionTypes: readonly ReportContributionType[];
   readonly contributionsTotal: number;
   readonly contributionsCount: number;
+  /** Recorded in the range but not yet consolidated in the cash book: absent from income, balances and the monthly flow. */
+  readonly pendingConsolidation: { readonly count: number; readonly amount: number };
   /** Income on accounts that are not a contribution type (donations, interest, activities). */
   readonly otherIncome: number;
   /** Only for a denomination-wide scope. */
   readonly congregations: readonly ReportCongregation[] | null;
   readonly closedPeriods: number;
   readonly openPeriods: number;
-}
-
-/** One contribution of the detail export (contributions.write only). */
-export interface ContributionDetailRow {
-  readonly receivedOn: string;
-  readonly receipt: string;
-  readonly congregationName: string;
-  readonly contributionType: string;
-  readonly contributor: string;
-  readonly paymentMethod: string;
-  readonly paymentReference: string;
-  readonly fundName: string;
-  readonly amount: number;
-  readonly status: string;
 }
 
 /** Relative change (0.051 = +5,1 %), or null when the previous value is zero. */

@@ -29,11 +29,12 @@ import { ContributionsRepository } from '../data/contributions.repository';
       @if (contribution(); as row) {
         <form id="void-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <p class="text-muted">
-            El aporte se conserva con estado Anulado y deja de sumar en los totales. Si ya tiene su propio movimiento en el
-            Libro de caja, se registra la reversa con fecha de hoy. Esta acción queda en la auditoría.
+            El aporte se conserva con estado Anulado, su recibo se anula y deja de sumar en los totales. Si pagaba una
+            promesa de voto, el saldo se restituye. Esta acción queda en la auditoría.
           </p>
           <dl class="details">
-            <div><dt>Aportante</dt><dd>{{ row.contributorName ?? 'Anónimo' }}</dd></div>
+            <div><dt>Recibo</dt><dd class="mono">{{ row.receiptNumber }}</dd></div>
+            <div><dt>Aportante</dt><dd>{{ row.contributorName ?? (row.notes ? 'Colecta agregada' : 'Anónimo') }}</dd></div>
             <div><dt>Tipo</dt><dd>{{ row.typeName }}</dd></div>
             <div><dt>Fecha</dt><dd>{{ row.receivedOn | date: 'dd/MM/yyyy' }}</dd></div>
             <div><dt>Valor</dt><dd class="amount">{{ row.amount | money }}</dd></div>
@@ -56,7 +57,7 @@ import { ContributionsRepository } from '../data/contributions.repository';
           </div>
           <div class="alert alert--warning" role="note">
             <app-icon name="alert" />
-            <span>Un aporte liquidado no se puede anular. Este aporte aún no está incluido en ninguna liquidación del diezmo.</span>
+            <span>Esta acción no se puede deshacer: para corregir el valor, registra un aporte nuevo con el valor correcto.</span>
           </div>
           @if (error()) {
             <div class="alert alert--danger" role="alert">{{ error() }}</div>

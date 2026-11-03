@@ -7,7 +7,7 @@
     <p class="text-muted">
       {{
         isCreate()
-          ? 'Registra un nuevo tenant en la plataforma.'
+          ? 'Registra una nueva denominación en la plataforma.'
           : 'Los cambios quedan registrados en Auditoría.'
       }}
     </p>
@@ -52,21 +52,15 @@
         <app-icon name="info" />
         <div class="defaults">
           <strong id="denomination-defaults-title">Se crea automáticamente</strong>
-          <ul>
-            <li>
-              Primera política de tratamiento de datos (Ley 1581 de 2012) en estado
-              <strong>borrador</strong>, para que el administrador de la denominación la revise y
-              publique. Mientras no la publique, sus sedes no reciben inscripciones públicas.
-            </li>
+          <ul class="cluster">
+            @for (item of templateItems; track item) {
+              <li class="chip">{{ item }}</li>
+            }
           </ul>
           <p class="text-small">
-            El fondo <strong>«Fondo Local»</strong> y los tipos de aporte
-            <span class="cluster">
-              @for (type of contributionTypes; track type) {
-                <span class="chip">{{ type }}</span>
-              }
-            </span>
-            se configuran después en Contabilidad.
+            Los porcentajes del diezmo no tienen valor por defecto: el administrador de la
+            denominación los registra en Contabilidad. La política de datos queda en borrador y las
+            sedes no reciben inscripciones públicas hasta que la publique.
           </p>
         </div>
       </section>

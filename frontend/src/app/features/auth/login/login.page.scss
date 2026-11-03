@@ -1,22 +1,29 @@
 @use 'tokens' as *;
 
 .login {
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
   &__title {
-    margin-bottom: $space-1;
+    font-size: $font-size-auth-title;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
   }
 
   &__lead {
-    margin-bottom: $space-5;
+    color: $color-ink-muted;
   }
 
   &__alert {
     align-items: flex-start;
-    margin-bottom: $space-5;
     color: $color-danger;
   }
 
   &__alert-title {
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-bold;
   }
 
   &__form {
@@ -25,62 +32,7 @@
     gap: $space-4;
   }
 
-  &__password {
-    position: relative;
-
-    .input {
-      padding-right: 2.75rem;
-    }
-  }
-
-  &__toggle {
-    position: absolute;
-    top: $space-1;
-    right: $space-1;
-    width: 2rem;
-    min-height: 2rem;
-    height: 2rem;
-    color: $color-ink-muted;
-  }
-
-  &__links {
-    display: flex;
-    justify-content: flex-end;
-    font-weight: $font-weight-medium;
-  }
-
-  &__submit {
-    width: 100%;
-  }
-
-  &__notice {
-    align-items: flex-start;
-    margin-top: $space-5;
-    background: $color-surface-2;
-    color: $color-ink-muted;
-  }
-
-  &__extras {
-    display: flex;
-    flex-direction: column;
-    gap: $space-4;
-  }
-
-  &__apply {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $space-3;
-    padding: $space-4 $space-5;
-    color: $color-primary;
-  }
-
-  &__apply-text {
-    flex: 1 1 12rem;
-    color: $color-ink;
-
-    a {
-      font-weight: $font-weight-medium;
-    }
+  &__help {
+    text-align: center;
   }
 }

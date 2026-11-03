@@ -116,7 +116,7 @@
       <div class="field">
         <label for="study-type">Tipo de estudio *</label>
         <select id="study-type" class="select" formControlName="studyTypeCode">
-          @for (type of studyTypes; track type.code) {
+          @for (type of studyTypes(); track type.code) {
             <option [value]="type.code">{{ type.name }}</option>
           }
         </select>

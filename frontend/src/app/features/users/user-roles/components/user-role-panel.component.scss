@@ -66,3 +66,10 @@
     gap: $space-1;
   }
 }
+
+.panel__access {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-3;
+}

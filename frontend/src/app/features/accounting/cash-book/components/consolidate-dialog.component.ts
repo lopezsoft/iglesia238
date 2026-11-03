@@ -54,12 +54,12 @@ import { CashBookRepository } from '../data/cash-book.repository';
           <p class="text-muted text-small">Elige una fecha válida para ver los aportes pendientes.</p>
         } @else if (preview.error(); as loadError) {
           <div class="alert alert--danger" role="alert">{{ message(loadError) }}</div>
-        } @else if (!preview.value()) {
+        } @else if (!previewData()) {
           <app-loading label="Buscando aportes pendientes…" />
-        } @else if (preview.value()!.count === 0) {
+        } @else if (previewData()!.count === 0) {
           <p class="alert" role="status">No hay aportes pendientes de consolidar el {{ date() | date: 'dd/MM/yyyy' }}.</p>
         } @else {
-          @let data = preview.value()!;
+          @let data = previewData()!;
           <div class="table-wrap">
             <table class="table">
               <caption class="visually-hidden">Movimientos de entrada que se registrarán</caption>
@@ -136,8 +136,11 @@ export class ConsolidateDialogComponent {
     stream: ({ params }) => this.repository.consolidationPreview(params.date),
   });
 
+  /** `value()` throws while a resource is in error, so everything else reads this. */
+  protected readonly previewData = computed(() => (this.preview.hasValue() ? this.preview.value() : undefined));
+
   protected readonly canConfirm = computed(
-    () => !this.pending() && !this.dateInvalid() && (this.preview.value()?.count ?? 0) > 0,
+    () => !this.pending() && !this.dateInvalid() && (this.previewData()?.count ?? 0) > 0,
   );
 
   constructor() {

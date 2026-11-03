@@ -1,0 +1,24 @@
+@use 'tokens' as *;
+
+// Shared by the three panels of the records screen.
+.panel__header {
+  padding: $space-5 $space-5 0;
+}
+
+.panel__filters {
+  padding: $space-4 $space-5;
+}
+
+.panel__message {
+  padding: 0 $space-5 $space-4;
+}
+
+.filter-search {
+  flex: 1 1 16rem;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: $space-2;
+}

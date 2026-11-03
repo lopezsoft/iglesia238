@@ -1,3 +1,4 @@
+import { Permission } from './permission';
 import { RoleCode } from './role';
 
 /** Mirrors the RoleScope enum of the backend. */
@@ -13,6 +14,10 @@ export interface Scope {
 
 export interface RoleAssignment {
   readonly role: RoleCode;
+  /** Display name of the role (Role.name). */
+  readonly roleName: string;
+  /** Permissions the role grants, as computed by the API from the database. */
+  readonly permissions: readonly Permission[];
   readonly scope: Scope;
 }
 
@@ -36,6 +41,22 @@ export interface TenantContext {
 
 export function scopeKey(scope: Scope): string {
   return `${scope.kind}:${scope.denominationId ?? '-'}:${scope.congregationId ?? '-'}`;
+}
+
+/**
+ * Value of the `X-Scope` header (the `UserRole.scopeKey` of the API): `P` for the platform,
+ * `D:<denominationId>` for a denomination and `C:<congregationId>` for a congregation.
+ * The API validates it on every request against the user's active roles.
+ */
+export function scopeHeader(scope: Scope): string {
+  switch (scope.kind) {
+    case 'PLATFORM':
+      return 'P';
+    case 'DENOMINATION':
+      return `D:${scope.denominationId}`;
+    case 'CONGREGATION':
+      return `C:${scope.congregationId}`;
+  }
 }
 
 /** True when a role granted on `granted` applies while acting on `active`. */

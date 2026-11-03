@@ -1,13 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoMembersRepository } from './members/data/demo-members.repository';
+import { HttpMembersRepository } from './members/data/http-members.repository';
 import { MembersRepository } from './members/data/members.repository';
 
-// The demo adapter answers until the members endpoints exist in the API; then an HTTP adapter
-// replaces it here and nothing else changes.
 export default [
   {
     path: '',
-    providers: [{ provide: MembersRepository, useClass: DemoMembersRepository }],
+    providers: [{ provide: MembersRepository, useClass: HttpMembersRepository }],
     children: [
       {
         path: '',

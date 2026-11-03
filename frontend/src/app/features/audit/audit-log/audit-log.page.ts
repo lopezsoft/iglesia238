@@ -10,6 +10,7 @@ import {
   PaginationComponent,
 } from '../../../shared/ui/feedback.components';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
+import { SectionPanelComponent } from '../../../shared/ui/section-panel.component';
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
 import { AuditFilters, AuditFiltersComponent, EMPTY_AUDIT_FILTERS } from './components/audit-filters.component';
 import { AuditTableComponent } from './components/audit-table.component';
@@ -28,6 +29,7 @@ import { AuditLogRepository } from './data/audit-log.repository';
     LoadingComponent,
     PageHeaderComponent,
     PaginationComponent,
+    SectionPanelComponent,
     StatCardComponent,
   ],
   templateUrl: './audit-log.page.html',

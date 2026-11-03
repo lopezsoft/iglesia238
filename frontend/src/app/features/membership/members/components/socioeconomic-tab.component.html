@@ -6,10 +6,9 @@
     <app-icon name="lock" [size]="28" />
     <p class="tab__box-value">Información protegida</p>
     <p class="text-muted">
-      La ficha socioeconómica contiene datos sensibles. Para consultarla se requiere el permiso
-      <code>socioeconomic-profiles.read</code>, y para editarla
-      <code>socioeconomic-profiles.write</code>. Tu rol en esta sede no tiene acceso; si lo
-      necesitas, solicítalo al administrador de la denominación.
+      La ficha socioeconómica contiene datos sensibles y solo la ven los roles autorizados. Tu rol en esta
+      sede no tiene acceso; si lo necesitas, solicita a tu administrador el acceso a las fichas
+      socioeconómicas.
     </p>
   </div>
 } @else {
@@ -17,12 +16,12 @@
     <app-icon name="shield" />
     <div>
       <p>
-        <strong>Información sensible</strong> · requiere <code>socioeconomic-profiles.read</code>;
-        editar requiere <code>socioeconomic-profiles.write</code>.
+        <strong>Información sensible</strong> · solo los roles autorizados pueden consultarla y, aparte,
+        editarla.
       </p>
       <p class="text-small">
         Tu rol ({{ roleNames() }})
-        {{ canWrite() ? 'tiene ambos permisos' : 'solo puede consultarla' }}. Cada consulta y
+        {{ canWrite() ? 'puede consultarla y editarla' : 'solo puede consultarla' }}. Cada consulta y
         modificación de esta ficha queda registrada en la auditoría.
       </p>
     </div>

@@ -4,12 +4,17 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { ErrorBannerComponent, LoadingComponent } from '../../../../shared/ui/feedback.components';
 import { BadgeTone, StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
-import { MemberRegistryView, TRANSFER_STATUS_LABELS } from '../data/members.models';
+import { MEMBER_STATUS_LABELS } from '../../../../core/models/membership.model';
+import {
+  MEMBER_STATUS_TONES,
+  MemberRegistryView,
+  TRANSFER_STATUS_LABELS,
+} from '../data/members.models';
 import { MembersRepository } from '../data/members.repository';
 
 interface TimelineEvent {
   readonly key: string;
-  readonly kind: 'entry' | 'transfer';
+  readonly kind: 'entry' | 'transfer' | 'status';
   readonly title: string;
   readonly badge: string;
   readonly tone: BadgeTone;
@@ -51,9 +56,21 @@ function toTimeline(view: MemberRegistryView): TimelineEvent[] {
     details: transfer.notes ? [{ label: 'Motivo', value: transfer.notes }] : [],
     note: null,
   }));
+  const statuses: TimelineEvent[] = view.statusHistory.map((change) => ({
+    key: `status-${change.id}`,
+    kind: 'status',
+    title: 'Cambio de estado',
+    badge: MEMBER_STATUS_LABELS[change.status],
+    tone: MEMBER_STATUS_TONES[change.status],
+    date: change.startedOn,
+    place: change.changedBy ? `Registrado por ${change.changedBy}` : 'Registrado por el sistema',
+    details: change.reason ? [{ label: 'Motivo', value: change.reason }] : [],
+    note: null,
+  }));
   // Most recent first; on the same day the entry a transfer opened goes above the transfer.
-  return [...entries, ...transfers].sort(
-    (a, b) => b.date.localeCompare(a.date) || (a.kind === b.kind ? 0 : a.kind === 'entry' ? -1 : 1),
+  const rank = { entry: 0, status: 1, transfer: 2 } as const;
+  return [...entries, ...transfers, ...statuses].sort(
+    (a, b) => b.date.localeCompare(a.date) || rank[a.kind] - rank[b.kind],
   );
 }
 
@@ -72,7 +89,8 @@ function formatDate(iso: string): string {
       <div>
         <h2>Registro y traslados</h2>
         <p class="text-muted text-small">
-          Inscripciones en los libros de cada sede y traslados, del más reciente al más antiguo.
+          Inscripciones en los libros de cada sede, traslados y cambios de estado, del más reciente
+          al más antiguo.
         </p>
       </div>
     </div>

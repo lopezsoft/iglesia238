@@ -1,0 +1,174 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-4;
+  min-height: 14.5rem;
+  padding: 1.375rem $space-5;
+  overflow: hidden;
+  background: $gradient-hero;
+  border-radius: $radius-hero;
+  box-shadow: $shadow-hero;
+  color: $color-on-brand;
+
+  // Arcos decorativos translúcidos.
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: $glass-grid;
+    pointer-events: none;
+  }
+
+  &::before {
+    right: -4rem;
+    bottom: -14rem;
+    width: 23rem;
+    height: 23rem;
+  }
+
+  &::after {
+    bottom: -10rem;
+    left: 40%;
+    width: 16rem;
+    height: 16rem;
+  }
+}
+
+.hero {
+  &__body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: 1 1 18rem;
+    flex-direction: column;
+    gap: $space-2;
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: $space-1 + 0.125rem;
+    padding: 3px $space-2 + 0.125rem;
+    border-radius: $radius-xs;
+    background: $glass-bg-strong;
+    font-size: $font-size-3xs;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    font-size: $font-size-hero-title;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  &__figure {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $space-1;
+    margin-top: $space-2;
+  }
+
+  &__label {
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-semibold;
+    color: $color-on-brand-muted;
+  }
+
+  &__value {
+    font-size: $font-size-display;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  &__compare {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2;
+    margin-top: $space-1;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    padding: 2px $space-3 - 0.125rem;
+    border-radius: $radius-pill;
+    background: $glass-bg-strong;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-bold;
+
+    &--neutral {
+      font-style: italic;
+    }
+
+    &--up {
+      background: color-mix(in srgb, #{$color-online} 35%, transparent);
+    }
+
+    &--down {
+      background: color-mix(in srgb, #{$color-badge-alert} 40%, transparent);
+    }
+  }
+
+  &__compare-label {
+    font-size: $font-size-2xs;
+    color: $color-on-brand-muted;
+  }
+
+  &__date {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1 + 0.125rem;
+    margin-top: $space-1;
+    font-size: $font-size-2xs;
+    color: $color-on-brand-muted;
+  }
+
+  &__controls {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $space-2;
+    max-width: 100%;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &__chart {
+    position: absolute;
+    right: $space-5;
+    bottom: $space-4;
+    z-index: 0;
+    width: 38%;
+    height: 5.5rem;
+  }
+}
+
+@include until($breakpoint-md) {
+  .hero__chart {
+    width: 60%;
+    opacity: 0.5;
+  }
+}

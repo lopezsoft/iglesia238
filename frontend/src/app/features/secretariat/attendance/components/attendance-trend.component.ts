@@ -1,67 +1,65 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { AttendanceSession, sessionTotal } from '../data/attendance.models';
 
-/** A total not saved yet, drawn as a dashed bar next to the history. */
+/** A total not saved yet, drawn as a dashed bar next to the saved ones. */
 export interface AttendanceDraft {
-  readonly sessionDate: string;
+  readonly label: string;
   readonly total: number;
 }
 
-interface TrendPoint {
-  readonly sessionDate: string;
+export interface TrendPoint {
+  readonly key: string;
+  readonly label: string;
   readonly total: number;
+}
+
+interface TrendBar extends TrendPoint {
   readonly height: number;
   readonly isDraft: boolean;
 }
 
 const MIN_BAR_PERCENT = 3;
 
-/** Totals of the last sessions as CSS bars, backed by an accessible table. */
+/** Totals as CSS bars, backed by an accessible table. Points go oldest first. */
 @Component({
   selector: 'app-attendance-trend',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
   templateUrl: './attendance-trend.component.html',
   styleUrl: './attendance-trend.component.scss',
 })
 export class AttendanceTrendComponent {
-  /** Most recent first, as the history returns them. */
-  readonly sessions = input.required<readonly AttendanceSession[]>();
+  readonly points = input.required<readonly TrendPoint[]>();
   readonly draft = input<AttendanceDraft | null>(null);
-  readonly meetingTypeName = input.required<string>();
-
-  private readonly chronological = computed(() =>
-    [...this.sessions()].reverse().map((session) => ({
-      sessionDate: session.sessionDate,
-      total: sessionTotal(session),
-    })),
-  );
+  readonly title = input.required<string>();
+  readonly subtitle = input.required<string>();
+  readonly unit = input('asistentes');
 
   protected readonly average = computed(() => {
-    const points = this.chronological();
-    return points.length ? Math.round(points.reduce((sum, p) => sum + p.total, 0) / points.length) : 0;
+    const points = this.points();
+    return points.length
+      ? Math.round(points.reduce((sum, p) => sum + p.total, 0) / points.length)
+      : 0;
   });
 
   protected readonly maximum = computed(() =>
-    this.chronological().reduce<{ total: number; sessionDate: string | null }>(
-      (best, point) => (point.total > best.total ? point : best),
-      { total: 0, sessionDate: null },
+    this.points().reduce<{ total: number; label: string | null }>(
+      (best, point) =>
+        point.total > best.total ? { total: point.total, label: point.label } : best,
+      { total: 0, label: null },
     ),
   );
 
-  /** Draft total minus the latest saved session. */
+  /** Draft total minus the latest saved point. */
   protected readonly delta = computed(() => {
     const draft = this.draft();
-    const latest = this.sessions()[0];
-    return draft && latest ? { value: draft.total - sessionTotal(latest), against: latest.sessionDate } : null;
+    const latest = this.points().at(-1);
+    return draft && latest ? { value: draft.total - latest.total, against: latest.label } : null;
   });
 
-  protected readonly points = computed<TrendPoint[]>(() => {
+  protected readonly bars = computed<TrendBar[]>(() => {
     const draft = this.draft();
     const all = [
-      ...this.chronological().map((point) => ({ ...point, isDraft: false })),
-      ...(draft ? [{ ...draft, isDraft: true }] : []),
+      ...this.points().map((point) => ({ ...point, isDraft: false })),
+      ...(draft ? [{ key: 'draft', label: draft.label, total: draft.total, isDraft: true }] : []),
     ];
     const scale = Math.max(1, ...all.map((point) => point.total));
     return all.map((point) => ({

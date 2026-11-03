@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { DemoVowsRepository } from './vows/data/demo-vows.repository';
+import { HttpVowsRepository } from './vows/data/http-vows.repository';
 import { VowsRepository } from './vows/data/vows.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: VowsRepository, useClass: DemoVowsRepository }],
+    providers: [{ provide: VowsRepository, useClass: HttpVowsRepository }],
     children: [
       {
         path: '',

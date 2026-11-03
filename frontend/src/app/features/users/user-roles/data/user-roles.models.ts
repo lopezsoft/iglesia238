@@ -2,7 +2,6 @@
 // backend/prisma/schema/identity.prisma. Only the fields the screen needs.
 import { ROLE_NAMES, RoleCode } from '../../../../core/auth/role';
 import { ScopeKind } from '../../../../core/auth/session.model';
-import { matchesText } from '../../../../shared/utils/pagination';
 
 export type UserStatus = 'ACTIVE' | 'INVITATION_PENDING' | 'INACTIVE';
 
@@ -11,6 +10,13 @@ export const USER_STATUS_LABELS: Readonly<Record<UserStatus, string>> = {
   INVITATION_PENDING: 'Invitación pendiente',
   INACTIVE: 'Inactivo',
 };
+
+export const USER_STATUS_OPTIONS: readonly { value: UserStatus | ''; label: string }[] = [
+  { value: '', label: 'Todos' },
+  { value: 'ACTIVE', label: 'Activos' },
+  { value: 'INVITATION_PENDING', label: 'Pendientes' },
+  { value: 'INACTIVE', label: 'Inactivos' },
+];
 
 export const USER_STATUS_TONES: Readonly<Record<UserStatus, 'success' | 'warning' | 'neutral'>> = {
   ACTIVE: 'success',
@@ -79,41 +85,47 @@ export interface InviteUserCommand {
   readonly congregationId: number | null;
 }
 
-export interface UserFilter {
+/** Filters and page of the users list; the server applies all of them. */
+export interface UserQuery {
   readonly search: string;
   readonly role: RoleCode | '';
+  readonly status: UserStatus | '';
+  readonly page: number;
+  readonly pageSize: number;
+}
+
+export type LinkPurpose = 'INVITATION' | 'PASSWORD_RESET';
+
+/** A one-time link (invitation or password recovery). Shown once, to the administrator who asked. */
+export interface OneTimeLink {
+  readonly link: string;
+  readonly expiresAt: string;
+  readonly purpose: LinkPurpose;
+  /** True when the API also e-mailed it; false means the administrator must pass it on. */
+  readonly emailDelivered: boolean;
+}
+
+export interface InvitationResult {
+  readonly user: ManagedUser;
+  readonly invitation: OneTimeLink;
+}
+
+export interface RoleMatrixRow {
+  readonly code: RoleCode;
+  readonly name: string;
+  readonly description: string | null;
+  readonly scopeKind: ScopeKind | null;
+  readonly permissions: readonly string[];
+}
+
+/** Roles with the permissions each one grants, read from the database. */
+export interface RoleMatrix {
+  readonly roles: readonly RoleMatrixRow[];
+  readonly permissions: readonly { code: string; description: string | null }[];
 }
 
 /** Roles that let a user manage users: revoking your own would lock you out. */
 export const ADMIN_ROLES: readonly RoleCode[] = ['PLATFORM_ADMIN', 'DENOMINATION_ADMIN'];
-
-/** Scope kind each role is granted on (mirrors the backend rule). */
-export const ROLE_SCOPE_KIND: Readonly<Record<RoleCode, ScopeKind>> = {
-  PLATFORM_ADMIN: 'PLATFORM',
-  DENOMINATION_ADMIN: 'DENOMINATION',
-  PASTOR: 'CONGREGATION',
-  SECRETARY: 'CONGREGATION',
-  TREASURER: 'CONGREGATION',
-};
-
-/** Mirrors UserRole.scopeKey: "P", "D:<denominationId>" or "C:<congregationId>". */
-export function roleScopeKey(scope: Pick<ScopeOption, 'kind' | 'denominationId' | 'congregationId'>): string {
-  switch (scope.kind) {
-    case 'PLATFORM':
-      return 'P';
-    case 'DENOMINATION':
-      return `D:${scope.denominationId ?? ''}`;
-    case 'CONGREGATION':
-      return `C:${scope.congregationId ?? ''}`;
-  }
-}
-
-/** yyyy-MM-dd of the local calendar day (toISOString().slice(0, 10) would give the UTC day). */
-export function localIsoDate(date: Date = new Date()): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
-}
 
 export function activeAssignments(user: ManagedUser): RoleAssignmentView[] {
   return user.assignments.filter((assignment) => assignment.revokedAt === null);
@@ -129,17 +141,12 @@ export function assignmentLabel(assignment: Pick<RoleAssignmentView, 'role' | 's
 
 /** True while the user holds the same role on the same scope (a regrant would duplicate it). */
 export function hasActiveEquivalent(user: ManagedUser, assignment: RoleAssignmentView): boolean {
-  const key = roleScopeKey({ ...assignment, kind: assignment.scope });
   return activeAssignments(user).some(
-    (active) => active.role === assignment.role && roleScopeKey({ ...active, kind: active.scope }) === key,
-  );
-}
-
-export function filterUsers(users: readonly ManagedUser[], filter: UserFilter): ManagedUser[] {
-  return users.filter(
-    (user) =>
-      matchesText([user.displayName, user.email], filter.search) &&
-      (filter.role === '' || activeAssignments(user).some((assignment) => assignment.role === filter.role)),
+    (active) =>
+      active.role === assignment.role &&
+      active.scope === assignment.scope &&
+      active.denominationId === assignment.denominationId &&
+      active.congregationId === assignment.congregationId,
   );
 }
 

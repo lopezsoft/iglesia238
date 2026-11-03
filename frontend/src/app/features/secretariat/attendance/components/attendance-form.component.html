@@ -1,8 +1,13 @@
 <section class="card" aria-labelledby="attendance-form-title">
   <header class="card__header">
-    <div>
-      <h2 id="attendance-form-title">{{ editing() ? 'Corregir sesión' : 'Registrar sesión' }}</h2>
-      <p class="text-muted text-small">Los campos marcados con * son obligatorios.</p>
+    <div class="head">
+      <app-icon-chip icon="calendar-check" tone="indigo" size="lg" [solid]="true" />
+      <div>
+        <h2 id="attendance-form-title">{{ editing() ? 'Corregir sesión' : 'Registrar sesión' }}</h2>
+        <p class="text-muted text-small">
+          {{ contextLabel() ?? 'Elige la sede y la reunión arriba.' }}
+        </p>
+      </div>
     </div>
     @if (editing()) {
       <span class="badge badge--info">Editando sesión registrada</span>
@@ -10,52 +15,24 @@
   </header>
 
   <form class="stack" [formGroup]="form()" (ngSubmit)="submitted.emit()" novalidate>
-    <div class="form-grid">
-      <div class="field">
-        <label for="att-meeting">Tipo de reunión *</label>
-        <select id="att-meeting" class="select" formControlName="meetingTypeCode">
-          @for (type of meetingTypes; track type.code) {
-            <option [value]="type.code">{{ type.name }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="att-date">Fecha *</label>
-        <input
-          id="att-date"
-          class="input"
-          type="date"
-          formControlName="sessionDate"
-          [max]="today"
-          aria-describedby="att-date-help"
-          [attr.aria-invalid]="dateError() ? true : null"
-        />
-        <span id="att-date-help" class="field__hint">
-          @if (value().sessionDate && !dateError()) {
-            Seleccionado: {{ value().sessionDate | date: "EEEE d 'de' MMMM 'de' y" }}
-          } @else {
-            Formato dd/mm/aaaa
-          }
-        </span>
-      </div>
-
-      <div class="field">
-        @if (fixedCongregation(); as sede) {
-          <label for="att-sede">Sede</label>
-          <input id="att-sede" class="input" type="text" [value]="sede.name" readonly aria-describedby="att-sede-help" />
-          <span id="att-sede-help" class="field__hint">Tu rol está asignado a esta sede.</span>
+    <div class="field date-field">
+      <label for="att-date">Fecha *</label>
+      <input
+        id="att-date"
+        class="input"
+        type="date"
+        formControlName="sessionDate"
+        [max]="today()"
+        aria-describedby="att-date-help"
+        [attr.aria-invalid]="dateError() ? true : null"
+      />
+      <span id="att-date-help" class="field__hint">
+        @if (value().sessionDate && !dateError()) {
+          Seleccionado: {{ value().sessionDate | date: "EEEE d 'de' MMMM 'de' y" }}
         } @else {
-          <label for="att-sede">Sede *</label>
-          <select id="att-sede" class="select" formControlName="congregationId" aria-describedby="att-sede-help">
-            <option [ngValue]="null" disabled>Selecciona una sede</option>
-            @for (sede of congregations(); track sede.id) {
-              <option [ngValue]="sede.id">{{ sede.name }}</option>
-            }
-          </select>
-          <span id="att-sede-help" class="field__hint">Actúas sobre toda la denominación: elige la sede de la reunión.</span>
+          Formato dd/mm/aaaa
         }
-      </div>
+      </span>
     </div>
 
     @if (dateError(); as message) {
@@ -73,10 +50,10 @@
     <fieldset class="categories" formGroupName="counts">
       <legend>Asistentes por categoría</legend>
       <div class="categories__grid">
-        @for (category of categories; track category.code; let index = $index) {
+        @for (category of categories(); track category.code; let index = $index) {
           <div class="field">
             <label [for]="'att-' + category.code">
-              <span [class]="'swatch swatch--' + index" aria-hidden="true"></span>
+              <span [class]="'swatch swatch--' + (index % 5)" aria-hidden="true"></span>
               {{ category.name }}
             </label>
             <input
@@ -84,7 +61,7 @@
               type="number"
               inputmode="numeric"
               min="0"
-              [max]="maxHeadcount"
+              [max]="maxHeadcount()"
               step="1"
               placeholder="0"
               [id]="'att-' + category.code"
@@ -95,7 +72,9 @@
             @if (countError(category.code); as error) {
               <span class="field__error" [id]="'att-' + category.code + '-help'">{{ error }}</span>
             } @else {
-              <span class="field__hint" [id]="'att-' + category.code + '-help'">{{ hints[category.code] }}</span>
+              <span class="field__hint" [id]="'att-' + category.code + '-help'">{{
+                hints[category.code] ?? ''
+              }}</span>
             }
           </div>
         }
@@ -105,7 +84,7 @@
     <div class="total" aria-live="polite">
       <div>
         <p class="total__label">Total de asistentes</p>
-        <p class="text-muted text-small">Se calcula sumando las cinco categorías.</p>
+        <p class="text-muted text-small">Se calcula sumando las categorías.</p>
       </div>
       <p class="total__value">{{ total() }}</p>
     </div>
@@ -113,15 +92,20 @@
     <div>
       <div class="distribution" aria-hidden="true">
         @for (segment of segments(); track segment.code) {
-          <span [class]="'distribution__part swatch--' + segment.index" [style.width.%]="segment.percent"></span>
+          <span
+            [class]="'distribution__part swatch--' + (segment.index % 5)"
+            [style.width.%]="segment.percent"
+          ></span>
         }
       </div>
       <ul class="legend text-small">
         @for (segment of segments(); track segment.code) {
           <li>
-            <span [class]="'swatch swatch--' + segment.index" aria-hidden="true"></span>
+            <span [class]="'swatch swatch--' + (segment.index % 5)" aria-hidden="true"></span>
             {{ segment.name }}
-            <span class="mono text-muted">{{ total() > 0 ? (segment.percent | number: '1.0-0') + ' %' : '—' }}</span>
+            <span class="text-muted">{{
+              total() > 0 ? (segment.percent | number: '1.0-0') + ' %' : '—'
+            }}</span>
           </li>
         }
       </ul>
@@ -131,15 +115,18 @@
       <app-icon name="info" />
       <div>
         <strong>Solo una sesión por sede, tipo de reunión y fecha</strong>
-        <p class="text-small">Si ya existe, carga la sesión registrada y corrígela en lugar de crear otra.</p>
+        <p class="text-small">
+          Si ya existe, carga la sesión registrada y corrígela en lugar de crear otra.
+        </p>
       </div>
     </div>
 
     <div class="actions">
-      <span class="text-muted text-small">Permiso activo: <span class="chip chip--mono">attendance.write</span></span>
       <div class="cluster">
         @if (editing()) {
-          <button type="button" class="btn btn--secondary" (click)="editCancelled.emit()">Cancelar corrección</button>
+          <button type="button" class="btn btn--secondary" (click)="editCancelled.emit()">
+            Cancelar corrección
+          </button>
         } @else {
           <button type="button" class="btn btn--secondary" (click)="cleared.emit()">Limpiar</button>
         }

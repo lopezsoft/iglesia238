@@ -1,5 +1,5 @@
-import { reportFileName, toCsv } from './report-csv';
-import { formatShare, formatVariation, variation } from './reports.models';
+import { accountsCsv, reportFileName, toCsv } from './report-csv';
+import { FinancialReport, formatShare, formatVariation, variation } from './reports.models';
 
 describe('report CSV', () => {
   it('writes a BOM, semicolons and CRLF lines', () => {
@@ -17,8 +17,23 @@ describe('report CSV', () => {
 
   it('names files after the table and the range', () => {
     expect(
-      reportFileName('saldos-por-fondo', { from: '2026-01-01', to: '2026-12-31', fundId: null }),
+      reportFileName('saldos-por-fondo', { from: '2026-01-01', to: '2026-12-31', fundId: null, congregationId: null }),
     ).toBe('reporte-saldos-por-fondo-2026-01-01-a-2026-12-31.csv');
+  });
+});
+
+describe('accounts CSV', () => {
+  it('writes the income statement by account with its nature in Spanish', () => {
+    const report = {
+      accounts: [
+        { accountId: 1, code: '410505', name: 'Diezmos', nature: 'INCOME', amount: 3000000 },
+        { accountId: 2, code: '510505', name: '=Servicios', nature: 'EXPENSE', amount: 1200000 },
+      ],
+    } as unknown as FinancialReport;
+
+    expect(accountsCsv(report)).toBe(
+      '﻿Código;Cuenta;Naturaleza;Valor\r\n410505;Diezmos;Ingreso;3000000\r\n510505;\'=Servicios;Egreso;1200000\r\n',
+    );
   });
 });
 

@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import {
-  DEMO_MUNICIPALITIES,
-  DOCUMENT_TYPES,
-  MARITAL_STATUSES,
-  municipalityLabel,
-} from '../../../../core/models/catalogs';
-import { ADULT_AGE, SEX_OPTIONS } from '../data/public-application.models';
 import { PersonalDataGroup, showsError } from '../application-form';
+import {
+  ADULT_AGE,
+  BAPTISM_OPTIONS,
+  CatalogOption,
+  SEX_OPTIONS,
+} from '../data/public-application.models';
+import { MunicipalityPickerComponent } from './municipality-picker.component';
 
 type PersonalField = keyof PersonalDataGroup['controls'];
 
@@ -15,23 +15,20 @@ type PersonalField = keyof PersonalDataGroup['controls'];
 @Component({
   selector: 'app-personal-data-step',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, MunicipalityPickerComponent],
   styleUrl: './personal-data-step.component.scss',
   templateUrl: './personal-data-step.component.html',
 })
 export class PersonalDataStepComponent {
   readonly group = input.required<PersonalDataGroup>();
+  readonly documentTypes = input.required<readonly CatalogOption[]>();
+  readonly maritalStatuses = input.required<readonly CatalogOption[]>();
   readonly revealErrors = input(false);
   /** Age computed from the birth date, null while it is empty or invalid. */
   readonly age = input<number | null>(null);
 
-  protected readonly documentTypes = DOCUMENT_TYPES;
-  protected readonly maritalStatuses = MARITAL_STATUSES;
   protected readonly sexOptions = SEX_OPTIONS;
-  protected readonly municipalities = DEMO_MUNICIPALITIES.map((municipality) => ({
-    code: municipality.code,
-    label: municipalityLabel(municipality.code),
-  }));
+  protected readonly baptismOptions = BAPTISM_OPTIONS;
   protected readonly isMinor = computed(() => {
     const age = this.age();
     return age !== null && age < ADULT_AGE;

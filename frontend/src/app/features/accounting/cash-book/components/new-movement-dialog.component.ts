@@ -188,8 +188,12 @@ export class NewMovementDialogComponent {
   }
 
   private insidePeriod(control: AbstractControl<string>): ValidationErrors | null {
+    // The form is built before the inputs are bound: read them only once there is a date to check.
+    if (!control.value) {
+      return null;
+    }
     const { from } = this.period();
-    return control.value && (control.value < from || control.value > this.maxDate()) ? { outsidePeriod: true } : null;
+    return control.value < from || control.value > this.maxDate() ? { outsidePeriod: true } : null;
   }
 
   private reset(): void {

@@ -13,7 +13,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { firstValueFrom } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
-import { GrantContext, ManagedUser } from '../data/user-roles.models';
+import { GrantContext, InvitationResult } from '../data/user-roles.models';
 import { UserRolesRepository } from '../data/user-roles.repository';
 import { RoleScopeFieldsComponent, createRoleScopeForm, selectedGrant } from './role-scope-fields.component';
 
@@ -26,7 +26,8 @@ import { RoleScopeFieldsComponent, createRoleScopeForm, selectedGrant } from './
     <app-dialog [(open)]="open" title="Invitar usuario">
       <form id="invite-user-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <p class="text-muted text-small">
-          Recibirá un correo para crear su contraseña. El enlace vence en 72 horas.
+          Se crea su cuenta con un enlace de un solo uso para elegir su contraseña (vence en 72 horas). Si el
+          correo está configurado se le envía; en cualquier caso verás el enlace para compartirlo.
         </p>
         <div class="form-grid">
           <div class="field">
@@ -67,7 +68,7 @@ import { RoleScopeFieldsComponent, createRoleScopeForm, selectedGrant } from './
       <div dialog-footer class="cluster">
         <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
         <button type="submit" form="invite-user-form" class="btn btn--primary" [disabled]="pending()">
-          {{ pending() ? 'Enviando…' : 'Enviar invitación' }}
+          {{ pending() ? 'Invitando…' : 'Invitar' }}
         </button>
       </div>
     </app-dialog>
@@ -76,7 +77,7 @@ import { RoleScopeFieldsComponent, createRoleScopeForm, selectedGrant } from './
 export class InviteUserDialogComponent {
   readonly open = model(false);
   readonly context = input.required<GrantContext>();
-  readonly invited = output<ManagedUser>();
+  readonly invited = output<InvitationResult>();
 
   private readonly repository = inject(UserRolesRepository);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -107,7 +108,7 @@ export class InviteUserDialogComponent {
     this.pending.set(true);
     this.error.set(null);
     try {
-      const user = await firstValueFrom(
+      const result = await firstValueFrom(
         this.repository.inviteUser({
           displayName,
           email,
@@ -118,7 +119,7 @@ export class InviteUserDialogComponent {
       );
       this.reset();
       this.open.set(false);
-      this.invited.emit(user);
+      this.invited.emit(result);
     } catch (error) {
       this.error.set(userMessage(error));
     } finally {

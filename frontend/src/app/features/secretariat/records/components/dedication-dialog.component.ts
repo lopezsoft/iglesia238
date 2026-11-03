@@ -1,30 +1,42 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
-import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { firstValueFrom, map } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { ageOn } from '../../../../core/models/membership.model';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { ADULT_AGE, ParentInput, PersonSummary, RecordsContext, personLabel, todayIso } from '../data/records.models';
+import {
+  MAX_PARENT_NAME_LENGTH,
+  ParentInput,
+  PersonSummary,
+  RecordsContext,
+} from '../data/records.models';
 import { RecordsRepository } from '../data/records.repository';
-import { notFutureDate, showError } from './record-validators';
+import { PersonPickerComponent } from './person-picker.component';
+import { notAfterToday, showError } from './record-validators';
 
-interface ChildOption {
-  readonly person: PersonSummary;
-  readonly age: number | null;
-  readonly label: string;
-}
-
-function isMinor(age: number | null): boolean {
-  return age !== null && age < ADULT_AGE;
-}
-
-/** Create dialog of a presentation of a child (D-04). */
+/** Create dialog of a presentation of a child (D-04). People are searched on the server. */
 @Component({
   selector: 'app-dedication-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DialogComponent, IconComponent],
+  imports: [ReactiveFormsModule, DialogComponent, IconComponent, PersonPickerComponent],
   templateUrl: './dedication-dialog.component.html',
   styles: `
     .parents {
@@ -45,37 +57,38 @@ export class DedicationDialogComponent {
   readonly open = model(false);
   readonly context = input.required<RecordsContext>();
   /** Current pastor of each sede, suggested as officiant. */
-  readonly currentPastors = input<ReadonlyMap<number, number>>(new Map());
+  readonly currentPastors = input<ReadonlyMap<number, PersonSummary>>(new Map());
   readonly saved = output<string>();
 
-  protected readonly today = todayIso();
-  protected readonly label = personLabel;
+  protected readonly maxNameLength = MAX_PARENT_NAME_LENGTH;
   protected readonly pending = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly submitted = signal(false);
 
   protected readonly form = this.fb.group({
     congregationId: new FormControl<number | null>(null, Validators.required),
-    childId: new FormControl<number | null>(null, Validators.required),
-    dedicatedOn: this.fb.control('', [Validators.required, notFutureDate]),
-    pastorId: new FormControl<number | null>(null),
-    fatherId: new FormControl<number | null>(null),
-    fatherName: this.fb.control('', Validators.maxLength(120)),
-    motherId: new FormControl<number | null>(null),
-    motherName: this.fb.control('', Validators.maxLength(120)),
+    child: new FormControl<PersonSummary | null>(null, Validators.required),
+    dedicatedOn: this.fb.control('', Validators.required),
+    pastor: new FormControl<PersonSummary | null>(null),
+    father: new FormControl<PersonSummary | null>(null),
+    fatherName: this.fb.control('', Validators.maxLength(MAX_PARENT_NAME_LENGTH)),
+    mother: new FormControl<PersonSummary | null>(null),
+    motherName: this.fb.control('', Validators.maxLength(MAX_PARENT_NAME_LENGTH)),
+    guardian: new FormControl<PersonSummary | null>(null),
+    guardianName: this.fb.control('', Validators.maxLength(MAX_PARENT_NAME_LENGTH)),
   });
 
-  /** Minors first (the usual case), then everyone else, each with their age. */
-  protected readonly children = computed<ChildOption[]>(() => {
-    const options = this.context().people.map((person) => {
-      const age = ageOn(person.birthDate, this.today);
-      return { person, age, label: `${personLabel(person)}${age === null ? '' : ` · ${age} años`}` };
-    });
-    return [...options.filter((o) => isMinor(o.age)), ...options.filter((o) => !isMinor(o.age))];
+  private readonly value = toSignal(
+    this.form.valueChanges.pipe(map(() => this.form.getRawValue())),
+    {
+      initialValue: this.form.getRawValue(),
+    },
+  );
+  /** The child cannot be listed as their own parent. */
+  protected readonly childId = computed(() => {
+    const child = this.value().child;
+    return child ? [child.id] : [];
   });
-  protected readonly fathers = computed(() => this.context().people.filter((person) => person.sex !== 'FEMALE'));
-  protected readonly mothers = computed(() => this.context().people.filter((person) => person.sex !== 'MALE'));
-  protected readonly hasMinors = computed(() => this.children().some((option) => isMinor(option.age)));
 
   constructor() {
     effect(() => {
@@ -85,11 +98,18 @@ export class DedicationDialogComponent {
     });
     // Free-text names only apply when the parent is not a registered person.
     const { controls } = this.form;
-    controls.fatherId.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => toggleName(controls.fatherName, id));
-    controls.motherId.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => toggleName(controls.motherName, id));
+    controls.father.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((p) => toggleName(controls.fatherName, p));
+    controls.mother.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((p) => toggleName(controls.motherName, p));
+    controls.guardian.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((p) => toggleName(controls.guardianName, p));
     controls.congregationId.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => {
       if (id !== null) {
-        this.form.controls.pastorId.setValue(this.currentPastors().get(id) ?? null);
+        controls.pastor.setValue(this.currentPastors().get(id) ?? null);
       }
     });
   }
@@ -99,13 +119,22 @@ export class DedicationDialogComponent {
   }
 
   protected dateError(): string {
-    const control = this.form.controls.dedicatedOn;
-    return control.hasError('futureDate') ? 'La fecha no puede ser futura.' : 'Indica la fecha de presentación.';
+    return this.form.controls.dedicatedOn.hasError('futureDate')
+      ? 'La fecha no puede ser futura.'
+      : 'Indica la fecha de presentación.';
   }
 
   protected missingParent(): boolean {
-    const { fatherId, fatherName, motherId, motherName } = this.form.getRawValue();
-    return fatherId === null && !fatherName.trim() && motherId === null && !motherName.trim();
+    const { father, fatherName, mother, motherName, guardian, guardianName } =
+      this.form.getRawValue();
+    return (
+      father === null &&
+      !fatherName.trim() &&
+      mother === null &&
+      !motherName.trim() &&
+      guardian === null &&
+      !guardianName.trim()
+    );
   }
 
   protected async submit(): Promise<void> {
@@ -121,11 +150,12 @@ export class DedicationDialogComponent {
       const created = await firstValueFrom(
         this.repository.createDedication({
           congregationId: value.congregationId as number,
-          childId: value.childId as number,
+          childId: (value.child as PersonSummary).id,
           dedicatedOn: value.dedicatedOn,
-          pastorId: value.pastorId,
-          father: parentInput(value.fatherId, value.fatherName),
-          mother: parentInput(value.motherId, value.motherName),
+          pastorId: value.pastor?.id ?? null,
+          father: parentInput(value.father, value.fatherName),
+          mother: parentInput(value.mother, value.motherName),
+          guardian: parentInput(value.guardian, value.guardianName),
         }),
       );
       this.saved.emit(`Presentación de ${created.child.fullName} registrada.`);
@@ -138,25 +168,28 @@ export class DedicationDialogComponent {
   }
 
   private reset(): void {
-    const sedes = this.context().congregations;
-    const congregationId = sedes.length === 1 ? sedes[0].id : null;
+    const { today, congregations } = this.context();
+    const congregationId = congregations.length === 1 ? congregations[0].id : null;
+    this.form.controls.dedicatedOn.setValidators([Validators.required, notAfterToday(today)]);
     this.form.reset({
       congregationId,
-      childId: null,
-      dedicatedOn: this.today,
-      pastorId: congregationId === null ? null : (this.currentPastors().get(congregationId) ?? null),
-      fatherId: null,
+      child: null,
+      dedicatedOn: today,
+      pastor: congregationId === null ? null : (this.currentPastors().get(congregationId) ?? null),
+      father: null,
       fatherName: '',
-      motherId: null,
+      mother: null,
       motherName: '',
+      guardian: null,
+      guardianName: '',
     });
     this.submitted.set(false);
     this.error.set(null);
   }
 }
 
-function toggleName(control: FormControl<string>, personId: number | null): void {
-  if (personId === null) {
+function toggleName(control: FormControl<string>, person: PersonSummary | null): void {
+  if (person === null) {
     control.enable({ emitEvent: false });
   } else {
     control.setValue('', { emitEvent: false });
@@ -164,9 +197,9 @@ function toggleName(control: FormControl<string>, personId: number | null): void
   }
 }
 
-function parentInput(personId: number | null, name: string): ParentInput | null {
-  if (personId !== null) {
-    return { personId, name: null };
+function parentInput(person: PersonSummary | null, name: string): ParentInput | null {
+  if (person !== null) {
+    return { personId: person.id, name: null };
   }
   return name.trim() ? { personId: null, name: name.trim() } : null;
 }

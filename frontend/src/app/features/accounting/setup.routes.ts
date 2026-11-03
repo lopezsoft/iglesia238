@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { AccountingSetupRepository } from './setup/data/accounting-setup.repository';
-import { DemoAccountingSetupRepository } from './setup/data/demo-accounting-setup.repository';
+import { HttpAccountingSetupRepository } from './setup/data/http-accounting-setup.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: AccountingSetupRepository, useClass: DemoAccountingSetupRepository }],
+    providers: [{ provide: AccountingSetupRepository, useClass: HttpAccountingSetupRepository }],
     children: [
       {
         path: '',

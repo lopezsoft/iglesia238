@@ -79,11 +79,11 @@
   <section class="tab__box" aria-labelledby="revocation-title">
     <h3 id="revocation-title">Revocación de la autorización</h3>
     <p class="text-small">
-      Si la persona revoca su autorización, se registra la revocación y su anonimización queda
-      pendiente. El proceso de anonimización reemplaza de forma irreversible nombre, documento,
-      contacto, dirección y ficha socioeconómica por valores sin identificación, y conserva los
-      aportes, certificados y libros de registro con un identificador anónimo. La revocación no se
-      puede deshacer.
+      Si la persona revoca su autorización, se registra la revocación. Con todas las autorizaciones
+      revocadas y el miembro inactivo, se puede anonimizar: se borran de forma irreversible nombre,
+      documento, contacto, dirección y ficha socioeconómica, y se conservan los aportes,
+      certificados y libros de registro con un identificador anónimo. La revocación no se puede
+      deshacer.
     </p>
     @if (!canWrite()) {
       <app-read-only-notice
@@ -108,9 +108,23 @@
     }
     @if (anonymizationPending()) {
       <p class="alert alert--warning text-small" role="note">
-        Anonimización pendiente: los datos personales siguen visibles hasta que el proceso de
-        anonimización la ejecute.
+        Anonimización pendiente: los datos personales siguen visibles hasta que se anonimicen.
+        @if (memberStatus() === 'ACTIVE') {
+          Cambia el estado del miembro a Inactivo para poder hacerlo.
+        }
       </p>
+      @if (canAnonymize()) {
+        <div>
+          <button
+            type="button"
+            class="btn btn--danger"
+            aria-haspopup="dialog"
+            (click)="openAnonymize()"
+          >
+            Anonimizar datos personales
+          </button>
+        </div>
+      }
     }
   </section>
 } @else {
@@ -126,9 +140,8 @@
     <ol>
       <li>registra la fecha de revocación de la autorización vigente (no la borra);</li>
       <li>
-        marca como pendiente la anonimización irreversible de nombre, documento, contacto, dirección
-        y ficha socioeconómica (la ejecuta después el proceso de anonimización; hasta entonces los
-        datos siguen visibles);
+        deja la anonimización pendiente: nombre, documento, contacto, dirección y ficha
+        socioeconómica siguen visibles hasta que anonimices al miembro inactivo;
       </li>
       <li>deja constancia en la auditoría (<code>CONSENT_REVOKED</code>).</li>
     </ol>
@@ -156,6 +169,42 @@
       (click)="revoke()"
     >
       {{ command.pending() ? 'Registrando…' : 'Confirmar revocación' }}
+    </button>
+  </div>
+</app-dialog>
+
+<app-dialog [(open)]="anonymizeOpen" title="Anonimizar datos personales">
+  <div class="stack">
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <p class="alert alert--warning" role="note">
+      Esta acción es irreversible. Se borran nombre, documento, fecha de nacimiento, contactos,
+      direcciones y ficha socioeconómica. Los aportes, certificados y libros se conservan con un
+      identificador anónimo.
+    </p>
+    <div class="field">
+      <label for="anonymize-confirmation">Escribe {{ confirmationWord }} para confirmar</label>
+      <input
+        id="anonymize-confirmation"
+        class="input"
+        autocomplete="off"
+        [value]="anonymizeConfirmation()"
+        (input)="anonymizeConfirmation.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="anonymizeOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="!confirmationMatches() || command.pending()"
+      (click)="anonymize()"
+    >
+      {{ command.pending() ? 'Anonimizando…' : 'Anonimizar' }}
     </button>
   </div>
 </app-dialog>

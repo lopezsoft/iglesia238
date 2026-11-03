@@ -9,6 +9,7 @@ import { IconName } from '../../shared/ui/icon.component';
 export const ACCESS = {
   denominations: ['denominations.manage'],
   organization: ['congregations.manage'],
+  privacyPolicy: ['congregations.manage'],
   users: ['users.manage'],
   applications: ['applications.review'],
   members: ['members.read'],
@@ -27,6 +28,8 @@ export const ACCESS = {
 
 export interface NavItem {
   readonly label: string;
+  /** Label under the icon of the 76 px rail; the full `label` is the tooltip and the drawer text. */
+  readonly shortLabel: string;
   readonly path: string;
   readonly icon: IconName;
   /** Empty: every signed-in user. */
@@ -39,52 +42,79 @@ export interface NavGroup {
 }
 
 export const NAV_GROUPS: readonly NavGroup[] = [
-  { label: 'General', items: [{ label: 'Inicio', path: '/dashboard', icon: 'home', permissions: [] }] },
+  { label: 'General', items: [{ label: 'Inicio', shortLabel: 'Inicio', path: '/dashboard', icon: 'home', permissions: [] }] },
   {
     label: 'Plataforma',
-    items: [{ label: 'Denominaciones', path: '/denominations', icon: 'landmark', permissions: ACCESS.denominations }],
+    items: [{ label: 'Denominaciones', shortLabel: 'Denominac.', path: '/denominations', icon: 'landmark', permissions: ACCESS.denominations }],
   },
   {
     label: 'Organización',
     items: [
-      { label: 'Sedes y razones sociales', path: '/organization', icon: 'building', permissions: ACCESS.organization },
-      { label: 'Usuarios y roles', path: '/users', icon: 'users', permissions: ACCESS.users },
+      { label: 'Sedes y razones sociales', shortLabel: 'Sedes', path: '/organization', icon: 'building', permissions: ACCESS.organization },
+      { label: 'Política de datos', shortLabel: 'Política', path: '/privacy-policy', icon: 'shield-check', permissions: ACCESS.privacyPolicy },
+      { label: 'Usuarios y roles', shortLabel: 'Usuarios', path: '/users', icon: 'users', permissions: ACCESS.users },
     ],
   },
   {
     label: 'Membresía',
     items: [
-      { label: 'Solicitudes', path: '/applications', icon: 'inbox', permissions: ACCESS.applications },
-      { label: 'Miembros', path: '/members', icon: 'id-card', permissions: ACCESS.members },
+      { label: 'Solicitudes', shortLabel: 'Solicitudes', path: '/applications', icon: 'inbox', permissions: ACCESS.applications },
+      { label: 'Miembros', shortLabel: 'Miembros', path: '/members', icon: 'id-card', permissions: ACCESS.members },
     ],
   },
   {
     label: 'Secretaría',
     items: [
-      { label: 'Certificados y carnés', path: '/certificates', icon: 'certificate', permissions: ACCESS.certificates },
-      { label: 'Asistencia', path: '/attendance', icon: 'calendar-check', permissions: ACCESS.attendance },
-      { label: 'Registros de secretaría', path: '/secretariat-records', icon: 'book', permissions: ACCESS.secretariatRecords },
+      { label: 'Certificados y carnés', shortLabel: 'Certific.', path: '/certificates', icon: 'certificate', permissions: ACCESS.certificates },
+      { label: 'Asistencia', shortLabel: 'Asistencia', path: '/attendance', icon: 'calendar-check', permissions: ACCESS.attendance },
+      { label: 'Registros de secretaría', shortLabel: 'Registros', path: '/secretariat-records', icon: 'book', permissions: ACCESS.secretariatRecords },
     ],
   },
   {
     label: 'Contabilidad',
     items: [
-      { label: 'Aportes', path: '/accounting/contributions', icon: 'coins', permissions: ACCESS.contributions },
-      { label: 'Votos', path: '/accounting/vows', icon: 'gift', permissions: ACCESS.vows },
-      { label: 'Libro de caja', path: '/accounting/cash-book', icon: 'wallet', permissions: ACCESS.cashBook },
-      { label: 'Liquidación del diezmo', path: '/accounting/tithe-settlements', icon: 'percent', permissions: ACCESS.titheSettlements },
-      { label: 'Presupuesto', path: '/accounting/budget', icon: 'pie-chart', permissions: ACCESS.budget },
-      { label: 'Configuración contable', path: '/accounting/setup', icon: 'sliders', permissions: ACCESS.accountingSetup },
+      { label: 'Aportes', shortLabel: 'Aportes', path: '/accounting/contributions', icon: 'coins', permissions: ACCESS.contributions },
+      { label: 'Votos', shortLabel: 'Votos', path: '/accounting/vows', icon: 'gift', permissions: ACCESS.vows },
+      { label: 'Libro de caja', shortLabel: 'Caja', path: '/accounting/cash-book', icon: 'wallet', permissions: ACCESS.cashBook },
+      { label: 'Liquidación del diezmo', shortLabel: 'Diezmo', path: '/accounting/tithe-settlements', icon: 'percent', permissions: ACCESS.titheSettlements },
+      { label: 'Presupuesto', shortLabel: 'Presup.', path: '/accounting/budget', icon: 'pie-chart', permissions: ACCESS.budget },
+      { label: 'Configuración contable', shortLabel: 'Config.', path: '/accounting/setup', icon: 'sliders', permissions: ACCESS.accountingSetup },
     ],
   },
   {
     label: 'Control',
     items: [
-      { label: 'Reportes', path: '/reports', icon: 'bar-chart', permissions: ACCESS.reports },
-      { label: 'Auditoría', path: '/audit', icon: 'shield', permissions: ACCESS.audit },
+      { label: 'Reportes', shortLabel: 'Reportes', path: '/reports', icon: 'bar-chart', permissions: ACCESS.reports },
+      { label: 'Auditoría', shortLabel: 'Auditoría', path: '/audit', icon: 'shield', permissions: ACCESS.audit },
     ],
   },
 ];
+
+/** An action of the "Nuevo" menu of the top bar: where the person goes to create something. */
+export interface QuickAction {
+  readonly label: string;
+  readonly path: string;
+  readonly icon: IconName;
+  /** Any one of these permissions shows the action. */
+  readonly permissions: readonly Permission[];
+}
+
+export const QUICK_ACTIONS: readonly QuickAction[] = [
+  { label: 'Registrar aporte', path: '/accounting/contributions', icon: 'coins', permissions: ['contributions.write'] },
+  { label: 'Registrar movimiento de caja', path: '/accounting/cash-book', icon: 'wallet', permissions: ['cash-transactions.write'] },
+  { label: 'Registrar asistencia', path: '/attendance', icon: 'calendar-check', permissions: ACCESS.attendance },
+  { label: 'Emitir certificado', path: '/certificates', icon: 'certificate', permissions: ACCESS.certificates },
+  { label: 'Revisar solicitudes', path: '/applications', icon: 'inbox', permissions: ACCESS.applications },
+  { label: 'Nuevo miembro', path: '/members', icon: 'user-plus', permissions: ['members.write'] },
+  { label: 'Invitar usuario', path: '/users', icon: 'mail', permissions: ACCESS.users },
+  { label: 'Nueva sede', path: '/organization', icon: 'building', permissions: ACCESS.organization },
+  { label: 'Nueva denominación', path: '/denominations', icon: 'landmark', permissions: ACCESS.denominations },
+];
+
+/** Quick actions the person is allowed to use. */
+export function visibleQuickActions(canAny: (permissions: readonly Permission[]) => boolean): QuickAction[] {
+  return QUICK_ACTIONS.filter((action) => canAny(action.permissions));
+}
 
 /** Groups with only the items `canAny` allows; empty groups are dropped. */
 export function visibleNavGroups(canAny: (permissions: readonly Permission[]) => boolean): NavGroup[] {

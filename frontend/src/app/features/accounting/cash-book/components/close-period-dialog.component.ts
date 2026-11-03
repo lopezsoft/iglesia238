@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
-import { monthLabel } from '../../data/accounting-rules';
+import { monthLabel } from '../../../../shared/utils/period';
 import { CashPeriodOption } from '../data/cash-book.models';
 import { CashBookRepository } from '../data/cash-book.repository';
 

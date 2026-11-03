@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { SmartLogger } from '../logging/smart-logger.service.js';
+import { DomainException, ErrorCode } from './domain.exception.js';
 import { sendErrorResponse } from './error-response.js';
 import { ERROR_TRANSLATORS, ErrorTranslator } from './error-translator.port.js';
 
@@ -40,6 +41,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         host,
         translated.statusCode,
         translated.message,
+        translated.code,
       );
       return;
     }
@@ -54,7 +56,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
   ): void {
     const statusCode = exception.getStatus();
 
-    if (statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
+    // Messages of a DomainException are written by us and safe to show, also when the status is 5xx.
+    const isHiddenServerError =
+      statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR) &&
+      !(exception instanceof DomainException);
+    if (isHiddenServerError) {
       this.logger.error(exception, AllExceptionsFilter.name);
       this.sendInternalError(host);
       return;
@@ -65,6 +71,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       host,
       statusCode,
       this.extractMessage(exception),
+      exception instanceof DomainException ? exception.code : undefined,
     );
   }
 
@@ -84,6 +91,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       host,
       HttpStatus.INTERNAL_SERVER_ERROR,
       INTERNAL_ERROR_MESSAGE,
+      ErrorCode.INTERNAL_ERROR,
     );
   }
 

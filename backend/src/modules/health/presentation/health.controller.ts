@@ -1,9 +1,11 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../../common/security/public.decorator.js';
 import { HealthService } from '../application/health.service.js';
 import { LivenessResponseDto, ReadinessResponseDto } from './health.dto.js';
 
+@Public()
 @ApiTags('health')
 @Controller('health')
 export class HealthController {

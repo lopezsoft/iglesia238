@@ -3,19 +3,17 @@ import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angu
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { ApplicationStatus } from '../../../../core/models/membership.model';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { BadgeTone, StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
-import { ApplicationStatusCheck } from '../../application/data/public-application.models';
+import { ApplicationStatusCheck, PublicApplicationStatus } from '../../application/data/public-application.models';
 import { PublicApplicationRepository } from '../../application/data/public-application.repository';
-import { normalizeTrackingCode } from '../../application/data/tracking-code';
+import { TRACKING_CODE_EXAMPLE, normalizeTrackingCode } from '../../application/data/tracking-code';
 
-const STATUS_TONES: Readonly<Record<ApplicationStatus, BadgeTone>> = {
+const STATUS_TONES: Readonly<Record<PublicApplicationStatus, BadgeTone>> = {
   PENDING: 'warning',
   IN_REVIEW: 'info',
   APPROVED: 'success',
   REJECTED: 'danger',
-  DUPLICATE: 'neutral',
 };
 
 interface StatusResult {
@@ -38,7 +36,7 @@ interface StatusResult {
           class="input mono"
           type="text"
           formControlName="code"
-          placeholder="MS-XXXX-XXXX"
+          placeholder="IG-XXXX-XXXX"
           autocomplete="off"
           spellcheck="false"
           autocapitalize="characters"
@@ -50,7 +48,7 @@ interface StatusResult {
         </button>
       </div>
       @if (form.controls.code.touched && form.controls.code.invalid) {
-        <p class="field__error">Escribe el código que recibiste, por ejemplo MS-7F3K-92QD.</p>
+        <p class="field__error">Escribe el código que recibiste, por ejemplo {{ example }}.</p>
       }
     </form>
 
@@ -71,12 +69,18 @@ interface StatusResult {
               <dd>{{ found.check.submittedOn | date: 'dd/MM/yyyy' }}</dd>
             </div>
             <div>
-              <dt>Revisada</dt>
+              <dt>Decisión</dt>
               <dd>
-                {{ found.check.reviewedOn ? (found.check.reviewedOn | date: 'dd/MM/yyyy HH:mm') : 'Aún sin revisar' }}
+                {{ found.check.reviewedOn ? (found.check.reviewedOn | date: 'dd/MM/yyyy HH:mm') : 'Aún sin decidir' }}
               </dd>
             </div>
           </dl>
+          @if (found.check.notice; as notice) {
+            <p class="alert alert--danger status-card__notice" role="note">
+              <app-icon name="info" [size]="16" />
+              <span>{{ notice }}</span>
+            </p>
+          }
           <p class="status-card__privacy text-small text-muted">
             <app-icon name="lock" [size]="14" />
             Por tu privacidad, esta consulta muestra solo el estado y las fechas. No mostramos datos personales.
@@ -93,6 +97,7 @@ export class StatusCheckComponent {
   readonly inputId = input('tracking-code');
 
   protected readonly tones = STATUS_TONES;
+  protected readonly example = TRACKING_CODE_EXAMPLE;
   protected readonly form = inject(NonNullableFormBuilder).group({
     code: ['', [Validators.required, Validators.maxLength(20)]],
   });

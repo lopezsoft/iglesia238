@@ -5,7 +5,7 @@
   max-height: calc(100vh - 2rem);
   padding: 0;
   border: 1px solid $color-border;
-  border-radius: $radius-card;
+  border-radius: $radius-panel;
   background: $color-surface;
   color: $color-ink;
   box-shadow: $shadow-overlay;
@@ -41,6 +41,7 @@
     gap: $space-3;
     padding: $space-4 $space-5;
     border-bottom: 1px solid $color-border;
+    background: $color-surface-tint;
   }
 
   &__body {
@@ -56,6 +57,7 @@
     gap: $space-3;
     padding: $space-4 $space-5;
     border-top: 1px solid $color-border;
+    background: $color-surface-tint;
 
     &:empty {
       display: none;

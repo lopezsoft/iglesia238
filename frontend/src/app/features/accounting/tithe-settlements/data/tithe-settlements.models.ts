@@ -2,33 +2,14 @@ import { PaymentMethod, TitheSettlementStatus } from '../../data/accounting.mode
 
 export type TitheComponentKey = 'NATIONAL' | 'LOCAL_FUND' | 'PASTOR';
 
-/** One destination of the gross tithe; `rate` is the effective share of the gross (0–1). */
-export interface TitheComponent {
-  readonly key: TitheComponentKey;
-  readonly name: string;
-  readonly target: string;
-  readonly rate: number;
-  /** "10 %", "30 % del neto (27 % del bruto)". */
-  readonly rateLabel: string;
-  readonly amount: number;
-}
-
-export interface TitheContributionRow {
-  readonly id: number;
-  readonly receiptNumber: string;
-  readonly receivedOn: string;
-  /** Null for anonymous tithes. */
-  readonly contributorName: string | null;
-  /** Member code or "Sin documento". */
-  readonly contributorDetail: string;
-  readonly paymentMethod: PaymentMethod;
-  readonly amount: number;
-}
-
+/** Percentages of the denomination by validity date (they are entered in the accounting setup). */
 export interface TitheRuleView {
+  readonly id: number;
   readonly effectiveFrom: string;
   readonly nationalShareRate: number;
   readonly localFundRate: number;
+  /** The one that applies today. */
+  readonly inForce: boolean;
 }
 
 export interface TitheRange {
@@ -36,9 +17,38 @@ export interface TitheRange {
   readonly to: string;
 }
 
+/** Account and fund where the cash line of a component is booked. */
+export interface TitheBooking {
+  readonly accountCode: string;
+  readonly accountName: string;
+  readonly fundName: string;
+}
+
+/** One destination of the gross tithe; `rate` is the effective share of the gross (0–1). */
+export interface TitheComponent {
+  readonly key: TitheComponentKey;
+  readonly rate: number;
+  readonly amount: number;
+  /** Null when the component generates no cash movement. */
+  readonly booking: TitheBooking | null;
+}
+
+export interface TitheContributionRow {
+  readonly id: number;
+  readonly receiptNumber: string | null;
+  readonly receivedOn: string;
+  /** Null for anonymous tithes. */
+  readonly contributorName: string | null;
+  readonly memberCode: string | null;
+  readonly paymentMethod: PaymentMethod;
+  readonly amount: number;
+}
+
 /** Draft computed by "Calcular": nothing is stored until it is confirmed. */
 export interface TithePreview extends TitheRange {
   readonly congregationName: string;
+  readonly denominationName: string;
+  readonly localFundName: string | null;
   readonly count: number;
   readonly contributorCount: number;
   readonly anonymousCount: number;
@@ -51,6 +61,7 @@ export interface TithePreview extends TitheRange {
   readonly componentsTotal: number;
   /** Oldest first. */
   readonly contributions: readonly TitheContributionRow[];
+  /** Estimate: the number is reserved when the settlement is confirmed. */
   readonly nextNumber: string;
 }
 
@@ -65,9 +76,41 @@ export interface TitheSettlementRow {
   readonly nationalShare: number;
   readonly localFundShare: number;
   readonly pastorNet: number;
+  /** Percentages copied when the settlement was issued. */
+  readonly nationalShareRate: number;
+  readonly localFundRate: number;
   readonly contributionCount: number;
   readonly status: TitheSettlementStatus;
   readonly voidReason: string | null;
+  readonly voidedAt: string | null;
+}
+
+export interface SettlementCashLine {
+  readonly id: number;
+  readonly postedOn: string;
+  readonly direction: 'IN' | 'OUT';
+  readonly amount: number;
+  readonly description: string;
+  readonly accountCode: string;
+  readonly accountName: string;
+  readonly fundName: string;
+  readonly isReversal: boolean;
+}
+
+export interface TitheSettlementDetail extends TitheSettlementRow {
+  readonly congregationName: string;
+  readonly voidedByName: string | null;
+  readonly contributions: readonly TitheContributionRow[];
+  readonly cashLines: readonly SettlementCashLine[];
+}
+
+export interface TitheYearSummary {
+  readonly year: number;
+  readonly issuedCount: number;
+  readonly grossTithe: number;
+  readonly nationalShare: number;
+  readonly localFundShare: number;
+  readonly pastorNet: number;
 }
 
 export interface TitheOverview {
@@ -79,8 +122,16 @@ export interface TitheOverview {
   readonly rule: TitheRuleView | null;
   /** Range of the latest issued settlement, for the help text and the suggestion. */
   readonly lastIssued: TitheRange | null;
-  /** Newest first. */
-  readonly settlements: readonly TitheSettlementRow[];
+  readonly yearSummary: TitheYearSummary | null;
+}
+
+export interface SettlementQuery {
+  readonly status: TitheSettlementStatus | null;
+  /** Settlement date bounds, inclusive. */
+  readonly from: string | null;
+  readonly to: string | null;
+  readonly page: number;
+  readonly pageSize: number;
 }
 
 /** The prototype calls an issued settlement "Confirmada". */

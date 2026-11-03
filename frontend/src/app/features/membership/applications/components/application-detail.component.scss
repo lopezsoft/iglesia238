@@ -9,41 +9,36 @@
     font-size: $font-size-lg;
   }
 
-  h3 {
-    margin-bottom: $space-3;
-    font-size: $font-size-md;
-  }
-
   p {
     margin: $space-1 0 0;
   }
 
   &__header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: $space-3;
+    align-items: center;
+    gap: $space-4;
     padding: $space-5;
     border-bottom: 1px solid $color-border;
+    background: $color-surface-tint;
+    border-radius: $radius-card $radius-card 0 0;
   }
 
-  &__tracking {
-    display: flex;
-    flex-direction: column;
-    font-weight: $font-weight-medium;
+  &__title {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   &__body {
     display: flex;
     flex-direction: column;
-    gap: $space-5;
+    gap: $space-4;
     padding: $space-5;
   }
 
-  &__section {
-    padding-top: $space-5;
-    border-top: 1px solid $color-border;
+  &__figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: $space-3;
   }
 
   &__note {
@@ -96,5 +91,13 @@
     margin: 0;
     color: $color-warning;
     text-align: right;
+  }
+
+  &__consequences {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    margin: $space-3 0 0;
+    padding-left: $space-5;
   }
 }

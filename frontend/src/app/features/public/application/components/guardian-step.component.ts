@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { GuardianGroup, showsError } from '../application-form';
-import { GUARDIAN_RELATIONSHIPS } from '../data/public-application.models';
+import { CatalogOption, GUARDIAN_RELATIONSHIPS } from '../data/public-application.models';
 
 type GuardianField = keyof GuardianGroup['controls'];
 
@@ -25,22 +25,40 @@ type GuardianField = keyof GuardianGroup['controls'];
 
       <div class="form-grid">
         <div class="field">
-          <label for="guardian-name">Nombre completo del acudiente *</label>
-          <input id="guardian-name" class="input" type="text" formControlName="name" autocomplete="off" required
-            [attr.aria-describedby]="errorId('name')" [attr.aria-invalid]="ariaInvalid('name')" />
-          @if (invalid('name')) {
-            <p id="guardian-name-error" class="field__error">Escribe el nombre del acudiente.</p>
+          <label for="guardian-firstName">Nombres del acudiente *</label>
+          <input id="guardian-firstName" class="input" type="text" formControlName="firstName" autocomplete="off" required
+            [attr.aria-describedby]="errorId('firstName')" [attr.aria-invalid]="ariaInvalid('firstName')" />
+          @if (invalid('firstName')) {
+            <p id="guardian-firstName-error" class="field__error">Escribe los nombres del acudiente.</p>
           }
         </div>
         <div class="field">
-          <label for="guardian-document">Documento del acudiente *</label>
-          <input id="guardian-document" class="input" type="text" formControlName="document" autocomplete="off"
-            required [attr.aria-describedby]="describedBy('document', 'guardian-document-hint')"
-            [attr.aria-invalid]="ariaInvalid('document')" />
-          @if (invalid('document')) {
-            <p id="guardian-document-error" class="field__error">Escribe el documento del acudiente.</p>
+          <label for="guardian-lastName">Apellidos del acudiente *</label>
+          <input id="guardian-lastName" class="input" type="text" formControlName="lastName" autocomplete="off" required
+            [attr.aria-describedby]="errorId('lastName')" [attr.aria-invalid]="ariaInvalid('lastName')" />
+          @if (invalid('lastName')) {
+            <p id="guardian-lastName-error" class="field__error">Escribe los apellidos del acudiente.</p>
           }
-          <p id="guardian-document-hint" class="field__hint">Tipo y número, por ejemplo CC 52345678.</p>
+        </div>
+        <div class="field">
+          <label for="guardian-documentTypeCode">Tipo de documento *</label>
+          <select id="guardian-documentTypeCode" class="select" formControlName="documentTypeCode" required>
+            @for (type of documentTypes(); track type.code) {
+              <option [value]="type.code">{{ type.code }} · {{ type.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="guardian-documentNumber">Número de documento *</label>
+          <input id="guardian-documentNumber" class="input" type="text" formControlName="documentNumber" autocomplete="off"
+            required [attr.aria-describedby]="describedBy('documentNumber', 'guardian-documentNumber-hint')"
+            [attr.aria-invalid]="ariaInvalid('documentNumber')" />
+          @if (invalid('documentNumber')) {
+            <p id="guardian-documentNumber-error" class="field__error">
+              Usa solo letras y números (3 a 20), sin puntos ni espacios.
+            </p>
+          }
+          <p id="guardian-documentNumber-hint" class="field__hint">Sin puntos ni espacios.</p>
         </div>
         <div class="field">
           <label for="guardian-relationship">Parentesco *</label>
@@ -69,6 +87,7 @@ type GuardianField = keyof GuardianGroup['controls'];
 })
 export class GuardianStepComponent {
   readonly group = input.required<GuardianGroup>();
+  readonly documentTypes = input.required<readonly CatalogOption[]>();
   readonly revealErrors = input(false);
 
   protected readonly relationships = GUARDIAN_RELATIONSHIPS;

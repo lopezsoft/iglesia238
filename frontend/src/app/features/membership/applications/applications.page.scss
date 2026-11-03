@@ -1,4 +1,5 @@
 @use 'tokens' as *;
+@use 'mixins' as *;
 
 :host {
   display: flex;
@@ -7,10 +8,24 @@
 }
 
 .applications-page {
-  &__permission {
-    display: inline-flex;
+  &__filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    align-items: end;
+    gap: $space-3;
+    padding: $space-4;
+  }
+
+  &__search {
+    grid-column: span 2;
+
+    @include until($breakpoint-sm) {
+      grid-column: auto;
+    }
+  }
+
+  &__filter-actions {
     align-items: center;
-    gap: $space-1;
   }
 
   &__layout {

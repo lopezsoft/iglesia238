@@ -20,7 +20,7 @@
     height: 100%;
     padding: $space-3;
     border: 1px solid $color-border;
-    border-radius: $radius-control;
+    border-radius: $radius-card;
     color: $color-ink;
     text-decoration: none;
 
@@ -32,8 +32,13 @@
   }
 
   &__icon {
-    display: inline-flex;
+    display: inline-grid;
     flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: $radius-chip;
+    background: $color-primary-soft;
     color: $color-primary;
   }
 

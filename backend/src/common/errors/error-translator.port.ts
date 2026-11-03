@@ -3,6 +3,8 @@ import { HttpStatus } from '@nestjs/common';
 export interface TranslatedError {
   statusCode: HttpStatus;
   message: string;
+  /** Stable error code; when absent the filter derives one from the status. */
+  code?: string;
 }
 
 /**

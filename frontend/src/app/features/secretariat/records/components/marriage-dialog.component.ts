@@ -1,29 +1,47 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
-import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { firstValueFrom, map } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { ageOn } from '../../../../core/models/membership.model';
 import {
-  ADULT_AGE,
   MARRIAGE_REGISTRIES,
   MARRIAGE_REGISTRY_LABELS,
+  MAX_PLACE_LENGTH,
   MarriageRegistry,
+  PersonSummary,
   RecordsContext,
-  personLabel,
-  todayIso,
 } from '../data/records.models';
 import { RecordsRepository } from '../data/records.repository';
-import { notFutureDate, showError } from './record-validators';
+import { PersonPickerComponent } from './person-picker.component';
+import { notAfterToday, showError } from './record-validators';
 
 const DEFAULT_PLACE_SUFFIX = ' · Templo principal';
 
-/** Create dialog of a marriage (D-04). Both spouses are people of the denomination. */
+/** Create dialog of a marriage (D-04). Both spouses are people of the denomination, searched on the server. */
 @Component({
   selector: 'app-marriage-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DialogComponent, IconComponent],
+  imports: [ReactiveFormsModule, DialogComponent, IconComponent, PersonPickerComponent],
   templateUrl: './marriage-dialog.component.html',
 })
 export class MarriageDialogComponent {
@@ -32,37 +50,43 @@ export class MarriageDialogComponent {
 
   readonly open = model(false);
   readonly context = input.required<RecordsContext>();
-  /** People with a marriage that is not dissolved: they cannot marry again. */
-  readonly marriedPersonIds = input<ReadonlySet<number>>(new Set());
-  readonly defaultOfficiantId = input<number | null>(null);
+  /** Current pastor of the sede, suggested as officiant. */
+  readonly defaultOfficiant = input<PersonSummary | null>(null);
   readonly saved = output<string>();
 
-  protected readonly today = todayIso();
-  protected readonly label = personLabel;
   protected readonly registries = MARRIAGE_REGISTRIES;
   protected readonly registryLabels = MARRIAGE_REGISTRY_LABELS;
+  protected readonly maxPlaceLength = MAX_PLACE_LENGTH;
   protected readonly pending = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly submitted = signal(false);
 
   protected readonly form = this.fb.group(
     {
-      spouse1Id: new FormControl<number | null>(null, Validators.required),
-      spouse2Id: new FormControl<number | null>(null, Validators.required),
-      marriedOn: this.fb.control('', [Validators.required, notFutureDate]),
-      place: this.fb.control('', [Validators.required, Validators.maxLength(150)]),
+      spouse1: new FormControl<PersonSummary | null>(null, Validators.required),
+      spouse2: new FormControl<PersonSummary | null>(null, Validators.required),
+      marriedOn: this.fb.control('', Validators.required),
+      place: this.fb.control('', [Validators.required, Validators.maxLength(MAX_PLACE_LENGTH)]),
       registeredWith: this.fb.control<MarriageRegistry>('CHURCH', Validators.required),
-      officiantId: new FormControl<number | null>(null),
+      officiant: new FormControl<PersonSummary | null>(null),
     },
     { validators: differentSpouses },
   );
 
-  /** Unmarried adults: minors cannot be spouses (the API rejects them with INVALID_SPOUSE). */
-  protected readonly candidates = computed(() =>
-    this.context().people.filter(
-      (person) =>
-        !this.marriedPersonIds().has(person.id) && (ageOn(person.birthDate, this.today) ?? ADULT_AGE) >= ADULT_AGE,
-    ),
+  private readonly value = toSignal(
+    this.form.valueChanges.pipe(map(() => this.form.getRawValue())),
+    {
+      initialValue: this.form.getRawValue(),
+    },
+  );
+  protected readonly excludeForFirst = computed(() =>
+    idsOf(this.value().spouse2, this.value().officiant),
+  );
+  protected readonly excludeForSecond = computed(() =>
+    idsOf(this.value().spouse1, this.value().officiant),
+  );
+  protected readonly excludeForOfficiant = computed(() =>
+    idsOf(this.value().spouse1, this.value().spouse2),
   );
 
   constructor() {
@@ -78,7 +102,9 @@ export class MarriageDialogComponent {
   }
 
   protected sameSpouse(): boolean {
-    return this.form.hasError('sameSpouse') && (this.form.controls.spouse2Id.touched || this.submitted());
+    return (
+      this.form.hasError('sameSpouse') && (this.form.controls.spouse2.touched || this.submitted())
+    );
   }
 
   protected async submit(): Promise<void> {
@@ -93,12 +119,12 @@ export class MarriageDialogComponent {
     try {
       await firstValueFrom(
         this.repository.createMarriage({
-          spouse1Id: value.spouse1Id as number,
-          spouse2Id: value.spouse2Id as number,
+          spouse1Id: (value.spouse1 as PersonSummary).id,
+          spouse2Id: (value.spouse2 as PersonSummary).id,
           marriedOn: value.marriedOn,
-          place: value.place,
+          place: value.place.trim(),
           registeredWith: value.registeredWith,
-          officiantId: value.officiantId,
+          officiantId: value.officiant?.id ?? null,
         }),
       );
       this.saved.emit('Matrimonio registrado.');
@@ -111,22 +137,29 @@ export class MarriageDialogComponent {
   }
 
   private reset(): void {
-    const sedes = this.context().congregations;
+    const { today, congregations } = this.context();
+    this.form.controls.marriedOn.setValidators([Validators.required, notAfterToday(today)]);
     this.form.reset({
-      spouse1Id: null,
-      spouse2Id: null,
-      marriedOn: this.today,
-      place: sedes.length === 1 ? `${sedes[0].name}${DEFAULT_PLACE_SUFFIX}` : '',
+      spouse1: null,
+      spouse2: null,
+      marriedOn: today,
+      place: congregations.length === 1 ? `${congregations[0].name}${DEFAULT_PLACE_SUFFIX}` : '',
       registeredWith: 'CHURCH',
-      officiantId: this.defaultOfficiantId(),
+      officiant: this.defaultOfficiant(),
     });
     this.submitted.set(false);
     this.error.set(null);
   }
 }
 
+function idsOf(...people: (PersonSummary | null)[]): number[] {
+  return people
+    .filter((person): person is PersonSummary => person !== null)
+    .map((person) => person.id);
+}
+
 function differentSpouses(group: AbstractControl): ValidationErrors | null {
-  const first = group.get('spouse1Id')?.value as number | null;
-  const second = group.get('spouse2Id')?.value as number | null;
-  return first !== null && first === second ? { sameSpouse: true } : null;
+  const first = group.get('spouse1')?.value as PersonSummary | null;
+  const second = group.get('spouse2')?.value as PersonSummary | null;
+  return first !== null && first?.id === second?.id ? { sameSpouse: true } : null;
 }

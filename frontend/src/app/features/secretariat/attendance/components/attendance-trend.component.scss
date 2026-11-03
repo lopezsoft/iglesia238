@@ -4,6 +4,10 @@
   display: block;
 }
 
+.trend-controls:empty {
+  display: none;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -13,22 +17,24 @@
   > div {
     padding: $space-3;
     border-radius: $radius-control;
-    background: $color-surface-2;
+    background: $color-surface-tint;
+    border: 1px solid $color-border;
   }
 
   dt {
     color: $color-ink-muted;
     font-size: $font-size-xs;
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-semibold;
   }
 
   dd {
     margin: $space-1 0 0;
     font-size: $font-size-lg;
-    font-weight: $font-weight-semibold;
+    font-weight: $font-weight-extrabold;
+    font-variant-numeric: tabular-nums;
 
     &.text-small {
-      font-size: $font-size-xs;
+      font-size: $font-size-2xs;
       font-weight: $font-weight-regular;
     }
   }
@@ -67,15 +73,17 @@
   }
 
   &__value {
-    font-size: $font-size-xs;
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
   }
 
   &__bar {
     width: 100%;
     max-width: 2.5rem;
     border: 1px solid $color-primary;
-    border-radius: 4px 4px 0 0;
-    background: $color-primary;
+    border-radius: $radius-xs $radius-xs 0 0;
+    background: $gradient-primary;
 
     &--draft {
       border-style: dashed;
@@ -84,8 +92,12 @@
   }
 
   &__label {
+    max-width: 100%;
+    overflow: hidden;
     color: $color-ink-muted;
-    font-size: $font-size-xs;
+    font-size: $font-size-2xs;
     text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

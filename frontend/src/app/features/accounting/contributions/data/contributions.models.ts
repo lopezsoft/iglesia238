@@ -17,18 +17,24 @@ export interface ContributionRow {
   readonly id: number;
   /** REC-2026-01872. */
   readonly receiptNumber: string;
+  /** The receipt voucher: with it the receipt downloads as a PDF. Null for rows that predate vouchers. */
+  readonly voucherId: number | null;
   readonly receivedOn: string;
   readonly contributionTypeId: number;
   readonly typeName: string;
   readonly category: ContributionCategory;
   readonly personId: number | null;
-  /** Null for anonymous contributions and aggregated collections. */
+  /** Name and first surname; null for anonymous contributions and aggregated collections. */
   readonly contributorName: string | null;
-  /** Member code, "Abono a VOTO-…", the collection description or "Sin datos del aportante". */
-  readonly contributorDetail: string;
+  /** SC-0130 for a member, null otherwise. */
+  readonly memberCode: string | null;
   readonly vowPledgeId: number | null;
+  /** VOTO-2026-0014 when the contribution pays a pledge. */
+  readonly vowPledgeCode: string | null;
   readonly paymentMethod: PaymentMethod;
   readonly paymentReference: string | null;
+  /** Description of a collection or free note. */
+  readonly notes: string | null;
   readonly amount: number;
   readonly status: ContributionDisplayStatus;
   /** Null when the contribution can be voided (or is already voided). */
@@ -37,26 +43,60 @@ export interface ContributionRow {
   readonly congregationName: string;
 }
 
+/** Everything the detail drawer shows. */
+export interface ContributionDetail extends ContributionRow {
+  readonly recordedAt: string;
+  readonly recordedByName: string | null;
+  readonly voidedAt: string | null;
+  readonly voidedByName: string | null;
+  /** CI-2026-00012 when the contribution is part of a cash-book consolidation. */
+  readonly consolidationVoucher: string | null;
+  readonly settlementId: number | null;
+}
+
 export interface CategorySummary {
   readonly category: ContributionCategory;
   readonly amount: number;
   readonly count: number;
-  /** Whole percentage of the month total. */
+  /** Whole percentage of the total. */
   readonly share: number;
 }
 
-export interface ContributionMonth {
-  readonly year: number;
-  readonly month: number;
-  readonly label: string;
-  /** Status of the sede period; null when denomination-wide or the period does not exist. */
-  readonly periodStatus: PeriodStatus | null;
-  /** Newest receipt first. */
-  readonly rows: readonly ContributionRow[];
-  readonly summary: readonly CategorySummary[];
-  /** Total of the non-voided contributions. */
+/** One page of contributions and the totals of the whole filter. */
+export interface ContributionListing {
+  readonly items: readonly ContributionRow[];
   readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+  readonly from: string;
+  readonly to: string;
+  /** "Noviembre 2026" or the written range. */
+  readonly label: string;
+  /** Status of the sede period when the list is one month of one sede; null otherwise. */
+  readonly periodStatus: PeriodStatus | null;
+  readonly summary: readonly CategorySummary[];
+  /** Total of the non-voided contributions of the filter. */
+  readonly totalAmount: number;
   readonly voidedCount: number;
+}
+
+/** Filters shared by the list and the export. Month or date range; the rest narrow the list. */
+export interface ContributionFilters {
+  readonly year?: number;
+  readonly month?: number;
+  readonly from?: string;
+  readonly to?: string;
+  readonly category?: ContributionCategory | null;
+  readonly contributionTypeId?: number | null;
+  readonly paymentMethod?: PaymentMethod | null;
+  readonly status?: ContributionDisplayStatus | null;
+  readonly search?: string | null;
+}
+
+export interface ContributionQuery extends ContributionFilters {
+  /** 1-based. */
+  readonly page: number;
+  readonly pageSize: number;
 }
 
 export interface ContributionTypeOption {

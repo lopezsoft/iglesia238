@@ -2,95 +2,136 @@
   <form id="dedication-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="alert alert--warning" role="note">
       <app-icon name="lock" />
-      <span class="text-small">Datos de menor con acceso restringido. No registres información que no sea necesaria.</span>
+      <span class="text-small">
+        Datos de menor con acceso restringido. Registra solo lo necesario: el documento se muestra
+        enmascarado y la consulta de cada registro queda en auditoría.
+      </span>
     </div>
 
     <div class="form-grid">
       @if (context().congregations.length > 1) {
         <div class="field">
           <label for="ded-sede">Sede *</label>
-          <select id="ded-sede" class="select" formControlName="congregationId" aria-describedby="ded-sede-error">
+          <select
+            id="ded-sede"
+            class="select"
+            formControlName="congregationId"
+            aria-describedby="ded-sede-error"
+          >
             <option [ngValue]="null" disabled>Selecciona una sede</option>
             @for (sede of context().congregations; track sede.id) {
               <option [ngValue]="sede.id">{{ sede.name }}</option>
             }
           </select>
           @if (invalid(form.controls.congregationId)) {
-            <span id="ded-sede-error" class="field__error">Selecciona la sede de la presentación.</span>
+            <span id="ded-sede-error" class="field__error"
+              >Selecciona la sede de la presentación.</span
+            >
           }
         </div>
       }
 
       <div class="field">
-        <label for="ded-child">Niño(a) *</label>
-        <select id="ded-child" class="select" formControlName="childId" aria-describedby="ded-child-hint">
-          <option [ngValue]="null" disabled>Selecciona una persona</option>
-          @for (option of children(); track option.person.id) {
-            <option [ngValue]="option.person.id">{{ option.label }}</option>
-          }
-        </select>
-        @if (invalid(form.controls.childId)) {
-          <span id="ded-child-hint" class="field__error">Selecciona al niño o la niña.</span>
-        } @else {
-          <span id="ded-child-hint" class="field__hint">
-            {{ hasMinors() ? 'Los menores de edad aparecen primero.' : 'Personas registradas en la denominación.' }}
-          </span>
-        }
-      </div>
-
-      <div class="field">
         <label for="ded-date">Fecha de presentación *</label>
-        <input id="ded-date" class="input" type="date" formControlName="dedicatedOn" [max]="today" aria-describedby="ded-date-error" />
+        <input
+          id="ded-date"
+          class="input"
+          type="date"
+          formControlName="dedicatedOn"
+          [max]="context().today"
+          aria-describedby="ded-date-error"
+        />
         @if (invalid(form.controls.dedicatedOn)) {
           <span id="ded-date-error" class="field__error">{{ dateError() }}</span>
         }
       </div>
-
-      <div class="field">
-        <label for="ded-pastor">Oficiante</label>
-        <select id="ded-pastor" class="select" formControlName="pastorId">
-          <option [ngValue]="null">Sin registrar</option>
-          @for (person of context().people; track person.id) {
-            <option [ngValue]="person.id">{{ label(person) }}</option>
-          }
-        </select>
-      </div>
     </div>
 
+    <app-person-picker
+      formControlName="child"
+      label="Niño(a)"
+      eligibleFor="child"
+      [required]="true"
+      hint="Busca por nombre, documento o código. Los menores de edad aparecen primero."
+      [error]="invalid(form.controls.child) ? 'Selecciona al niño o la niña.' : null"
+    />
+
+    <app-person-picker
+      formControlName="pastor"
+      label="Oficiante"
+      eligibleFor="officiant"
+      hint="Si la sede tiene un pastor vigente, se propone solo."
+    />
+
     <fieldset class="stack parents">
-      <legend>Padres o acudientes *</legend>
+      <legend>Padres o acudiente *</legend>
       <div class="form-grid">
-        <div class="field">
-          <label for="ded-father">Padre</label>
-          <select id="ded-father" class="select" formControlName="fatherId">
-            <option [ngValue]="null">No está registrado</option>
-            @for (person of fathers(); track person.id) {
-              <option [ngValue]="person.id">{{ label(person) }}</option>
-            }
-          </select>
+        <div class="stack">
+          <app-person-picker
+            formControlName="father"
+            label="Padre"
+            eligibleFor="parent"
+            [exclude]="childId()"
+          />
+          <div class="field">
+            <label for="ded-father-name">Nombre del padre (si no está registrado)</label>
+            <input
+              id="ded-father-name"
+              class="input"
+              type="text"
+              formControlName="fatherName"
+              [maxlength]="maxNameLength"
+              autocomplete="off"
+            />
+          </div>
         </div>
-        <div class="field">
-          <label for="ded-father-name">Nombre del padre (si no está registrado)</label>
-          <input id="ded-father-name" class="input" type="text" formControlName="fatherName" maxlength="120" autocomplete="off" />
+        <div class="stack">
+          <app-person-picker
+            formControlName="mother"
+            label="Madre"
+            eligibleFor="parent"
+            [exclude]="childId()"
+          />
+          <div class="field">
+            <label for="ded-mother-name">Nombre de la madre (si no está registrada)</label>
+            <input
+              id="ded-mother-name"
+              class="input"
+              type="text"
+              formControlName="motherName"
+              [maxlength]="maxNameLength"
+              autocomplete="off"
+            />
+          </div>
         </div>
-        <div class="field">
-          <label for="ded-mother">Madre</label>
-          <select id="ded-mother" class="select" formControlName="motherId">
-            <option [ngValue]="null">No está registrada</option>
-            @for (person of mothers(); track person.id) {
-              <option [ngValue]="person.id">{{ label(person) }}</option>
-            }
-          </select>
-        </div>
-        <div class="field">
-          <label for="ded-mother-name">Nombre de la madre (si no está registrada)</label>
-          <input id="ded-mother-name" class="input" type="text" formControlName="motherName" maxlength="120" autocomplete="off" />
+        <div class="stack">
+          <app-person-picker
+            formControlName="guardian"
+            label="Acudiente"
+            eligibleFor="parent"
+            [exclude]="childId()"
+          />
+          <div class="field">
+            <label for="ded-guardian-name">Nombre del acudiente (si no está registrado)</label>
+            <input
+              id="ded-guardian-name"
+              class="input"
+              type="text"
+              formControlName="guardianName"
+              [maxlength]="maxNameLength"
+              autocomplete="off"
+            />
+          </div>
         </div>
       </div>
       @if (submitted() && missingParent()) {
-        <p class="field__error" role="alert">Selecciona o escribe al menos al padre, la madre o un acudiente.</p>
+        <p class="field__error" role="alert">
+          Selecciona o escribe al menos al padre, la madre o un acudiente.
+        </p>
       } @else {
-        <p class="field__hint">Elige una persona registrada o escribe el nombre si no hace parte de la denominación.</p>
+        <p class="field__hint">
+          Elige una persona registrada o escribe el nombre si no hace parte de la denominación.
+        </p>
       }
     </fieldset>
 

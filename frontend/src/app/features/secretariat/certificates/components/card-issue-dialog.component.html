@@ -1,92 +1,129 @@
 <app-dialog [(open)]="open" title="Emitir carné">
-  @if (candidates.isLoading()) {
-    <app-loading label="Cargando miembros sin carné vigente…" />
-  } @else if (candidates.error()) {
-    <app-error-banner [message]="candidatesError()" (retry)="candidates.reload()" />
-  } @else if (candidates.value(); as list) {
-    @if (list.length === 0) {
-      <p class="text-muted">Todos los miembros activos de la sede tienen un carné vigente.</p>
-    } @else {
-      <form id="card-issue-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (noCandidatesAtAll()) {
+    <p class="text-muted">
+      No hay miembros activos para carné: todos tienen uno vigente o aún no están inscritos en el
+      libro de la sede.
+    </p>
+  } @else {
+    <form id="card-issue-form" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="card-member-search">Miembro *</label>
         @if (selected(); as candidate) {
-          <p class="text-muted">
-            Se asignará el número <span class="chip chip--mono">{{ candidate.cardNumber }}</span>
-          </p>
-        }
-
-        <div class="field">
-          <label for="card-member">Miembro *</label>
-          <select
-            id="card-member"
-            class="select"
-            formControlName="memberId"
+          <div class="candidate-pick">
+            <div>
+              <strong>{{ candidate.fullName }}</strong>
+              <div class="text-muted text-small">
+                Se asignará el número
+                <span class="chip chip--mono">{{ candidate.cardNumber }}</span>
+                @if (candidate.hasExpiredCard) {
+                  · tenía un carné vencido
+                }
+              </div>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="clearPick()">
+              <app-icon name="x" [size]="16" />
+              Quitar
+            </button>
+          </div>
+        } @else {
+          <input
+            id="card-member-search"
+            class="input"
+            type="search"
+            autocomplete="off"
+            placeholder="Busca por nombre o número de carné (SC-0130)"
             aria-describedby="card-member-help"
-          >
-            <option [ngValue]="0" disabled>Selecciona un miembro</option>
-            @for (candidate of list; track candidate.memberId) {
-              <option [ngValue]="candidate.memberId">
-                {{ candidate.fullName }} · {{ candidate.cardNumber }} ·
-                {{ candidate.hasExpiredCard ? 'carné vencido' : 'sin carné' }}
-              </option>
+            [value]="search()"
+            (input)="search.set($any($event.target).value)"
+          />
+          @if (candidates.isLoading()) {
+            <app-loading label="Buscando miembros…" />
+          } @else if (candidates.error()) {
+            <app-error-banner [message]="candidatesError()" (retry)="candidates.reload()" />
+          } @else if (candidates.value(); as page) {
+            @if (page.items.length === 0) {
+              <p class="text-muted text-small" role="status">
+                Ningún miembro sin carné vigente coincide con la búsqueda.
+              </p>
+            } @else {
+              <ul class="candidate-list" aria-label="Miembros sin carné vigente">
+                @for (candidate of page.items; track candidate.memberId) {
+                  <li>
+                    <button type="button" (click)="pick(candidate)">
+                      <span>{{ candidate.fullName }}</span>
+                      <span class="text-muted text-small">
+                        <span class="mono">{{ candidate.cardNumber }}</span>
+                        · {{ candidate.hasExpiredCard ? 'carné vencido' : 'sin carné' }}
+                      </span>
+                    </button>
+                  </li>
+                }
+              </ul>
+              @if (page.total > page.items.length) {
+                <p class="text-muted text-small">
+                  Mostrando {{ page.items.length }} de {{ page.total }}. Escribe para acotar la
+                  búsqueda.
+                </p>
+              }
             }
-          </select>
-          @if (showError('memberId')) {
-            <p class="field__error">Selecciona el miembro que recibe el carné.</p>
           }
-          <p class="field__hint" id="card-member-help">
-            Solo se listan miembros activos sin carné vigente.
+        }
+        @if (showError('memberId')) {
+          <p class="field__error" role="alert">Selecciona el miembro que recibe el carné.</p>
+        }
+        <p class="field__hint" id="card-member-help">
+          Solo se listan miembros activos, inscritos en la sede y sin carné vigente.
+        </p>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="card-issued-on">Fecha de emisión *</label>
+          <input
+            id="card-issued-on"
+            class="input"
+            type="date"
+            formControlName="issuedOn"
+            [max]="today()"
+          />
+          @if (showError('issuedOn')) {
+            <p class="field__error">Indica la fecha de emisión.</p>
+          } @else if (showFutureIssueError()) {
+            <p class="field__error" role="alert">La fecha de emisión no puede ser futura.</p>
+          }
+        </div>
+        <div class="field">
+          <label for="card-expires-on">Vencimiento *</label>
+          <input
+            id="card-expires-on"
+            class="input"
+            type="date"
+            formControlName="expiresOn"
+            aria-describedby="card-expires-help"
+            [min]="today()"
+          />
+          @if (showError('expiresOn')) {
+            <p class="field__error">Indica la fecha de vencimiento.</p>
+          } @else if (showExpiryOrderError()) {
+            <p class="field__error" role="alert">
+              El vencimiento debe ser posterior a la fecha de emisión.
+            </p>
+          } @else if (showExpiredOnIssueError()) {
+            <p class="field__error" role="alert">El carné no puede emitirse ya vencido.</p>
+          }
+          <p class="field__hint" id="card-expires-help">
+            Por defecto, dos años desde la fecha de emisión.
           </p>
         </div>
+      </div>
 
-        <div class="form-grid">
-          <div class="field">
-            <label for="card-issued-on">Fecha de emisión *</label>
-            <input
-              id="card-issued-on"
-              class="input"
-              type="date"
-              formControlName="issuedOn"
-              [max]="today()"
-            />
-            @if (showError('issuedOn')) {
-              <p class="field__error">Indica la fecha de emisión.</p>
-            } @else if (showFutureIssueError()) {
-              <p class="field__error" role="alert">La fecha de emisión no puede ser futura.</p>
-            }
-          </div>
-          <div class="field">
-            <label for="card-expires-on">Vencimiento *</label>
-            <input
-              id="card-expires-on"
-              class="input"
-              type="date"
-              formControlName="expiresOn"
-              aria-describedby="card-expires-help"
-              [min]="today()"
-            />
-            @if (showError('expiresOn')) {
-              <p class="field__error">Indica la fecha de vencimiento.</p>
-            } @else if (showExpiryOrderError()) {
-              <p class="field__error" role="alert">
-                El vencimiento debe ser posterior a la fecha de emisión.
-              </p>
-            } @else if (showExpiredOnIssueError()) {
-              <p class="field__error" role="alert">El carné no puede emitirse ya vencido.</p>
-            }
-            <p class="field__hint" id="card-expires-help">
-              Por defecto, dos años desde la fecha de emisión.
-            </p>
-          </div>
+      @if (error(); as message) {
+        <div class="alert alert--danger" role="alert">
+          <app-icon name="alert" />
+          <span>{{ message }}</span>
         </div>
-
-        @if (error(); as message) {
-          <div class="alert alert--danger" role="alert">
-            <app-icon name="alert" />
-            <span>{{ message }}</span>
-          </div>
-        }
-      </form>
-    }
+      }
+    </form>
   }
   <div dialog-footer>
     <button
@@ -101,7 +138,7 @@
       type="submit"
       form="card-issue-form"
       class="btn btn--primary"
-      [disabled]="pending() || !(candidates.hasValue() && candidates.value().length)"
+      [disabled]="pending() || noCandidatesAtAll()"
     >
       <app-icon name="id-card" />
       {{ pending() ? 'Emitiendo…' : 'Emitir carné' }}

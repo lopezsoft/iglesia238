@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { userMessage } from '../../../core/errors/domain-error';
 import { IconComponent } from '../../../shared/ui/icon.component';
+import { SpinnerComponent } from '../../../shared/ui/spinner.component';
+import { TextFieldComponent } from '../../../shared/ui/text-field.component';
 import { AuthFrameComponent } from '../components/auth-frame.component';
 
 /**
@@ -14,7 +16,7 @@ import { AuthFrameComponent } from '../components/auth-frame.component';
 @Component({
   selector: 'app-recover-password-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, AuthFrameComponent],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent, SpinnerComponent, TextFieldComponent, AuthFrameComponent],
   templateUrl: './recover-password.page.html',
   styleUrl: './recover-password.page.scss',
 })
@@ -27,6 +29,14 @@ export class RecoverPasswordPage {
   protected readonly pending = signal(false);
   protected readonly sent = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected emailError(): string | null {
+    const control = this.form.controls.email;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return control.hasError('required') ? 'Escribe tu correo.' : 'Escribe un correo válido.';
+  }
 
   protected async submit(): Promise<void> {
     if (this.pending()) {

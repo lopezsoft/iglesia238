@@ -1,9 +1,11 @@
-// Secretariat records (D-04, D-05), mirroring ChildDedication, Marriage and PastoralTerm of
-// backend/prisma/schema/secretariat.prisma. Rows reach the UI with the referenced people
-// resolved into summaries, and documents of minors arrive masked.
+// Secretariat records (D-04, D-05), mirroring the `/api/child-dedications`, `/api/marriages`,
+// `/api/pastoral-terms` and `/api/secretariat/*` contract. Rows reach the UI with the people
+// resolved into summaries; documents arrive masked and the server decides who may see what.
 
 export type MarriageRegistry = 'NOTARY' | 'CHURCH';
 export type MarriageEndReason = 'DIVORCE' | 'DEATH' | 'ANNULMENT';
+export type MarriageStatus = 'ACTIVE' | 'DISSOLVED';
+export type PersonEligibility = 'child' | 'spouse' | 'parent' | 'pastor' | 'officiant';
 
 export const MARRIAGE_REGISTRY_LABELS: Readonly<Record<MarriageRegistry, string>> = {
   NOTARY: 'Notaría (civil)',
@@ -19,17 +21,30 @@ export const MARRIAGE_END_REASON_LABELS: Readonly<Record<MarriageEndReason, stri
 export const MARRIAGE_REGISTRIES = Object.keys(MARRIAGE_REGISTRY_LABELS) as MarriageRegistry[];
 export const MARRIAGE_END_REASONS = Object.keys(MARRIAGE_END_REASON_LABELS) as MarriageEndReason[];
 
+export const RECORDS_PAGE_SIZE = 10;
+export const MAX_PLACE_LENGTH = 150;
+export const MAX_PARENT_NAME_LENGTH = 120;
+export const ADULT_AGE = 18;
+
 /** A person of the denomination as the pickers and tables show it. */
 export interface PersonSummary {
   readonly id: number;
   readonly fullName: string;
   /** Member code in their current sede (SC-0130), null when the person is not a member. */
   readonly memberCode: string | null;
+  /** Current sede of the member, null when the person is not a member. */
   readonly congregationId: number | null;
   readonly sex: 'FEMALE' | 'MALE' | null;
   readonly birthDate: string | null;
-  /** Document type plus the last four digits, e.g. "TI ···· 4817". */
+  readonly age: number | null;
+  /** Document type plus the last four digits, e.g. "TI ···· 4817". Never the full number. */
   readonly maskedDocument: string | null;
+}
+
+/** A search result of the people picker. */
+export interface PersonOption extends PersonSummary {
+  /** Already has a marriage in force: cannot be a spouse again. */
+  readonly hasActiveMarriage: boolean;
 }
 
 export interface RecordsCongregation {
@@ -37,10 +52,28 @@ export interface RecordsCongregation {
   readonly name: string;
 }
 
-/** Catalogs the dialogs need: sedes of the active scope and people of the denomination. */
+/** What the screen needs before it renders: the sedes of the active scope and the server date. */
 export interface RecordsContext {
+  readonly today: string;
   readonly congregations: readonly RecordsCongregation[];
-  readonly people: readonly PersonSummary[];
+}
+
+export interface RecordsSummary {
+  readonly year: number;
+  readonly dedicationsThisYear: number;
+  readonly dedicationsTotal: number;
+  readonly marriagesActive: number;
+  readonly marriagesDissolved: number;
+  readonly termsTotal: number;
+  /** Only when the scope is a single sede. */
+  readonly currentPastor: {
+    readonly congregationId: number;
+    readonly congregationName: string;
+    readonly fullName: string;
+    readonly startedOn: string;
+  } | null;
+  readonly congregationsWithPastor: number;
+  readonly congregationsTotal: number;
 }
 
 /** A parent: a registered person or, when not registered, only a name. */
@@ -54,32 +87,36 @@ export interface ChildDedication {
   readonly id: number;
   readonly denominationId: number;
   readonly congregationId: number;
+  readonly congregationName: string;
   readonly dedicatedOn: string;
   readonly child: PersonSummary;
   readonly pastor: PersonSummary | null;
-  /** In the API the parents come from FamilyRelation; the screen captures them here. */
   readonly father: ParentReference | null;
   readonly mother: ParentReference | null;
+  readonly guardian: ParentReference | null;
 }
 
 export interface Marriage {
   readonly id: number;
+  /** Display number, MAT-0007. */
+  readonly code: string;
   readonly denominationId: number;
   readonly spouse1: PersonSummary;
   readonly spouse2: PersonSummary;
   readonly registeredWith: MarriageRegistry | null;
   readonly marriedOn: string | null;
-  /** Ceremony place and officiant: required by D-05, pending columns in the Prisma model. */
   readonly place: string | null;
   readonly officiant: PersonSummary | null;
   readonly endedOn: string | null;
   readonly endReason: MarriageEndReason | null;
+  readonly status: MarriageStatus;
 }
 
 export interface PastoralTerm {
   readonly id: number;
   readonly denominationId: number;
   readonly congregationId: number;
+  readonly congregationName: string;
   readonly pastor: PersonSummary;
   readonly startedOn: string;
   /** Null while the term is open (current pastor). */
@@ -98,6 +135,7 @@ export interface ChildDedicationInput {
   readonly pastorId: number | null;
   readonly father: ParentInput | null;
   readonly mother: ParentInput | null;
+  readonly guardian: ParentInput | null;
 }
 
 export interface MarriageInput {
@@ -123,10 +161,37 @@ export interface PastoralTermInput {
   readonly closeCurrent: boolean;
 }
 
-export const ADULT_AGE = 18;
+export interface DedicationQuery {
+  readonly page: number;
+  readonly pageSize: number;
+  readonly congregationId?: number | null;
+  readonly q?: string | null;
+  readonly from?: string | null;
+  readonly to?: string | null;
+}
 
-export function isActiveMarriage(marriage: Pick<Marriage, 'endedOn'>): boolean {
-  return marriage.endedOn === null;
+export interface MarriageQuery {
+  readonly page: number;
+  readonly pageSize: number;
+  readonly status?: 'active' | 'dissolved' | null;
+  readonly q?: string | null;
+  readonly from?: string | null;
+  readonly to?: string | null;
+}
+
+export interface PastoralTermQuery {
+  readonly congregationId?: number | null;
+  readonly current?: boolean;
+}
+
+export interface PeopleQuery {
+  readonly q: string;
+  readonly eligibleFor?: PersonEligibility;
+  readonly limit?: number;
+}
+
+export function isActiveMarriage(marriage: Pick<Marriage, 'status'>): boolean {
+  return marriage.status === 'ACTIVE';
 }
 
 export function personLabel(person: Pick<PersonSummary, 'fullName' | 'memberCode'>): string {
@@ -134,15 +199,13 @@ export function personLabel(person: Pick<PersonSummary, 'fullName' | 'memberCode
 }
 
 /** The open term of a sede, if any. */
-export function currentTerm(terms: readonly PastoralTerm[], congregationId: number): PastoralTerm | null {
-  return terms.find((term) => term.congregationId === congregationId && term.endedOn === null) ?? null;
-}
-
-/** Today in the local time zone as an ISO date. */
-export function todayIso(now: Date = new Date()): string {
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+export function currentTerm(
+  terms: readonly PastoralTerm[],
+  congregationId: number,
+): PastoralTerm | null {
+  return (
+    terms.find((term) => term.congregationId === congregationId && term.endedOn === null) ?? null
+  );
 }
 
 /** The ISO date one day before `isoDate`. */
@@ -151,8 +214,8 @@ export function previousDay(isoDate: string): string {
   return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
 }
 
-/** "8 años y 3 meses" between two ISO dates (the end defaults to today). */
-export function durationLabel(from: string, to: string | null, today: string = todayIso()): string {
+/** "8 años y 3 meses" between two ISO dates (the end defaults to `today`). */
+export function durationLabel(from: string, to: string | null, today: string): string {
   const [fy, fm, fd] = from.split('-').map(Number);
   const [ty, tm, td] = (to ?? today).split('-').map(Number);
   const totalMonths = Math.max(0, (ty - fy) * 12 + (tm - fm) - (td < fd ? 1 : 0));

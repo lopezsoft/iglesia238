@@ -1,7 +1,8 @@
 @let app = application();
 <article class="card card--flush application-detail" aria-labelledby="application-detail-title">
   <header class="application-detail__header">
-    <div>
+    <app-icon-chip [icon]="app.isMinor ? 'user-circle' : 'user'" tone="indigo" size="lg" [solid]="true" />
+    <div class="application-detail__title">
       <div class="cluster">
         <h2 id="application-detail-title">{{ app.fullName }}</h2>
         <app-status-badge [label]="statusLabels[app.status]" [tone]="statusTones[app.status]" />
@@ -11,10 +12,6 @@
         Formulario público
       </p>
     </div>
-    <div class="application-detail__tracking">
-      <span class="text-small text-muted">Código de seguimiento</span>
-      <span class="mono">{{ app.trackingCode }}</span>
-    </div>
   </header>
 
   <div class="application-detail__body">
@@ -23,17 +20,18 @@
         [match]="match"
         [canResolve]="canReview()"
         [pending]="pending()"
+        (link)="askToLink($event)"
         (markDuplicate)="markDuplicate.emit($event)"
         (dismiss)="dismissDuplicate.emit()"
       />
     }
 
-    @if (showDismissedMatch() && app.duplicateMatch; as match) {
+    @if (showDismissedMatch() && app.duplicateMatch) {
       <p class="application-detail__note text-small">
         <app-icon name="check" [size]="16" />
-        Coincidencia con Persona #{{ match.personId }} descartada por {{ reviewerName() }}. Dos
+        Coincidencia con {{ app.duplicateMatch.fullName }} descartada por {{ reviewerName() }}. Dos
         personas de la denominación no pueden compartir el mismo documento: rechaza la solicitud
-        indicando al solicitante que corrija su documento.
+        para que el solicitante corrija su documento.
       </p>
     }
 
@@ -51,7 +49,7 @@
             <strong>Solicitud duplicada</strong>
             <p>
               @if (app.linkedPerson; as person) {
-                Enlazada a Persona #{{ person.personId }} · {{ person.fullName }}
+                Enlazada a {{ person.fullName }}
                 @if (person.congregationName) {
                   ({{ person.congregationName }})
                 }
@@ -69,7 +67,7 @@
         <div class="alert alert--success application-detail__resolution">
           <div>
             <strong
-              >Aprobada · carné <span class="mono">{{ app.memberCode }}</span></strong
+              >Aprobada · número de miembro <span class="mono">{{ app.memberCode ?? '—' }}</span></strong
             >
             <p class="text-small text-muted">
               Aprobada el {{ app.reviewedAt | date: 'dd/MM/yyyy' }} por
@@ -85,31 +83,42 @@
         <div class="alert alert--danger">
           <div>
             <strong>Rechazada</strong>
-            <p>Motivo: {{ app.rejectionReason }}</p>
+            <p>Motivo (nota interna): {{ app.rejectionReason }}</p>
             <p class="text-small text-muted">
               Rechazada el {{ app.reviewedAt | date: 'dd/MM/yyyy' }} por
-              {{ app.reviewerName ?? '—' }}
+              {{ app.reviewerName ?? '—' }}. El solicitante solo ve que no fue aprobada.
             </p>
           </div>
         </div>
       }
     }
 
-    <section aria-labelledby="application-personal">
-      <h3 id="application-personal">Datos personales</h3>
+    <div class="application-detail__figures">
+      <app-mini-stat label="Documento" [value]="document()" [meta]="app.documentTypeName" icon="id-card" tone="indigo" />
+      <app-mini-stat
+        label="Edad"
+        [value]="app.age !== null ? app.age + ' años' : '—'"
+        [meta]="app.isMinor ? 'Menor de edad' : 'Mayor de edad'"
+        icon="user"
+        tone="cyan"
+      />
+      <app-mini-stat label="Sede" [value]="app.congregationName" icon="church" tone="green" />
+      <app-mini-stat
+        label="Política aceptada"
+        [value]="app.policyVersion ? 'v' + app.policyVersion : '—'"
+        [meta]="'el ' + (app.consentedAt | date: 'dd/MM/yyyy HH:mm')"
+        icon="shield-check"
+        tone="orange"
+      />
+    </div>
+
+    <app-section-panel title="Datos personales" icon="user" tone="slate" layout="stack">
       <dl class="details">
-        <div>
-          <dt>Documento</dt>
-          <dd>
-            <span class="mono">{{ document() }}</span>
-            <span class="text-small text-muted">{{ documentTypeName() }}</span>
-          </dd>
-        </div>
         <div>
           <dt>Fecha de nacimiento</dt>
           <dd>
             @if (app.birthDate) {
-              {{ app.birthDate | date: 'dd/MM/yyyy' }} ({{ app.age }} años)
+              {{ app.birthDate | date: 'dd/MM/yyyy' }}
             } @else {
               —
             }
@@ -121,8 +130,25 @@
         </div>
         <div>
           <dt>Estado civil</dt>
-          <dd>{{ maritalStatus() }}</dd>
+          <dd>{{ app.formData.maritalStatusName ?? app.formData.maritalStatusCode }}</dd>
         </div>
+        <div>
+          <dt>Ocupación</dt>
+          <dd>{{ app.formData.occupation ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Bautizado(a)</dt>
+          <dd>{{ baptism() }}</dd>
+        </div>
+        <div>
+          <dt>Congregación anterior</dt>
+          <dd>{{ app.formData.previousCongregationName ?? 'Ninguna' }}</dd>
+        </div>
+      </dl>
+    </app-section-panel>
+
+    <app-section-panel title="Contacto y residencia" icon="mail" tone="cyan" layout="stack">
+      <dl class="details">
         <div>
           <dt>Teléfono</dt>
           <dd>{{ app.phone ?? '—' }}</dd>
@@ -133,26 +159,27 @@
         </div>
         <div>
           <dt>Dirección</dt>
-          <dd>{{ app.formData.address ?? '—' }}</dd>
+          <dd>{{ app.formData.address }}</dd>
+        </div>
+        <div>
+          <dt>Barrio</dt>
+          <dd>{{ app.formData.neighborhood ?? '—' }}</dd>
         </div>
         <div>
           <dt>Municipio</dt>
           <dd>{{ municipality() }}</dd>
         </div>
-        <div>
-          <dt>Congregación anterior</dt>
-          <dd>{{ app.formData.previousCongregationName ?? 'Ninguna' }}</dd>
-        </div>
       </dl>
-    </section>
+    </app-section-panel>
 
-    <section class="application-detail__section" aria-labelledby="application-guardian">
-      <h3 id="application-guardian">Acudiente</h3>
+    <app-section-panel
+      title="Acudiente"
+      [subtitle]="app.isMinor ? 'El solicitante es menor de edad' : 'No aplica: es mayor de edad'"
+      icon="users"
+      tone="orange"
+      layout="stack"
+    >
       @if (app.isMinor) {
-        <p class="text-small text-muted">
-          El solicitante es menor de edad. El acudiente firmó la autorización de tratamiento de
-          datos en su nombre.
-        </p>
         <dl class="details">
           <div>
             <dt>Nombre</dt>
@@ -160,7 +187,9 @@
           </div>
           <div>
             <dt>Documento</dt>
-            <dd class="mono">{{ app.guardianDocument ?? '—' }}</dd>
+            <dd class="mono">
+              {{ app.formData.guardianDocumentTypeCode ?? '' }} {{ app.guardianDocument ?? '—' }}
+            </dd>
           </div>
           <div>
             <dt>Parentesco</dt>
@@ -171,35 +200,15 @@
             <dd>{{ app.formData.guardianPhone ?? '—' }}</dd>
           </div>
         </dl>
+        <p class="text-small text-muted">
+          El acudiente autorizó el tratamiento de datos en nombre del solicitante.
+        </p>
       } @else {
-        <p class="text-muted">No aplica: el solicitante es mayor de edad.</p>
+        <p class="text-muted">El solicitante autorizó el tratamiento de sus datos personales por sí mismo.</p>
       }
-    </section>
+    </app-section-panel>
 
-    <section class="application-detail__section" aria-labelledby="application-consent">
-      <h3 id="application-consent">Consentimiento de datos personales</h3>
-      <dl class="details">
-        <div>
-          <dt>Política aceptada</dt>
-          <dd>
-            Tratamiento de datos
-            <span class="mono">{{ app.policyVersion ? 'v' + app.policyVersion : '—' }}</span>
-          </dd>
-        </div>
-        <div>
-          <dt>Fecha y hora</dt>
-          <dd>{{ app.consentedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
-        </div>
-        <div>
-          <dt>Otorgado por</dt>
-          <dd>{{ app.isMinor ? 'Acudiente: ' + (app.guardianName ?? '—') : 'El titular' }}</dd>
-        </div>
-      </dl>
-      <p class="text-small text-muted">Autorización conforme a la Ley 1581 de 2012.</p>
-    </section>
-
-    <section class="application-detail__section" aria-labelledby="application-tracking">
-      <h3 id="application-tracking">Seguimiento</h3>
+    <app-section-panel title="Seguimiento" icon="clock" tone="green" layout="stack">
       <dl class="details">
         <div>
           <dt>Recibida</dt>
@@ -214,7 +223,8 @@
           <dd>{{ app.reviewedAt ? (app.reviewedAt | date: 'dd/MM/yyyy HH:mm') : 'Pendiente' }}</dd>
         </div>
       </dl>
-    </section>
+      <p class="text-small text-muted">Autorización conforme a la Ley 1581 de 2012.</p>
+    </app-section-panel>
   </div>
 
   @if (reviewable()) {
@@ -231,7 +241,7 @@
           <p class="application-detail__hint text-small text-muted">
             <app-icon name="info" [size]="16" />
             Al aprobar se crean, en una sola transacción, la persona, el miembro, su registro con
-            número de carné y la autorización de datos. Si un paso falla, no se guarda nada.
+            número de miembro y la autorización de datos. Si un paso falla, no se guarda nada.
           </p>
           <div class="cluster">
             @if (app.status === 'PENDING') {
@@ -269,7 +279,7 @@
               El documento ya pertenece a otra persona de la denominación. Rechaza la solicitud
               para que el solicitante corrija su documento.
             } @else {
-              Resuelve la posible duplicidad para habilitar la aprobación.
+              Resuelve la coincidencia de documento para habilitar la aprobación.
             }
           </p>
         }
@@ -279,3 +289,33 @@
     </footer>
   }
 </article>
+
+<app-dialog [(open)]="linkDialogOpen" title="Aprobar sobre una persona ya registrada">
+  @if (linkCandidate(); as candidate) {
+    <p>
+      La solicitud de <strong>{{ app.fullName }}</strong> se aprobará sobre el registro de
+      <strong>{{ candidate.fullName }}</strong> (<span class="mono">{{
+        candidate.documentTypeCode ?? ''
+      }}
+        {{ candidate.documentNumber ?? '' }}</span
+      >).
+    </p>
+    <ul class="application-detail__consequences">
+      <li>No se crea otra persona: se completan los datos que su ficha no tiene.</li>
+      <li>
+        @if (candidate.memberId !== null) {
+          Se reactiva su membresía en {{ app.congregationName }} con un número de miembro nuevo.
+        } @else {
+          Se crea su membresía en {{ app.congregationName }} con el siguiente número de miembro.
+        }
+      </li>
+      <li>Se registra su autorización de datos con la política que aceptó en esta solicitud.</li>
+    </ul>
+  }
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="linkDialogOpen.set(false)">Cancelar</button>
+    <button type="button" class="btn btn--primary" [disabled]="pending()" (click)="confirmLink()">
+      Confirmar y aprobar
+    </button>
+  </div>
+</app-dialog>

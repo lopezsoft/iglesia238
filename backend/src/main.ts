@@ -9,6 +9,7 @@ import { AppModule } from './app.module.js';
 import { API_PREFIX, configureApp } from './bootstrap/configure-app.js';
 import { SmartLogger } from './common/logging/smart-logger.service.js';
 import { Environment, validateEnvironment } from './config/environment.js';
+import { toFastifyTrustProxy } from './config/trust-proxy.js';
 
 async function bootstrap(): Promise<void> {
   // The adapter is created before the DI container exists, so the environment is read here.
@@ -18,7 +19,7 @@ async function bootstrap(): Promise<void> {
     AppModule,
     new FastifyAdapter({
       bodyLimit: environment.BODY_LIMIT_BYTES,
-      trustProxy: environment.TRUST_PROXY,
+      trustProxy: toFastifyTrustProxy(environment.TRUST_PROXY),
     }),
     { bufferLogs: true },
   );

@@ -1,30 +1,18 @@
 <app-page-header
   title="Configuración contable"
   breadcrumb="Inicio / Contabilidad / Configuración contable"
-  [description]="'Fondos, plan de cuentas y tipos de aporte que usa la tesorería de ' + (overview.value()?.scopeLabel ?? 'la sede') + '.'"
+  [description]="'Fondos, plan de cuentas, tipos de aporte, periodos y porcentajes del diezmo que usa la tesorería de ' + (overviewData()?.scopeLabel ?? 'la sede') + '.'"
 >
-  @if (canManage()) {
+  @if (canCreate()) {
     <button type="button" class="btn btn--primary" (click)="openCreate()">
       <app-icon name="plus" />
-      @switch (tab()) {
-        @case ('funds') { Nuevo fondo }
-        @case ('accounts') { Nueva cuenta }
-        @case ('types') { Nuevo tipo de aporte }
-      }
+      {{ createLabel() }}
     </button>
   }
 </app-page-header>
 
 <div class="stack">
-  @if (canManage()) {
-    <div class="alert" role="note">
-      <app-icon name="shield" />
-      <span>
-        Tu rol tiene el permiso <code>budgets.manage</code>: puedes crear y editar fondos, cuentas y tipos de aporte.
-        Los cambios quedan registrados en la auditoría de la denominación.
-      </span>
-    </div>
-  } @else {
+  @if (!canManage()) {
     <app-read-only-notice permission="budgets.manage" />
   }
 
@@ -43,88 +31,151 @@
     <div class="alert alert--danger" role="alert">{{ actionError() }}</div>
   }
 
-  <div>
-    <div class="tabs" role="tablist" aria-label="Secciones de configuración contable">
-      @for (item of tabs(); track item.id; let index = $index) {
-        <button
-          type="button"
-          role="tab"
-          [id]="'tab-' + item.id"
-          [attr.aria-controls]="'panel-' + item.id"
-          [attr.aria-selected]="tab() === item.id"
-          [attr.tabindex]="tab() === item.id ? 0 : -1"
-          (click)="selectTab(item.id)"
-          (keydown)="onTabKey($event, index)"
-        >
-          {{ item.label }}
-          @if (item.count !== undefined) {
-            <span class="chip chip--mono tab-count">{{ item.count }}</span>
-          }
-        </button>
-      }
-    </div>
+  @if (overview.error()) {
+    <app-error-banner message="No fue posible cargar el resumen de la configuración." (retry)="overview.reload()" />
+  } @else if (overviewData(); as info) {
+    <app-section-panel
+      title="Estado de la configuración"
+      [subtitle]="'Lo necesario para operar la tesorería de ' + info.scopeLabel"
+      icon="settings"
+      tone="green"
+    >
+      <app-mini-stat label="Fondos activos" [value]="info.activeFunds + ' de ' + info.totalFunds" icon="wallet" tone="green" />
+      <app-mini-stat
+        [label]="'Saldo inicial ' + info.year"
+        [value]="info.openingTotal | money"
+        [meta]="'Fondos activos de ' + info.scopeLabel"
+        icon="banknote"
+        tone="cyan"
+      />
+      <app-mini-stat
+        label="Periodo contable actual"
+        [value]="info.currentPeriod?.label ?? (info.congregationScoped ? 'Sin abrir' : '—')"
+        [meta]="info.currentPeriod ? (info.currentPeriod.status === 'OPEN' ? 'Abierto' : 'Cerrado') : (info.congregationScoped ? 'Ábrelo en la pestaña Periodos' : 'Selecciona una sede')"
+        icon="calendar-check"
+        [tone]="info.currentPeriod || !info.congregationScoped ? 'indigo' : 'orange'"
+      />
+      <app-mini-stat
+        label="Porcentaje del diezmo"
+        [value]="titheSummary()"
+        [meta]="info.titheRule ? 'Nacional + fondo local, vigente' : 'Define los porcentajes'"
+        icon="percent"
+        [tone]="info.titheRule ? 'green' : 'orange'"
+      />
+    </app-section-panel>
 
-    @switch (tab()) {
-      @case ('funds') {
-        <div role="tabpanel" id="panel-funds" aria-labelledby="tab-funds">
-          @if (funds.error()) {
-            <app-error-banner [message]="'No fue posible cargar los fondos.'" (retry)="funds.reload()" />
-          } @else if (funds.isLoading() && !funds.value()) {
-            <app-loading label="Cargando fondos…" />
-          } @else {
-            <app-funds-panel
-              [funds]="funds.value() ?? []"
-              [overview]="overview.value()"
-              [canManage]="canManage()"
-              (edit)="editFund($event)"
-              (remove)="askDelete('fund', $event.id, 'Fondo «' + $event.name + '»')"
-            />
+    @if (todos().length > 0) {
+      <div class="alert alert--warning todos" role="status">
+        <app-icon name="alert" />
+        <ul>
+          @for (todo of todos(); track todo.message) {
+            <li>
+              {{ todo.message }}
+              <button type="button" class="btn btn--ghost btn--sm" (click)="selectTab(todo.tab)">Ir ahí</button>
+            </li>
           }
-        </div>
-      }
-      @case ('accounts') {
-        <div role="tabpanel" id="panel-accounts" aria-labelledby="tab-accounts">
-          @if (accounts.error()) {
-            <app-error-banner [message]="'No fue posible cargar el plan de cuentas.'" (retry)="accounts.reload()" />
-          } @else if (accounts.isLoading() && !accounts.value()) {
-            <app-loading label="Cargando el plan de cuentas…" />
-          } @else {
-            <app-accounts-tree
-              [accounts]="accounts.value() ?? []"
-              [canManage]="canManage()"
-              (edit)="editAccount($event, null)"
-              (addChild)="editAccount(null, $event.id)"
-              (remove)="askDelete('account', $event.id, 'Cuenta ' + $event.code)"
-            />
-          }
-        </div>
-      }
-      @case ('types') {
-        <div role="tabpanel" id="panel-types" aria-labelledby="tab-types">
-          @if (types.error()) {
-            <app-error-banner [message]="'No fue posible cargar los tipos de aporte.'" (retry)="types.reload()" />
-          } @else if (types.isLoading() && !types.value()) {
-            <app-loading label="Cargando tipos de aporte…" />
-          } @else {
-            <app-contribution-types-table
-              [types]="types.value() ?? []"
-              [canManage]="canManage()"
-              [busyId]="typeBusyId()"
-              (toggle)="toggleType($event)"
-              (edit)="editType($event)"
-            />
-          }
-        </div>
-      }
+        </ul>
+      </div>
     }
-  </div>
+  }
+
+  <app-tab-cards [items]="tabs()" [selected]="tab()" (selectedChange)="selectTab($event)" ariaLabel="Secciones de configuración contable" idPrefix="setup" />
+
+  @switch (tab()) {
+    @case ('funds') {
+      <div role="tabpanel" id="setup-panel-funds" aria-labelledby="setup-tab-funds">
+        @if (funds.error()) {
+          <app-error-banner message="No fue posible cargar los fondos." (retry)="funds.reload()" />
+        } @else if (funds.isLoading() && !fundsData()) {
+          <app-loading label="Cargando fondos…" />
+        } @else {
+          <app-funds-panel
+            [funds]="fundsData() ?? []"
+            [overview]="overviewData()"
+            [canManage]="canManage()"
+            (edit)="editFund($event)"
+            (remove)="askDelete('fund', $event.id, 'Fondo «' + $event.name + '»')"
+          />
+        }
+      </div>
+    }
+    @case ('accounts') {
+      <div role="tabpanel" id="setup-panel-accounts" aria-labelledby="setup-tab-accounts">
+        @if (accounts.error()) {
+          <app-error-banner message="No fue posible cargar el plan de cuentas." (retry)="accounts.reload()" />
+        } @else if (accounts.isLoading() && !accountsData()) {
+          <app-loading label="Cargando el plan de cuentas…" />
+        } @else {
+          <app-accounts-tree
+            [accounts]="accountsData() ?? []"
+            [canManage]="canManage()"
+            (edit)="editAccount($event, null)"
+            (addChild)="editAccount(null, $event.id)"
+            (toggleActive)="toggleAccount($event)"
+            (remove)="askDelete('account', $event.id, 'Cuenta ' + $event.code)"
+          />
+        }
+      </div>
+    }
+    @case ('types') {
+      <div role="tabpanel" id="setup-panel-types" aria-labelledby="setup-tab-types">
+        @if (types.error()) {
+          <app-error-banner message="No fue posible cargar los tipos de aporte." (retry)="types.reload()" />
+        } @else if (types.isLoading() && !typesData()) {
+          <app-loading label="Cargando tipos de aporte…" />
+        } @else {
+          <app-contribution-types-table
+            [types]="typesData() ?? []"
+            [canManage]="canManage()"
+            [busyId]="typeBusyId()"
+            (toggle)="toggleType($event)"
+            (edit)="editType($event)"
+          />
+        }
+      </div>
+    }
+    @case ('periods') {
+      <div role="tabpanel" id="setup-panel-periods" aria-labelledby="setup-tab-periods">
+        @if (periods.error()) {
+          <app-error-banner message="No fue posible cargar los periodos contables." (retry)="periods.reload()" />
+        } @else if (periods.isLoading() && !periodsData()) {
+          <app-loading label="Cargando periodos…" />
+        } @else {
+          <app-periods-panel
+            [periods]="periodsData() ?? []"
+            [overview]="overviewData()"
+            [canOpen]="canOpenPeriod()"
+            (openRequested)="periodDialogOpen.set(true)"
+          />
+        }
+      </div>
+    }
+    @case ('tithe') {
+      <div role="tabpanel" id="setup-panel-tithe" aria-labelledby="setup-tab-tithe">
+        @if (titheRules.error()) {
+          <app-error-banner message="No fue posible cargar los porcentajes del diezmo." (retry)="titheRules.reload()" />
+        } @else if (titheRules.isLoading() && !titheRulesData()) {
+          <app-loading label="Cargando porcentajes…" />
+        } @else {
+          <app-tithe-rules-panel
+            [rules]="titheRulesData() ?? []"
+            [canManage]="canManage()"
+            [today]="overviewData()?.today ?? ''"
+            (create)="editRule(null)"
+            (edit)="editRule($event)"
+            (remove)="askDelete('tithe', $event.id, 'Porcentaje del diezmo desde ' + $event.effectiveFrom)"
+          />
+        }
+      </div>
+    }
+  }
 </div>
 
 <app-fund-form-dialog
   [(open)]="fundDialogOpen"
   [fund]="editingFund()"
-  [year]="overview.value()?.year ?? 2026"
-  [congregationScoped]="overview.value()?.congregationScoped ?? true"
+  [year]="overviewData()?.year ?? 2026"
+  [congregationScoped]="overviewData()?.congregationScoped ?? true"
   (saved)="onFundSaved($event)"
 />
 
@@ -132,16 +183,32 @@
   [(open)]="accountDialogOpen"
   [account]="editingAccount()"
   [parentId]="accountParentId()"
-  [accounts]="accounts.value() ?? []"
-  [funds]="funds.value() ?? []"
+  [accounts]="accountsData() ?? []"
+  [funds]="fundsData() ?? []"
   (saved)="onAccountSaved($event)"
 />
 
 <app-contribution-type-form-dialog
   [(open)]="typeDialogOpen"
   [type]="editingType()"
-  [accounts]="accounts.value() ?? []"
+  [accounts]="accountsData() ?? []"
   (saved)="onTypeSaved($event)"
+/>
+
+<app-open-period-dialog
+  [(open)]="periodDialogOpen"
+  [year]="overviewData()?.year ?? 2026"
+  [currentMonth]="currentMonth()"
+  [periods]="periodsData() ?? []"
+  [scopeLabel]="overviewData()?.scopeLabel ?? 'La sede'"
+  (opened)="onPeriodOpened($event)"
+/>
+
+<app-tithe-rule-form-dialog
+  [(open)]="ruleDialogOpen"
+  [rule]="editingRule()"
+  [today]="overviewData()?.today ?? ''"
+  (saved)="onRuleSaved($event)"
 />
 
 <app-dialog [(open)]="deleteOpen" title="Confirmar eliminación">

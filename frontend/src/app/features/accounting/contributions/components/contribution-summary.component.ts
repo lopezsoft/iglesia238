@@ -1,47 +1,41 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { IconName } from '../../../../shared/ui/icon.component';
+import { ChipTone } from '../../../../shared/ui/icon-chip.component';
 import { StatCardComponent } from '../../../../shared/ui/stat-card.component';
-import { CONTRIBUTION_CATEGORY_PLURALS } from '../../data/accounting.models';
-import { ContributionMonth } from '../data/contributions.models';
+import { CONTRIBUTION_CATEGORY_PLURALS, ContributionCategory } from '../../data/accounting.models';
+import { CategorySummary } from '../data/contributions.models';
 
-/** Totals of the month per contribution category. */
+const CATEGORY_LOOK: Readonly<Record<ContributionCategory, { icon: IconName; tone: ChipTone }>> = {
+  TITHE: { icon: 'coins', tone: 'green' },
+  OFFERING: { icon: 'gift', tone: 'cyan' },
+  FIRST_FRUITS: { icon: 'sparkles', tone: 'orange' },
+  VOW: { icon: 'heart', tone: 'indigo' },
+  OTHER: { icon: 'banknote', tone: 'slate' },
+};
+
+/** Totals of the filter per contribution category, as KPI cards. */
 @Component({
   selector: 'app-contribution-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MoneyPipe, StatCardComponent],
   template: `
-    <section class="stack summary" aria-labelledby="summary-title">
-      <div class="cluster summary__header">
-        <h2 id="summary-title">Resumen de {{ month().label.toLowerCase() }}</h2>
-        <span class="text-muted">
-          Total vigente del periodo: <strong class="amount">{{ month().total | money }}</strong>
-          @if (month().voidedCount > 0) {
-            · {{ month().voidedCount }} {{ month().voidedCount === 1 ? 'anulado' : 'anulados' }}
-          }
-        </span>
-      </div>
-      <div class="grid-auto">
-        @for (item of month().summary; track item.category) {
-          <app-stat-card
-            [label]="plurals[item.category]"
-            [value]="item.amount | money"
-            [hint]="item.count + (item.count === 1 ? ' aporte' : ' aportes') + ' · ' + item.share + ' % del total'"
-          />
-        }
-      </div>
+    <section class="kpi-grid" aria-label="Totales por categoría">
+      @for (item of summary(); track item.category) {
+        <app-stat-card
+          [label]="plurals[item.category]"
+          [value]="item.amount | money"
+          [icon]="look[item.category].icon"
+          [tone]="look[item.category].tone"
+          [comparison]="item.share + ' %'"
+          [hint]="item.count + (item.count === 1 ? ' aporte' : ' aportes') + ' vigentes'"
+        />
+      }
     </section>
-  `,
-  styles: `
-    @use 'tokens' as *;
-    .summary {
-      gap: $space-3;
-    }
-    .summary__header {
-      justify-content: space-between;
-    }
   `,
 })
 export class ContributionSummaryComponent {
-  readonly month = input.required<ContributionMonth>();
+  readonly summary = input.required<readonly CategorySummary[]>();
   protected readonly plurals = CONTRIBUTION_CATEGORY_PLURALS;
+  protected readonly look = CATEGORY_LOOK;
 }

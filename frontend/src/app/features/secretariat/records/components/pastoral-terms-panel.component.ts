@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { EmptyStateComponent } from '../../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { PastoralTerm, RecordsCongregation, durationLabel } from '../data/records.models';
@@ -21,8 +21,12 @@ interface SedeTimeline {
 export class PastoralTermsPanelComponent {
   readonly terms = input.required<readonly PastoralTerm[]>();
   readonly congregations = input.required<readonly RecordsCongregation[]>();
+  /** Today in Bogotá, from the API: the open term lasts until today. */
+  readonly today = input.required<string>();
+  readonly closeTerm = output<PastoralTerm>();
 
-  protected readonly duration = durationLabel;
+  protected readonly durationOf = (term: PastoralTerm) =>
+    durationLabel(term.startedOn, term.endedOn, this.today());
 
   protected readonly timelines = computed<SedeTimeline[]>(() =>
     this.congregations().map((congregation) => ({

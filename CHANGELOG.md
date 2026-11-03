@@ -8,6 +8,58 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+### Added
+
+- Descarga en PDF de recibos y comprobantes (`GET /api/accounting/vouchers/:id/pdf`), con botón en Aportes, en el aviso de registro y en Comprobantes. El aporte ahora trae `voucherId`.
+- El reporte financiero informa los aportes registrados que el libro de caja aún no consolida (`pendingConsolidation`) y la pantalla lo avisa.
+- Comando `npm run admin:reset-password` para el administrador de plataforma que olvidó su contraseña sin SMTP.
+- Variable `REFRESH_MAX_LIFETIME` (duración absoluta de la sesión, 30 días) y `TRUST_PROXY` como número de saltos o lista de proxies.
+- Aviso en Sedes cuando la denominación no tiene política de datos publicada, y recarga de la sesión tras cambiar roles o sedes.
+
+### Changed
+
+- Nadie puede otorgarse roles a sí mismo (`409 SELF_GRANT`). Invitar un correo que ya tiene cuenta responde `409 DUPLICATE_EMAIL` y no vincula la cuenta; invitar tiene límite por IP.
+- El enlace de recuperación de otra cuenta se niega si la cuenta tuvo roles fuera de la denominación o es de otro administrador, y avisa a la persona por correo sin enlace.
+- Cerrar sesión, cambiar la contraseña o detectar un refresh token robado invalida también el access token (`JwtAuthGuard` comprueba la sesión). El access token dura 30 minutos como máximo.
+- Los roles de una sede desactivada o borrada dejan de servir en la API, no solo en el menú.
+- Una cuenta bloqueada por intentos responde `401 INVALID_CREDENTIALS` como cualquier credencial incorrecta (ya no `423`).
+- La invitación se valida con `POST /api/auth/invitations/lookup` (token en el cuerpo) y las páginas de enlace quitan el token de la URL.
+- La cookie del refresh token lleva `Secure` también en cualquier entorno con `APP_BASE_URL` https; la sesión tiene duración absoluta.
+- Los errores de descargas (PDF, CSV) conservan el código y el mensaje de la API; las fechas «de hoy» del frontend usan la hora de Bogotá; los textos de solo lectura hablan de lo que no se puede hacer, no de códigos de permiso.
+- Se quitó del texto inicial de la política de datos la frase de borrador, y el Nginx del frontend reemplaza `X-Forwarded-For`.
+
+### Fixed
+
+- Páginas de caja, configuración contable, certificados y solicitud pública ya no quedan en blanco cuando una consulta falla: muestran el aviso con «Reintentar».
+- El nombre del archivo CSV de asistencia ya no admite texto libre del filtro; el widget de auditoría del tablero oculta los nombres del equipo de plataforma a las denominaciones.
+- El límite del número de documento del formulario de miembros coincide con el de la API (30).
+
+## 0.4.0 - 2026-11-02
+
+### Added
+
+- **Acceso real:** inicio de sesión con correo y contraseña, token de acceso solo en memoria, refresh token en cookie `HttpOnly` con rotación y detección de reutilización, bloqueo tras 5 intentos fallidos, recuperación de contraseña, invitaciones de un solo uso y cambio de contraseña. Las contraseñas se guardan con `scrypt`.
+- **Alcance y permisos por petición:** cabecera `X-Scope` (`P`, `D:<id>` o `C:<id>`) validada contra los roles vigentes; los permisos se calculan en cada petición y la sesión los devuelve desde la base de datos.
+- **API de todos los módulos del MVP:** denominaciones (con aprovisionamiento transaccional), sedes, razones sociales, distritos, usuarios y roles, auditoría, catálogos y municipios, inscripción pública, solicitudes y políticas de datos, miembros (alta manual, estado, traslados, familia, estudios, cargos, ficha socioeconómica, consentimientos y anonimización), certificados y carnés con PDF, asistencia, registros de secretaría, configuración contable, libro de caja, aportes, votos, liquidación del diezmo, presupuesto, reportes y dashboard.
+- Tablero de inicio compuesto por proveedores de widgets de cada área (miembros, solicitudes, certificados, asistencia, sedes, ingresos, saldos y diezmo).
+- Migración `20261102150000_api_support_fields`: código de sede, estado de la política, datos del carné, emisor y motivo de anulación del certificado, lugar y oficiante del matrimonio, institución y año de estudios, autor de la asistencia e índice de caja. **Hay que aplicarla** con `npm run prisma:migrate:deploy` y luego `npm run prisma:seed`.
+- Comando `npm run admin:create` para el primer administrador de plataforma, y variables `JWT_SECRET`, `JWT_EXPIRATION`, `REFRESH_TTL`, `APP_BASE_URL` y `SMTP_*` (ver backend/README.md).
+- Diseño del frontend renovado: barra lateral de iconos, barra superior, tarjeta principal, indicadores, paneles por sección y pestañas, e ingreso en dos paneles.
+
+### Changed
+
+- El frontend ya no tiene modo demostración: todas las pantallas usan el adaptador HTTP de su módulo, con listas paginadas en el servidor donde crecen. Un interceptor convierte los errores de la API en mensajes en español.
+- Los porcentajes del diezmo nunca tienen valores por defecto: se ingresan por denominación en Contabilidad > Configuración. El primer periodo contable de una sede se crea desde la misma pantalla.
+- Un único buscador de personas (`SearchPeopleUseCase`) atiende certificados, aportes, secretaría y familia, con el documento siempre enmascarado en el servidor.
+- Numeración de documentos con un único servicio (`MEMBER`, `VOUCHER:<TIPO>`, `CERT:<CÓDIGO>`), sin reinicio anual.
+- El build de la API excluye los auxiliares de prueba `src/**/testing`.
+
+### Removed
+
+- Adaptadores y datos de demostración del frontend (`core/demo`, almacenes en memoria, la contraseña común de demostración y el aviso «Modo demostración»).
+- Las rutas duplicadas `GET /api/members/lookup` y `GET /api/members/lookup/:memberId`, y las constantes de catálogos del frontend (ahora vienen de `GET /api/catalogs`).
+- Las promesas de adjuntos y de logotipo en las pantallas: no hay almacenamiento de archivos.
+
 ## 0.3.0 - 2026-11-02
 
 ### Added

@@ -1,5 +1,4 @@
 @use 'tokens' as *;
-@use 'mixins' as *;
 
 .flash {
   align-items: center;
@@ -9,36 +8,18 @@
   }
 }
 
-.table-header {
-  padding: $space-5 $space-5 0;
-}
-
-.progress-cell {
+.filters {
   display: flex;
-  align-items: center;
-  gap: $space-2;
-  min-width: 8rem;
-
-  .progress {
-    flex: 1;
-  }
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4 $space-5;
 }
 
-.link-button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: $color-primary;
-  font-weight: $font-weight-medium;
-  text-align: left;
-  cursor: pointer;
+.grow {
+  flex: 1 1 16rem;
+}
 
-  &:hover {
-    color: $color-primary-hover;
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
+.overdue {
+  align-self: center;
+  padding-top: $space-4;
 }

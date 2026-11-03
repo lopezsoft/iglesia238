@@ -1,7 +1,7 @@
 <app-page-header
-  breadcrumb="Organización"
+  breadcrumb="Inicio / Organización / Usuarios y roles"
   title="Usuarios y roles"
-  description="Asigna y revoca roles por alcance: toda la denominación o una sede específica."
+  description="Invita personas, asigna y revoca roles por alcance (toda la denominación o una sede) y entrega enlaces de acceso."
 >
   @if (canReadAudit()) {
     <a class="btn btn--secondary" routerLink="/audit">
@@ -16,104 +16,207 @@
 </app-page-header>
 
 <div class="stack">
-  @if (grantContext(); as grant) {
-    <p class="alert" role="note">
-      <app-icon name="info" />
-      @if (grant.isPlatformAdmin) {
-        <span>
-          Tu rol tiene el permiso <code>users.manage</code> en toda la plataforma. Puedes otorgar cualquier rol en
-          cualquier denominación activa.
-        </span>
-      } @else {
-        <span>
-          Tu rol tiene el permiso <code>users.manage</code> dentro de {{ grant.audienceLabel }}. Puedes otorgar
-          {{ grantableRoleNames().join(', ') }}. El rol Administrador de plataforma solo lo asigna el equipo de
-          plataforma.
-        </span>
+  <section class="kpi-grid" aria-label="Resumen">
+    <app-stat-card label="Usuarios" icon="users" tone="cyan" [value]="totalUsers()" />
+    <app-stat-card
+      label="Invitaciones pendientes"
+      icon="mail"
+      tone="orange"
+      [value]="pendingUsers()"
+      hint="Aún no crean su contraseña"
+    />
+    <app-stat-card label="Inactivos" icon="ban" tone="slate" [value]="inactiveUsers()" />
+    <app-stat-card
+      label="Roles que puedes otorgar"
+      icon="shield"
+      tone="green"
+      [value]="grantContext()?.roles?.length ?? '—'"
+      [hint]="grantContext()?.audienceLabel ?? null"
+    />
+  </section>
+
+  <app-tab-cards
+    ariaLabel="Secciones de usuarios"
+    idPrefix="users"
+    [items]="tabs"
+    [selected]="tab()"
+    (selectedChange)="onTab($event)"
+  />
+
+  @if (tab() === 'users') {
+    <section id="users-panel-users" role="tabpanel" aria-labelledby="users-tab-users" class="stack">
+      @if (grantContext(); as grant) {
+        <app-section-panel
+          tone="indigo"
+          icon="lock"
+          layout="stack"
+          title="Quién puede qué"
+          [subtitle]="grant.isPlatformAdmin ? 'Plataforma' : grant.audienceLabel"
+        >
+          @if (grant.isPlatformAdmin) {
+            <p class="text-small">
+              Tu rol puede gestionar usuarios en toda la plataforma: puedes otorgar cualquier rol en cualquier
+              denominación activa, excepto a ti mismo.
+            </p>
+          } @else {
+            <p class="text-small">
+              Tu rol puede gestionar usuarios dentro de {{ grant.audienceLabel }}. Puedes otorgar
+              {{ grantableRoleNames().join(', ') }}, pero no a ti mismo. El rol Administrador de plataforma solo lo
+              asigna el equipo de plataforma.
+            </p>
+          }
+        </app-section-panel>
       }
-    </p>
-  }
 
-  <div role="status" aria-live="polite">
-    @if (notice(); as message) {
-      <div class="alert alert--success">
-        <app-icon name="check" />
-        <span class="notice__text">{{ message }}</span>
-        <button type="button" class="btn btn--ghost btn--sm" aria-label="Cerrar aviso" (click)="notice.set(null)">
-          <app-icon name="x" />
-        </button>
+      <div role="status" aria-live="polite">
+        @if (notice(); as message) {
+          <div class="alert alert--success">
+            <app-icon name="check" />
+            <span class="notice__text">{{ message }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" aria-label="Cerrar aviso" (click)="notice.set(null)">
+              <app-icon name="x" />
+            </button>
+          </div>
+        }
       </div>
-    }
-  </div>
 
-  @if (loadError(); as message) {
-    <app-error-banner [message]="message" (retry)="retry()" />
-  }
+      @if (loadError(); as message) {
+        <app-error-banner [message]="message" (retry)="retry()" />
+      }
 
-  <div class="users-layout" [class.users-layout--detail]="selected() && grantContext()">
-    <section class="card card--flush" aria-labelledby="users-title">
-      <div class="users-toolbar">
-        <h2 id="users-title">
-          {{ grantContext()?.isPlatformAdmin ? 'Usuarios de la plataforma' : 'Usuarios de la denominación' }}
-        </h2>
-        <div class="toolbar">
-          <div class="field">
-            <label for="user-search">Buscar</label>
-            <input
-              id="user-search"
-              class="input"
-              type="search"
-              placeholder="Nombre o correo"
-              [value]="search()"
-              (input)="onSearch($event)"
+      <div class="users-layout" [class.users-layout--detail]="selected() && grantContext()">
+        <section class="card card--flush" aria-labelledby="users-title">
+          <div class="users-toolbar">
+            <h2 id="users-title">
+              {{ grantContext()?.isPlatformAdmin ? 'Usuarios de la plataforma' : 'Usuarios de la denominación' }}
+            </h2>
+            <div class="toolbar">
+              <div class="field">
+                <label for="user-search">Buscar</label>
+                <input
+                  id="user-search"
+                  class="input"
+                  type="search"
+                  placeholder="Nombre o correo"
+                  [value]="searchDraft()"
+                  (input)="onSearch($event)"
+                />
+              </div>
+              <div class="field">
+                <label for="role-filter">Rol</label>
+                <select id="role-filter" class="select" [value]="roleFilter()" (change)="onRoleFilter($event)">
+                  <option value="">Todos los roles</option>
+                  @for (option of grantContext()?.roles ?? []; track option.role) {
+                    <option [value]="option.role">{{ roleNames[option.role] }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="users-status">
+            <app-segmented-control
+              ariaLabel="Estado de la cuenta"
+              [options]="statusOptions"
+              [value]="statusFilter()"
+              (valueChange)="onStatusFilter($event)"
             />
           </div>
-          <div class="field">
-            <label for="role-filter">Rol</label>
-            <select id="role-filter" class="select" [value]="roleFilter()" (change)="onRoleFilter($event)">
-              <option value="">Todos los roles</option>
-              @for (option of grantContext()?.roles ?? []; track option.role) {
-                <option [value]="option.role">{{ roleNames[option.role] }}</option>
-              }
-            </select>
-          </div>
+
+          @if (users.isLoading() && !users.hasValue()) {
+            <app-loading label="Cargando usuarios…" />
+          } @else if (userPage(); as result) {
+            @if (result.total > 0) {
+              <app-user-table
+                [users]="result.items"
+                [selectedId]="selectedId()"
+                (selectUser)="select($event)"
+              />
+            } @else {
+              <app-empty-state
+                icon="users"
+                title="Sin resultados"
+                description="No hay usuarios que coincidan con la búsqueda o los filtros."
+              />
+            }
+            <app-pagination
+              [page]="page()"
+              [pageSize]="pageSize"
+              [total]="result.total"
+              (pageChange)="page.set($event)"
+            />
+          }
+        </section>
+
+        @if (grantContext(); as grant) {
+          @if (selected(); as user) {
+            <app-user-role-panel
+              [user]="user"
+              [context]="grant"
+              (changed)="onChanged($event)"
+              (linkIssued)="onLinkIssued()"
+              (closed)="selectedId.set(null)"
+            />
+          }
+        }
+      </div>
+    </section>
+  } @else {
+    <section id="users-panel-roles" role="tabpanel" aria-labelledby="users-tab-roles" class="card card--flush">
+      <div class="users-toolbar">
+        <div>
+          <h2>Roles y permisos</h2>
+          <p class="text-muted text-small">
+            Cada rol suma los permisos que ves marcados. La API los lee de la base de datos y los valida en cada
+            petición.
+          </p>
         </div>
       </div>
-
-      @if (users.isLoading() && !users.hasValue()) {
-        <app-loading label="Cargando usuarios…" />
-      } @else if (userList()) {
-        @if (pageResult().total > 0) {
-          <app-user-table [users]="pageResult().items" [selectedId]="selectedId()" (selectUser)="select($event)" />
-        } @else {
-          <app-empty-state
-            icon="users"
-            title="Sin resultados"
-            description="No hay usuarios que coincidan con la búsqueda o el filtro de rol."
-          />
-        }
-        <app-pagination
-          [page]="page()"
-          [pageSize]="pageSize"
-          [total]="pageResult().total"
-          (pageChange)="page.set($event)"
-        />
+      @if (matrix.error()) {
+        <div class="matrix-feedback">
+          <app-error-banner message="No fue posible cargar la matriz de roles." (retry)="matrix.reload()" />
+        </div>
+      } @else if (roleMatrix(); as result) {
+        <div class="table-wrap">
+          <table class="table matrix">
+            <thead>
+              <tr>
+                <th scope="col">Permiso</th>
+                @for (role of result.roles; track role.code) {
+                  <th scope="col" class="text-center">{{ role.name }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (permission of result.permissions; track permission.code) {
+                <tr>
+                  <th scope="row">
+                    <div class="cell-title">{{ permissionLabel(permission.code) }}</div>
+                    <code class="text-muted text-small">{{ permission.code }}</code>
+                  </th>
+                  @for (role of result.roles; track role.code) {
+                    <td class="text-center">
+                      @if (role.permissions.includes(permission.code)) {
+                        <span class="matrix__yes" role="img" [attr.aria-label]="role.name + ' tiene este permiso'">
+                          <app-icon name="check" [size]="16" />
+                        </span>
+                      } @else {
+                        <span class="matrix__no" aria-label="Sin este permiso">—</span>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-loading label="Cargando roles…" />
       }
     </section>
-
-    @if (grantContext(); as grant) {
-      @if (selected(); as user) {
-        <app-user-role-panel
-          [user]="user"
-          [context]="grant"
-          (changed)="onChanged($event)"
-          (closed)="selectedId.set(null)"
-        />
-      }
-    }
-  </div>
+  }
 </div>
 
 @if (grantContext(); as grant) {
   <app-invite-user-dialog [(open)]="inviteOpen" [context]="grant" (invited)="onInvited($event)" />
 }
+<app-one-time-link-dialog [(open)]="linkOpen" [link]="issuedLink()" [recipient]="issuedFor()" />

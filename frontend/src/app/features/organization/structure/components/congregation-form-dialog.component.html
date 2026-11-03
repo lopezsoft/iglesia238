@@ -44,6 +44,30 @@
       </div>
 
       <div class="field">
+        <label for="congregation-code">Código</label>
+        <input
+          id="congregation-code"
+          class="input"
+          type="text"
+          formControlName="code"
+          placeholder="Se genera si lo dejas vacío"
+          autocomplete="off"
+          [attr.maxlength]="limits.congregationCode"
+          aria-describedby="congregation-code-hint congregation-code-error"
+        />
+        <span id="congregation-code-hint" class="field__hint"
+          >Abreviatura estable de la sede: prefijo del código de miembro y de carné.</span
+        >
+        <span id="congregation-code-error" class="field__error" aria-live="polite">
+          @if (codeError(); as message) {
+            {{ message }}
+          } @else if (showError('code', 'pattern')) {
+            Solo letras y números, sin espacios.
+          }
+        </span>
+      </div>
+
+      <div class="field">
         <label for="congregation-legal-entity">Razón social *</label>
         <select
           id="congregation-legal-entity"
@@ -78,24 +102,15 @@
 
       <div class="field">
         <label for="congregation-municipality">Municipio *</label>
-        <select
-          id="congregation-municipality"
-          class="select"
-          formControlName="municipalityCode"
-          aria-describedby="congregation-municipality-hint"
-        >
-          <option value="">Selecciona un municipio</option>
-          @for (group of municipalityGroups; track group.regionName) {
-            <optgroup [label]="group.regionName">
-              @for (municipality of group.municipalities; track municipality.code) {
-                <option [value]="municipality.code">{{ municipality.name }}</option>
-              }
-            </optgroup>
-          }
-        </select>
-        <span id="congregation-municipality-hint" class="field__hint">{{
-          municipalityHint()
-        }}</span>
+        <app-municipality-select
+          inputId="congregation-municipality"
+          [code]="form.controls.municipalityCode.value"
+          [label]="municipalityText()"
+          [invalid]="showError('municipalityCode', 'required')"
+          (picked)="onMunicipalityPicked($event)"
+          (cleared)="onMunicipalityCleared()"
+        />
+        <span class="field__hint">Busca por nombre; se guarda el código DIVIPOLA del DANE.</span>
         @if (showError('municipalityCode', 'required')) {
           <span class="field__error">Selecciona el municipio.</span>
         }

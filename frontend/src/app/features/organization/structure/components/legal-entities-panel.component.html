@@ -41,7 +41,7 @@
               <td>{{ row.tradeName ?? '—' }}</td>
               <td class="code">{{ row.taxId }}</td>
               <td>{{ row.legalRepresentative ?? '—' }}</td>
-              <td>{{ municipality(row.municipalityCode) }}</td>
+              <td>{{ place(row) }}</td>
               <td>
                 <app-status-badge
                   [label]="row.isActive ? 'Activa' : 'Inactiva'"

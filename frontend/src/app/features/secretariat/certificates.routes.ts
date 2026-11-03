@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { CertificatesRepository } from './certificates/data/certificates.repository';
-import { DemoCertificatesRepository } from './certificates/data/demo-certificates.repository';
+import { HttpCertificatesRepository } from './certificates/data/http-certificates.repository';
 
 export default [
   {
     path: '',
-    providers: [{ provide: CertificatesRepository, useClass: DemoCertificatesRepository }],
+    providers: [{ provide: CertificatesRepository, useClass: HttpCertificatesRepository }],
     children: [
       {
         path: '',

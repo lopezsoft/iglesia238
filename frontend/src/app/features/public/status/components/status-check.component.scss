@@ -63,6 +63,11 @@
     }
   }
 
+  &__notice {
+    margin: 0;
+    align-items: flex-start;
+  }
+
   &__privacy {
     display: flex;
     align-items: flex-start;

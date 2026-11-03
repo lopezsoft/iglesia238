@@ -1,37 +1,37 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { environment } from '../../../../environments/environment';
+import { AuthBrandPanelComponent } from './auth-brand-panel.component';
 
 /**
- * Centered layout of the screens shown before signing in (no shell): the brand card with the
- * projected form, extra panels below it (`[auth-extra]`) and the legal footer.
+ * Split layout of the screens shown before signing in (no shell): the brand panel on the left
+ * and, on the right, the projected form, extra panels below it (`[auth-extra]`) and the legal
+ * footer. Below 900 px the brand panel collapses to a top band.
  */
 @Component({
   selector: 'app-auth-frame',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent],
+  imports: [AuthBrandPanelComponent],
   styleUrl: './auth-frame.component.scss',
   template: `
-    <div class="auth-frame">
-      <main id="main-content" class="auth-frame__main">
-        <section class="card auth-frame__card" [attr.aria-labelledby]="labelledBy()">
-          <div class="auth-frame__brand">
-            <span class="auth-frame__mark"><app-icon name="church" [size]="22" /></span>
-            <div>
-              <p class="auth-frame__name">Iglesia 238</p>
-              <p class="text-muted text-small">Gestión de membresía y contabilidad</p>
-            </div>
-          </div>
+    <div class="auth">
+      <app-auth-brand-panel class="auth__brand" />
+      <main id="main-content" class="auth__main">
+        <section class="auth__content" [attr.aria-labelledby]="labelledBy()">
           <ng-content />
+          <ng-content select="[auth-extra]" />
         </section>
-        <ng-content select="[auth-extra]" />
-        <footer class="auth-frame__footer text-muted text-small">
-          Tus datos se tratan conforme a la Ley 1581 de 2012.
+        <footer class="auth__footer">
+          © {{ year }} Iglesia 238 · v{{ version }}
+          <span>Tus datos se tratan conforme a la Ley 1581 de 2012.</span>
         </footer>
       </main>
     </div>
   `,
 })
 export class AuthFrameComponent {
-  /** Id of the page heading that names the card. */
+  /** Id of the page heading that names the form section. */
   readonly labelledBy = input.required<string>();
+
+  protected readonly year = new Date().getFullYear();
+  protected readonly version = environment.appVersion;
 }

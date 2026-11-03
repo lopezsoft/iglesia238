@@ -41,12 +41,14 @@ export const DENOMINATION_STATUS_OPTIONS: readonly {
   { value: 'inactive', label: 'Inactiva' },
 ];
 
-/** Defaults the API creates with every denomination (shown in the create drawer). */
-export const DENOMINATION_DEFAULT_CONTRIBUTION_TYPES: readonly string[] = [
-  'Diezmo',
-  'Ofrenda',
-  'Primicia',
-  'Voto',
+/** What the API creates with every denomination (shown in the create drawer). */
+export const DENOMINATION_TEMPLATE_ITEMS: readonly string[] = [
+  'Fondo «Fondo Local»',
+  'Plan de cuentas inicial',
+  'Tipos de aporte: diezmo, ofrenda, primicia y voto',
+  'Certificados: membresía, traslado, bautismo y asistencia',
+  'Grados pastorales y cargos básicos',
+  'Política de datos en borrador',
 ];
 
 /** `page` limited to the pages that `total` rows fill (at least 1). */

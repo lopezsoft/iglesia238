@@ -1,5 +1,13 @@
 import { Observable } from 'rxjs';
-import { TitheOverview, TithePreview, TitheRange, TitheSettlementRow } from './tithe-settlements.models';
+import { Page } from '../../../../shared/utils/pagination';
+import {
+  SettlementQuery,
+  TitheOverview,
+  TithePreview,
+  TitheRange,
+  TitheSettlementDetail,
+  TitheSettlementRow,
+} from './tithe-settlements.models';
 
 /**
  * Port of Liquidación del diezmo (E-05). Every call needs tithe-settlements.write and a sede
@@ -12,4 +20,7 @@ export abstract class TitheSettlementsRepository {
   abstract preview(range: TitheRange): Observable<TithePreview>;
   abstract confirm(range: TitheRange): Observable<TitheSettlementRow>;
   abstract void(settlementId: number, reason: string): Observable<TitheSettlementRow>;
+  /** History of the sede, newest first, paginated and filtered by the server. */
+  abstract list(query: SettlementQuery): Observable<Page<TitheSettlementRow>>;
+  abstract detail(settlementId: number): Observable<TitheSettlementDetail>;
 }

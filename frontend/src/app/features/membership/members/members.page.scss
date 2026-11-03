@@ -1,5 +1,17 @@
 @use 'tokens' as *;
 
+.members__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-4;
+
+  .members__tabs {
+    flex: 1 1 36rem;
+    min-width: 0;
+  }
+}
+
 .members__toolbar {
   display: flex;
   flex-direction: column;
@@ -12,38 +24,11 @@
   flex: 1 1 16rem;
 }
 
-.members__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  min-height: 2rem;
-  padding: 0 $space-3;
-  border: 1px solid $color-border;
-  border-radius: $radius-pill;
-  background: $color-surface;
-  color: $color-ink;
-  font-size: $font-size-sm;
-  cursor: pointer;
-
-  &[aria-pressed='true'] {
-    border-color: $color-primary;
-    background: $color-primary-soft;
-    color: $color-primary;
-    font-weight: $font-weight-medium;
-  }
-}
-
-.members__chip-count {
-  font-family: $font-mono;
-  font-size: $font-size-xs;
-  color: $color-ink-muted;
-}
-
 .members__notes {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: $space-3;
 }
 
@@ -58,7 +43,21 @@
   padding: $space-4 $space-5;
 }
 
-.members__dialog ul {
-  margin: 0;
-  padding-left: $space-5;
+// Column headers that sort: a button that looks like the header text.
+.members__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-primary;
+  }
 }

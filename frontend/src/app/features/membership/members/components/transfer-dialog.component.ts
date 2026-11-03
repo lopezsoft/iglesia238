@@ -13,7 +13,6 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { userMessage } from '../../../../core/errors/domain-error';
-import { municipalityLabel } from '../../../../core/models/catalogs';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import {
   TRANSFER_REASONS,
@@ -46,7 +45,6 @@ export class TransferDialogComponent {
   readonly transferred = output<TransferResult>();
 
   protected readonly reasons = TRANSFER_REASONS;
-  protected readonly municipalityLabel = municipalityLabel;
   protected readonly today = todayIso();
   protected readonly command = new CommandState();
   protected readonly destination = signal<Destination>('INTERNAL');

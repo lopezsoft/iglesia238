@@ -40,6 +40,8 @@ model User {
   people                Person[]
   memberStatusHistories MemberStatusHistory[]
   memberTransfers       MemberTransfer[]
+  issuedCertificates    Certificate[]           @relation("CertificateIssuer")
+  recordedAttendance    AttendanceSession[]     @relation("AttendanceRecorder")
 
   @@map("users")
 }

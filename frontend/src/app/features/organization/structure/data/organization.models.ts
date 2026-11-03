@@ -4,10 +4,15 @@ import { Congregation, District, LegalEntity } from '../../../../core/models/org
 
 export type OrganizationTab = 'sedes' | 'razones' | 'distritos';
 
-export const ORGANIZATION_TABS: readonly { value: OrganizationTab; label: string }[] = [
-  { value: 'sedes', label: 'Sedes' },
-  { value: 'razones', label: 'Razones sociales' },
-  { value: 'distritos', label: 'Distritos' },
+export const ORGANIZATION_TABS: readonly {
+  value: OrganizationTab;
+  label: string;
+  subtitle: string;
+  icon: 'building' | 'landmark' | 'church';
+}[] = [
+  { value: 'sedes', label: 'Sedes', subtitle: 'Congregaciones y sus inscripciones', icon: 'building' },
+  { value: 'razones', label: 'Razones sociales', subtitle: 'Entidades legales y NIT', icon: 'landmark' },
+  { value: 'distritos', label: 'Distritos', subtitle: 'Agrupación de sedes', icon: 'church' },
 ];
 
 export function isOrganizationTab(value: string | null | undefined): value is OrganizationTab {
@@ -23,12 +28,33 @@ export interface OrganizationOverview {
   readonly districts: number;
 }
 
+/** A sede as the API returns it: municipality, department and neighborhood already resolved. */
 export interface CongregationRow extends Congregation {
+  /** Stable abbreviation (prefix of the member code). */
+  readonly code: string;
   readonly legalEntityName: string;
   readonly districtNumber: string | null;
+  readonly municipalityName: string | null;
+  readonly regionName: string | null;
+  readonly createdAt: string;
 }
 
-export type LegalEntityRow = LegalEntity;
+export interface LegalEntityRow extends LegalEntity {
+  readonly municipalityName: string | null;
+  readonly regionName: string | null;
+  readonly createdAt: string;
+}
+
+/** "Cartagena de Indias (Bolívar)". */
+export function placeLabel(place: {
+  readonly municipalityName: string | null;
+  readonly regionName: string | null;
+}): string {
+  if (!place.municipalityName) {
+    return '—';
+  }
+  return place.regionName ? `${place.municipalityName} (${place.regionName})` : place.municipalityName;
+}
 
 export interface DistrictRow extends District {
   readonly congregationNames: readonly string[];
@@ -36,6 +62,8 @@ export interface DistrictRow extends District {
 
 export interface CongregationInput {
   readonly name: string;
+  /** Optional abbreviation; the API generates one from the name when it is left out. */
+  readonly code?: string | null;
   readonly legalEntityId: number;
   readonly districtId: number | null;
   readonly municipalityCode: string;
@@ -77,6 +105,7 @@ export interface CongregationFormOptions {
 /** Max lengths of the Prisma columns. */
 export const FIELD_LIMITS = {
   congregationName: 150,
+  congregationCode: 10,
   legalName: 200,
   taxId: 30,
   districtNumber: 20,

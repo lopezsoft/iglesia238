@@ -18,7 +18,10 @@ function minTrimmedLength(min: number) {
     control.value.trim().length >= min ? null : { minTrimmedLength: { min } };
 }
 
-/** Reason of a rejection: the applicant reads it when they look up their tracking code. */
+/**
+ * Reason of a rejection. It is an internal note for the secretariat and the audit: the applicant
+ * only sees that the application was not approved and is told to contact the sede.
+ */
 @Component({
   selector: 'app-reject-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,11 +46,12 @@ function minTrimmedLength(min: number) {
           [attr.maxlength]="maxLength"
           aria-describedby="reject-reason-help"
           [attr.aria-invalid]="showError()"
-          placeholder="Ej.: El documento adjunto no es legible. Por favor envía una foto nítida de ambas caras."
+          placeholder="Ej.: El documento no coincide con la persona. Se le pidió corregirlo en la secretaría."
         ></textarea>
         <span id="reject-reason-help" class="field__hint">
-          El solicitante verá este motivo al consultar su código de seguimiento. Mínimo
-          {{ minLength }} caracteres ({{ reason().length }}/{{ maxLength }}).
+          Es una nota interna: el solicitante no la ve. Solo sabrá que su solicitud no fue aprobada y
+          que debe comunicarse con la secretaría. Mínimo {{ minLength }} caracteres
+          ({{ reason().length }}/{{ maxLength }}).
         </span>
         @if (showError()) {
           <span class="field__error" role="alert">

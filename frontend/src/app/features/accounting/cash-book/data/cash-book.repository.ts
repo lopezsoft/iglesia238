@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { Page } from '../../../../shared/utils/pagination';
 import {
   CashBookOptions,
   CashBookQuery,
@@ -9,6 +10,9 @@ import {
   ConsolidationResult,
   RecordCashTransactionCommand,
   ReverseCashTransactionCommand,
+  VoucherDetail,
+  VoucherListItem,
+  VoucherQuery,
 } from './cash-book.models';
 
 /**
@@ -27,4 +31,10 @@ export abstract class CashBookRepository {
   abstract consolidationPreview(date: string): Observable<ConsolidationPreview>;
   /** Posts one inflow per account and fund with a CI voucher and links the contributions. */
   abstract consolidate(date: string): Observable<ConsolidationResult>;
+
+  /** Vouchers of the sede the user may read (receipts need contributions.read), newest first. */
+  abstract vouchers(query: VoucherQuery): Observable<Page<VoucherListItem>>;
+  abstract voucher(id: number): Observable<VoucherDetail>;
+  /** The receipt or voucher ready to print (PDF). A failure keeps the API's code and message. */
+  abstract voucherPdf(id: number): Observable<Blob>;
 }

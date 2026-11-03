@@ -1,11 +1,5 @@
-// Review of membership applications (C-03/C-04), mirroring MembershipApplication in
-// backend/prisma/schema/membership.prisma plus the read-model fields the review screen needs.
-import {
-  ApplicationFormData,
-  ApplicationStatus,
-  MemberStatus,
-  Sex,
-} from '../../../../core/models/membership.model';
+// Review of membership applications (C-03/C-04), mirroring GET /api/membership-applications.
+import { ApplicationStatus, MemberStatus, Sex } from '../../../../core/models/membership.model';
 import { BadgeTone } from '../../../../shared/ui/status-badge.component';
 
 /** Status chips of the queue: "Pendientes" groups PENDING and IN_REVIEW. */
@@ -18,16 +12,6 @@ export const APPLICATION_FILTERS: readonly ApplicationFilter[] = [
   'REJECTED',
   'ALL',
 ];
-
-export const APPLICATION_FILTER_STATUSES: Readonly<
-  Record<ApplicationFilter, readonly ApplicationStatus[]>
-> = {
-  PENDING: ['PENDING', 'IN_REVIEW'],
-  DUPLICATE: ['DUPLICATE'],
-  APPROVED: ['APPROVED'],
-  REJECTED: ['REJECTED'],
-  ALL: ['PENDING', 'IN_REVIEW', 'DUPLICATE', 'APPROVED', 'REJECTED'],
-};
 
 export const APPLICATION_FILTER_LABELS: Readonly<Record<ApplicationFilter, string>> = {
   PENDING: 'Pendientes',
@@ -63,9 +47,10 @@ export const REVIEWABLE_STATUSES: readonly ApplicationStatus[] = ['PENDING', 'IN
 
 /** rejection_reason is VARCHAR(255) in the API. */
 export const REJECTION_REASON_MAX_LENGTH = 255;
-/** UX rule of the review screen: the applicant reads the reason, so it must say something. */
+/** The reason is read by the next reviewer and the audit, so it has to say something. */
 export const REJECTION_REASON_MIN_LENGTH = 10;
 export const ADULT_AGE = 18;
+export const APPLICATIONS_PAGE_SIZE = 10;
 
 export function isReviewable(status: ApplicationStatus): boolean {
   return REVIEWABLE_STATUSES.includes(status);
@@ -81,12 +66,32 @@ export function documentLabel(typeCode: string | null, number: string | null): s
   return number ? [typeCode, number].filter(Boolean).join(' ') : '—';
 }
 
-/** Local calendar date (YYYY-MM-DD), the format of the API date columns. */
-export function todayIsoDate(now: Date = new Date()): string {
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+/** What the reviewer filters the queue with (query string of GET /membership-applications). */
+export interface ApplicationListQuery {
+  readonly filter: ApplicationFilter;
+  /** Words of the name or the document. */
+  readonly search: string;
+  /** Only with a denomination-wide scope. */
+  readonly congregationId: number | null;
+  /** First day received (yyyy-MM-dd), inclusive. */
+  readonly from: string | null;
+  /** Last day received (yyyy-MM-dd), inclusive. */
+  readonly to: string | null;
+  readonly order: 'asc' | 'desc';
+  readonly page: number;
+  readonly pageSize: number;
 }
+
+export const DEFAULT_LIST_QUERY: ApplicationListQuery = {
+  filter: 'PENDING',
+  search: '',
+  congregationId: null,
+  from: null,
+  to: null,
+  order: 'desc',
+  page: 1,
+  pageSize: APPLICATIONS_PAGE_SIZE,
+};
 
 /** Row of the review queue. */
 export interface ApplicationSummary {
@@ -106,8 +111,12 @@ export interface ApplicationSummary {
 export type ApplicationCounts = Readonly<Record<ApplicationFilter, number>>;
 
 export interface ApplicationQueue {
-  /** Most recent first. */
   readonly items: readonly ApplicationSummary[];
+  /** Rows matching every filter, across pages. */
+  readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+  /** Per chip, ignoring the chip, the search and the dates. */
   readonly counts: ApplicationCounts;
 }
 
@@ -124,13 +133,32 @@ export interface PersonMatch {
   readonly memberStatus: MemberStatus | null;
 }
 
+/** Answers of the public form that have no column of their own. */
+export interface ApplicationFormData {
+  readonly secondLastName: string | null;
+  readonly sex: Sex;
+  readonly maritalStatusCode: string;
+  readonly maritalStatusName: string | null;
+  readonly address: string;
+  readonly municipalityCode: string;
+  readonly municipalityName: string | null;
+  readonly regionName: string | null;
+  readonly neighborhood: string | null;
+  readonly occupation: string | null;
+  readonly previousCongregationName: string | null;
+  readonly isBaptized: boolean | null;
+  readonly guardianRelationship: string | null;
+  readonly guardianPhone: string | null;
+  readonly guardianDocumentTypeCode: string | null;
+}
+
 export interface ApplicationDetail {
   readonly id: number;
   readonly congregationId: number;
   readonly congregationName: string;
   readonly status: ApplicationStatus;
-  readonly trackingCode: string;
   readonly documentTypeCode: string | null;
+  readonly documentTypeName: string | null;
   readonly documentNumber: string | null;
   readonly firstName: string;
   readonly lastName: string;
@@ -148,6 +176,7 @@ export interface ApplicationDetail {
   readonly createdAt: string;
   readonly reviewerName: string | null;
   readonly reviewedAt: string | null;
+  /** Internal reason of a rejection: the applicant never sees it. */
   readonly rejectionReason: string | null;
   /** Possible duplicate, computed only while the application can still be resolved. */
   readonly duplicateMatch: PersonMatch | null;
@@ -163,4 +192,9 @@ export interface ApprovalResult {
   readonly memberNumber: number;
   /** Card code of the new member in its sede, e.g. SC-0153. */
   readonly memberCode: string;
+}
+
+/** A person can join again unless they are an active member or deceased. */
+export function canLinkMatch(match: PersonMatch): boolean {
+  return match.memberStatus !== 'ACTIVE' && match.memberStatus !== 'DECEASED';
 }

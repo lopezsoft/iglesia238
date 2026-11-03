@@ -4,6 +4,12 @@ import { MoneyPipe, formatMoney } from '../../../../shared/pipes/money.pipe';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatCardComponent } from '../../../../shared/ui/stat-card.component';
 import { PAYMENT_METHOD_LABELS } from '../../data/accounting.models';
+import {
+  COMPONENT_NAMES,
+  bookingLabel,
+  componentRateLabel,
+  componentTarget,
+} from '../data/tithe-labels';
 import { TithePreview } from '../data/tithe-settlements.models';
 
 const VISIBLE_CONTRIBUTIONS = 10;
@@ -33,10 +39,16 @@ const VISIBLE_CONTRIBUTIONS = 10;
           <span>No hay diezmos por liquidar en el rango: todos están anulados, ya liquidados o no hay registros.</span>
         </div>
       } @else {
-        <div class="grid-auto">
-          <app-stat-card label="Diezmos incluidos" [value]="preview().count" [hint]="contributorsHint()" />
-          <app-stat-card label="Total bruto" [value]="gross()" hint="Diezmos registrados y no liquidados" />
-          <app-stat-card label="Excluidos del cálculo" [value]="preview().excludedCount" hint="Aportes anulados en el rango" />
+        <div class="kpi-grid">
+          <app-stat-card icon="coins" tone="green" label="Diezmos incluidos" [value]="preview().count" [hint]="contributorsHint()" />
+          <app-stat-card icon="banknote" tone="cyan" label="Total bruto" [value]="gross()" hint="Diezmos registrados y no liquidados" />
+          <app-stat-card
+            icon="ban"
+            tone="orange"
+            label="Excluidos del cálculo"
+            [value]="preview().excludedCount"
+            hint="Aportes anulados en el rango"
+          />
         </div>
 
         <div>
@@ -53,15 +65,17 @@ const VISIBLE_CONTRIBUTIONS = 10;
                   <th scope="col">Componente</th>
                   <th scope="col">Destino</th>
                   <th scope="col">Porcentaje vigente</th>
+                  <th scope="col">Registro en caja</th>
                   <th scope="col" class="text-right">Valor</th>
                 </tr>
               </thead>
               <tbody>
-                @for (component of preview().components; track component.key) {
+                @for (component of rows(); track component.key) {
                   <tr>
                     <td>{{ component.name }}</td>
                     <td class="text-muted">{{ component.target }}</td>
                     <td>{{ component.rateLabel }}</td>
+                    <td class="text-muted text-small">{{ component.booking }}</td>
                     <td class="num">{{ component.amount | money }}</td>
                   </tr>
                 }
@@ -70,6 +84,7 @@ const VISIBLE_CONTRIBUTIONS = 10;
                 <tr>
                   <td colspan="2">Total</td>
                   <td>100 %</td>
+                  <td></td>
                   <td class="num">{{ preview().componentsTotal | money }}</td>
                 </tr>
               </tfoot>
@@ -80,6 +95,15 @@ const VISIBLE_CONTRIBUTIONS = 10;
             {{ balanced() ? 'Los componentes suman el bruto' : 'Los componentes no suman el bruto' }}
             ({{ preview().componentsTotal | money }})
           </p>
+          @if (unbooked().length > 0) {
+            <div class="alert alert--warning" role="note">
+              <app-icon name="alert" />
+              <span>
+                Sin movimiento de caja: {{ unbooked().join(' y ') }}. La cuenta de egreso no existe en el plan de cuentas de la
+                denominación; la liquidación se emite igual, pero ese valor no se registra en el libro de caja.
+              </span>
+            </div>
+          }
         </div>
 
         <div class="linked">
@@ -113,11 +137,11 @@ const VISIBLE_CONTRIBUTIONS = 10;
                   <tbody>
                     @for (row of visibleContributions(); track row.id) {
                       <tr>
-                        <td class="code">{{ row.receiptNumber }}</td>
+                        <td class="code">{{ row.receiptNumber ?? '—' }}</td>
                         <td>{{ row.receivedOn | date: 'dd/MM/yyyy' }}</td>
                         <td>
                           <div [class.text-muted]="!row.contributorName">{{ row.contributorName ?? 'Anónimo' }}</div>
-                          <div class="text-muted text-small mono">{{ row.contributorDetail }}</div>
+                          <div class="text-muted text-small mono">{{ row.memberCode ?? 'Sin código de miembro' }}</div>
                         </td>
                         <td>{{ methodLabels[row.paymentMethod] }}</td>
                         <td class="num">{{ row.amount | money }}</td>
@@ -140,8 +164,8 @@ const VISIBLE_CONTRIBUTIONS = 10;
       <div class="card__footer confirm">
         <p class="text-small confirm__text">
           @if (preview().count > 0) {
-            Al confirmar se asigna el número <span class="mono">{{ preview().nextNumber }}</span>, los {{ preview().count }} diezmos
-            quedan vinculados y no podrán incluirse en otra liquidación mientras esta no se anule.
+            Al confirmar se reserva el siguiente número (<span class="mono">{{ preview().nextNumber }}</span>), los
+            {{ preview().count }} diezmos quedan vinculados y no podrán incluirse en otra liquidación mientras esta no se anule.
           }
         </p>
         @if (error()) {
@@ -179,6 +203,26 @@ export class TithePreviewComponent {
     const { contributorCount, anonymousCount } = this.preview();
     return `De ${contributorCount} ${contributorCount === 1 ? 'miembro' : 'miembros'} y ${anonymousCount} ${anonymousCount === 1 ? 'aporte anónimo' : 'aportes anónimos'}`;
   });
+
+  protected readonly rows = computed(() => {
+    const { components, rule, denominationName, congregationName, localFundName } = this.preview();
+    return components.map((component) => ({
+      key: component.key,
+      name: COMPONENT_NAMES[component.key],
+      target: componentTarget(component.key, { denominationName, congregationName, localFundName }),
+      rateLabel: componentRateLabel(component, rule),
+      booking: bookingLabel(component),
+      amount: component.amount,
+    }));
+  });
+
+  /** Payable components whose account is missing from the chart: they will not touch the cash book. */
+  protected readonly unbooked = computed(() =>
+    this.preview()
+      .components.filter((component) => component.key !== 'LOCAL_FUND' && component.amount > 0 && component.booking === null)
+      .map((component) => COMPONENT_NAMES[component.key].toLowerCase()),
+  );
+
   protected readonly visibleContributions = computed(() =>
     this.showAll() ? this.preview().contributions : this.preview().contributions.slice(0, VISIBLE_CONTRIBUTIONS),
   );

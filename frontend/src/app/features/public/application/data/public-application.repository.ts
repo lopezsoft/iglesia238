@@ -3,7 +3,9 @@ import {
   ApplicationStatusCheck,
   ApplicationSubmission,
   CurrentPrivacyPolicy,
+  MunicipalityOption,
   OpenCongregation,
+  PublicCatalogs,
   SubmissionReceipt,
 } from './public-application.models';
 
@@ -15,8 +17,14 @@ export abstract class PublicApplicationRepository {
   /** Active congregations of active denominations that accept applications. */
   abstract listOpenCongregations(): Observable<OpenCongregation[]>;
 
-  /** Privacy policy in force for the denomination. Fails with NOT_FOUND when there is none. */
+  /** Privacy policy in force for the denomination. Fails with POLICY_NOT_AVAILABLE when there is none. */
   abstract getCurrentPolicy(denominationId: number): Observable<CurrentPrivacyPolicy>;
+
+  /** Document types and marital statuses of the form. */
+  abstract getCatalogs(): Observable<PublicCatalogs>;
+
+  /** Municipalities (DIVIPOLA) whose name matches the text; at most `limit`. */
+  abstract searchMunicipalities(text: string, limit?: number): Observable<MunicipalityOption[]>;
 
   /** Stores a PENDING application and returns only its tracking code. */
   abstract submit(input: ApplicationSubmission): Observable<SubmissionReceipt>;

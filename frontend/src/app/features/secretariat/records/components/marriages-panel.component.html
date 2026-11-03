@@ -1,0 +1,158 @@
+<section class="card card--flush" aria-labelledby="marriages-title">
+  <header class="card__header panel__header">
+    <div>
+      <h2 id="marriages-title">Matrimonios</h2>
+      <p class="text-muted text-small">
+        {{ scopeName() }} · {{ result()?.total ?? 0 }} registros. Un matrimonio disuelto no se
+        elimina: conserva su historial y queda en auditoría.
+      </p>
+    </div>
+  </header>
+
+  <div class="toolbar panel__filters">
+    <div class="field filter-search">
+      <label for="marriage-search">Buscar pareja</label>
+      <input
+        id="marriage-search"
+        class="input"
+        type="search"
+        autocomplete="off"
+        placeholder="Nombre de alguno de los cónyuges"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </div>
+    <div class="field">
+      <label for="marriage-filter">Estado</label>
+      <select id="marriage-filter" class="select" (change)="setStatus($any($event.target).value)">
+        <option value="all" [selected]="status() === 'all'">Todos</option>
+        <option value="active" [selected]="status() === 'active'">Vigentes</option>
+        <option value="dissolved" [selected]="status() === 'dissolved'">Disueltos</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="marriage-from">Desde</label>
+      <input
+        id="marriage-from"
+        class="input"
+        type="date"
+        [value]="from() ?? ''"
+        [max]="to() ?? ''"
+        (change)="setDate('from', $any($event.target).value)"
+      />
+    </div>
+    <div class="field">
+      <label for="marriage-to">Hasta</label>
+      <input
+        id="marriage-to"
+        class="input"
+        type="date"
+        [value]="to() ?? ''"
+        [min]="from() ?? ''"
+        (change)="setDate('to', $any($event.target).value)"
+      />
+    </div>
+    @if (hasFilters()) {
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">
+        <app-icon name="x" [size]="16" />
+        Limpiar filtros
+      </button>
+    }
+  </div>
+
+  @if (list.error()) {
+    <div class="panel__message">
+      <app-error-banner [message]="loadError()" (retry)="list.reload()" />
+    </div>
+  } @else if (!result()) {
+    <div class="panel__message"><app-loading label="Cargando matrimonios…" /></div>
+  } @else if (result()!.total === 0) {
+    <app-empty-state
+      icon="heart"
+      [title]="hasFilters() ? 'Sin resultados' : 'Sin matrimonios registrados'"
+      [description]="
+        hasFilters()
+          ? 'Ningún matrimonio coincide con los filtros.'
+          : 'Los matrimonios que registres aparecerán aquí.'
+      "
+    />
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="list.isLoading()">
+      <table class="table">
+        <caption class="visually-hidden">
+          Matrimonios registrados en
+          {{
+            scopeName()
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Registro</th>
+            <th scope="col">Cónyuges</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Lugar</th>
+            <th scope="col">Oficiante</th>
+            <th scope="col">Estado</th>
+            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of result()!.items; track row.id) {
+            <tr>
+              <td class="code">{{ row.code }}</td>
+              <td>
+                @for (spouse of [row.spouse1, row.spouse2]; track spouse.id) {
+                  <div>
+                    {{ spouse.fullName }}
+                    @if (spouse.memberCode) {
+                      <span class="chip chip--mono">{{ spouse.memberCode }}</span>
+                    }
+                  </div>
+                }
+              </td>
+              <td>
+                <div>{{ row.marriedOn ? (row.marriedOn | date: 'dd/MM/yyyy') : '—' }}</div>
+                <div class="text-muted text-small">
+                  {{ row.registeredWith ? registries[row.registeredWith] : '' }}
+                </div>
+              </td>
+              <td>{{ row.place ?? '—' }}</td>
+              <td>{{ row.officiant?.fullName ?? 'Sin registrar' }}</td>
+              <td>
+                @if (isActive(row)) {
+                  <app-status-badge label="Vigente" tone="success" />
+                } @else {
+                  <app-status-badge label="Disuelto" />
+                  <div class="text-muted text-small">
+                    {{ row.endedOn | date: 'dd/MM/yyyy' }} ·
+                    {{ row.endReason ? endReasons[row.endReason] : '' }}
+                  </div>
+                }
+              </td>
+              <td class="text-right">
+                @if (isActive(row)) {
+                  <button
+                    type="button"
+                    class="btn btn--danger-ghost btn--sm"
+                    [attr.aria-label]="'Registrar disolución del matrimonio ' + row.code"
+                    (click)="dissolve.emit(row)"
+                  >
+                    Registrar disolución
+                  </button>
+                } @else {
+                  <span class="text-muted text-small">Registro cerrado</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="result()!.page"
+      [pageSize]="pageSize"
+      [total]="result()!.total"
+      (pageChange)="pageNumber.set($event)"
+    />
+  }
+</section>

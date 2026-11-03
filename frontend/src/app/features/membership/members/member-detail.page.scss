@@ -5,11 +5,36 @@
   display: none;
 }
 
-.member__header {
+// Profile header: gradient card of the design system with the identity of the member.
+.member__hero {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $space-4 $space-5;
   align-items: start;
+  padding: 1.375rem $space-5;
+  overflow: hidden;
+  background: $gradient-hero;
+  border-radius: $radius-hero;
+  box-shadow: $shadow-hero;
+  color: $color-on-brand;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -4rem;
+    bottom: -12rem;
+    width: 21rem;
+    height: 21rem;
+    border-radius: 50%;
+    background: $glass-grid;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 
   @include from($breakpoint-md) {
     grid-template-columns: auto 1fr auto;
@@ -19,13 +44,13 @@
 .member__avatar {
   display: grid;
   place-items: center;
-  width: 4rem;
-  height: 4rem;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: $radius-pill;
-  background: $color-primary-soft;
-  color: $color-primary;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  background: $glass-grid;
+  color: $color-on-brand;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-extrabold;
 }
 
 .member__identity {
@@ -35,8 +60,45 @@
   min-width: 0;
 }
 
+.member__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-3;
+
+  h1 {
+    color: inherit;
+  }
+}
+
+.member__chip {
+  padding: 2px $space-2;
+  border-radius: $radius-xs;
+  background: $glass-grid;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+}
+
 .member__facts {
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: $space-3;
+  margin: 0;
+
+  dt {
+    font-size: $font-size-2xs;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: $color-on-brand-muted;
+  }
+
+  dd {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    overflow-wrap: anywhere;
+  }
 }
 
 .member__actions {
@@ -48,19 +110,17 @@
   @include from($breakpoint-md) {
     grid-column: auto;
     justify-content: flex-end;
+    max-width: 22rem;
   }
 }
 
 .member__hint {
   grid-column: 1 / -1;
   margin: 0;
+  font-size: $font-size-xs;
+  color: $color-on-brand-muted;
 }
 
-.member__tabs {
-  overflow-x: auto;
-  flex-wrap: nowrap;
-
-  [role='tab'] {
-    white-space: nowrap;
-  }
+.member__panel {
+  padding: $space-5;
 }

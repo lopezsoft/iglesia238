@@ -1,0 +1,129 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+:host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-5 + 0.5rem;
+  padding: 4.5rem 6rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 85% 12%, $glass-glow, transparent 45%),
+    linear-gradient($glass-grid 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, $glass-grid 1px, transparent 1px) 0 0 / 44px 44px,
+    $gradient-brand-panel;
+  color: $color-on-brand;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+
+  &__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: $radius-card;
+    background: $color-on-brand;
+    color: $color-brand-mark;
+  }
+
+  &__name {
+    font-size: $font-size-lg + 0.125rem;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: -0.02em;
+  }
+
+  &__accent {
+    color: $color-brand-accent;
+  }
+}
+
+.headline {
+  max-width: 40rem;
+  font-size: $font-size-auth-headline;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+
+  &__accent {
+    display: block;
+    color: $color-brand-accent;
+  }
+}
+
+.lead {
+  max-width: 36rem;
+  color: $color-on-brand-muted;
+  font-size: $font-size-md + 0.0625rem;
+  line-height: 1.55;
+}
+
+.showcase {
+  position: relative;
+  flex: 1;
+  min-height: 15rem;
+  max-width: 38rem;
+
+  app-showcase-card {
+    position: absolute;
+  }
+
+  &__chart {
+    top: 0;
+    left: 0;
+    width: 15rem;
+  }
+
+  &__request {
+    top: 0;
+    left: 13.5rem;
+    width: 14rem;
+  }
+
+  &__member {
+    top: 9.75rem;
+    left: 3rem;
+    width: 15rem;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@include until($breakpoint-lg) {
+  :host {
+    padding: $space-7 $space-6;
+  }
+
+  .showcase {
+    display: none;
+  }
+}
+
+// Una sola columna: el panel de marca se reduce a una banda superior.
+@include until($breakpoint-md) {
+  :host {
+    gap: $space-3;
+    padding: $space-5 $space-4;
+  }
+
+  .headline {
+    font-size: $font-size-lg;
+    letter-spacing: -0.02em;
+  }
+
+  .lead,
+  .chips {
+    display: none;
+  }
+}

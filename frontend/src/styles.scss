@@ -1,3 +1,4 @@
-// Estilos globales: tokens, base y vocabulario de componentes en src/assets/scss.
+// Estilos globales: tema (propiedades CSS), tokens, base y vocabulario de componentes en src/assets/scss.
+@use 'theme';
 @use 'base';
 @use 'components';

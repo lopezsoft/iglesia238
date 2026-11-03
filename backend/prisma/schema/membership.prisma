@@ -56,6 +56,11 @@ enum ConsentChannel {
   PAPER
 }
 
+enum PolicyStatus {
+  DRAFT
+  PUBLISHED
+}
+
 // Catálogos globales: su valor no depende de la iglesia.
 
 model DocumentType {
@@ -204,6 +209,7 @@ model Person {
   personAttachments             PersonAttachment[]
   membershipApplications        MembershipApplication[]
   pastoralTerms                 PastoralTerm[]
+  marriagesOfficiated           Marriage[]              @relation("MarriageOfficiant")
 
   @@unique([denominationId, id])
   @@unique([denominationId, documentTypeId, documentNumber])
@@ -283,6 +289,9 @@ model PersonStudy {
   studyId        Int         @map("study_id")
   status         StudyStatus @default(COMPLETED)
   completedOn    DateTime?   @map("completed_on") @db.Date
+  institution    String?     @db.VarChar(150)
+  /// Año de finalización o, si sigue en curso, año de inicio.
+  year           Int?
   person         Person      @relation(fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   study          Study       @relation(fields: [denominationId, studyId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
 
@@ -421,13 +430,15 @@ model MemberPosition {
   @@map("member_positions")
 }
 
-/// Política de tratamiento de datos versionada.
+/// Política de tratamiento de datos versionada. Solo una política publicada rige; el borrador no se muestra al público.
 model PrivacyPolicy {
   id                     Int                     @id @default(autoincrement())
   denominationId         Int                     @map("denomination_id")
   version                String                  @db.VarChar(20)
   content                String                  @db.Text
   effectiveFrom          DateTime                @map("effective_from") @db.Date
+  status                 PolicyStatus            @default(DRAFT)
+  publishedAt            DateTime?               @map("published_at")
   denomination           Denomination            @relation(fields: [denominationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   dataConsents           DataConsent[]
   membershipApplications MembershipApplication[]

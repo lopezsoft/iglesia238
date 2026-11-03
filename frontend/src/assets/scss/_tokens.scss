@@ -1,47 +1,103 @@
-// Tokens de diseño «Plex institucional»: única fuente de colores, tipografía y espaciado.
-// Los componentes los usan con `@use 'tokens' as *;` y nunca escriben colores literales.
+// Tokens de diseño «Panel institucional».
+// Colores, sombras y degradados son alias SCSS a las propiedades CSS definidas en `_theme.scss`
+// (así el tema se cambia en un solo lugar). Escalas de forma, espaciado y tipografía son valores
+// SCSS. Los componentes los usan con `@use 'tokens' as *;` y nunca escriben colores literales.
 
-// Colores
-$color-ground: #f5f6f8;
-$color-surface: #ffffff;
-$color-surface-2: #eef1f5;
-$color-border: #d9dee5;
-$color-border-strong: #b8c1cc;
-$color-ink: #172231;
-$color-ink-muted: #566273;
-$color-primary: #1f5da0;
-$color-primary-hover: #174a80;
-$color-primary-soft: #e3ecf7;
-$color-on-primary: #ffffff;
-$color-warning: #a8530c;
-$color-warning-soft: #fbebdd;
-$color-success: #276a43;
-$color-success-soft: #e1f1e7;
-$color-danger: #b42318;
-$color-danger-hover: #8f1c13;
-$color-danger-soft: #fbe4e2;
-$color-danger-border: #f0c4bf;
-$color-sidebar: #172231;
-$color-sidebar-text: #e6eaf0;
-$color-sidebar-muted: #a7b1bf;
-$color-sidebar-active: #2a3d57;
-$color-brand-mark: #6ea8e8;
-$color-backdrop: rgba(23, 34, 49, 0.45);
-$color-shadow: rgba(23, 34, 49, 0.06);
-$color-shadow-strong: rgba(23, 34, 49, 0.18);
+// Marca y acciones
+$color-primary: var(--color-primary);
+$color-primary-hover: var(--color-primary-hover);
+$color-primary-strong: var(--color-primary-strong);
+$color-primary-soft: var(--color-primary-soft);
+$color-primary-ring: var(--color-primary-ring);
+$color-brand-accent: var(--color-brand-accent);
+$color-on-primary: var(--color-on-primary);
+$color-on-brand: var(--color-on-brand);
+$color-on-brand-muted: var(--color-on-brand-muted);
+
+// Superficies y texto
+$color-ground: var(--color-ground);
+$color-surface: var(--color-surface);
+$color-surface-2: var(--color-surface-2);
+$color-surface-tint: var(--color-surface-tint);
+$color-border: var(--color-border);
+$color-border-strong: var(--color-border-strong);
+$color-ink: var(--color-ink);
+$color-ink-muted: var(--color-ink-muted);
+$color-ink-subtle: var(--color-ink-subtle);
+
+// Semánticos
+$color-warning: var(--color-warning);
+$color-warning-soft: var(--color-warning-soft);
+$color-success: var(--color-success);
+$color-success-soft: var(--color-success-soft);
+$color-danger: var(--color-danger);
+$color-danger-hover: var(--color-danger-hover);
+$color-danger-soft: var(--color-danger-soft);
+$color-danger-border: var(--color-danger-border);
+
+// Shell
+$color-sidebar: var(--color-sidebar);
+$color-sidebar-text: var(--color-sidebar-text);
+$color-sidebar-muted: var(--color-sidebar-muted);
+$color-sidebar-active: var(--color-sidebar-active);
+$color-sidebar-icon: var(--color-sidebar-icon);
+$color-brand-mark: var(--color-brand-mark);
+$color-online: var(--color-online);
+$color-offline: var(--color-offline);
+$color-badge-alert: var(--color-badge-alert);
+$color-backdrop: var(--color-backdrop);
+$color-shadow: var(--color-shadow);
+$color-shadow-strong: var(--color-shadow-strong);
+
+// Superficies translúcidas sobre fondos de marca
+$glass-bg: var(--glass-bg);
+$glass-bg-strong: var(--glass-bg-strong);
+$glass-border: var(--glass-border);
+$glass-grid: var(--glass-grid);
+$glass-glow: var(--glass-glow);
+
+// Degradados
+$gradient-primary: var(--gradient-primary);
+$gradient-hero: var(--gradient-hero);
+$gradient-brand-panel: var(--gradient-brand-panel);
+$gradient-auth-form: var(--gradient-auth-form);
+
+// Sombras
+$shadow-card: var(--shadow-card);
+$shadow-card-hover: var(--shadow-card-hover);
+$shadow-button: var(--shadow-button);
+$shadow-button-soft: var(--shadow-button-soft);
+$shadow-hero: var(--shadow-hero);
+$shadow-overlay: var(--shadow-overlay);
+
+// Tonos de categoría (cyan, green, orange, red, indigo, slate). `tone($name)` (en _mixins)
+// publica --tone-fg / --tone-soft / --tone-border / --tone-panel para el tono elegido.
+$tone-names: ('cyan', 'green', 'orange', 'red', 'indigo', 'slate');
+$tone-fg: var(--tone-fg);
+$tone-soft: var(--tone-soft);
+$tone-border: var(--tone-border);
+$tone-panel: var(--tone-panel);
 
 // Tipografía
-$font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+$font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 $font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+$font-size-3xs: 0.625rem;
+$font-size-2xs: 0.6875rem;
 $font-size-xs: 0.75rem;
 $font-size-sm: 0.875rem;
 $font-size-md: 1rem;
 $font-size-lg: 1.25rem;
 $font-size-xl: 1.5rem;
-$font-size-kpi: 1.75rem;
+$font-size-kpi: 1.5rem;
+$font-size-display: 2.75rem;
+$font-size-hero-title: 1.375rem;
+$font-size-auth-title: 2rem;
+$font-size-auth-headline: clamp(2rem, 3.4vw, 3rem);
 $font-weight-regular: 400;
 $font-weight-medium: 500;
 $font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 800;
 $line-height: 1.5;
 
 // Espaciado (escala de 4 px)
@@ -52,19 +108,29 @@ $space-4: 1rem;
 $space-5: 1.5rem;
 $space-6: 2rem;
 $space-7: 3rem;
+$space-8: 4rem;
 
 // Forma
-$radius-control: 8px;
-$radius-card: 10px;
+$radius-xs: 6px;
+$radius-control: 10px;
+$radius-input-lg: 12px;
+$radius-card: 14px;
+$radius-panel: 16px;
+$radius-hero: 18px;
+$radius-chip: 10px;
 $radius-pill: 999px;
 $control-height: 2.5rem;
-$shadow-card: 0 1px 2px $color-shadow;
-$shadow-overlay: 0 12px 32px $color-shadow-strong;
-$sidebar-width: 15.5rem;
-$topbar-height: 4rem;
-$content-max-width: 80rem;
+$control-height-compact: 2.25rem;
+$control-height-lg: 3rem;
+$button-height-lg: 3.125rem;
+$sidebar-width: 4.75rem;
+$sidebar-width-expanded: 18rem;
+$topbar-height: 4.5rem;
+$footer-height: 3.5rem;
+$content-max-width: 100rem;
 
 // Puntos de corte
 $breakpoint-sm: 640px;
 $breakpoint-md: 900px;
 $breakpoint-lg: 1200px;
+$breakpoint-xl: 1536px;

@@ -1,50 +1,41 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { EmptyStateComponent, PaginationComponent } from '../../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { PaginationComponent } from '../../../../shared/ui/feedback.components';
 import { BadgeTone, StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
-import { paginate } from '../../../../shared/utils/pagination';
 import {
   CONTRIBUTION_CATEGORY_LABELS,
   CONTRIBUTION_STATUS_LABELS,
-  ContributionCategory,
   ContributionDisplayStatus,
   PAYMENT_METHOD_LABELS,
 } from '../../data/accounting.models';
-import { ContributionRow } from '../data/contributions.models';
+import { ContributionListing, ContributionRow } from '../data/contributions.models';
 
-const PAGE_SIZE = 10;
 const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
   RECORDED: 'info',
   SETTLED: 'success',
   VOIDED: 'danger',
 };
 
-/** Contributions of the month, newest receipt first, with the void action. */
+/** One page of contributions, newest first, with the detail and void actions. */
 @Component({
   selector: 'app-contributions-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, IconComponent, MoneyPipe, PaginationComponent, RouterLink, StatusBadgeComponent],
+  imports: [DatePipe, EmptyStateComponent, IconComponent, MoneyPipe, PaginationComponent, RouterLink, StatusBadgeComponent],
   template: `
     <section class="card card--flush" aria-labelledby="table-title">
-      <div class="card__header table-header">
+      <div class="card__header">
         <div>
-          <h2 id="table-title">Aportes de {{ monthLabel() }}</h2>
-          <p class="text-muted text-small">Ordenados por número de recibo, del más reciente al más antiguo.</p>
+          <h2 id="table-title">Aportes de {{ listing().label.toLowerCase() }}</h2>
+          <p class="text-muted text-small">
+            Del más reciente al más antiguo. Un aporte anulado se conserva con su motivo y no suma en los totales.
+          </p>
         </div>
-        <div class="field">
-          <label for="type-filter">Tipo</label>
-          <select id="type-filter" class="select" [value]="category()" (change)="onFilter($event)">
-            <option value="ALL">Todos</option>
-            @for (option of categoryOptions; track option) {
-              <option [value]="option">{{ categoryLabels[option] }}</option>
-            }
-          </select>
-        </div>
+        <span class="chip">{{ listing().total }} {{ listing().total === 1 ? 'resultado' : 'resultados' }}</span>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" [attr.aria-busy]="loading()">
         <table class="table">
           <thead>
             <tr>
@@ -58,18 +49,23 @@ const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
               <th scope="col">Medio</th>
               <th scope="col" class="text-right">Valor</th>
               <th scope="col">Estado</th>
-              <th scope="col">Acción</th>
+              <th scope="col"><span class="visually-hidden">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            @for (row of page().items; track row.id) {
+            @for (row of listing().items; track row.id) {
               <tr>
                 <td>{{ row.receivedOn | date: 'dd/MM/yyyy' }}</td>
-                <td class="code">{{ row.receiptNumber }}</td>
-                <td>{{ row.typeName }}</td>
+                <td class="code">
+                  <button type="button" class="link-button" (click)="detailRequested.emit(row)">{{ row.receiptNumber }}</button>
+                </td>
                 <td>
-                  <div>{{ row.contributorName ?? 'Anónimo' }}</div>
-                  <div class="text-muted text-small">{{ row.contributorDetail }}</div>
+                  <div>{{ row.typeName }}</div>
+                  <div class="text-muted text-small">{{ categoryLabels[row.category] }}</div>
+                </td>
+                <td>
+                  <div>{{ row.contributorName ?? (row.notes ? 'Colecta agregada' : 'Anónimo') }}</div>
+                  <div class="text-muted text-small">{{ detailOf(row) }}</div>
                 </td>
                 @if (showCongregation()) {
                   <td>{{ row.congregationName }}</td>
@@ -82,35 +78,44 @@ const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
                 </td>
                 <td class="num" [class.voided]="row.status === 'VOIDED'">{{ row.amount | money }}</td>
                 <td><app-status-badge [label]="statusLabels[row.status]" [tone]="statusTones[row.status]" /></td>
-                <td>
-                  @switch (row.status) {
-                    @case ('VOIDED') {
-                      <span class="text-muted text-small">Motivo: {{ row.voidReason }}</span>
-                    }
-                    @case ('SETTLED') {
-                      <button type="button" class="btn btn--ghost btn--sm" disabled title="Un aporte liquidado no se puede anular" [attr.aria-label]="'Recibo ' + row.receiptNumber + ' liquidado: no se puede anular'">
+                <td class="actions">
+                  <button type="button" class="btn btn--secondary btn--sm" [attr.aria-label]="'Ver detalle del recibo ' + row.receiptNumber" (click)="detailRequested.emit(row)">
+                    <app-icon name="eye" [size]="14" />
+                    Ver
+                  </button>
+                  @if (canDownloadReceipt() && row.voucherId !== null) {
+                    <button
+                      type="button"
+                      class="btn btn--ghost btn--sm"
+                      [attr.aria-label]="'Descargar el recibo ' + row.receiptNumber + ' en PDF'"
+                      (click)="receiptRequested.emit(row)"
+                    >
+                      <app-icon name="download" [size]="14" />
+                      Recibo
+                    </button>
+                  }
+                  @if (canWrite() && row.status === 'RECORDED') {
+                    @if (row.voidBlock === 'CONSOLIDATED') {
+                      <button type="button" class="btn btn--ghost btn--sm" disabled title="Consolidado en el Libro de caja: reversa primero la consolidación" [attr.aria-label]="'Recibo ' + row.receiptNumber + ' consolidado en el Libro de caja: reversa primero la consolidación para anularlo'">
                         <app-icon name="lock" [size]="14" /> Anular
                       </button>
-                    }
-                    @default {
-                      @if (row.voidBlock === 'CONSOLIDATED') {
-                        <button type="button" class="btn btn--ghost btn--sm" disabled title="Consolidado en el Libro de caja: reversa primero la consolidación" [attr.aria-label]="'Recibo ' + row.receiptNumber + ' consolidado en el Libro de caja: reversa primero la consolidación para anularlo'">
-                          <app-icon name="lock" [size]="14" /> Anular
-                        </button>
-                      } @else if (canWrite()) {
-                        <button type="button" class="btn btn--danger-ghost btn--sm" [attr.aria-label]="'Anular recibo ' + row.receiptNumber" (click)="voidRequested.emit(row)">
-                          Anular
-                        </button>
-                      } @else {
-                        <span class="text-muted text-small">—</span>
-                      }
+                    } @else {
+                      <button type="button" class="btn btn--danger-ghost btn--sm" [attr.aria-label]="'Anular recibo ' + row.receiptNumber" (click)="voidRequested.emit(row)">
+                        Anular
+                      </button>
                     }
                   }
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td [attr.colspan]="showCongregation() ? 9 : 8" class="text-muted">No hay aportes de este tipo en {{ monthLabel() }}.</td>
+                <td [attr.colspan]="showCongregation() ? 9 : 8">
+                  <app-empty-state
+                    icon="receipt"
+                    title="No hay aportes con esos criterios"
+                    description="Cambia el periodo o limpia los filtros para ver más resultados."
+                  />
+                </td>
               </tr>
             }
           </tbody>
@@ -119,51 +124,81 @@ const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
       <div class="alert table-note" role="note">
         <app-icon name="info" />
         <span>
-          Un aporte liquidado no se puede anular: ya forma parte de una liquidación del diezmo. Para corregirlo, registra un
-          ajuste en el <a routerLink="/accounting/cash-book">Libro de caja</a>.
+          Un aporte liquidado o consolidado no se puede anular: se corrige desde la
+          <a routerLink="/accounting/tithe-settlements">Liquidación del diezmo</a> o el
+          <a routerLink="/accounting/cash-book">Libro de caja</a>.
         </span>
       </div>
-      <app-pagination [page]="pageNumber()" [pageSize]="pageSize" [total]="filtered().length" (pageChange)="pageNumber.set($event)" />
+      <app-pagination
+        [page]="listing().page"
+        [pageSize]="listing().pageSize"
+        [total]="listing().total"
+        (pageChange)="pageChange.emit($event)"
+      />
     </section>
   `,
   styles: `
     @use 'tokens' as *;
-    .table-header {
-      align-items: flex-end;
-      padding: $space-5 $space-5 0;
-    }
+    @use 'mixins' as *;
+
     .table-note {
       margin: $space-4 $space-5 0;
     }
+
     .voided {
       text-decoration: line-through;
       color: $color-ink-muted;
     }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $space-2;
+      justify-content: flex-end;
+    }
+
+    .link-button {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: $color-primary;
+      font: inherit;
+      font-weight: $font-weight-semibold;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+
+      &:focus-visible {
+        @include focus-ring;
+      }
+    }
   `,
 })
 export class ContributionsTableComponent {
-  readonly rows = input.required<readonly ContributionRow[]>();
-  readonly monthLabel = input.required<string>();
+  readonly listing = input.required<ContributionListing>();
   readonly canWrite = input(false);
   readonly showCongregation = input(false);
+  /** The receipt PDF needs a sede: a denomination-wide list shows the sede name instead. */
+  readonly canDownloadReceipt = input(false);
+  readonly loading = input(false);
+  readonly pageChange = output<number>();
   readonly voidRequested = output<ContributionRow>();
+  readonly detailRequested = output<ContributionRow>();
+  readonly receiptRequested = output<ContributionRow>();
 
-  protected readonly pageSize = PAGE_SIZE;
-  protected readonly categoryOptions: readonly ContributionCategory[] = ['TITHE', 'OFFERING', 'FIRST_FRUITS', 'VOW', 'OTHER'];
   protected readonly categoryLabels = CONTRIBUTION_CATEGORY_LABELS;
   protected readonly methodLabels = PAYMENT_METHOD_LABELS;
   protected readonly statusLabels = CONTRIBUTION_STATUS_LABELS;
   protected readonly statusTones = STATUS_TONES;
 
-  protected readonly category = signal<ContributionCategory | 'ALL'>('ALL');
-  protected readonly filtered = computed(() =>
-    this.category() === 'ALL' ? this.rows() : this.rows().filter((row) => row.category === this.category()),
-  );
-  /** Back to the first page whenever the rows or the filter change. */
-  protected readonly pageNumber = linkedSignal({ source: this.filtered, computation: () => 1 });
-  protected readonly page = computed(() => paginate(this.filtered(), { page: this.pageNumber(), pageSize: PAGE_SIZE }));
-
-  protected onFilter(event: Event): void {
-    this.category.set((event.target as HTMLSelectElement).value as ContributionCategory | 'ALL');
+  /** Member code and pledge, or the description of a collection. */
+  protected detailOf(row: ContributionRow): string {
+    if (row.personId === null) {
+      return row.notes ?? 'Sin datos del aportante';
+    }
+    const parts = [row.memberCode, row.vowPledgeCode ? `Abono a ${row.vowPledgeCode}` : null];
+    return parts.filter(Boolean).join(' · ') || 'Sin código de miembro';
   }
 }

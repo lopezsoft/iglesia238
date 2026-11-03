@@ -1,7 +1,7 @@
 <app-page-header
   [title]="'Presupuesto ' + (data()?.year ?? '')"
-  breadcrumb="Inicio / Contabilidad / Presupuesto"
-  [description]="'Presupuesto fijo y por comités de ' + (data()?.congregationName ?? 'la sede') + '. ' + (data()?.cutoffLabel ?? '')"
+  breadcrumb="Contabilidad / Presupuesto"
+  [description]="'Presupuesto fijo y por comités de ' + (data()?.congregationName ?? 'la sede') + '. ' + (data() ? cutoff(data()!.year, data()!.today) : '')"
 >
   @if (data(); as current) {
     <div class="field year-field">
@@ -62,120 +62,227 @@
   } @else {
     @let current = data()!;
     @let view = active()!;
+
+    <div class="bar">
+      <app-tab-cards
+        class="bar__tabs"
+        ariaLabel="Tipo de presupuesto"
+        idPrefix="budget"
+        [items]="tabs()"
+        [selected]="tab()"
+        (selectedChange)="selectTab($event)"
+      />
+      <app-export-actions [formats]="['csv']" [disabled]="view.lines.length === 0" (export)="exportCsv()" />
+    </div>
+
     <section aria-labelledby="kpi-title">
       <h2 id="kpi-title" class="visually-hidden">Resumen de ejecución</h2>
-      <div class="grid-auto">
+      <div class="kpi-grid">
         @for (kpi of kpis(); track kpi.label) {
-          <app-stat-card [label]="kpi.label" [value]="kpi.value" [hint]="kpi.hint" />
+          <app-stat-card [icon]="kpi.icon" [tone]="kpi.tone" [label]="kpi.label" [value]="kpi.value" [hint]="kpi.hint" />
         }
       </div>
     </section>
 
-    <section class="card" aria-label="Líneas del presupuesto">
-      <div class="tabs-row">
-        <div class="tabs" role="tablist" aria-label="Tipo de presupuesto">
-          <button
-            type="button"
-            id="tab-fixed"
-            role="tab"
-            aria-controls="panel-budget"
-            [attr.aria-selected]="tab() === 'FIXED'"
-            (click)="selectTab('FIXED')"
-          >
-            Presupuesto fijo <span class="chip chip--mono">{{ current.fixed.lines.length }}</span>
-          </button>
-          <button
-            type="button"
-            id="tab-committees"
-            role="tab"
-            aria-controls="panel-budget"
-            [attr.aria-selected]="tab() === 'COMMITTEE'"
-            (click)="selectTab('COMMITTEE')"
-          >
-            Por comités <span class="chip chip--mono">{{ current.committee.lines.length }}</span>
-          </button>
+    <section class="card controls" aria-label="Estado y filtros del presupuesto">
+      <div class="controls__row">
+        <div class="controls__status">
+          <span class="text-small text-muted">Estado</span>
+          @if (view.status; as status) {
+            <app-status-badge [label]="statusLabels[status]" [tone]="statusTones[status]" />
+          } @else {
+            <app-status-badge label="Sin presupuesto" />
+          }
         </div>
-        <p class="text-muted text-small legend">
-          <span class="legend__mark" aria-hidden="true"></span>
-          Línea vertical en cada barra: ejecución esperada a la fecha ({{ percent(current.expectedPct) }}).
-        </p>
+        @if (canWrite() && view.status) {
+          <div class="cluster">
+            @if (view.status === 'DRAFT') {
+              <button type="button" class="btn btn--secondary btn--sm" (click)="askStatus('APPROVED')">
+                <app-icon name="check" [size]="16" />
+                Aprobar
+              </button>
+            }
+            @if (view.status === 'APPROVED') {
+              <button type="button" class="btn btn--secondary btn--sm" (click)="askStatus('CLOSED')">
+                <app-icon name="lock" [size]="16" />
+                Cerrar presupuesto
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm" (click)="askStatus('DRAFT')">
+                <app-icon name="undo" [size]="16" />
+                Volver a borrador
+              </button>
+            }
+          </div>
+        }
+        @if (canEdit()) {
+          <button type="button" class="btn btn--ghost btn--sm" (click)="copyOpen.set(true)">
+            <app-icon name="copy" [size]="16" />
+            Copiar de otro año
+          </button>
+        }
       </div>
 
-      <div id="panel-budget" role="tabpanel" [attr.aria-labelledby]="tab() === 'FIXED' ? 'tab-fixed' : 'tab-committees'">
-        @if (view.lines.length === 0) {
-          <app-empty-state
-            icon="pie-chart"
-            [title]="tab() === 'FIXED' ? 'El presupuesto fijo ' + current.year + ' aún no tiene líneas' : 'Ningún comité tiene líneas en ' + current.year"
-            [description]="'Agrega líneas por cuenta y fondo. La ejecución real se calcula con los movimientos del libro de caja de ' + current.year + '.'"
-          >
-            @if (canEdit()) {
-              <button type="button" class="btn btn--primary" (click)="addLine()">Agregar primera línea</button>
+      @if (view.budgetId !== null) {
+        <div class="controls__row">
+          <div class="field rate-field">
+            <label for="budget-rate">Incremento esperado de ingresos (%)</label>
+            <div class="rate-input">
+              <input
+                id="budget-rate"
+                class="input mono"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="Sin definir"
+                [value]="rateValue(view)"
+                [disabled]="!canEdit()"
+                [attr.aria-invalid]="rateError() !== null"
+                (input)="onRateInput($event)"
+              />
+              @if (canEdit()) {
+                <button type="button" class="btn btn--secondary btn--sm" [disabled]="ratePending() || rateDraft() === null" (click)="saveRate()">
+                  {{ ratePending() ? 'Guardando…' : 'Guardar' }}
+                </button>
+              }
+            </div>
+            @if (rateError(); as message) {
+              <span class="field__error">{{ message }}</span>
+            } @else {
+              <span class="field__hint">Referencia para proyectar los ingresos del año frente al anterior.</span>
             }
-          </app-empty-state>
-        } @else if (tab() === 'FIXED') {
+          </div>
+        </div>
+      }
+
+      <div class="controls__row filters">
+        <div class="field filters__search">
+          <label for="budget-search">Buscar línea</label>
+          <input id="budget-search" class="input" type="search" placeholder="Cuenta, código o fondo" [value]="search()" (input)="onSearch($event)" />
+        </div>
+        <label class="checkbox filters__over">
+          <input type="checkbox" [checked]="onlyOver()" (change)="toggleOver($event)" />
+          Solo sobreejecutadas
+        </label>
+        @if (filtering()) {
+          <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">Quitar filtros</button>
+        }
+        <p class="text-muted text-small legend">
+          <span class="legend__mark" aria-hidden="true"></span>
+          Línea vertical: ejecución esperada a la fecha ({{ percent(current.expectedPct) }}).
+        </p>
+      </div>
+    </section>
+
+    @if (view.lines.length === 0) {
+      <section class="card">
+        <app-empty-state
+          icon="pie-chart"
+          [title]="tab() === 'FIXED' ? 'El presupuesto fijo ' + current.year + ' aún no tiene líneas' : 'Ningún comité tiene líneas en ' + current.year"
+          [description]="'Agrega líneas por cuenta y fondo, o copia el presupuesto de otro año. La ejecución real se calcula con los movimientos del libro de caja de ' + current.year + '.'"
+        >
+          @if (canEdit()) {
+            <button type="button" class="btn btn--primary" (click)="addLine()">Agregar primera línea</button>
+          }
+        </app-empty-state>
+      </section>
+    } @else if (visibleLines().length === 0) {
+      <section class="card">
+        <app-empty-state icon="filter" title="Ninguna línea coincide" description="Cambia la búsqueda o quita los filtros para ver todas las líneas." />
+      </section>
+    } @else if (tab() === 'FIXED') {
+      @if (incomeLines().length > 0) {
+        <app-section-panel
+          icon="trending-up"
+          tone="green"
+          layout="stack"
+          title="Ingresos presupuestados"
+          [subtitle]="incomeLines().length + (incomeLines().length === 1 ? ' línea' : ' líneas') + ' · recaudo real del libro de caja'"
+        >
           <app-budget-lines-table
-            [lines]="view.lines"
-            [totals]="view.totals"
-            totalLabel="Total presupuesto fijo"
-            [caption]="'Presupuesto fijo ' + current.year + ' de ' + current.congregationName + ', por cuenta y fondo'"
+            [lines]="incomeLines()"
+            [totals]="incomeTotals()"
+            totalLabel="Total ingresos"
+            [caption]="'Ingresos presupuestados ' + current.year + ' de ' + current.congregationName"
             [expectedPct]="current.expectedPct"
             [canEdit]="canEdit()"
+            (detail)="showDetail($event)"
             (edit)="editLine($event)"
             (remove)="askDelete($event)"
           />
-        } @else {
-          <div class="stack">
-            <p class="alert" role="note">
-              <app-icon name="info" />
-              <span>
-                Un mismo concepto puede estar en dos comités: la línea es por cuenta y fondo. Cada comité ejecuta su propia
-                línea; la etiqueta «También en» indica dónde más se presupuesta el concepto.
-              </span>
-            </p>
-            @for (group of view.groups; track group.fundId) {
-              <section class="committee" [attr.aria-labelledby]="'committee-' + group.fundId">
-                <div class="committee__header">
-                  <h3 [id]="'committee-' + group.fundId">{{ group.fundName }}</h3>
-                  <span class="chip">{{ group.lines.length }} {{ group.lines.length === 1 ? 'línea' : 'líneas' }}</span>
-                </div>
-                <app-budget-lines-table
-                  [lines]="group.lines"
-                  [totals]="group.totals"
-                  [totalLabel]="'Subtotal ' + group.fundName"
-                  [caption]="'Líneas de ' + group.fundName + ' en ' + current.year"
-                  fundHeader="Comité"
-                  [expectedPct]="current.expectedPct"
-                  [canEdit]="canEdit()"
-                  (edit)="editLine($event)"
-                  (remove)="askDelete($event)"
-                />
-              </section>
-            }
-            <div class="committee-total">
-              <p><strong>Total por comités</strong> · {{ view.lines.length }} líneas en {{ view.groups.length }} comités</p>
-              <dl class="details">
-                <div>
-                  <dt>Anual</dt>
-                  <dd class="amount">{{ view.totals.annual | money }}</dd>
-                </div>
-                <div>
-                  <dt>Ejecutado</dt>
-                  <dd class="amount">{{ view.totals.executed | money }}</dd>
-                </div>
-                <div>
-                  <dt>Ejecución</dt>
-                  <dd class="amount">{{ percent(view.totals.executionPct) }}</dd>
-                </div>
-                <div>
-                  <dt>Diferencia</dt>
-                  <dd class="amount">{{ view.totals.difference | money }}</dd>
-                </div>
-              </dl>
-            </div>
+        </app-section-panel>
+      }
+      @if (expenseLines().length > 0) {
+        <app-section-panel
+          icon="trending-down"
+          tone="orange"
+          layout="stack"
+          title="Egresos presupuestados"
+          [subtitle]="expenseLines().length + (expenseLines().length === 1 ? ' línea' : ' líneas') + ' · gasto real del libro de caja'"
+        >
+          <app-budget-lines-table
+            [lines]="expenseLines()"
+            [totals]="expenseTotals()"
+            totalLabel="Total egresos"
+            [caption]="'Egresos presupuestados ' + current.year + ' de ' + current.congregationName"
+            [expectedPct]="current.expectedPct"
+            [canEdit]="canEdit()"
+            (detail)="showDetail($event)"
+            (edit)="editLine($event)"
+            (remove)="askDelete($event)"
+          />
+        </app-section-panel>
+      }
+    } @else {
+      <p class="alert" role="note">
+        <app-icon name="info" />
+        <span>
+          Un mismo concepto puede estar en dos comités: la línea es por cuenta y fondo. Cada comité ejecuta su propia línea; la
+          etiqueta «También en» indica dónde más se presupuesta el concepto.
+        </span>
+      </p>
+      @for (group of visibleGroups(); track group.fundId) {
+        <app-section-panel
+          icon="users"
+          tone="indigo"
+          layout="stack"
+          [title]="group.fundName"
+          [subtitle]="group.lines.length + (group.lines.length === 1 ? ' línea' : ' líneas')"
+        >
+          <app-budget-lines-table
+            [lines]="group.lines"
+            [totals]="group.totals"
+            [totalLabel]="'Subtotal ' + group.fundName"
+            [caption]="'Líneas de ' + group.fundName + ' en ' + current.year"
+            fundHeader="Comité"
+            [expectedPct]="current.expectedPct"
+            [canEdit]="canEdit()"
+            (detail)="showDetail($event)"
+            (edit)="editLine($event)"
+            (remove)="askDelete($event)"
+          />
+        </app-section-panel>
+      }
+      <div class="committee-total">
+        <p><strong>Total por comités</strong> · {{ visibleLines().length }} líneas en {{ visibleGroups().length }} comités</p>
+        <dl class="details">
+          <div>
+            <dt>Anual</dt>
+            <dd class="amount">{{ visibleTotals().annual | money }}</dd>
           </div>
-        }
+          <div>
+            <dt>Ejecutado</dt>
+            <dd class="amount">{{ visibleTotals().executed | money }}</dd>
+          </div>
+          <div>
+            <dt>Ejecución</dt>
+            <dd class="amount">{{ percent(visibleTotals().executionPct) }}</dd>
+          </div>
+          <div>
+            <dt>Diferencia</dt>
+            <dd class="amount">{{ visibleTotals().difference | money }}</dd>
+          </div>
+        </dl>
       </div>
-    </section>
+    }
 
     <div class="notes text-muted text-small">
       <p>
@@ -183,13 +290,6 @@
         El ejecutado real suma los movimientos del <a routerLink="/accounting/cash-book">Libro de caja</a> de {{ current.year }}
         para cada cuenta y fondo; las reversas lo descuentan.
       </p>
-      @if (canWrite()) {
-        <p>
-          <app-icon name="shield" [size]="14" />
-          Tu rol puede crear y ajustar líneas (<span class="mono">budgets.manage</span>). Los comités consultan su ejecución en
-          <a routerLink="/reports">Reportes</a>.
-        </p>
-      }
     </div>
 
     <app-budget-line-dialog
@@ -201,6 +301,10 @@
       [funds]="current.funds"
       (saved)="onSaved($event)"
     />
+
+    <app-budget-line-detail-dialog [(open)]="detailOpen" [line]="detailTarget()" />
+
+    <app-budget-copy-dialog [(open)]="copyOpen" [type]="tab()" [targetYear]="current.year" [years]="current.years" (copied)="onCopied($event)" />
 
     <app-dialog [(open)]="deleteOpen" title="Eliminar línea del presupuesto">
       @if (deleteTarget(); as line) {
@@ -218,6 +322,23 @@
         <button type="button" class="btn btn--secondary" (click)="deleteOpen.set(false)">Cancelar</button>
         <button type="button" class="btn btn--danger" [disabled]="deletePending()" (click)="confirmDelete()">
           {{ deletePending() ? 'Eliminando…' : 'Eliminar línea' }}
+        </button>
+      </div>
+    </app-dialog>
+
+    <app-dialog [(open)]="statusOpen" [title]="statusChange()?.title ?? 'Cambiar estado'">
+      @if (statusChange(); as change) {
+        <div class="stack">
+          <p>{{ change.text }}</p>
+          @if (statusError()) {
+            <div class="alert alert--danger" role="alert">{{ statusError() }}</div>
+          }
+        </div>
+      }
+      <div dialog-footer>
+        <button type="button" class="btn btn--secondary" (click)="statusOpen.set(false)">Cancelar</button>
+        <button type="button" class="btn btn--primary" [disabled]="statusPending()" (click)="confirmStatus()">
+          {{ statusPending() ? 'Guardando…' : statusChange()?.confirm }}
         </button>
       </div>
     </app-dialog>

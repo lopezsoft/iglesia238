@@ -1,39 +1,95 @@
 @use 'tokens' as *;
 @use 'mixins' as *;
 
+:host {
+  display: block;
+}
+
 .stat {
   @include card;
   display: flex;
   flex-direction: column;
-  gap: $space-2;
+  gap: $space-1;
   height: 100%;
-  padding: $space-4 $space-5;
+  padding: $space-4;
   color: $color-ink;
   text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 
   &--link:hover {
     border-color: $color-primary;
+    box-shadow: $shadow-card-hover;
     color: $color-ink;
   }
 
-  &__label {
-    display: inline-flex;
-    align-items: center;
+  &.is-active {
+    @include bottom-bar;
+    border-color: $color-primary;
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: $space-2;
-    color: $color-ink-muted;
-    font-size: $font-size-xs;
+  }
+
+  &__chip {
+    @include icon-chip(2.5rem);
+  }
+
+  &__comparison {
+    margin-left: auto;
+    padding: 2px $space-2;
+    border-radius: $radius-xs;
+    background: $color-surface-2;
+    color: $color-ink-subtle;
+    font-size: $font-size-2xs;
+    font-style: italic;
     font-weight: $font-weight-medium;
   }
 
   &__value {
-    font-family: $font-mono;
+    margin-top: $space-2;
     font-size: $font-size-kpi;
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-extrabold;
+    letter-spacing: -0.02em;
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  &__label {
+    color: $color-ink-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
   }
 
   &__hint {
-    font-size: $font-size-xs;
-    color: $color-ink-muted;
+    font-size: $font-size-2xs;
+    color: $color-ink-subtle;
+  }
+
+  &__footer {
+    @include dashed-divider;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+    margin-top: $space-2;
+    padding-top: $space-2 + 0.125rem;
+    font-size: $font-size-2xs;
+  }
+
+  &__footer-label {
+    color: $color-ink-subtle;
+  }
+
+  &__footer-value {
+    color: $color-ink;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
   }
 }

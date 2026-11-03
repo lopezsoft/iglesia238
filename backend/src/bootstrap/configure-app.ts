@@ -1,4 +1,5 @@
 import compression from '@fastify/compress';
+import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -86,6 +87,8 @@ export async function configureApp(app: NestFastifyApplication): Promise<void> {
 
   await configureSecurity(app, config);
   await app.register(compression, { encodings: ['gzip', 'deflate'] });
+  // Parses the HttpOnly refresh cookie (request.cookies) and adds reply.setCookie / clearCookie.
+  await app.register(cookie);
   app.setGlobalPrefix(API_PREFIX);
   configureValidation(app);
   configureSwagger(app, config);

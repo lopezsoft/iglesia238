@@ -9,15 +9,13 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, switchMap, timer } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { IconComponent } from '../../../../shared/ui/icon.component';
-import { buildCertificateSnapshot } from '../data/certificate-document';
 import {
   CertificateListItem,
-  CertificateSnapshot,
   IssuingContext,
   MemberOption,
   NOTES_MAX_LENGTH,
@@ -26,7 +24,9 @@ import { CertificatesRepository } from '../data/certificates.repository';
 import { CertificateDocumentComponent } from './certificate-document.component';
 import { MemberSearchComponent } from './member-search.component';
 
-/** Issue form with the live preview of the printed certificate. */
+const PREVIEW_DEBOUNCE_MS = 300;
+
+/** Issue form with the preview of the printed certificate, built by the server. */
 @Component({
   selector: 'app-certificate-issue',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,38 +67,44 @@ export class CertificateIssueComponent {
     return this.context().types.find((type) => type.id === id) ?? null;
   });
 
-  /** The baptism certificate needs a registered baptism (checked again by the data source). */
+  /** The baptism certificate needs a registered baptism (the API checks it again). */
   protected readonly baptismMissing = computed(
     () =>
       this.selectedType()?.code === 'BAU' && this.member() !== null && !this.member()?.isBaptized,
   );
 
-  protected readonly preview = computed<CertificateSnapshot>(() => {
-    const context = this.context();
-    const type = this.selectedType() ?? context.types[0];
-    const member = this.member();
-    const placeholder: MemberOption = {
-      id: 0,
-      fullName: '',
-      code: '',
-      documentLabel: '',
-      joinedOn: null,
-      isBaptized: false,
-      waterBaptismOn: null,
-    };
-    const snapshot = buildCertificateSnapshot({
-      number: type?.nextNumber ?? '—',
-      typeCode: type?.code ?? '',
-      typeName: type?.name ?? '',
-      issuedOn: context.today,
-      letterhead: context.letterhead,
-      signers: context.signers,
-      issuedByName: context.issuedByName,
-      member: member ?? placeholder,
-      notes: this.formValue().notes ?? null,
-    });
-    return member ? snapshot : { ...snapshot, body: '' };
+  /** The server prints the preview: the text always matches what will be issued. */
+  protected readonly previewResource = rxResource({
+    params: () => {
+      const member = this.member();
+      const typeId = this.formValue().certificateTypeId ?? 0;
+      return member !== null && typeId > 0 && !this.baptismMissing()
+        ? {
+            memberId: member.id,
+            certificateTypeId: typeId,
+            notes: (this.formValue().notes ?? '').trim() || null,
+            // Issuing moves the next number: ask again after each emission.
+            nextNumber: this.selectedType()?.nextNumber ?? '',
+          }
+        : undefined;
+    },
+    stream: ({ params }) =>
+      timer(PREVIEW_DEBOUNCE_MS).pipe(
+        switchMap(() =>
+          this.repo.preview({
+            memberId: params.memberId,
+            certificateTypeId: params.certificateTypeId,
+            notes: params.notes,
+          }),
+        ),
+      ),
   });
+  protected readonly preview = computed(() =>
+    this.previewResource.hasValue() ? this.previewResource.value() : null,
+  );
+  protected readonly previewError = computed(() =>
+    this.previewResource.error() ? userMessage(this.previewResource.error()) : null,
+  );
 
   constructor() {
     // Default to the first type of the denomination once the context arrives.

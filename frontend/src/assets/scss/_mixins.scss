@@ -35,3 +35,61 @@
   border-radius: $radius-card;
   box-shadow: $shadow-card;
 }
+
+// Publica las variables del tono (cyan, green, orange, red, indigo, slate) en el elemento.
+@mixin tone($name) {
+  --tone-fg: var(--tone-#{$name}-fg);
+  --tone-soft: var(--tone-#{$name}-soft);
+  --tone-border: var(--tone-#{$name}-border);
+  --tone-panel: var(--tone-#{$name}-panel);
+}
+
+// Cuadro redondeado tintado que contiene un icono (usa las variables del tono vigente).
+@mixin icon-chip($size: 2.5rem) {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: $size;
+  height: $size;
+  border-radius: $radius-chip;
+  background: $tone-soft;
+  color: $tone-fg;
+}
+
+// Fondo translúcido sobre superficies de marca (con alternativa si no hay backdrop-filter).
+@mixin glass($radius: $radius-card) {
+  background: $glass-bg-strong;
+  border: 1px solid $glass-border;
+  border-radius: $radius;
+  color: $color-on-brand;
+  backdrop-filter: blur(10px);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: $glass-bg-strong;
+  }
+}
+
+// Barra inferior decorativa de un elemento activo.
+@mixin bottom-bar($inset: 0.75rem, $color: $color-primary) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: $inset;
+    bottom: 0;
+    left: $inset;
+    height: 4px;
+    border-radius: 0 0 4px 4px;
+    background: $color;
+  }
+}
+
+@mixin dashed-divider {
+  border-top: 1px dashed $color-border;
+}
+
+@mixin thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: $color-border-strong transparent;
+}

@@ -13,16 +13,22 @@
 
 <div class="stack">
   @if (canManage()) {
-    <div class="alert" role="note">
-      <app-icon name="info" />
-      <p>
-        Tu rol tiene <span class="chip chip--mono">congregations.manage</span>: puedes crear sedes,
-        razones sociales y distritos, y abrir o cerrar las inscripciones públicas.
-        @if (denominationName()) {
-          Solo ves datos de {{ denominationName() }}.
-        }
+    <app-section-panel
+      tone="green"
+      icon="shield"
+      title="Estructura de la denominación"
+      layout="stack"
+      [subtitle]="
+        denominationName()
+          ? 'Solo ves datos de ' + denominationName() + '.'
+          : 'Sedes, razones sociales y distritos.'
+      "
+    >
+      <p class="text-small">
+        Puedes crear sedes, razones sociales y distritos, y abrir o cerrar las inscripciones públicas.
+        Cada sede tiene un código estable que prefija el número de miembro y de carné.
       </p>
-    </div>
+    </app-section-panel>
   } @else {
     <app-read-only-notice permission="congregations.manage" />
   }
@@ -51,56 +57,61 @@
     </div>
   }
 
-  <section class="grid-auto" aria-label="Resumen">
+  <section class="kpi-grid" aria-label="Resumen">
     <app-stat-card
       label="Sedes activas"
       icon="building"
+      tone="green"
       [value]="summary()?.activeCongregations ?? '—'"
+      [hint]="summary() ? 'de ' + summary()!.totalCongregations + ' registradas' : null"
     />
-    <app-stat-card label="Aceptan inscripciones" icon="inbox" [value]="acceptingLabel()" />
+    <app-stat-card
+      label="Aceptan inscripciones"
+      icon="inbox"
+      tone="cyan"
+      [value]="acceptingLabel()"
+    />
     <app-stat-card
       label="Razones sociales"
       icon="landmark"
+      tone="indigo"
       [value]="summary()?.legalEntities ?? '—'"
     />
-    <app-stat-card label="Distritos" icon="church" [value]="summary()?.districts ?? '—'" />
+    <app-stat-card
+      label="Distritos"
+      icon="church"
+      tone="orange"
+      [value]="summary()?.districts ?? '—'"
+    />
   </section>
 
-  <div>
-    <div class="tabs" role="tablist" aria-label="Secciones de organización">
-      @for (tab of tabs; track tab.value; let index = $index) {
-        <button
-          #tabButton
-          type="button"
-          role="tab"
-          [id]="tabId(tab.value)"
-          [attr.aria-selected]="activeTab() === tab.value"
-          [attr.tabindex]="activeTab() === tab.value ? 0 : -1"
-          aria-controls="organization-panel"
-          (click)="selectTab(tab.value)"
-          (keydown)="onTabKeydown($event, index)"
-        >
-          {{ tab.label }}
-        </button>
-      }
-    </div>
+  <app-tab-cards
+    ariaLabel="Secciones de organización"
+    idPrefix="organization"
+    [items]="tabs"
+    [selected]="activeTab()"
+    (selectedChange)="selectTab($event)"
+  />
 
-    <section id="organization-panel" role="tabpanel" [attr.aria-labelledby]="tabId(activeTab())">
-      @switch (activeTab()) {
-        @case ('sedes') {
-          <app-congregations-panel
-            [canManage]="canManage()"
-            [denominationName]="denominationName()"
-            (changed)="onChanged($event)"
-          />
-        }
-        @case ('razones') {
-          <app-legal-entities-panel [canManage]="canManage()" (changed)="onChanged($event)" />
-        }
-        @case ('distritos') {
-          <app-districts-panel [canManage]="canManage()" (changed)="onChanged($event)" />
-        }
+  <section
+    role="tabpanel"
+    [id]="'organization-panel-' + activeTab()"
+    [attr.aria-labelledby]="tabId(activeTab())"
+  >
+    @switch (activeTab()) {
+      @case ('sedes') {
+        <app-congregations-panel
+          [canManage]="canManage()"
+          [denominationName]="denominationName()"
+          (changed)="onChanged($event)"
+        />
       }
-    </section>
-  </div>
+      @case ('razones') {
+        <app-legal-entities-panel [canManage]="canManage()" (changed)="onChanged($event)" />
+      }
+      @case ('distritos') {
+        <app-districts-panel [canManage]="canManage()" (changed)="onChanged($event)" />
+      }
+    }
+  </section>
 </div>

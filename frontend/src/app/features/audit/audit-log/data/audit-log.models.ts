@@ -1,4 +1,4 @@
-// Audit log (A-06), mirroring AuditLog of backend/prisma/schema/identity.prisma.
+// Audit log (A-06). The label tables mirror backend/src/modules/dashboard/application/audit-labels.ts.
 import { BadgeTone } from '../../../../shared/ui/status-badge.component';
 import { Page } from '../../../../shared/utils/pagination';
 
@@ -8,23 +8,41 @@ export const MAX_RANGE_DAYS = 90;
 
 export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   LOGIN: 'Inicio de sesión',
+  LOGIN_FAILED: 'Inicio de sesión fallido',
+  ACCOUNT_LOCKED: 'Cuenta bloqueada',
   LOGOUT: 'Cierre de sesión',
+  REFRESH_REUSE_DETECTED: 'Sesión cerrada por reutilización de credenciales',
+  PASSWORD_RESET_REQUESTED: 'Recuperación de contraseña solicitada',
+  PASSWORD_RESET: 'Contraseña restablecida',
+  PASSWORD_CHANGED: 'Cambio de contraseña',
+  INVITATION_ACCEPTED: 'Invitación aceptada',
   CREATE: 'Creación',
+  CREATED: 'Creación',
   UPDATE: 'Actualización',
+  UPDATED: 'Actualización',
+  DELETED: 'Eliminación',
   ACTIVATE: 'Activación',
   DEACTIVATE: 'Desactivación',
   ROLE_GRANTED: 'Rol otorgado',
   ROLE_REVOKED: 'Rol revocado',
   USER_INVITED: 'Usuario invitado',
+  USER_LINK_ISSUED: 'Enlace de acceso generado',
+  POLICY_CREATED: 'Creación de política de datos',
+  POLICY_UPDATED: 'Actualización de política de datos',
+  POLICY_PUBLISHED: 'Publicación de política de datos',
+  POLICY_DELETED: 'Eliminación de política de datos',
   APPLICATION_SUBMITTED: 'Envío de solicitud',
   APPLICATION_REVIEW_STARTED: 'Revisión de solicitud',
   APPLICATION_APPROVED: 'Aprobación de solicitud',
   APPLICATION_REJECTED: 'Rechazo de solicitud',
   APPLICATION_DUPLICATE: 'Solicitud duplicada',
   APPLICATION_MARKED_DUPLICATE: 'Solicitud duplicada',
+  MEMBER_CREATED: 'Alta de miembro',
   MEMBER_UPDATED: 'Actualización de miembro',
+  MEMBER_STATUS_CHANGED: 'Cambio de estado de miembro',
   MEMBER_TRANSFERRED: 'Traslado de miembro',
   MEMBERS_EXPORTED: 'Exportación de miembros',
+  PERSON_ANONYMIZED: 'Anonimización de persona',
   SOCIOECONOMIC_PROFILE_VIEWED: 'Consulta de perfil socioeconómico',
   CONSENT_REVOKED: 'Revocación de consentimiento',
   CERTIFICATE_ISSUED: 'Emisión de certificado',
@@ -34,10 +52,12 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   MARRIAGE_RECORDED: 'Registro de matrimonio',
   MARRIAGE_DISSOLVED: 'Disolución de matrimonio',
   CHILD_DEDICATION_RECORDED: 'Registro de presentación de niño',
+  CHILD_DEDICATION_VIEWED: 'Consulta de presentación de niño',
   PASTORAL_TERM_RECORDED: 'Registro de periodo pastoral',
   PASTORAL_TERM_CLOSED: 'Cierre de periodo pastoral',
   ATTENDANCE_RECORDED: 'Registro de asistencia',
   ATTENDANCE_UPDATED: 'Actualización de asistencia',
+  ATTENDANCE_DELETED: 'Eliminación de asistencia',
   ACCOUNT_CREATED: 'Creación de cuenta contable',
   ACCOUNT_UPDATED: 'Actualización de cuenta contable',
   ACCOUNT_DELETED: 'Eliminación de cuenta contable',
@@ -49,22 +69,37 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   CONTRIBUTION_RECORDED: 'Registro de aporte',
   CONTRIBUTION_VOIDED: 'Anulación de aporte',
   CONTRIBUTIONS_CONSOLIDATED: 'Consolidación de aportes',
+  CONTRIBUTIONS_EXPORTED: 'Exportación de aportes',
   VOW_PLEDGE_CREATED: 'Registro de voto',
+  VOW_PLEDGE_UPDATED: 'Actualización de voto',
+  VOW_PLEDGE_CANCELLED: 'Cancelación de voto',
+  VOW_PLEDGES_EXPORTED: 'Exportación de votos',
   CASH_TRANSACTION_POSTED: 'Movimiento de caja',
   CASH_TRANSACTION_REVERSED: 'Reversa de movimiento de caja',
+  PERIOD_OPENED: 'Apertura de periodo',
   PERIOD_CLOSED: 'Cierre de periodo',
+  TITHE_RULE_CREATED: 'Creación de regla del diezmo',
+  TITHE_RULE_UPDATED: 'Actualización de regla del diezmo',
+  TITHE_RULE_DELETED: 'Eliminación de regla del diezmo',
   TITHE_SETTLED: 'Liquidación del diezmo',
   TITHE_SETTLEMENT_VOIDED: 'Anulación de liquidación del diezmo',
+  BUDGET_UPDATED: 'Actualización de presupuesto',
+  BUDGET_COPIED: 'Copia de presupuesto',
+  BUDGET_APPROVED: 'Aprobación de presupuesto',
+  BUDGET_REOPENED: 'Reapertura de presupuesto',
+  BUDGET_CLOSED: 'Cierre de presupuesto',
   BUDGET_LINE_CREATED: 'Creación de rubro de presupuesto',
   BUDGET_LINE_UPDATED: 'Actualización de rubro de presupuesto',
   BUDGET_LINE_DELETED: 'Eliminación de rubro de presupuesto',
-  BUDGET_CLOSED: 'Cierre de presupuesto',
 };
 
 const AUDIT_ACTION_TONES: Readonly<Record<string, BadgeTone>> = {
   ROLE_GRANTED: 'warning',
   ROLE_REVOKED: 'warning',
   USER_INVITED: 'warning',
+  USER_LINK_ISSUED: 'warning',
+  LOGIN_FAILED: 'danger',
+  ACCOUNT_LOCKED: 'danger',
   APPLICATION_APPROVED: 'success',
   ACTIVATE: 'success',
   CERTIFICATE_ISSUED: 'info',
@@ -86,15 +121,33 @@ export const AUDIT_ENTITY_LABELS: Readonly<Record<string, string>> = {
   UserRole: 'Asignación de rol',
   MembershipApplication: 'Solicitud de membresía',
   Member: 'Miembro',
+  MemberPosition: 'Cargo de miembro',
+  MemberTransfer: 'Traslado de miembro',
   Person: 'Persona',
+  PersonStudy: 'Estudio',
+  FamilyRelation: 'Relación familiar',
+  SocioeconomicProfile: 'Ficha socioeconómica',
   DataConsent: 'Consentimiento de datos',
+  PrivacyPolicy: 'Política de datos',
   Certificate: 'Certificado',
+  MembershipCard: 'Carné',
+  ChildDedication: 'Presentación de niño',
+  Marriage: 'Matrimonio',
+  PastoralTerm: 'Periodo pastoral',
+  AttendanceSession: 'Asistencia',
   Contribution: 'Aporte',
+  VowPledge: 'Voto',
   Vow: 'Voto',
   CashTransaction: 'Movimiento de caja',
+  Voucher: 'Comprobante',
   AccountingPeriod: 'Periodo contable',
   TitheSettlement: 'Liquidación del diezmo',
+  TitheSettlementRule: 'Regla del diezmo',
   Budget: 'Presupuesto',
+  BudgetLine: 'Rubro de presupuesto',
+  Fund: 'Fondo',
+  Account: 'Cuenta contable',
+  ContributionType: 'Tipo de aporte',
 };
 
 /** Spanish label of an action; unknown codes are shown raw. */
@@ -108,25 +161,6 @@ export function auditActionTone(action: string): BadgeTone {
 
 export function auditEntityLabel(entity: string): string {
   return AUDIT_ENTITY_LABELS[entity] ?? entity;
-}
-
-/**
- * Keeps the network part of an address: 181.52.10.24 → 181.52.•••.•••. IPv6 keeps the first
- * two groups. Anything else is fully hidden.
- */
-export function maskIpAddress(ip: string | null): string {
-  if (!ip) {
-    return '—';
-  }
-  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/.exec(ip.trim());
-  if (ipv4) {
-    return `${ipv4[1]}.${ipv4[2]}.•••.•••`;
-  }
-  const groups = ip.trim().split(':');
-  if (groups.length > 2 && groups[0] && groups[1]) {
-    return `${groups[0]}:${groups[1]}:••••`;
-  }
-  return '•••';
 }
 
 /** A field diff, values already formatted for display. */
@@ -146,7 +180,7 @@ export interface AuditEntryView {
   readonly entityId: string;
   /** Sede name, "Toda la denominación" or "Plataforma". */
   readonly scopeLabel: string;
-  /** Masked by the data source: the UI never receives a full address. */
+  /** Masked by the API: the UI never receives a full address. */
   readonly ipAddress: string;
   readonly changes: readonly AuditFieldChange[];
 }

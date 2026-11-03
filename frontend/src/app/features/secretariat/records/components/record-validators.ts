@@ -1,9 +1,14 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { todayIso } from '../data/records.models';
 
-/** ISO dates compare as strings; empty values are left to Validators.required. */
-export function notFutureDate(control: AbstractControl<string | null>): ValidationErrors | null {
-  return control.value && control.value > todayIso() ? { futureDate: true } : null;
+/**
+ * ISO dates compare as strings; empty values are left to Validators.required. `today` is the server
+ * date; an empty one (not loaded yet) limits nothing.
+ */
+export function notAfterToday(today: string): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string | null;
+    return value && today && value > today ? { futureDate: true } : null;
+  };
 }
 
 /** Group validator: the `to` date, when present, is not before the `from` date. */

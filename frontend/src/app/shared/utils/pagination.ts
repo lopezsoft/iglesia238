@@ -15,7 +15,7 @@ export function paginate<T>(rows: readonly T[], { page, pageSize }: PageRequest)
   return { items: rows.slice(start, start + pageSize), total: rows.length, page, pageSize };
 }
 
-/** Case- and accent-insensitive text match for demo filters. */
+/** Case- and accent-insensitive text match for client-side filters of small lists. */
 export function matchesText(haystack: readonly (string | null)[], needle: string): boolean {
   const query = normalize(needle);
   return query === '' || haystack.some((value) => value !== null && normalize(value).includes(query));

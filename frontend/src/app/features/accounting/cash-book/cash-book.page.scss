@@ -42,24 +42,30 @@
   }
 }
 
-.consolidate {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $space-4;
-  color: $color-primary;
+.consolidate__text {
+  margin: 0;
+  color: $color-ink;
+}
 
-  &__text {
-    flex: 1 1 18rem;
-    color: $color-ink;
+.moves {
+  &__header {
+    padding: $space-5 $space-5 0;
 
     h2 {
-      margin: 0 0 $space-1;
-      font-size: $font-size-md;
+      margin: 0;
     }
+  }
 
-    p {
-      margin: 0 0 $space-1;
+  &__filters {
+    align-items: flex-end;
+    padding: $space-4 $space-5;
+
+    .field {
+      flex: 0 1 16rem;
     }
+  }
+
+  &__search {
+    flex: 1 1 14rem;
   }
 }

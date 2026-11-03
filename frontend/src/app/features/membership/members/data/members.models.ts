@@ -7,6 +7,7 @@ import {
   Person,
   Sex,
 } from '../../../../core/models/membership.model';
+import { bogotaTodayIso } from '../../../../core/time/bogota-date';
 
 // ---------- List ----------
 
@@ -21,11 +22,17 @@ export interface MemberFilters {
   readonly sex: 'ALL' | Sex;
   readonly ageRange: AgeRange;
   readonly position: PositionFilter;
+  /** Narrows a denomination-wide list to one sede; null lists them all. */
+  readonly congregationId: number | null;
 }
+
+export type MemberSortField = 'name' | 'joinedOn' | 'age';
 
 export interface MemberListQuery extends MemberFilters {
   readonly page: number;
   readonly pageSize: number;
+  readonly sortBy: MemberSortField;
+  readonly order: 'asc' | 'desc';
 }
 
 export interface MemberListItem {
@@ -61,11 +68,21 @@ export interface MemberDetail {
   readonly joinedOn: string | null;
   readonly isBaptized: boolean | null;
   readonly waterBaptismOn: string | null;
+  readonly baptismPlace: string | null;
   readonly previousCongregationName: string | null;
   readonly congregationId: number;
   readonly congregationName: string;
   readonly congregationMunicipalityCode: string | null;
   readonly person: Person;
+}
+
+/** Membership data of the file (not of the person); `undefined` keeps the stored value, `null` clears it. */
+export interface MembershipDataInput {
+  readonly joinedOn?: string | null;
+  readonly isBaptized?: boolean | null;
+  readonly waterBaptismOn?: string | null;
+  readonly baptismPlace?: string | null;
+  readonly previousCongregationName?: string | null;
 }
 
 export interface PersonUpdate {
@@ -78,6 +95,7 @@ export interface PersonUpdate {
   readonly sex: Sex | null;
   readonly maritalStatusCode: string | null;
   readonly educationLevelCode: string | null;
+  readonly profession: string | null;
   readonly occupation: string | null;
   readonly phone: string | null;
   readonly email: string | null;
@@ -90,22 +108,14 @@ export interface PersonUpdate {
 /** The spouse is not here: its single source of truth is Marriage. */
 export type FamilyRelationType = 'FATHER' | 'MOTHER' | 'CHILD' | 'GUARDIAN';
 
-/** `type` is what the relative is to the person (the relative is the FATHER of the person). */
-export interface FamilyRelation {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly personId: number;
-  readonly relativeId: number;
-  readonly type: FamilyRelationType;
-}
-
 export interface FamilyRelationView {
   readonly id: number;
   readonly type: FamilyRelationType;
   readonly relativeId: number;
   readonly fullName: string;
   readonly documentTypeCode: string | null;
-  readonly documentNumber: string | null;
+  /** "CC ···· 4817": the API never sends the full number of a relative. */
+  readonly maskedDocument: string | null;
   readonly age: number | null;
   /** Member id when the relative is a member the user can open. */
   readonly memberId: number | null;
@@ -114,11 +124,13 @@ export interface FamilyRelationView {
   readonly memberStatus: MemberStatus | null;
 }
 
+/** A person found by the shared people search. The document is always masked. */
 export interface PersonOption {
   readonly id: number;
   readonly fullName: string;
   readonly documentTypeCode: string | null;
-  readonly documentNumber: string | null;
+  readonly maskedDocument: string | null;
+  readonly memberCode: string | null;
   readonly congregationName: string | null;
 }
 
@@ -134,8 +146,6 @@ export type StudyStatus = 'IN_PROGRESS' | 'COMPLETED';
 /** Flattened view of PersonStudy and its Study (type and name) plus the institution. */
 export interface PersonStudy {
   readonly id: number;
-  readonly denominationId: number;
-  readonly personId: number;
   readonly studyTypeCode: string;
   readonly name: string;
   readonly institution: string | null;
@@ -151,33 +161,22 @@ export type PersonStudyInput = Pick<
 
 // ---------- Positions and pastoral rank ----------
 
-export interface ChurchPosition {
+/** Position or pastoral rank of the denomination's catalog. */
+export interface CatalogItem {
   readonly id: number;
-  readonly denominationId: number;
   readonly name: string;
   readonly isActive: boolean;
 }
 
-export interface PastoralRank {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly name: string;
-  readonly isActive: boolean;
-}
+export type ChurchPosition = CatalogItem;
+export type PastoralRank = CatalogItem;
 
 export interface MemberPosition {
   readonly id: number;
-  readonly denominationId: number;
   readonly memberId: number;
   readonly positionId: number;
   readonly startedOn: string | null;
   readonly endedOn: string | null;
-}
-
-/** Member.pastoralRankId of the API; the shared demo Member row does not carry it. */
-export interface MemberPastoralRank {
-  readonly memberId: number;
-  readonly pastoralRankId: number | null;
 }
 
 export interface MemberPositionView extends MemberPosition {
@@ -202,7 +201,6 @@ export interface PositionAssignmentInput {
 /** Separate from Person so it needs its own permission. Yes/no affiliations, never medical data. */
 export interface SocioeconomicProfile {
   readonly personId: number;
-  readonly denominationId: number;
   readonly hasHealthCoverage: boolean | null;
   readonly hasPension: boolean | null;
   readonly hasOccupationalRiskCoverage: boolean | null;
@@ -213,10 +211,7 @@ export interface SocioeconomicProfile {
   readonly updatedAt: string;
 }
 
-export type SocioeconomicProfileInput = Omit<
-  SocioeconomicProfile,
-  'personId' | 'denominationId' | 'updatedAt'
->;
+export type SocioeconomicProfileInput = Omit<SocioeconomicProfile, 'personId' | 'updatedAt'>;
 
 export type SocioeconomicFlag = Exclude<keyof SocioeconomicProfileInput, 'sisbenLevel'>;
 
@@ -237,21 +232,6 @@ export const SISBEN_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 // ---------- Registry and transfers ----------
 
 export type TransferStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
-
-export interface MemberTransfer {
-  readonly id: number;
-  readonly denominationId: number;
-  readonly memberId: number;
-  readonly originCongregationId: number;
-  readonly destinationCongregationId: number | null;
-  readonly externalDestinationName: string | null;
-  readonly status: TransferStatus;
-  readonly transferDate: string;
-  readonly approvedById: number | null;
-  readonly approvedAt: string | null;
-  readonly notes: string | null;
-  readonly createdAt: string;
-}
 
 export interface RegistryEntryView {
   readonly id: number;
@@ -275,9 +255,18 @@ export interface TransferView {
   readonly notes: string | null;
 }
 
+export interface StatusHistoryView {
+  readonly id: number;
+  readonly status: MemberStatus;
+  readonly startedOn: string;
+  readonly reason: string | null;
+  readonly changedBy: string | null;
+}
+
 export interface MemberRegistryView {
   readonly entries: readonly RegistryEntryView[];
   readonly transfers: readonly TransferView[];
+  readonly statusHistory: readonly StatusHistoryView[];
 }
 
 export interface CongregationOption {
@@ -313,6 +302,43 @@ export const TRANSFER_REASONS: readonly string[] = [
   'Envío ministerial',
   'Otro',
 ];
+
+// ---------- Create and status ----------
+
+/** Manual registration of a member (a person present at the secretariat, a legacy record). */
+export interface MemberCreateInput {
+  /** Required when the user acts on the whole denomination. */
+  readonly congregationId: number | null;
+  /** Registers a person who already exists (a relative, a guardian) instead of creating one. */
+  readonly existingPersonId: number | null;
+  readonly person: PersonUpdate | null;
+  readonly joinedOn: string | null;
+  readonly isBaptized: boolean | null;
+  readonly waterBaptismOn: string | null;
+  readonly baptismPlace: string | null;
+  readonly previousCongregationName: string | null;
+  readonly registryBook: string | null;
+  readonly registryFolio: string | null;
+  /** Adult who authorizes the data processing of a minor. */
+  readonly guardianPersonId: number | null;
+  /** The signed paper form of data processing was received. */
+  readonly consentAccepted: boolean;
+}
+
+export interface StatusChangeInput {
+  readonly status: MemberStatus;
+  readonly reason: string | null;
+  /** Defaults to today on the server. */
+  readonly effectiveOn: string | null;
+}
+
+/** Statuses a person can set by hand; Trasladado only comes from a transfer to another church. */
+export const MANUAL_STATUS_TARGETS: Readonly<Record<MemberStatus, readonly MemberStatus[]>> = {
+  ACTIVE: ['INACTIVE', 'DECEASED'],
+  INACTIVE: ['ACTIVE', 'DECEASED'],
+  TRANSFERRED: ['ACTIVE'],
+  DECEASED: [],
+};
 
 // ---------- Consents ----------
 
@@ -399,6 +425,13 @@ export const CONSENT_CHANNEL_LABELS: Readonly<Record<ConsentChannel, string>> = 
   PAPER: 'Formato físico firmado',
 };
 
+export const SORT_OPTIONS: readonly { readonly value: MemberSortField; readonly label: string }[] =
+  [
+    { value: 'name', label: 'Nombre' },
+    { value: 'joinedOn', label: 'Fecha de ingreso' },
+    { value: 'age', label: 'Edad' },
+  ];
+
 export function documentLabel(typeCode: string | null, number: string | null): string {
   if (!number) {
     return '—';
@@ -406,11 +439,9 @@ export function documentLabel(typeCode: string | null, number: string | null): s
   return typeCode ? `${typeCode} ${number}` : number;
 }
 
-/** Today as an ISO date (YYYY-MM-DD) in local time. */
+/** Today as an ISO date (YYYY-MM-DD) in Bogota, the day the API compares against. */
 export function todayIso(now: Date = new Date()): string {
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+  return bogotaTodayIso(now);
 }
 
 /** First letter of the first given name and of the first last name (Ana María Rojas → AR). */

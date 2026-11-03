@@ -6,6 +6,10 @@ export class DomainError extends Error {
   constructor(
     readonly code: string,
     message: string,
+    /** HTTP status when the error comes from the API. */
+    readonly status?: number,
+    /** Seconds to wait before retrying (429 and locked accounts), when the API says so. */
+    readonly retryAfterSeconds?: number | null,
   ) {
     super(message);
     this.name = 'DomainError';

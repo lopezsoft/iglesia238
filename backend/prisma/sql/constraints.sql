@@ -73,3 +73,30 @@ ALTER TABLE `user_roles`
   ADD CONSTRAINT `chk_user_roles_active` CHECK (
     (`revoked_at` IS NULL AND `active_key` = 1) OR (`revoked_at` IS NOT NULL AND `active_key` IS NULL)
   );
+
+-- Migración 20261102150000_api_support_fields: reglas de los campos que agrega.
+ALTER TABLE `privacy_policies`
+  -- Solo una política publicada tiene fecha de publicación.
+  ADD CONSTRAINT `chk_privacy_policies_published` CHECK (
+    (`status` = 'PUBLISHED') = (`published_at` IS NOT NULL)
+  );
+
+ALTER TABLE `membership_cards`
+  -- Un carné anulado siempre tiene motivo, y un motivo solo existe si fue anulado.
+  ADD CONSTRAINT `chk_membership_cards_void` CHECK (
+    (`voided_at` IS NULL) = (`void_reason` IS NULL)
+  );
+
+ALTER TABLE `certificates`
+  ADD CONSTRAINT `chk_certificates_void_reason` CHECK (
+    `void_reason` IS NULL OR `voided_at` IS NOT NULL
+  );
+
+ALTER TABLE `marriages`
+  -- El oficiante no puede ser uno de los contrayentes.
+  ADD CONSTRAINT `chk_marriages_officiant` CHECK (
+    `officiant_id` IS NULL OR (`officiant_id` <> `spouse1_id` AND `officiant_id` <> `spouse2_id`)
+  );
+
+ALTER TABLE `person_studies`
+  ADD CONSTRAINT `chk_person_studies_year` CHECK (`year` IS NULL OR `year` BETWEEN 1900 AND 2200);

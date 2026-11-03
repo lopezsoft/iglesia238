@@ -1,6 +1,23 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, input, model, output, signal, untracked } from '@angular/core';
-import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
+import {
+  AbstractControl,
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { userMessage } from '../../../../core/errors/domain-error';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
@@ -10,11 +27,9 @@ import {
   MARRIAGE_END_REASON_LABELS,
   Marriage,
   MarriageEndReason,
-  todayIso,
 } from '../data/records.models';
 import { RecordsRepository } from '../data/records.repository';
-import { marriageCode } from './marriages-panel.component';
-import { notFutureDate, showError } from './record-validators';
+import { notAfterToday, showError } from './record-validators';
 
 /** Records the end of a marriage. The record is kept with status Disuelto. */
 @Component({
@@ -24,11 +39,17 @@ import { notFutureDate, showError } from './record-validators';
   template: `
     <app-dialog [(open)]="open" title="Registrar disolución">
       @if (marriage(); as target) {
-        <form id="dissolution-form" class="stack" [formGroup]="form" (ngSubmit)="submit(target)" novalidate>
+        <form
+          id="dissolution-form"
+          class="stack"
+          [formGroup]="form"
+          (ngSubmit)="submit(target)"
+          novalidate
+        >
           <div class="alert" role="note">
             <div>
               <p class="text-small">
-                Matrimonio <span class="mono">{{ code(target.id) }}</span>
+                Matrimonio <span class="mono">{{ target.code }}</span>
                 @if (target.marriedOn) {
                   · celebrado el {{ target.marriedOn | date: 'dd/MM/yyyy' }}
                 }
@@ -46,7 +67,7 @@ import { notFutureDate, showError } from './record-validators';
                 type="date"
                 formControlName="endedOn"
                 [min]="target.marriedOn ?? ''"
-                [max]="today"
+                [max]="today()"
                 aria-describedby="dis-date-error"
               />
               @if (invalid(form.controls.endedOn)) {
@@ -55,21 +76,31 @@ import { notFutureDate, showError } from './record-validators';
             </div>
             <div class="field">
               <label for="dis-reason">Motivo *</label>
-              <select id="dis-reason" class="select" formControlName="endReason" aria-describedby="dis-reason-error">
+              <select
+                id="dis-reason"
+                class="select"
+                formControlName="endReason"
+                aria-describedby="dis-reason-error"
+              >
                 <option [ngValue]="null" disabled>Selecciona el motivo</option>
                 @for (reason of reasons; track reason) {
                   <option [ngValue]="reason">{{ reasonLabels[reason] }}</option>
                 }
               </select>
               @if (invalid(form.controls.endReason)) {
-                <span id="dis-reason-error" class="field__error">Selecciona el motivo de la disolución.</span>
+                <span id="dis-reason-error" class="field__error"
+                  >Selecciona el motivo de la disolución.</span
+                >
               }
             </div>
           </div>
 
-          <p class="field__hint">No registres aquí detalles íntimos ni motivos personales de la pareja.</p>
+          <p class="field__hint">
+            No registres aquí detalles íntimos ni motivos personales de la pareja.
+          </p>
           <p class="text-muted text-small">
-            El registro no se elimina: su estado cambia a Disuelto y la acción queda en auditoría con tu usuario.
+            El registro no se elimina: su estado cambia a Disuelto y la acción queda en auditoría
+            con tu usuario.
           </p>
 
           @if (error(); as message) {
@@ -82,7 +113,12 @@ import { notFutureDate, showError } from './record-validators';
       }
       <div dialog-footer>
         <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cancelar</button>
-        <button type="submit" form="dissolution-form" class="btn btn--danger" [disabled]="pending()">
+        <button
+          type="submit"
+          form="dissolution-form"
+          class="btn btn--danger"
+          [disabled]="pending()"
+        >
           {{ pending() ? 'Registrando…' : 'Registrar disolución' }}
         </button>
       </div>
@@ -95,10 +131,10 @@ export class DissolutionDialogComponent {
 
   readonly open = model(false);
   readonly marriage = input<Marriage | null>(null);
+  /** Today in Bogotá, from the API. */
+  readonly today = input('');
   readonly saved = output<string>();
 
-  protected readonly today = todayIso();
-  protected readonly code = marriageCode;
   protected readonly reasons = MARRIAGE_END_REASONS;
   protected readonly reasonLabels = MARRIAGE_END_REASON_LABELS;
   protected readonly pending = signal(false);
@@ -106,7 +142,11 @@ export class DissolutionDialogComponent {
   protected readonly submitted = signal(false);
 
   protected readonly form = this.fb.group({
-    endedOn: this.fb.control('', [Validators.required, notFutureDate, (control: AbstractControl<string>) => this.notBeforeMarriage(control)]),
+    endedOn: this.fb.control('', [
+      Validators.required,
+      (control: AbstractControl<string>) => notAfterToday(this.today())(control),
+      (control: AbstractControl<string>) => this.notBeforeMarriage(control),
+    ]),
     endReason: new FormControl<MarriageEndReason | null>(null, Validators.required),
   });
 
@@ -114,7 +154,7 @@ export class DissolutionDialogComponent {
     effect(() => {
       if (this.open()) {
         untracked(() => {
-          this.form.reset({ endedOn: this.today, endReason: null });
+          this.form.reset({ endedOn: this.today(), endReason: null });
           this.submitted.set(false);
           this.error.set(null);
         });
@@ -153,7 +193,7 @@ export class DissolutionDialogComponent {
           endReason: value.endReason as MarriageEndReason,
         }),
       );
-      this.saved.emit(`Se registró la disolución del matrimonio ${marriageCode(target.id)}.`);
+      this.saved.emit(`Se registró la disolución del matrimonio ${target.code}.`);
       this.open.set(false);
     } catch (error) {
       this.error.set(userMessage(error));
@@ -164,6 +204,8 @@ export class DissolutionDialogComponent {
 
   private notBeforeMarriage(control: AbstractControl<string>): ValidationErrors | null {
     const marriedOn = this.marriage()?.marriedOn;
-    return control.value && marriedOn && control.value < marriedOn ? { beforeMarriage: true } : null;
+    return control.value && marriedOn && control.value < marriedOn
+      ? { beforeMarriage: true }
+      : null;
   }
 }

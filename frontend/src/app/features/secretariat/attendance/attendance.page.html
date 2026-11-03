@@ -1,32 +1,31 @@
+<app-page-header
+  breadcrumb="Secretaría"
+  title="Asistencia"
+  [description]="
+    'Registra cuántas personas asistieron a cada reunión de ' +
+    (congregationName() ?? 'tu sede') +
+    ', por categoría.'
+  "
+>
+  <app-export-actions
+    [formats]="['csv']"
+    [disabled]="exporting() || !(historyData()?.total ?? 0)"
+    (export)="exportCsv()"
+  />
+</app-page-header>
+
 <div class="stack">
-  <app-page-header
-    breadcrumb="Inicio / Secretaría"
-    title="Asistencia"
-    [description]="
-      'Registra cuántas personas asistieron a cada reunión de ' + (congregationName() ?? 'tu sede') + ', por categoría.'
-    "
-  >
-    <button
-      type="button"
-      class="btn btn--secondary"
-      [disabled]="!history.hasValue() || history.value().total === 0"
-      (click)="exportHistory()"
-    >
-      <app-icon name="download" />
-      Exportar historial
-    </button>
-  </app-page-header>
-
-  @if (!canWrite()) {
-    <app-read-only-notice permission="attendance.write" />
-  }
-
   <div role="status" aria-live="polite">
     @if (savedMessage(); as message) {
       <div class="alert alert--success">
         <app-icon name="check" />
         <span class="grow">{{ message }}</span>
-        <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar aviso" (click)="savedMessage.set(null)">
+        <button
+          type="button"
+          class="btn btn--ghost btn--icon btn--sm"
+          aria-label="Cerrar aviso"
+          (click)="savedMessage.set(null)"
+        >
           <app-icon name="x" />
         </button>
       </div>
@@ -34,7 +33,12 @@
   </div>
 
   @if (commandError(); as message) {
-    <div class="alert" [class.alert--warning]="duplicateKey()" [class.alert--danger]="!duplicateKey()" role="alert">
+    <div
+      class="alert"
+      [class.alert--warning]="duplicateKey()"
+      [class.alert--danger]="!duplicateKey()"
+      role="alert"
+    >
       <app-icon name="alert" />
       <div class="cluster grow">
         <span>{{ message }}</span>
@@ -48,23 +52,134 @@
     </div>
   }
 
-  @if (congregations.isLoading()) {
-    <app-loading label="Cargando sedes…" />
-  } @else if (congregations.error()) {
-    <app-error-banner message="No fue posible cargar las sedes." (retry)="congregations.reload()" />
-  } @else if (congregations.value(); as sedes) {
-    @if (sedes.length === 0) {
+  @if (options.isLoading() && !options.hasValue()) {
+    <app-loading label="Cargando sedes y tipos de reunión…" />
+  } @else if (options.error()) {
+    <app-error-banner
+      message="No fue posible cargar las sedes y los tipos de reunión."
+      (retry)="options.reload()"
+    />
+  } @else if (optionsData(); as opts) {
+    @if (opts.congregations.length === 0) {
       <div class="alert alert--warning" role="note">
         <app-icon name="info" />
-        <span>Selecciona una sede de tu denominación en el selector superior para registrar asistencia.</span>
+        <span
+          >No hay sedes activas en tu alcance. Pide a la administración que registre una sede.</span
+        >
       </div>
     } @else {
+      <section class="kpi-grid" aria-label="Resumen de asistencia">
+        <app-stat-card
+          icon="calendar-check"
+          tone="indigo"
+          label="Sesiones registradas"
+          [value]="historyData()?.total ?? '—'"
+          [hint]="contextLabel() ?? 'Elige sede y reunión'"
+        />
+        <app-stat-card
+          icon="users"
+          tone="cyan"
+          label="Promedio por sesión"
+          [value]="statsData()?.sessionCount ? statsData()!.average : '—'"
+          [hint]="hasRange() ? 'En el rango de fechas elegido' : 'Últimos 12 meses'"
+        />
+        <app-stat-card
+          icon="trending-up"
+          tone="green"
+          label="Mejor sesión"
+          [value]="statsData()?.max?.total ?? '—'"
+          [hint]="
+            statsData()?.max ? formatDay(statsData()!.max!.sessionDate) : 'Sin sesiones en el rango'
+          "
+        />
+        <app-stat-card
+          icon="activity"
+          tone="orange"
+          [label]="'Promedio ' + (statsData()?.yearOverYear?.year ?? 'del año')"
+          [value]="statsData()?.yearOverYear?.average ?? '—'"
+          [comparison]="yearComparison()"
+          [compareLabel]="'vs. ' + (statsData()?.yearOverYear?.previousYear ?? 'año anterior')"
+          [compareValue]="statsData()?.yearOverYear?.previousAverage ?? '—'"
+        />
+      </section>
+
+      <app-section-panel
+        title="Reunión a consultar"
+        subtitle="La sede y el tipo de reunión valen para el formulario, el historial, la tendencia y la exportación."
+        icon="calendar-check"
+        tone="cyan"
+        layout="stack"
+      >
+        <form class="toolbar context" [formGroup]="form" novalidate>
+          <div class="field">
+            @if (opts.congregations.length === 1) {
+              <label for="att-sede">Sede</label>
+              <input
+                id="att-sede"
+                class="input"
+                type="text"
+                [value]="opts.congregations[0].name"
+                readonly
+              />
+            } @else {
+              <label for="att-sede">Sede *</label>
+              <select id="att-sede" class="select" formControlName="congregationId">
+                <option [ngValue]="null" disabled>Selecciona una sede</option>
+                @for (sede of opts.congregations; track sede.id) {
+                  <option [ngValue]="sede.id">{{ sede.name }}</option>
+                }
+              </select>
+            }
+          </div>
+          <div class="field">
+            <label for="att-meeting">Tipo de reunión *</label>
+            <select id="att-meeting" class="select" formControlName="meetingTypeCode">
+              @for (type of opts.meetingTypes; track type.code) {
+                <option [value]="type.code">{{ type.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="att-from">Desde</label>
+            <input
+              id="att-from"
+              class="input"
+              type="date"
+              [value]="from() ?? ''"
+              [max]="to() ?? opts.today"
+              (change)="setDate('from', $any($event.target).value)"
+            />
+          </div>
+          <div class="field">
+            <label for="att-to">Hasta</label>
+            <input
+              id="att-to"
+              class="input"
+              type="date"
+              [value]="to() ?? ''"
+              [min]="from() ?? ''"
+              [max]="opts.today"
+              (change)="setDate('to', $any($event.target).value)"
+            />
+          </div>
+          @if (hasRange()) {
+            <button type="button" class="btn btn--ghost" (click)="clearRange()">
+              <app-icon name="x" [size]="16" />
+              Quitar fechas
+            </button>
+          }
+        </form>
+      </app-section-panel>
+
       <div class="layout">
         <app-attendance-form
           [form]="form"
           [value]="value()"
-          [congregations]="sedes"
+          [categories]="opts.categories"
+          [maxHeadcount]="opts.maxHeadcount"
+          [today]="opts.today"
           [total]="total()"
+          [contextLabel]="contextLabel()"
           [editing]="editing()"
           [pending]="pending()"
           [dateWarning]="dateWarning()"
@@ -74,37 +189,74 @@
           (editCancelled)="stopEditing()"
         />
 
-        @if (history.hasValue()) {
-          <app-attendance-trend
-            [sessions]="history.value().sessions"
-            [draft]="draft()"
-            [meetingTypeName]="meetingTypeName()"
+        <app-attendance-trend
+          [points]="trendPoints()"
+          [draft]="draft()"
+          [title]="trendTitle()"
+          [subtitle]="trendSubtitle()"
+        >
+          <app-segmented-control
+            trend-controls
+            ariaLabel="Vista de la tendencia"
+            [options]="trendModes"
+            [(value)]="trendMode"
           />
-        } @else {
-          <section class="card">
-            <h2>Tendencia · {{ meetingTypeName() }}</h2>
-            @if (history.isLoading()) {
-              <app-loading label="Cargando historial…" />
-            } @else {
-              <p class="text-muted">Selecciona una sede para ver la tendencia.</p>
-            }
-          </section>
-        }
+        </app-attendance-trend>
       </div>
 
-      @if (history.error()) {
-        <app-error-banner message="No fue posible cargar el historial de asistencia." (retry)="history.reload()" />
-      } @else if (history.hasValue()) {
-        <app-attendance-history
-          [sessions]="history.value().sessions"
-          [recordedCount]="history.value().total"
-          [meetingTypeName]="meetingTypeName()"
-          [congregationName]="congregationName() ?? ''"
-          [highlightedId]="highlightedId()"
-          [canEdit]="canWrite()"
-          (edit)="startEditing($event)"
-        />
-      }
+      <app-attendance-history
+        [result]="historyData()"
+        [categories]="opts.categories"
+        [contextLabel]="contextLabel() ?? 'Selecciona una sede y un tipo de reunión'"
+        [highlightedId]="highlightedId()"
+        [loading]="history.isLoading()"
+        [error]="!!history.error()"
+        [filtered]="hasRange()"
+        (pageChange)="historyPage.set($event)"
+        (edit)="startEditing($event)"
+        (remove)="askDelete($event)"
+        (retry)="history.reload()"
+      />
     }
   }
 </div>
+
+<app-dialog [(open)]="deleteOpen" title="Eliminar sesión">
+  @if (deleting(); as session) {
+    <div class="stack">
+      <p>
+        Vas a eliminar la sesión de <strong>{{ session.meetingTypeName }}</strong> del
+        <strong>{{ formatDay(session.sessionDate) }}</strong> en {{ session.congregationName }} ({{
+          session.total
+        }}
+        asistentes).
+      </p>
+      <div class="alert alert--warning">
+        <app-icon name="alert" />
+        <span
+          >Úsalo solo si la sesión se registró por error. Para cambiar los conteos, usa «Corregir».
+          La eliminación queda en la auditoría.</span
+        >
+      </div>
+      @if (deleteError(); as message) {
+        <div class="alert alert--danger" role="alert">
+          <app-icon name="alert" />
+          <span>{{ message }}</span>
+        </div>
+      }
+    </div>
+  }
+  <div dialog-footer>
+    <button type="button" class="btn btn--secondary" (click)="deleteOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="deletePending()"
+      (click)="confirmDelete()"
+    >
+      {{ deletePending() ? 'Eliminando…' : 'Eliminar sesión' }}
+    </button>
+  </div>
+</app-dialog>

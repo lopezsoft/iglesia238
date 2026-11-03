@@ -21,9 +21,10 @@ import {
   LegalEntityInput,
   LegalEntityRow,
   TAX_ID_PATTERN,
+  placeLabel,
 } from '../data/organization.models';
 import { OrganizationRepository } from '../data/organization.repository';
-import { MUNICIPALITY_GROUPS } from './municipality-options';
+import { MunicipalityPicked, MunicipalitySelectComponent } from './municipality-select.component';
 
 type LegalEntityField =
   'legalName' | 'taxId' | 'legalRepresentative' | 'municipalityCode' | 'email';
@@ -39,7 +40,7 @@ export interface LegalEntitySaved {
 @Component({
   selector: 'app-legal-entity-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DialogComponent, IconComponent, ReactiveFormsModule],
+  imports: [DialogComponent, IconComponent, MunicipalitySelectComponent, ReactiveFormsModule],
   templateUrl: './legal-entity-form-dialog.component.html',
 })
 export class LegalEntityFormDialogComponent {
@@ -51,7 +52,8 @@ export class LegalEntityFormDialogComponent {
   readonly saved = output<LegalEntitySaved>();
 
   protected readonly limits = FIELD_LIMITS;
-  protected readonly municipalityGroups = MUNICIPALITY_GROUPS;
+  /** Name of the chosen municipality, shown while the DIVIPOLA code is set. */
+  protected readonly municipalityText = signal('');
   protected readonly isCreate = computed(() => this.legalEntity() === null);
   protected readonly pending = signal(false);
   protected readonly taxIdError = signal<string | null>(null);
@@ -82,6 +84,17 @@ export class LegalEntityFormDialogComponent {
         untracked(() => this.reset(current));
       }
     });
+  }
+
+  protected onMunicipalityPicked(picked: MunicipalityPicked): void {
+    this.form.controls.municipalityCode.setValue(picked.code);
+    this.form.controls.municipalityCode.markAsTouched();
+    this.municipalityText.set(picked.label);
+  }
+
+  protected onMunicipalityCleared(): void {
+    this.form.controls.municipalityCode.setValue('');
+    this.municipalityText.set('');
   }
 
   protected showError(control: LegalEntityField, error: string): boolean {
@@ -137,6 +150,7 @@ export class LegalEntityFormDialogComponent {
       phone: current?.phone ?? '',
       address: current?.address ?? '',
     });
+    this.municipalityText.set(current ? placeLabel(current) : '');
     this.taxIdError.set(null);
     this.formError.set(null);
   }

@@ -7,11 +7,10 @@
     ' y decide si se aprueban.'
   "
 >
-  <span class="applications-page__permission text-small text-muted">
-    <app-icon name="shield" [size]="16" />
-    Permiso <span class="mono">applications.review</span>
-  </span>
-  <a class="btn btn--secondary" routerLink="/apply">Ver formulario público</a>
+  <a class="btn btn--secondary" routerLink="/apply" target="_blank" rel="noopener">
+    <app-icon name="arrow-right" [size]="16" />
+    Ver formulario público
+  </a>
 </app-page-header>
 
 <app-application-status-filter
@@ -20,11 +19,65 @@
   (selected)="selectFilter($event)"
 />
 
+<form class="card applications-page__filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+  <div class="field applications-page__search">
+    <label for="applications-search">Buscar</label>
+    <div class="input-group input-group--icon">
+      <app-icon class="input-group__icon" name="search" [size]="18" />
+      <input
+        id="applications-search"
+        class="input"
+        type="search"
+        formControlName="q"
+        placeholder="Nombre o documento"
+        autocomplete="off"
+      />
+    </div>
+  </div>
+  @if (denominationWide() && sedes().length > 1) {
+    <div class="field">
+      <label for="applications-sede">Sede</label>
+      <select id="applications-sede" class="select" formControlName="sede">
+        <option value="">Todas las sedes</option>
+        @for (scope of sedes(); track scope.congregationId) {
+          <option [value]="scope.congregationId">{{ scope.label }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="field">
+    <label for="applications-from">Recibidas desde</label>
+    <input id="applications-from" class="input" type="date" formControlName="from" />
+  </div>
+  <div class="field">
+    <label for="applications-to">Hasta</label>
+    <input id="applications-to" class="input" type="date" formControlName="to" />
+  </div>
+  <div class="field">
+    <label for="applications-order">Orden</label>
+    <select id="applications-order" class="select" formControlName="order">
+      <option value="desc">Más recientes primero</option>
+      <option value="asc">Más antiguas primero</option>
+    </select>
+  </div>
+  <div class="cluster applications-page__filter-actions">
+    <button type="submit" class="btn btn--primary">
+      <app-icon name="filter" [size]="16" />
+      Aplicar
+    </button>
+    @if (filtersActive()) {
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">Quitar filtros</button>
+    }
+  </div>
+</form>
+
 <div class="applications-page__layout">
   <section class="card card--flush applications-page__queue" aria-labelledby="queue-title">
     <div class="applications-page__queue-header">
       <h2 id="queue-title">{{ listTitle() }}</h2>
-      <span class="text-small text-muted">Más recientes primero</span>
+      <span class="text-small text-muted">
+        {{ query().order === 'asc' ? 'Más antiguas primero' : 'Más recientes primero' }}
+      </span>
     </div>
 
     @if (queue.error(); as error) {
@@ -37,21 +90,25 @@
       </div>
     } @else if (items().length === 0) {
       <app-empty-state
-        title="No hay solicitudes en este estado"
-        description="Cuando lleguen nuevas inscripciones aparecerán aquí."
+        [title]="filtersActive() ? 'Ninguna solicitud coincide con los filtros' : 'No hay solicitudes en este estado'"
+        [description]="
+          filtersActive()
+            ? 'Cambia la búsqueda o quita los filtros.'
+            : 'Cuando lleguen nuevas inscripciones aparecerán aquí.'
+        "
       />
     } @else {
       <app-application-list
-        [items]="pagedItems()"
+        [items]="items()"
         [selectedId]="selectedId()"
         [showCongregation]="denominationWide()"
         (selected)="selectApplication($event)"
       />
       <app-pagination
-        [page]="page()"
+        [page]="query().page"
         [pageSize]="pageSize"
-        [total]="items().length"
-        (pageChange)="page.set($event)"
+        [total]="total()"
+        (pageChange)="changePage($event)"
       />
     }
   </section>
@@ -64,7 +121,7 @@
           <div class="applications-page__notice-text">
             @if (current.kind === 'approved') {
               <strong
-                >Miembro creado con el carné
+                >Miembro creado con el número
                 <span class="mono">{{ current.memberCode }}</span></strong
               >
               <p>{{ current.text }}</p>
@@ -107,6 +164,7 @@
         (markDuplicate)="markDuplicate(application, $event)"
         (dismissDuplicate)="dismissDuplicate(application)"
         (approve)="approve(application)"
+        (approveLinked)="approveLinked(application, $event)"
       />
     } @else if (detail.isLoading()) {
       <div class="card">
