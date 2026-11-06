@@ -1,5 +1,5 @@
 #!/bin/sh
-# Script de arranque para el contenedor unificado en producción (Dokploy - matiasimpulso.com):
+# Script de arranque para el contenedor unificado en producción (Dokploy - iglesia238.com / app.iglesia238.com / api.iglesia238.com):
 # 1. Aplica migraciones pendientes (prisma migrate deploy).
 # 2. Sincroniza catálogos globales de forma idempotente (prisma db seed).
 # 3. Si existen PLATFORM_ADMIN_EMAIL y PLATFORM_ADMIN_PASSWORD y aún no hay administrador, lo crea.

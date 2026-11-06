@@ -1,5 +1,5 @@
-# Dockerfile unificado para producción en Dokploy (matiasimpulso.com):
-# Empaqueta Frontend (Angular 22 + Nginx) + Backend (NestJS 12 + Fastify) + Migraciones (Prisma 7) en un solo contenedor.
+# Dockerfile unificado para producción en Dokploy (iglesia238.com · app.iglesia238.com · api.iglesia238.com):
+# Empaqueta Sitio Principal (Landing) + Frontend (Angular 22 + Nginx) + Backend (NestJS 12 + Fastify) + Migraciones (Prisma 7) en un solo contenedor.
 
 # Etapa 1: compilación del Frontend (Angular)
 FROM node:22.23-alpine AS frontend-builder
@@ -18,20 +18,24 @@ COPY backend/ ./
 RUN npx prisma generate
 RUN npm run build
 
-# Etapa 3: imagen unificada de producción (Nginx + Node.js + Prisma)
+# Etapa 3: imagen unificada de producción (Nginx Multi-Host + Node.js + Prisma)
 FROM node:22.23-alpine AS production
-RUN apk add --no-cache nginx dumb-init openssl && mkdir -p /run/nginx
+RUN apk add --no-cache nginx dumb-init openssl && mkdir -p /run/nginx /usr/share/nginx/landing
 
 WORKDIR /app/backend
 ENV NODE_ENV=production \
     PORT=3000 \
     TRUST_PROXY=1
 
-# Estáticos de Angular y configuración de Nginx (proxy interno /api/ -> 127.0.0.1:3000)
+# 1. Sitio principal (iglesia238.com) en /usr/share/nginx/landing
+COPY landing/ /usr/share/nginx/landing/
+COPY frontend/public/favicon.svg /usr/share/nginx/landing/favicon.svg
+
+# 2. Aplicación Angular (app.iglesia238.com) en /usr/share/nginx/html
 COPY --from=frontend-builder /app/frontend/dist/frontend/browser /usr/share/nginx/html
 COPY docker/nginx/dokploy.conf /etc/nginx/http.d/default.conf
 
-# Backend compilado, Prisma CLI, migraciones, seed y scripts CLI (admin:create / admin:reset-password)
+# 3. Backend compilado (api.iglesia238.com y /api/), Prisma CLI, migraciones, seed y scripts CLI
 COPY --from=backend-builder /app/backend/package*.json ./
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/dist ./dist

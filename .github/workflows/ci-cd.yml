@@ -80,7 +80,7 @@ jobs:
         run: npx ng test --watch=false
 
   deploy-dokploy:
-    name: CD — Trigger Dokploy Deployment (matiasimpulso.com)
+    name: CD — Trigger Dokploy Deployment (iglesia238.com)
     needs: [ci-backend, ci-frontend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/backend-frontend' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
@@ -93,5 +93,5 @@ jobs:
             echo "DOKPLOY_WEBHOOK_URL no está configurado aún en GitHub Secrets; omitiendo disparo por webhook (o Dokploy despliega por integración Git)."
             exit 0
           fi
-          echo "Disparando despliegue en Dokploy para matiasimpulso.com..."
+          echo "Disparando despliegue en Dokploy para iglesia238.com..."
           curl --fail --silent --show-error -X POST "$DOKPLOY_WEBHOOK_URL"

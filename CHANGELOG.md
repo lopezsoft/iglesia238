@@ -8,6 +8,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.12.0 - 2026-11-06
+
+### Added
+
+- Sitio web principal (`landing/` para **`iglesia238.com`** y **`www.iglesia238.com`**) y configuración Multi-Host en el contenedor unificado de producción (`Dockerfile` y `docker/nginx/dokploy.conf`):
+  - **`iglesia238.com` / `www.iglesia238.com`:** Landing page institucional de **Iglesia 238** con barra de navegación fija, selector de tema claro/oscuro, cambio de idioma `ES | EN`, hero de dos columnas con vista previa interactiva de `app.iglesia238.com` y tarjetas flotantes de métricas, soluciones por rol, módulos integrados, pasos de puesta en marcha, seguridad/Habeas Data (Ley 1581 de 2012), preguntas frecuentes y llamadas a la acción hacia `https://app.iglesia238.com/register-congregation`, `/apply`, `/apply/status` y `/login`.
+  - **`app.iglesia238.com`:** sirve la aplicación web Angular y mantiene el proxy interno `/api/` hacia `127.0.0.1:3000` (garantizando cookies `HttpOnly; SameSite=Strict` en el mismo origen).
+  - **`api.iglesia238.com`:** bloque de servidor dedicado que enruta peticiones directamente hacia la API NestJS/Fastify en `127.0.0.1:3000`.
+
 ## 0.11.1 - 2026-11-06
 
 ### Fixed
