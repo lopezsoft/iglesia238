@@ -825,12 +825,12 @@ export class FakeFamilyRepository implements FamilyRepository {
     relationId: number,
     type: FamilyRelationType,
   ): Promise<void> {
-    const row = this.store.family.find(
+    const index = this.store.family.findIndex(
       (item) =>
         item.id === relationId && item.denominationId === scope.denominationId,
     );
-    if (row) {
-      row.type = type;
+    if (index >= 0) {
+      this.store.family[index] = { ...this.store.family[index], type };
     }
     return Promise.resolve();
   }

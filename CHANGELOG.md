@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.11.1 - 2026-11-06
+
+### Fixed
+
+- `FakeFamilyRepository.updateType` en `in-memory-membership.ts`: reemplazo inmutable de la fila familiar para satisfacer `readonly type` en `npm run typecheck` (`tsc --noEmit`) dentro del workflow de CI.
+
 ## 0.11.0 - 2026-11-06
 
 ### Added
