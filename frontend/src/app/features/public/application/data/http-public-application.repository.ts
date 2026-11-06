@@ -10,6 +10,7 @@ import {
   MunicipalityOption,
   OpenCongregation,
   PublicCatalogs,
+  RegionOption,
   SubmissionReceipt,
 } from './public-application.models';
 import { PublicApplicationRepository } from './public-application.repository';
@@ -18,6 +19,7 @@ import { normalizeTrackingCode } from './tracking-code';
 interface MunicipalityDto {
   readonly code: string;
   readonly name: string;
+  readonly regionCode?: string;
   readonly regionName: string;
 }
 
@@ -42,6 +44,11 @@ export class HttpPublicApplicationRepository extends PublicApplicationRepository
     return this.http.get<PublicCatalogs>(apiUrl('/public/catalogs'));
   }
 
+  override listRegions(countryId: number): Observable<RegionOption[]> {
+    const params = new HttpParams().set('countryId', countryId);
+    return this.http.get<RegionOption[]>(apiUrl('/public/geo/regions'), { params });
+  }
+
   searchMunicipalities(text: string, filter: MunicipalityFilter = {}): Observable<MunicipalityOption[]> {
     let params = new HttpParams().set('limit', filter.limit ?? DEFAULT_MUNICIPALITY_LIMIT);
     const search = text.trim();
@@ -50,6 +57,9 @@ export class HttpPublicApplicationRepository extends PublicApplicationRepository
     }
     if (filter.countryId !== undefined && filter.countryId !== null) {
       params = params.set('countryId', filter.countryId);
+    }
+    if (filter.regionCode !== undefined && filter.regionCode !== null && filter.regionCode.trim() !== '') {
+      params = params.set('regionCode', filter.regionCode.trim());
     }
     return this.http
       .get<MunicipalityDto[]>(apiUrl('/public/geo/municipalities'), { params })

@@ -25,8 +25,8 @@ const DEBOUNCE_MS = 250;
 
 /**
  * Searchable municipality field: the applicant types a few letters and picks one result. The form keeps
- * the code; the label travels in a second control so the summary can show it. With `countryId` the search
- * only covers that country, and a country without municipalities shows a note instead of the search.
+ * the code; the label travels in a second control so the summary can show it. With `countryId` (and optionally
+ * `regionCode`) the search only covers that country/region, and a country without municipalities shows a note.
  */
 @Component({
   selector: 'app-municipality-picker',
@@ -60,7 +60,8 @@ const DEBOUNCE_MS = 250;
           type="search"
           role="combobox"
           autocomplete="off"
-          placeholder="Escribe el nombre de tu municipio"
+          [placeholder]="awaitingRegion() ? 'Selecciona primero el departamento o estado' : 'Escribe el nombre de tu municipio'"
+          [disabled]="awaitingRegion()"
           [id]="inputId()"
           [value]="query()"
           [attr.aria-expanded]="showList()"
@@ -113,6 +114,10 @@ export class MunicipalityPickerComponent {
   readonly describedBy = input<string | null>(null);
   /** Country the search is limited to; `null` (the member application) searches every country. */
   readonly countryId = input<number | null>(null);
+  /** Department or state code within the country; `null` searches all regions of the country. */
+  readonly regionCode = input<string | null>(null);
+  /** When true, the search input stays disabled until `regionCode` is selected. */
+  readonly requireRegion = input(false);
   /** False once it is known that the country has no municipality to pick. */
   readonly availabilityChange = output<boolean>();
 
@@ -126,6 +131,7 @@ export class MunicipalityPickerComponent {
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly activeIndex = signal(0);
+  protected readonly awaitingRegion = computed(() => this.requireRegion() && !this.regionCode());
 
   protected readonly selectedCode = toSignal(
     toObservable(this.codeControl).pipe(switchMap((control) => control.valueChanges.pipe(startWith(control.value)))),
@@ -148,17 +154,21 @@ export class MunicipalityPickerComponent {
 
   protected readonly results = rxResource({
     params: () =>
-      this.query().trim().length >= MIN_SEARCH_LENGTH
-        ? { text: this.query().trim(), countryId: this.countryId() }
+      !this.awaitingRegion() && this.query().trim().length >= MIN_SEARCH_LENGTH
+        ? { text: this.query().trim(), countryId: this.countryId(), regionCode: this.regionCode() }
         : undefined,
     // A new query unsubscribes the previous one, so the timer debounces the typing.
     stream: ({ params }) =>
       timer(DEBOUNCE_MS).pipe(
-        switchMap(() =>
-          params.countryId === null
-            ? this.repository.searchMunicipalities(params.text)
-            : this.repository.searchMunicipalities(params.text, { countryId: params.countryId }),
-        ),
+        switchMap(() => {
+          if (params.countryId === null && !params.regionCode) {
+            return this.repository.searchMunicipalities(params.text);
+          }
+          return this.repository.searchMunicipalities(params.text, {
+            ...(params.countryId !== null ? { countryId: params.countryId } : {}),
+            ...(params.regionCode ? { regionCode: params.regionCode } : {}),
+          });
+        }),
       ),
   });
 

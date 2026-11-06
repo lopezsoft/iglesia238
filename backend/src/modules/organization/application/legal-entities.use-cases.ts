@@ -92,6 +92,22 @@ export type ValidatedLegalEntity = LegalEntityData & {
   readonly municipalityCode: string | null;
 };
 
+export function toLegalEntityData(
+  validated: ValidatedLegalEntity,
+): LegalEntityData {
+  return {
+    legalName: validated.legalName,
+    tradeName: validated.tradeName,
+    taxId: validated.taxId,
+    legalRepresentative: validated.legalRepresentative,
+    countryId: validated.countryId,
+    municipalityId: validated.municipalityId,
+    email: validated.email,
+    phone: validated.phone,
+    address: validated.address,
+  };
+}
+
 @Injectable()
 export class LegalEntityInputValidator {
   constructor(
@@ -219,7 +235,11 @@ export class CreateLegalEntityUseCase {
     const data = await this.validator.validate(command.input, null);
 
     const id = await this.transactions.run(async (transaction) => {
-      const created = await this.legalEntities.create(scope, data, transaction);
+      const created = await this.legalEntities.create(
+        scope,
+        toLegalEntityData(data),
+        transaction,
+      );
       // The audit trail carries the name and the state only: no NIT, representative, address, phone or email.
       await this.audit.record(
         {
@@ -279,7 +299,12 @@ export class UpdateLegalEntityUseCase {
     });
 
     await this.transactions.run(async (transaction) => {
-      await this.legalEntities.update(scope, current.id, data, transaction);
+      await this.legalEntities.update(
+        scope,
+        current.id,
+        toLegalEntityData(data),
+        transaction,
+      );
       // The NIT is sensitive for the audit rules: only the fact that it changed is recorded.
       const changes = buildAuditChanges(
         { ...current, fiscalIdentifierChanged: false },

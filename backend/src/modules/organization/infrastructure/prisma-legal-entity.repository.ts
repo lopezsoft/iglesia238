@@ -48,6 +48,20 @@ function toRecord(row: LegalEntityRow): LegalEntityRecord {
   };
 }
 
+function toRowData(data: LegalEntityData) {
+  return {
+    legalName: data.legalName,
+    tradeName: data.tradeName,
+    taxId: data.taxId,
+    legalRepresentative: data.legalRepresentative,
+    countryId: data.countryId,
+    municipalityId: data.municipalityId,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+  };
+}
+
 @Injectable()
 export class PrismaLegalEntityRepository
   extends TenantScopedRepository
@@ -117,7 +131,7 @@ export class PrismaLegalEntityRepository
   ): Promise<number> {
     const created = await clientOf(this.prisma, transaction).legalEntity.create(
       {
-        data: { denominationId: scope.denominationId, ...data },
+        data: { denominationId: scope.denominationId, ...toRowData(data) },
         select: { id: true },
       },
     );
@@ -132,7 +146,7 @@ export class PrismaLegalEntityRepository
   ): Promise<void> {
     await clientOf(this.prisma, transaction).legalEntity.updateMany({
       where: this.whereOf(scope, { id }),
-      data,
+      data: toRowData(data),
     });
   }
 

@@ -2,6 +2,12 @@
 import { Sex } from '../../../../core/models/membership.model';
 import { bogotaTodayIso } from '../../../../core/time/bogota-date';
 
+export interface RegionOption {
+  readonly code: string;
+  readonly name: string;
+  readonly countryId?: number;
+}
+
 /** Age from which an applicant answers for themself (Colombian majority). */
 export const ADULT_AGE = 18;
 
@@ -101,6 +107,7 @@ export interface PublicCatalogs {
 export interface MunicipalityOption {
   readonly code: string;
   readonly name: string;
+  readonly regionCode?: string;
   readonly regionName: string;
 }
 
@@ -110,6 +117,8 @@ export interface MunicipalityFilter {
   readonly limit?: number;
   /** Only municipalities of this country; every country when it is left out. */
   readonly countryId?: number | null;
+  /** Only municipalities of this department or state; every region when left out. */
+  readonly regionCode?: string | null;
 }
 
 export function municipalityOptionLabel(option: Pick<MunicipalityOption, 'name' | 'regionName'>): string {

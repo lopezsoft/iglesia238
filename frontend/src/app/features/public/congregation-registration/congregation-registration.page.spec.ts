@@ -63,6 +63,8 @@ const CHIA: MunicipalityOption = { code: '25175', name: 'Chía', regionName: 'Cu
 /** Public municipality search: only the country with id 1 has municipalities. */
 class FakeMunicipalities {
   readonly searches: { text: string; filter?: MunicipalityFilter }[] = [];
+  regions: { code: string; name: string }[] = [];
+  listRegions = (_countryId: number) => of(this.regions);
   searchMunicipalities = (text: string, filter?: MunicipalityFilter) => {
     this.searches.push({ text, filter });
     return of(filter?.countryId === 1 ? [CHIA] : []);
@@ -286,6 +288,35 @@ describe('CongregationRegistrationPage', () => {
 
     expect(municipalities.searches.at(-1)).toEqual({ text: 'chí', filter: { countryId: 1 } });
     expect(element.querySelector('[role="option"]')?.textContent).toContain('Chía');
+  });
+
+  it('filters municipalities by the selected department or state when regions are loaded', async () => {
+    const { element, fixture, advance, page, municipalities } = await render();
+    municipalities.regions = [{ code: '25', name: 'Cundinamarca' }];
+    page.form.patchValue({ legalEntityId: 4 });
+    await advance();
+
+    const regionSelect = element.querySelector<HTMLSelectElement>('#register-region')!;
+    expect(regionSelect).not.toBeNull();
+    const municipalityInput = element.querySelector<HTMLInputElement>('#register-municipality')!;
+    expect(municipalityInput.disabled).toBe(true);
+
+    regionSelect.value = '25';
+    regionSelect.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(municipalityInput.disabled).toBe(false);
+    municipalityInput.value = 'chí';
+    municipalityInput.dispatchEvent(new Event('input'));
+    await new Promise((resolve) => setTimeout(resolve, 320));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(municipalities.searches.at(-1)).toEqual({
+      text: 'chí',
+      filter: { countryId: 1, regionCode: '25' },
+    });
   });
 
   it('forgets the municipality when the person goes back and picks a legal entity of another country', async () => {

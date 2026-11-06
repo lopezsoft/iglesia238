@@ -52,6 +52,21 @@ function toRecord(row: CongregationRow): CongregationRecord {
   };
 }
 
+function toRowData(data: CongregationData) {
+  return {
+    name: data.name,
+    code: data.code,
+    legalEntityId: data.legalEntityId,
+    districtId: data.districtId,
+    municipalityId: data.municipalityId,
+    neighborhoodId: data.neighborhoodId,
+    address: data.address,
+    phone: data.phone,
+    email: data.email,
+    acceptsApplications: data.acceptsApplications,
+  };
+}
+
 @Injectable()
 export class PrismaCongregationRepository
   extends TenantScopedRepository
@@ -116,7 +131,7 @@ export class PrismaCongregationRepository
       this.prisma,
       transaction,
     ).congregation.create({
-      data: { denominationId: scope.denominationId, ...data },
+      data: { denominationId: scope.denominationId, ...toRowData(data) },
       select: { id: true },
     });
     return created.id;
@@ -130,7 +145,7 @@ export class PrismaCongregationRepository
   ): Promise<void> {
     await clientOf(this.prisma, transaction).congregation.updateMany({
       where: this.denominationWhere(scope, { id }),
-      data,
+      data: toRowData(data),
     });
   }
 

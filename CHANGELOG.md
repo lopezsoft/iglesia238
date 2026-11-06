@@ -8,6 +8,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.6.1 - 2026-11-05
+
+### Added
+
+- Selector en cascada `Departamento / estado *` → `Municipio *` en el registro público de sedes (`/register-congregation`), filtrando los municipios por el departamento o estado seleccionado del país de la razón social y organizando el paso «Tu sede» en grilla adaptable de dos columnas (`.form-grid`).
+
+### Fixed
+
+- Se corrigió el error `500 INTERNAL_SERVER_ERROR` (`PrismaClientValidationError`) al crear o actualizar razones sociales (`POST/PATCH /api/platform/legal-entities` y `POST/PATCH /api/organization/legal-entities`) y sedes (`POST/PATCH /api/organization/congregations`), omitiendo los campos transitorios `municipalityCode` y `neighborhood` antes de persistir en `legal_entities` y `congregations` con Prisma.
+
 ## 0.6.0 - 2026-11-05
 
 ### Added

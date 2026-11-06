@@ -32,6 +32,7 @@ import {
   DISTRICT_REPOSITORY,
   GEO_REPOSITORY,
   LEGAL_ENTITY_REPOSITORY,
+  type CongregationData,
   type CongregationRecord,
   type CongregationRepository,
   type DistrictRepository,
@@ -52,6 +53,24 @@ const AUDITED_FIELDS = [
   'municipalityCode',
   'acceptsApplications',
 ] as const;
+
+function toCongregationData(
+  fields: ValidatedCongregation,
+  neighborhoodId: number | null,
+): CongregationData {
+  return {
+    name: fields.name,
+    code: fields.code,
+    legalEntityId: fields.legalEntityId,
+    districtId: fields.districtId,
+    municipalityId: fields.municipalityId,
+    neighborhoodId,
+    address: fields.address,
+    phone: fields.phone,
+    email: fields.email,
+    acceptsApplications: fields.acceptsApplications,
+  };
+}
 
 export interface CongregationInput {
   readonly name: string;
@@ -281,7 +300,7 @@ export class CreateCongregationUseCase {
         : null;
       const created = await this.congregations.create(
         scope,
-        { ...fields, neighborhoodId: neighborhood?.id ?? null },
+        toCongregationData(fields, neighborhood?.id ?? null),
         transaction,
       );
       await this.audit.record(
@@ -338,7 +357,7 @@ export class UpdateCongregationUseCase {
       await this.congregations.update(
         scope,
         current.id,
-        { ...fields, neighborhoodId: neighborhood?.id ?? null },
+        toCongregationData(fields, neighborhood?.id ?? null),
         transaction,
       );
       const changes = buildAuditChanges(

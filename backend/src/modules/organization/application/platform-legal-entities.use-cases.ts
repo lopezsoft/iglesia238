@@ -18,6 +18,7 @@ import { TenantScope } from '../../../common/tenancy/tenant-scope.js';
 import { requirePlatformScope } from '../../denominations/application/denomination-rules.js';
 import {
   LegalEntityInputValidator,
+  toLegalEntityData,
   type LegalEntityInput,
 } from './legal-entities.use-cases.js';
 import {
@@ -141,7 +142,7 @@ export class CreatePlatformLegalEntityUseCase {
     const id = await this.transactions.run(async (transaction) => {
       const created = await this.legalEntities.create(
         TenantScope.of(denomination.id),
-        data,
+        toLegalEntityData(data),
         transaction,
       );
       // Name and state only: no NIT, representative, address, phone or e-mail in the trail.
@@ -217,7 +218,12 @@ export class UpdatePlatformLegalEntityUseCase {
     );
 
     await this.transactions.run(async (transaction) => {
-      await this.legalEntities.update(scope, current.id, data, transaction);
+      await this.legalEntities.update(
+        scope,
+        current.id,
+        toLegalEntityData(data),
+        transaction,
+      );
       // The NIT is sensitive for the audit rules: only the fact that it changed is recorded.
       const changes = buildAuditChanges(
         { ...current, fiscalIdentifierChanged: false },

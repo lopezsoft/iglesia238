@@ -102,6 +102,25 @@ describe('HttpPublicApplicationRepository', () => {
     expect(await result).toEqual([]);
   });
 
+  it('lists regions of a country and filters municipalities by regionCode when given', async () => {
+    const { repository, backend } = setup();
+
+    const regionsResult = firstValueFrom(repository.listRegions(46));
+    const regionsRequest = backend.expectOne((req) => req.url === '/api/public/geo/regions');
+    expect(regionsRequest.request.params.get('countryId')).toBe('46');
+    regionsRequest.flush([{ code: '25', name: 'Cundinamarca' }]);
+    expect(await regionsResult).toEqual([{ code: '25', name: 'Cundinamarca' }]);
+
+    const municipalitiesResult = firstValueFrom(
+      repository.searchMunicipalities('chí', { countryId: 46, regionCode: '25' }),
+    );
+    const municipalitiesRequest = backend.expectOne((req) => req.url === '/api/public/geo/municipalities');
+    expect(municipalitiesRequest.request.params.get('countryId')).toBe('46');
+    expect(municipalitiesRequest.request.params.get('regionCode')).toBe('25');
+    municipalitiesRequest.flush([{ code: '25175', name: 'Chía', regionName: 'Cundinamarca' }]);
+    expect(await municipalitiesResult).toEqual([{ code: '25175', name: 'Chía', regionName: 'Cundinamarca' }]);
+  });
+
   it('submits the form as it is, without any denomination', async () => {
     const { repository, backend } = setup();
 
