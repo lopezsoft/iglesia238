@@ -196,6 +196,7 @@
         <app-municipality-select
           #municipalitySelect
           inputId="platform-le-municipality"
+          [selectByRegion]="true"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
           [countryId]="country.selectedId() || null"

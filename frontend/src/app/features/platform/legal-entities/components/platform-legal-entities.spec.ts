@@ -379,28 +379,31 @@ describe('PlatformLegalEntityFormDialogComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const municipalityInput = element.querySelector<HTMLInputElement>('#platform-le-municipality')!;
-    expect(document.activeElement).toBe(municipalityInput);
+    const municipalitySelect = element.querySelector<HTMLSelectElement>('#platform-le-municipality')!;
+    expect(document.activeElement).toBe(municipalitySelect);
     expect(catalogsRepository.searches.at(-1)).toEqual({
       search: '',
-      limit: 15,
       countryId: 1,
       regionCode: '25',
     });
     document.body.removeChild(fixture.nativeElement);
   });
 
-  it('searches the municipalities of the chosen country only', async () => {
+  it('lists the municipalities of the chosen country and region in a select', async () => {
     const { element, fixture } = await render();
 
-    const input = element.querySelector<HTMLInputElement>('#platform-le-municipality')!;
-    input.value = 'chí';
-    input.dispatchEvent(new Event('input'));
-    await new Promise((resolve) => setTimeout(resolve, 320));
+    const regionSelect = element.querySelector<HTMLSelectElement>('#platform-le-region')!;
+    regionSelect.value = '25';
+    regionSelect.dispatchEvent(new Event('change'));
     await fixture.whenStable();
+    fixture.detectChanges();
 
-    expect(catalogsRepository.searches.at(-1)).toEqual({ search: 'chí', limit: 15, countryId: 1 });
-    expect(element.querySelector('[role="option"]')?.textContent).toContain('Chía');
+    expect(catalogsRepository.searches.at(-1)).toEqual({ search: '', countryId: 1, regionCode: '25' });
+    const municipalitySelect = element.querySelector<HTMLSelectElement>('#platform-le-municipality')!;
+    expect(Array.from(municipalitySelect.options).map((option) => option.textContent?.trim())).toEqual([
+      'Selecciona el municipio',
+      'Chía',
+    ]);
   });
 
   it('forgets the municipality when the country changes and explains a country without municipalities', async () => {

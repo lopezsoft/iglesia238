@@ -34,23 +34,60 @@ const DEBOUNCE_MS = 250;
   imports: [IconComponent],
   styleUrl: './municipality-picker.component.scss',
   template: `
-    @if (selectedCode()) {
+    @if (unavailable()) {
+      <div class="unavailable">
+        @if (selectMode()) {
+          <select
+            class="select"
+            disabled
+            [id]="inputId()"
+            [attr.aria-describedby]="noteId"
+          >
+            <option value="">No hay municipios cargados</option>
+          </select>
+        } @else {
+          <input
+            class="input"
+            type="text"
+            disabled
+            placeholder="Escribe el nombre de tu municipio"
+            [id]="inputId()"
+            [attr.aria-describedby]="noteId"
+          />
+        }
+        <span class="field__hint" role="status" [id]="noteId">{{ noMunicipalities }}</span>
+      </div>
+    } @else if (selectMode()) {
+      <select
+        class="select"
+        [id]="inputId()"
+        [value]="selectedCode()"
+        [disabled]="awaitingRegion() || regionMunicipalities.isLoading()"
+        [attr.aria-invalid]="invalid() ? 'true' : null"
+        [attr.aria-describedby]="describedBy()"
+        (change)="onSelectOption($any($event.target).value)"
+      >
+        <option value="">
+          {{
+            awaitingRegion()
+              ? 'Selecciona primero el departamento o estado…'
+              : regionMunicipalities.isLoading()
+                ? 'Cargando municipios…'
+                : 'Selecciona el municipio…'
+          }}
+        </option>
+        @if (selectedCode() && !hasSelectedInRegionOptions()) {
+          <option [value]="selectedCode()">{{ selectedLabel() || selectedCode() }}</option>
+        }
+        @for (option of regionOptions(); track option.code) {
+          <option [value]="option.code">{{ option.name }}</option>
+        }
+      </select>
+    } @else if (selectedCode()) {
       <div class="picked">
         <app-icon name="home" [size]="16" />
         <span class="picked__label">{{ selectedLabel() }}</span>
         <button type="button" class="btn btn--ghost btn--sm" (click)="clear()">Cambiar</button>
-      </div>
-    } @else if (unavailable()) {
-      <div class="unavailable">
-        <input
-          class="input"
-          type="text"
-          disabled
-          placeholder="Escribe el nombre de tu municipio"
-          [id]="inputId()"
-          [attr.aria-describedby]="noteId"
-        />
-        <span class="field__hint" role="status" [id]="noteId">{{ noMunicipalities }}</span>
       </div>
     } @else {
       <div class="search">
@@ -60,8 +97,7 @@ const DEBOUNCE_MS = 250;
           type="search"
           role="combobox"
           autocomplete="off"
-          [placeholder]="awaitingRegion() ? 'Selecciona primero el departamento o estado' : 'Escribe el nombre de tu municipio'"
-          [disabled]="awaitingRegion()"
+          placeholder="Escribe el nombre de tu municipio"
           [id]="inputId()"
           [value]="query()"
           [attr.aria-expanded]="showList()"
@@ -116,7 +152,7 @@ export class MunicipalityPickerComponent {
   readonly countryId = input<number | null>(null);
   /** Department or state code within the country; `null` searches all regions of the country. */
   readonly regionCode = input<string | null>(null);
-  /** When true, the search input stays disabled until `regionCode` is selected. */
+  /** When true, renders a `<select>` of municipalities for the chosen `regionCode`. */
   readonly requireRegion = input(false);
   /** False once it is known that the country has no municipality to pick. */
   readonly availabilityChange = output<boolean>();
@@ -131,7 +167,10 @@ export class MunicipalityPickerComponent {
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly activeIndex = signal(0);
-  protected readonly awaitingRegion = computed(() => this.requireRegion() && !this.regionCode());
+  protected readonly selectMode = computed(
+    () => this.requireRegion() || Boolean(this.regionCode()?.trim()),
+  );
+  protected readonly awaitingRegion = computed(() => this.requireRegion() && !this.regionCode()?.trim());
 
   protected readonly selectedCode = toSignal(
     toObservable(this.codeControl).pipe(switchMap((control) => control.valueChanges.pipe(startWith(control.value)))),
@@ -152,9 +191,32 @@ export class MunicipalityPickerComponent {
   });
   protected readonly unavailable = computed(() => this.probe.hasValue() && this.probe.value().length === 0);
 
+  /** Loads all municipalities of the selected department/state when operating as a `<select>`. */
+  protected readonly regionMunicipalities = rxResource({
+    params: () => {
+      const regionCode = this.regionCode()?.trim();
+      if (!regionCode) {
+        return undefined;
+      }
+      return { countryId: this.countryId(), regionCode };
+    },
+    stream: ({ params }) =>
+      this.repository.searchMunicipalities('', {
+        ...(params.countryId !== null ? { countryId: params.countryId } : {}),
+        regionCode: params.regionCode,
+      }),
+  });
+  protected readonly regionOptions = computed<readonly MunicipalityOption[]>(() =>
+    this.regionMunicipalities.hasValue() ? this.regionMunicipalities.value() : [],
+  );
+  protected readonly hasSelectedInRegionOptions = computed(() => {
+    const code = this.selectedCode();
+    return Boolean(code) && this.regionOptions().some((option) => option.code === code);
+  });
+
   protected readonly results = rxResource({
     params: () =>
-      !this.awaitingRegion() && this.query().trim().length >= MIN_SEARCH_LENGTH
+      !this.selectMode() && !this.awaitingRegion() && this.query().trim().length >= MIN_SEARCH_LENGTH
         ? { text: this.query().trim(), countryId: this.countryId(), regionCode: this.regionCode() }
         : undefined,
     // A new query unsubscribes the previous one, so the timer debounces the typing.
@@ -187,6 +249,18 @@ export class MunicipalityPickerComponent {
   protected readonly activeId = computed(() =>
     this.showList() && this.options().length > 0 ? this.optionId(this.activeIndex()) : null,
   );
+
+  protected onSelectOption(code: string): void {
+    const option = this.regionOptions().find((item) => item.code === code);
+    if (option) {
+      this.codeControl().setValue(option.code);
+      this.nameControl().setValue(municipalityOptionLabel(option));
+    } else {
+      this.codeControl().setValue('');
+      this.nameControl().setValue('');
+    }
+    this.codeControl().markAsTouched();
+  }
 
   protected optionId(index: number): string {
     return `${this.listId}-${index}`;

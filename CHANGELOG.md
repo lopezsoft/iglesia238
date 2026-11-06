@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.7.1 - 2026-11-06
+
+### Fixed
+
+- Los campos de municipio en el formulario público de solicitud (`/apply`: expedición, nacimiento, residencia y bautismo), en el registro público de sedes (`/register-congregation`) y en los modales de sedes y razones sociales (`/organization` y `/denominations`) ahora muestran un `<select>` desplegable con todos los municipios del departamento o estado seleccionado (`REGION_MUNICIPALITY_LIMIT = 1000` en `GET /api/public/geo/municipalities` y `GET /api/geo/municipalities`), eliminando la caja de búsqueda de texto y el autocompletado de direcciones del navegador.
+
 ## 0.7.0 - 2026-11-06
 
 ### Added

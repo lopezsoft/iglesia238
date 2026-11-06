@@ -145,6 +145,7 @@
         <app-municipality-select
           #municipalitySelect
           inputId="congregation-municipality"
+          [selectByRegion]="true"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
           [countryId]="selectedLegalEntity()?.countryId ?? null"

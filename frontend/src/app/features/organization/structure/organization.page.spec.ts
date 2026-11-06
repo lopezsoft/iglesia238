@@ -390,21 +390,23 @@ describe('LegalEntityFormDialogComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const municipalityInput = element.querySelector<HTMLInputElement>('#legal-entity-municipality')!;
-    expect(document.activeElement).toBe(municipalityInput);
+    const municipalitySelect = element.querySelector<HTMLSelectElement>('#legal-entity-municipality')!;
+    expect(document.activeElement).toBe(municipalitySelect);
     expect(catalogs.searches.at(-1)).toEqual({
       search: '',
-      limit: 15,
       countryId: 1,
       regionCode: '05',
     });
 
-    const option = element.querySelector<HTMLElement>('[role="option"]')!;
-    expect(option.textContent).toContain('Medellín');
-    option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    expect(Array.from(municipalitySelect.options).map((option) => option.textContent?.trim())).toEqual([
+      'Selecciona el municipio',
+      'Medellín',
+    ]);
+    municipalitySelect.value = '05001';
+    municipalitySelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    expect(element.querySelector('.picked__label')?.textContent).toContain('Medellín (Antioquia)');
+    expect(municipalitySelect.value).toBe('05001');
     document.body.removeChild(fixture.nativeElement);
   });
 });
@@ -478,15 +480,21 @@ describe('CongregationFormDialogComponent', () => {
   });
 
   it('searches only in the country of the legal entity and forgets the municipality of another country', async () => {
-    const { element, fixture, catalogs, component, chooseLegalEntity, typeMunicipality } = await renderForm();
+    const { element, fixture, catalogs, component, chooseLegalEntity } = await renderForm();
     component.form.patchValue({ name: 'Sede Centro', address: 'Calle 30' });
 
     await chooseLegalEntity('3');
     expect(element.textContent).toContain('Municipios de Colombia, el país de la razón social.');
-    await typeMunicipality('cart');
+    const regionSelect = element.querySelector<HTMLSelectElement>('#congregation-region')!;
+    regionSelect.value = '13';
+    regionSelect.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
 
-    expect(catalogs.searches.at(-1)).toEqual({ search: 'cart', limit: 15, countryId: 1 });
-    element.querySelector('[role="option"]')!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    expect(catalogs.searches.at(-1)).toEqual({ search: '', countryId: 1, regionCode: '13' });
+    const municipalitySelect = element.querySelector<HTMLSelectElement>('#congregation-municipality')!;
+    municipalitySelect.value = '13001';
+    municipalitySelect.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     expect(component.form.controls.municipalityCode.value).toBe('13001');
 

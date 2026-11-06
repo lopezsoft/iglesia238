@@ -53,16 +53,22 @@ export class HttpPublicApplicationRepository extends PublicApplicationRepository
   }
 
   searchMunicipalities(text: string, filter: MunicipalityFilter = {}): Observable<MunicipalityOption[]> {
-    let params = new HttpParams().set('limit', filter.limit ?? DEFAULT_MUNICIPALITY_LIMIT);
     const search = text.trim();
+    const regionCode = filter.regionCode?.trim() ?? '';
+    let params = new HttpParams();
+    if (filter.limit !== undefined) {
+      params = params.set('limit', filter.limit);
+    } else if (!regionCode || search) {
+      params = params.set('limit', DEFAULT_MUNICIPALITY_LIMIT);
+    }
     if (search) {
       params = params.set('search', search);
     }
     if (filter.countryId !== undefined && filter.countryId !== null) {
       params = params.set('countryId', filter.countryId);
     }
-    if (filter.regionCode !== undefined && filter.regionCode !== null && filter.regionCode.trim() !== '') {
-      params = params.set('regionCode', filter.regionCode.trim());
+    if (regionCode) {
+      params = params.set('regionCode', regionCode);
     }
     return this.http
       .get<MunicipalityDto[]>(apiUrl('/public/geo/municipalities'), { params })

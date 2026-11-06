@@ -298,25 +298,23 @@ describe('CongregationRegistrationPage', () => {
 
     const regionSelect = element.querySelector<HTMLSelectElement>('#register-region')!;
     expect(regionSelect).not.toBeNull();
-    const municipalityInput = element.querySelector<HTMLInputElement>('#register-municipality')!;
-    expect(municipalityInput.disabled).toBe(true);
+    const municipalitySelect = element.querySelector<HTMLSelectElement>('#register-municipality')!;
+    expect(municipalitySelect.disabled).toBe(true);
 
     regionSelect.value = '25';
     regionSelect.dispatchEvent(new Event('change'));
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(municipalityInput.disabled).toBe(false);
-    municipalityInput.value = 'chí';
-    municipalityInput.dispatchEvent(new Event('input'));
-    await new Promise((resolve) => setTimeout(resolve, 320));
-    await fixture.whenStable();
-    fixture.detectChanges();
-
+    expect(municipalitySelect.disabled).toBe(false);
     expect(municipalities.searches.at(-1)).toEqual({
-      text: 'chí',
+      text: '',
       filter: { countryId: 1, regionCode: '25' },
     });
+    expect(Array.from(municipalitySelect.options).map((option) => option.textContent?.trim())).toEqual([
+      'Selecciona el municipio…',
+      'Chía',
+    ]);
   });
 
   it('forgets the municipality when the person goes back and picks a legal entity of another country', async () => {

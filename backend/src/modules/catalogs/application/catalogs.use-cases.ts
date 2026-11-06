@@ -22,15 +22,19 @@ import {
 export const COUNTRIES_MANAGE_PERMISSION = 'denominations.manage';
 
 export const DEFAULT_MUNICIPALITY_LIMIT = 20;
-export const MAX_MUNICIPALITY_LIMIT = 50;
+export const REGION_MUNICIPALITY_LIMIT = 1000;
+export const MAX_MUNICIPALITY_LIMIT = 1000;
 export const MAX_SEARCH_LENGTH = 80;
 export const MIN_NEIGHBORHOOD_LENGTH = 2;
 export const MAX_NEIGHBORHOOD_LENGTH = 120;
 
 const MUNICIPALITY_NOT_FOUND = 'El municipio no existe.';
 
-function clampLimit(limit: number | undefined): number {
-  const requested = limit ?? DEFAULT_MUNICIPALITY_LIMIT;
+function clampLimit(
+  limit: number | undefined,
+  defaultLimit = DEFAULT_MUNICIPALITY_LIMIT,
+): number {
+  const requested = limit ?? defaultLimit;
   return Math.min(Math.max(Math.trunc(requested), 1), MAX_MUNICIPALITY_LIMIT);
 }
 
@@ -109,10 +113,15 @@ export class SearchMunicipalitiesUseCase {
     countryId: number | undefined = undefined,
     regionCode: string | undefined = undefined,
   ): Promise<MunicipalityView[]> {
+    const normalizedSearch = cleanSearch(search);
     const normalizedRegion = regionCode?.trim() || null;
+    const defaultLimit =
+      normalizedRegion !== null && normalizedSearch === null
+        ? REGION_MUNICIPALITY_LIMIT
+        : DEFAULT_MUNICIPALITY_LIMIT;
     return this.reader.searchMunicipalities(
-      cleanSearch(search),
-      clampLimit(limit),
+      normalizedSearch,
+      clampLimit(limit, defaultLimit),
       countryId ?? null,
       ...(normalizedRegion === null ? [] : [normalizedRegion]),
     );

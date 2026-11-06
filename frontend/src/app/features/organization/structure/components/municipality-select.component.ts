@@ -118,7 +118,47 @@ let nextId = 0;
     }
   `,
   template: `
-    @if (code()) {
+    @if (selectByRegion()) {
+      @if (note(); as message) {
+        <div class="unavailable">
+          <select
+            class="select"
+            disabled
+            [id]="inputId()"
+            [attr.aria-describedby]="noteId"
+          >
+            <option value="">{{ message }}</option>
+          </select>
+          <span class="field__hint" role="status" [id]="noteId">{{ message }}</span>
+        </div>
+      } @else {
+        <select
+          #selectElement
+          class="select"
+          [id]="inputId()"
+          [value]="code()"
+          [disabled]="!normalizedRegionCode() || regionResults.isLoading()"
+          [attr.aria-invalid]="invalid() ? 'true' : null"
+          (change)="onSelectOption($any($event.target).value)"
+        >
+          <option value="">
+            {{
+              !normalizedRegionCode()
+                ? 'Selecciona primero el departamento o estado'
+                : regionResults.isLoading()
+                  ? 'Cargando municipios…'
+                  : 'Selecciona el municipio'
+            }}
+          </option>
+          @if (code() && !hasCodeInRegionOptions()) {
+            <option [value]="code()">{{ label() || code() }}</option>
+          }
+          @for (option of regionOptions(); track option.code) {
+            <option [value]="option.code">{{ option.name }}</option>
+          }
+        </select>
+      }
+    } @else if (code()) {
       <div class="picked">
         <app-icon name="home" [size]="16" />
         <span class="picked__label">{{ label() || code() }}</span>
@@ -199,6 +239,8 @@ export class MunicipalitySelectComponent {
   readonly countryId = input<number | null>(null);
   /** Region (departamento/estado) the search is limited to; `null` or `''` searches every region. */
   readonly regionCode = input<string | null>(null);
+  /** When true, renders a `<select>` populated with all municipalities of `regionCode`. */
+  readonly selectByRegion = input(false);
   /**
    * Whether the country has municipalities, when the parent already knows it (from GET /geo/countries).
    * `null`: the component asks the API with a one-result search of the country.
@@ -216,6 +258,7 @@ export class MunicipalitySelectComponent {
   private readonly catalogs = inject(CatalogsRepository);
   private readonly injector = inject(Injector);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private readonly selectElement = viewChild<ElementRef<HTMLSelectElement>>('selectElement');
 
   private readonly instance = nextId++;
   protected readonly listId = `municipality-select-list-${this.instance}`;
@@ -225,9 +268,33 @@ export class MunicipalitySelectComponent {
   protected readonly activeIndex = signal(0);
 
   /** Normalized region code when a department/state is selected; `null` otherwise. */
-  private readonly normalizedRegionCode = computed(() => {
+  protected readonly normalizedRegionCode = computed(() => {
     const value = this.regionCode()?.trim();
     return value ? value : null;
+  });
+
+  /** Loads all municipalities of the selected region when `selectByRegion` is true. */
+  protected readonly regionResults = rxResource({
+    params: () => {
+      const regionCode = this.normalizedRegionCode();
+      if (!this.selectByRegion() || !regionCode) {
+        return undefined;
+      }
+      return { countryId: this.countryId(), regionCode };
+    },
+    stream: ({ params }) =>
+      this.catalogs.searchMunicipalities({
+        search: '',
+        ...(params.countryId === null ? {} : { countryId: params.countryId }),
+        regionCode: params.regionCode,
+      }),
+  });
+  protected readonly regionOptions = computed<readonly Municipality[]>(() =>
+    this.regionResults.hasValue() ? this.regionResults.value() : [],
+  );
+  protected readonly hasCodeInRegionOptions = computed(() => {
+    const current = this.code();
+    return Boolean(current) && this.regionOptions().some((option) => option.code === current);
   });
 
   /** One-result search that tells whether the country has municipalities at all. */
@@ -255,6 +322,9 @@ export class MunicipalitySelectComponent {
    * at least 2 letters (`MIN_SEARCH_LENGTH`).
    */
   private readonly canSearch = computed(() => {
+    if (this.selectByRegion()) {
+      return false;
+    }
     const text = this.query().trim();
     if (text.length >= MIN_SEARCH_LENGTH) {
       return true;
@@ -301,12 +371,23 @@ export class MunicipalitySelectComponent {
     this.showList() && this.options().length > 0 ? this.optionId(this.activeIndex()) : null,
   );
 
-  /** Moves focus to the search input once it is rendered in the DOM. */
+  /** Moves focus to the select or search input once it is rendered in the DOM. */
   focusInput(): void {
-    const apply = () => this.searchInput()?.nativeElement.focus();
+    const apply = () =>
+      (this.selectElement()?.nativeElement ?? this.searchInput()?.nativeElement)?.focus();
     apply();
     queueMicrotask(apply);
     afterNextRender(apply, { injector: this.injector });
+  }
+
+  protected onSelectOption(selectedCode: string): void {
+    const option = this.regionOptions().find((item) => item.code === selectedCode);
+    if (option) {
+      this.picked.emit({ code: option.code, label: `${option.name} (${option.regionName})` });
+      this.municipalityPicked.emit(option);
+    } else {
+      this.cleared.emit();
+    }
   }
 
   protected optionId(index: number): string {

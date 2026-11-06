@@ -22,6 +22,7 @@ import {
   ListNeighborhoodsUseCase,
   ListRegionsUseCase,
   MAX_MUNICIPALITY_LIMIT,
+  REGION_MUNICIPALITY_LIMIT,
   SearchMunicipalitiesUseCase,
 } from './catalogs.use-cases.js';
 
@@ -204,6 +205,22 @@ describe('catalog use cases', () => {
       expect(reader.searches[0]).toEqual({
         search: 'Medel',
         limit: 5,
+        countryId: COLOMBIA_ID,
+        regionCode: '05',
+      });
+    });
+
+    it('returns all municipalities of a region when regionCode is given without search or limit', async () => {
+      await new SearchMunicipalitiesUseCase(reader).execute(
+        undefined,
+        undefined,
+        COLOMBIA_ID,
+        '05',
+      );
+
+      expect(reader.searches[0]).toEqual({
+        search: null,
+        limit: REGION_MUNICIPALITY_LIMIT,
         countryId: COLOMBIA_ID,
         regionCode: '05',
       });
