@@ -208,10 +208,19 @@ export class MembersController {
       id,
       {
         joinedOn: body.joinedOn,
+        convertedOn: body.convertedOn,
         isBaptized: body.isBaptized,
         waterBaptismOn: body.waterBaptismOn,
+        baptismMunicipalityCode: body.baptismMunicipalityCode,
         baptismPlace: body.baptismPlace,
+        baptizingPastorName: body.baptizingPastorName,
+        holySpiritBaptismOn: body.holySpiritBaptismOn,
+        reconciledOn: body.reconciledOn,
+        previousCongregationId: body.previousCongregationId,
         previousCongregationName: body.previousCongregationName,
+        isChristianEducationTeacher: body.isChristianEducationTeacher,
+        desiredAreas: body.desiredAreas,
+        pastorNotes: body.pastorNotes,
       },
     );
   }

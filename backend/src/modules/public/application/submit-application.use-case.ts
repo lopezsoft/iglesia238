@@ -68,6 +68,35 @@ export interface SubmitApplicationInput {
   consentAccepted: boolean;
   /** Honeypot: hidden field that only bots fill in. */
   website: string | null;
+  documentIssuePlaceCode?: string | null;
+  birthPlaceCode?: string | null;
+  landlinePhone?: string | null;
+  educationLevelCode?: string | null;
+  profession?: string | null;
+  workplace?: string | null;
+  workPhone?: string | null;
+  marriageIsCivil?: boolean;
+  marriageIsChristian?: boolean;
+  marriageIsCatholic?: boolean;
+  spouseFullName?: string | null;
+  passedEcclesiasticalTribunal?: boolean | null;
+  tribunalOpinion?: string | null;
+  fatherFullName?: string | null;
+  motherFullName?: string | null;
+  childrenCount?: number | null;
+  childrenNames?: string | null;
+  convertedOn?: string | null;
+  waterBaptismOn?: string | null;
+  baptismMunicipalityCode?: string | null;
+  baptismPlace?: string | null;
+  baptizingPastorName?: string | null;
+  holySpiritBaptismOn?: string | null;
+  reconciledOn?: string | null;
+  previousCongregationId?: number | null;
+  pastPositionsText?: string | null;
+  currentPositionsText?: string | null;
+  desiredAreas?: string | null;
+  isChristianEducationTeacher?: boolean;
 }
 
 export interface SubmissionReceipt {
@@ -161,6 +190,35 @@ export class SubmitApplicationUseCase {
       previousCongregationName: input.previousCongregationName,
       isBaptized: input.isBaptized,
       guardian,
+      documentIssuePlaceCode: input.documentIssuePlaceCode ?? null,
+      birthPlaceCode: input.birthPlaceCode ?? null,
+      landlinePhone: input.landlinePhone ?? null,
+      educationLevelCode: input.educationLevelCode ?? null,
+      profession: input.profession ?? null,
+      workplace: input.workplace ?? null,
+      workPhone: input.workPhone ?? null,
+      marriageIsCivil: input.marriageIsCivil ?? false,
+      marriageIsChristian: input.marriageIsChristian ?? false,
+      marriageIsCatholic: input.marriageIsCatholic ?? false,
+      spouseFullName: input.spouseFullName ?? null,
+      passedEcclesiasticalTribunal: input.passedEcclesiasticalTribunal ?? null,
+      tribunalOpinion: input.tribunalOpinion ?? null,
+      fatherFullName: input.fatherFullName ?? null,
+      motherFullName: input.motherFullName ?? null,
+      childrenCount: input.childrenCount ?? null,
+      childrenNames: input.childrenNames ?? null,
+      convertedOn: input.convertedOn ?? null,
+      waterBaptismOn: input.waterBaptismOn ?? null,
+      baptismMunicipalityCode: input.baptismMunicipalityCode ?? null,
+      baptismPlace: input.baptismPlace ?? null,
+      baptizingPastorName: input.baptizingPastorName ?? null,
+      holySpiritBaptismOn: input.holySpiritBaptismOn ?? null,
+      reconciledOn: input.reconciledOn ?? null,
+      previousCongregationId: input.previousCongregationId ?? null,
+      pastPositionsText: input.pastPositionsText ?? null,
+      currentPositionsText: input.currentPositionsText ?? null,
+      desiredAreas: input.desiredAreas ?? null,
+      isChristianEducationTeacher: input.isChristianEducationTeacher ?? false,
     };
 
     const trackingCode = await this.freshTrackingCode();
@@ -270,6 +328,30 @@ export class SubmitApplicationUseCase {
       checks.push([
         this.directory.documentTypeExists(input.guardian.documentTypeCode),
         'El tipo de documento del acudiente no es válido.',
+      ]);
+    }
+    if (input.educationLevelCode && this.directory.educationLevelExists) {
+      checks.push([
+        this.directory.educationLevelExists(input.educationLevelCode),
+        'El nivel educativo no es válido.',
+      ]);
+    }
+    if (input.documentIssuePlaceCode) {
+      checks.push([
+        this.directory.municipalityExists(input.documentIssuePlaceCode),
+        'El municipio de expedición del documento no es válido.',
+      ]);
+    }
+    if (input.birthPlaceCode) {
+      checks.push([
+        this.directory.municipalityExists(input.birthPlaceCode),
+        'El municipio de nacimiento no es válido.',
+      ]);
+    }
+    if (input.baptismMunicipalityCode) {
+      checks.push([
+        this.directory.municipalityExists(input.baptismMunicipalityCode),
+        'El municipio de bautismo no es válido.',
       ]);
     }
     for (const [check, message] of checks) {

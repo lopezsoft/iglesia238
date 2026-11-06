@@ -1,5 +1,33 @@
+@if (member(); as memberDetail) {
+  <div class="tab__header">
+    <h2>Cónyuge y datos matrimoniales</h2>
+    @if (canWrite()) {
+      <button type="button" class="btn btn--secondary btn--sm" (click)="editPerson.emit()">
+        <app-icon name="edit" [size]="14" />
+        Editar datos matrimoniales
+      </button>
+    }
+  </div>
+  <dl class="details">
+    <div>
+      <dt>Nombre del cónyuge</dt>
+      <dd>{{ memberDetail.person.spouseFullName ?? '—' }}</dd>
+    </div>
+    <div>
+      <dt>Tipo de matrimonio</dt>
+      <dd>{{ marriageTypes() }}</dd>
+    </div>
+    @if (memberDetail.person.tribunalOpinion) {
+      <div>
+        <dt>Concepto del Tribunal Eclesiástico</dt>
+        <dd>{{ memberDetail.person.tribunalOpinion }}</dd>
+      </div>
+    }
+  </dl>
+}
+
 <div class="tab__header">
-  <h2>Familia</h2>
+  <h2>Familiares y parentescos</h2>
   @if (canWrite()) {
     <button
       type="button"
@@ -8,29 +36,16 @@
       (click)="openAdd()"
     >
       <app-icon name="plus" />
-      Agregar parentesco
+      Agregar familiar
     </button>
   }
-</div>
-
-<div class="alert" role="note">
-  <app-icon name="info" />
-  <p>
-    El cónyuge se registra únicamente a través de un <strong>Matrimonio</strong> en
-    @if (canOpenRecords()) {
-      <a routerLink="/secretariat-records">Registros de secretaría</a>.
-    } @else {
-      Registros de secretaría.
-    }
-    Desde esta ficha solo se agregan padres, hijos y acudientes.
-  </p>
 </div>
 
 <div aria-live="polite">
   @if (command.message(); as text) {
     <p class="alert alert--success" role="status">{{ text }}</p>
   }
-  @if (!addOpen() && command.error(); as text) {
+  @if (!addOpen() && !editOpen() && command.error(); as text) {
     <p class="alert alert--danger" role="alert">{{ text }}</p>
   }
 </div>
@@ -43,7 +58,7 @@
   <app-empty-state
     icon="users"
     title="Sin parentescos registrados"
-    description="Agrega padres, hijos o acudientes que también estén registrados en la denominación."
+    description="Agrega padres, hijos o acudientes del miembro."
   />
 } @else {
   <div class="table-wrap tab__table">
@@ -107,14 +122,25 @@
                     </button>
                   </span>
                 } @else {
-                  <button
-                    type="button"
-                    class="btn btn--danger-ghost btn--sm"
-                    [attr.aria-label]="'Quitar parentesco con ' + row.fullName"
-                    (click)="confirmingId.set(row.id)"
-                  >
-                    Quitar
-                  </button>
+                  <span class="cluster">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Editar familiar ' + row.fullName"
+                      (click)="openEdit(row)"
+                    >
+                      <app-icon name="edit" [size]="14" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--danger-ghost btn--sm"
+                      [attr.aria-label]="'Quitar parentesco con ' + row.fullName"
+                      (click)="confirmingId.set(row.id)"
+                    >
+                      Quitar
+                    </button>
+                  </span>
                 }
               </td>
             }
@@ -125,7 +151,7 @@
   </div>
 }
 
-<app-dialog [(open)]="addOpen" title="Agregar parentesco">
+<app-dialog [(open)]="addOpen" title="Agregar familiar">
   <form id="family-add-form" class="stack" [formGroup]="form" (ngSubmit)="add()" novalidate>
     @if (command.error(); as text) {
       <p class="alert alert--danger" role="alert">{{ text }}</p>
@@ -143,56 +169,116 @@
         }
       </select>
       <span id="relative-type-hint" class="field__hint"
-        >Qué es la persona elegida para este miembro.</span
+        >Qué es la persona para este miembro.</span
       >
     </div>
-    <div class="field">
-      <label for="relative-search">Buscar persona de la denominación *</label>
-      <input
-        id="relative-search"
-        class="input"
-        type="search"
-        placeholder="Nombre o número de documento"
-        [value]="searchText()"
-        (input)="onSearch($any($event.target).value)"
-      />
-      <span class="field__hint">Escribe al menos 2 caracteres.</span>
+
+    <div class="cluster" role="group" aria-label="Modo de registro del familiar">
+      <button
+        type="button"
+        class="btn btn--sm"
+        [class.btn--primary]="sourceMode() === 'NEW'"
+        [class.btn--secondary]="sourceMode() !== 'NEW'"
+        (click)="setSourceMode('NEW')"
+      >
+        Registrar nuevo familiar
+      </button>
+      <button
+        type="button"
+        class="btn btn--sm"
+        [class.btn--primary]="sourceMode() === 'EXISTING'"
+        [class.btn--secondary]="sourceMode() !== 'EXISTING'"
+        (click)="setSourceMode('EXISTING')"
+      >
+        Buscar persona ya registrada
+      </button>
     </div>
-    <fieldset class="stack">
-      <legend class="visually-hidden">Resultados de la búsqueda</legend>
-      @if (candidates.isLoading()) {
-        <app-loading label="Buscando…" />
-      } @else if (searchError(); as text) {
-        <div class="cluster" role="alert">
-          <span class="field__error">No se pudo completar la búsqueda: {{ text }}</span>
-          <button type="button" class="btn btn--ghost btn--sm" (click)="candidates.reload()">
-            Reintentar
-          </button>
+
+    @if (sourceMode() === 'NEW') {
+      <div class="form-grid">
+        <div class="field">
+          <label for="relative-first-name">Nombres *</label>
+          <input id="relative-first-name" class="input" formControlName="firstName" />
+          @if (form.controls.firstName.touched && form.controls.firstName.invalid) {
+            <span class="field__error">Escribe el nombre del familiar.</span>
+          }
         </div>
-      } @else if (searchText().trim().length >= 2 && options().length === 0) {
-        <p class="text-muted text-small">No hay personas que coincidan.</p>
-      }
-      @for (option of options(); track option.id) {
-        <label class="checkbox">
-          <input type="radio" formControlName="relativeId" [value]="option.id" />
-          <span>
-            {{ option.fullName }}
-            <span class="text-muted text-small mono">{{
-              option.maskedDocument ?? 'Sin documento'
-            }}</span>
-            @if (option.memberCode) {
-              <span class="text-muted text-small mono"> · {{ option.memberCode }}</span>
-            }
-            @if (option.congregationName) {
-              <span class="text-muted text-small"> · {{ option.congregationName }}</span>
-            }
-          </span>
-        </label>
-      }
-      @if (form.controls.relativeId.touched && form.controls.relativeId.invalid) {
-        <span class="field__error">Selecciona una persona.</span>
-      }
-    </fieldset>
+        <div class="field">
+          <label for="relative-last-name">Primer apellido</label>
+          <input id="relative-last-name" class="input" formControlName="lastName" />
+        </div>
+        <div class="field">
+          <label for="relative-second-last-name">Segundo apellido</label>
+          <input id="relative-second-last-name" class="input" formControlName="secondLastName" />
+        </div>
+        <div class="field">
+          <label for="relative-sex">Sexo</label>
+          <select id="relative-sex" class="select" formControlName="sex">
+            <option value="">Sin dato</option>
+            <option value="FEMALE">Femenino</option>
+            <option value="MALE">Masculino</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="relative-birth-date">Fecha de nacimiento</label>
+          <input
+            id="relative-birth-date"
+            class="input"
+            type="date"
+            formControlName="birthDate"
+            [max]="today"
+          />
+        </div>
+      </div>
+    } @else {
+      <div class="field">
+        <label for="relative-search">Buscar persona de la denominación *</label>
+        <input
+          id="relative-search"
+          class="input"
+          type="search"
+          placeholder="Nombre o número de documento"
+          [value]="searchText()"
+          (input)="onSearch($any($event.target).value)"
+        />
+        <span class="field__hint">Escribe al menos 2 caracteres.</span>
+      </div>
+      <fieldset class="stack">
+        <legend class="visually-hidden">Resultados de la búsqueda</legend>
+        @if (candidates.isLoading()) {
+          <app-loading label="Buscando…" />
+        } @else if (searchError(); as text) {
+          <div class="cluster" role="alert">
+            <span class="field__error">No se pudo completar la búsqueda: {{ text }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="candidates.reload()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (searchText().trim().length >= 2 && options().length === 0) {
+          <p class="text-muted text-small">No hay personas que coincidan.</p>
+        }
+        @for (option of options(); track option.id) {
+          <label class="checkbox">
+            <input type="radio" formControlName="relativeId" [value]="option.id" />
+            <span>
+              {{ option.fullName }}
+              <span class="text-muted text-small mono">{{
+                option.maskedDocument ?? 'Sin documento'
+              }}</span>
+              @if (option.memberCode) {
+                <span class="text-muted text-small mono"> · {{ option.memberCode }}</span>
+              }
+              @if (option.congregationName) {
+                <span class="text-muted text-small"> · {{ option.congregationName }}</span>
+              }
+            </span>
+          </label>
+        }
+        @if (form.controls.relativeId.touched && form.controls.relativeId.invalid) {
+          <span class="field__error">Selecciona una persona.</span>
+        }
+      </fieldset>
+    }
   </form>
   <div dialog-footer class="cluster">
     <button type="button" class="btn btn--secondary" (click)="addOpen.set(false)">Cancelar</button>
@@ -203,6 +289,68 @@
       [disabled]="command.pending()"
     >
       {{ command.pending() ? 'Guardando…' : 'Agregar' }}
+    </button>
+  </div>
+</app-dialog>
+
+<app-dialog [(open)]="editOpen" title="Editar familiar">
+  <form id="family-edit-form" class="stack" [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
+    @if (command.error(); as text) {
+      <p class="alert alert--danger" role="alert">{{ text }}</p>
+    }
+    <div class="form-grid">
+      <div class="field">
+        <label for="edit-relative-type">Parentesco *</label>
+        <select id="edit-relative-type" class="select" formControlName="type">
+          @for (type of relationTypes; track type) {
+            <option [value]="type">{{ relationLabels[type] }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="edit-relative-sex">Sexo</label>
+        <select id="edit-relative-sex" class="select" formControlName="sex">
+          <option value="">Sin dato</option>
+          <option value="FEMALE">Femenino</option>
+          <option value="MALE">Masculino</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="edit-relative-first-name">Nombres *</label>
+        <input id="edit-relative-first-name" class="input" formControlName="firstName" />
+        @if (editForm.controls.firstName.touched && editForm.controls.firstName.invalid) {
+          <span class="field__error">Escribe el nombre del familiar.</span>
+        }
+      </div>
+      <div class="field">
+        <label for="edit-relative-last-name">Primer apellido</label>
+        <input id="edit-relative-last-name" class="input" formControlName="lastName" />
+      </div>
+      <div class="field">
+        <label for="edit-relative-second-last-name">Segundo apellido</label>
+        <input id="edit-relative-second-last-name" class="input" formControlName="secondLastName" />
+      </div>
+      <div class="field">
+        <label for="edit-relative-birth-date">Fecha de nacimiento</label>
+        <input
+          id="edit-relative-birth-date"
+          class="input"
+          type="date"
+          formControlName="birthDate"
+          [max]="today"
+        />
+      </div>
+    </div>
+  </form>
+  <div dialog-footer class="cluster">
+    <button type="button" class="btn btn--secondary" (click)="editOpen.set(false)">Cancelar</button>
+    <button
+      type="submit"
+      form="family-edit-form"
+      class="btn btn--primary"
+      [disabled]="command.pending()"
+    >
+      {{ command.pending() ? 'Guardando…' : 'Guardar cambios' }}
     </button>
   </div>
 </app-dialog>

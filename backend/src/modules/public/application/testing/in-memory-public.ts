@@ -51,6 +51,7 @@ export class InMemoryPublicWorld
   ];
   documentTypes = new Set(['CC', 'TI', 'RC']);
   maritalStatuses = new Set(['SINGLE', 'MARRIED']);
+  educationLevels = new Set(['NONE', 'PRIMARY', 'SECONDARY', 'TECHNICAL', 'UNIVERSITY', 'POSTGRADUATE']);
   municipalities = new Set(['13001', '05001']);
   applications: StoredApplication[] = [];
   /** Hashes that already exist, to force a collision. */
@@ -70,6 +71,7 @@ export class InMemoryPublicWorld
           denominationId: row.denominationId,
           denominationName: `Denominación ${row.denominationId}`,
           name: `Sede ${row.id}`,
+          countryId: 46,
           municipalityCode: '13001',
           municipalityName: 'Cartagena',
           regionName: 'Bolívar',
@@ -108,6 +110,10 @@ export class InMemoryPublicWorld
 
   maritalStatusExists(code: string): Promise<boolean> {
     return Promise.resolve(this.maritalStatuses.has(code));
+  }
+
+  educationLevelExists(code: string): Promise<boolean> {
+    return Promise.resolve(this.educationLevels.has(code));
   }
 
   municipalityExists(code: string): Promise<boolean> {

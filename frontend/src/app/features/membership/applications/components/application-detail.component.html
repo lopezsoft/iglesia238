@@ -112,7 +112,7 @@
       />
     </div>
 
-    <app-section-panel title="Datos personales" icon="user" tone="slate" layout="stack">
+    <app-section-panel title="Datos personales y laborales" icon="user" tone="slate" layout="stack">
       <dl class="details">
         <div>
           <dt>Fecha de nacimiento</dt>
@@ -133,26 +133,158 @@
           <dd>{{ app.formData.maritalStatusName ?? app.formData.maritalStatusCode }}</dd>
         </div>
         <div>
+          <dt>Profesión</dt>
+          <dd>{{ app.formData.profession ?? '—' }}</dd>
+        </div>
+        <div>
           <dt>Ocupación</dt>
           <dd>{{ app.formData.occupation ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Lugar de trabajo</dt>
+          <dd>{{ app.formData.workplace ?? '—' }}</dd>
+        </div>
+      </dl>
+    </app-section-panel>
+
+    @if (
+      app.formData.spouseFullName ||
+      app.formData.fatherFullName ||
+      app.formData.motherFullName ||
+      app.formData.childrenCount !== undefined && app.formData.childrenCount !== null ||
+      app.formData.tribunalOpinion
+    ) {
+      <app-section-panel title="Familia y matrimonio" icon="users" tone="indigo" layout="stack">
+        <dl class="details">
+          @if (app.formData.spouseFullName) {
+            <div>
+              <dt>Cónyuge</dt>
+              <dd>{{ app.formData.spouseFullName }}</dd>
+            </div>
+          }
+          @if (app.formData.fatherFullName) {
+            <div>
+              <dt>Padre</dt>
+              <dd>{{ app.formData.fatherFullName }}</dd>
+            </div>
+          }
+          @if (app.formData.motherFullName) {
+            <div>
+              <dt>Madre</dt>
+              <dd>{{ app.formData.motherFullName }}</dd>
+            </div>
+          }
+          @if (app.formData.childrenCount !== undefined && app.formData.childrenCount !== null) {
+            <div>
+              <dt>Número de hijos</dt>
+              <dd>{{ app.formData.childrenCount }}</dd>
+            </div>
+          }
+          @if (app.formData.childrenNames?.length) {
+            <div>
+              <dt>Hijos</dt>
+              <dd>{{ app.formData.childrenNames?.join(', ') }}</dd>
+            </div>
+          }
+          @if (app.formData.tribunalOpinion) {
+            <div>
+              <dt>Concepto Tribunal Eclesiástico</dt>
+              <dd>{{ app.formData.tribunalOpinion }}</dd>
+            </div>
+          }
+        </dl>
+      </app-section-panel>
+    }
+
+    <app-section-panel title="Datos eclesiásticos" icon="church" tone="green" layout="stack">
+      <dl class="details">
+        <div>
+          <dt>Fecha de conversión</dt>
+          <dd>{{ app.formData.convertedOn ? (app.formData.convertedOn | date: 'dd/MM/yyyy') : '—' }}</dd>
         </div>
         <div>
           <dt>Bautizado(a)</dt>
           <dd>{{ baptism() }}</dd>
         </div>
+        @if (app.formData.waterBaptismOn) {
+          <div>
+            <dt>Fecha de bautismo en agua</dt>
+            <dd>{{ app.formData.waterBaptismOn | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        }
+        @if (app.formData.baptismPlace) {
+          <div>
+            <dt>Congregación o lugar del bautismo</dt>
+            <dd>{{ app.formData.baptismPlace }}</dd>
+          </div>
+        }
+        @if (app.formData.baptizingPastorName) {
+          <div>
+            <dt>Pastor que bautizó</dt>
+            <dd>{{ app.formData.baptizingPastorName }}</dd>
+          </div>
+        }
+        @if (app.formData.holySpiritBaptismOn) {
+          <div>
+            <dt>Bautismo del Espíritu Santo</dt>
+            <dd>{{ app.formData.holySpiritBaptismOn | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        }
+        @if (app.formData.reconciledOn) {
+          <div>
+            <dt>Fecha de reconciliación</dt>
+            <dd>{{ app.formData.reconciledOn | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        }
         <div>
           <dt>Congregación anterior</dt>
           <dd>{{ app.formData.previousCongregationName ?? 'Ninguna' }}</dd>
         </div>
+        @if (app.formData.currentPositionsText) {
+          <div>
+            <dt>Cargos actuales</dt>
+            <dd>{{ app.formData.currentPositionsText }}</dd>
+          </div>
+        }
+        @if (app.formData.pastPositionsText) {
+          <div>
+            <dt>Cargos desempeñados</dt>
+            <dd>{{ app.formData.pastPositionsText }}</dd>
+          </div>
+        }
+        @if (app.formData.desiredAreas) {
+          <div>
+            <dt>Áreas de servicio</dt>
+            <dd>{{ app.formData.desiredAreas }}</dd>
+          </div>
+        }
+        @if (app.formData.isChristianEducationTeacher !== undefined && app.formData.isChristianEducationTeacher !== null) {
+          <div>
+            <dt>Maestro(a) de Educación Cristiana</dt>
+            <dd>{{ app.formData.isChristianEducationTeacher ? 'Sí' : 'No' }}</dd>
+          </div>
+        }
       </dl>
     </app-section-panel>
 
     <app-section-panel title="Contacto y residencia" icon="mail" tone="cyan" layout="stack">
       <dl class="details">
         <div>
-          <dt>Teléfono</dt>
+          <dt>Teléfono celular</dt>
           <dd>{{ app.phone ?? '—' }}</dd>
         </div>
+        @if (app.formData.landlinePhone) {
+          <div>
+            <dt>Teléfono fijo</dt>
+            <dd>{{ app.formData.landlinePhone }}</dd>
+          </div>
+        }
+        @if (app.formData.workPhone) {
+          <div>
+            <dt>Teléfono oficina</dt>
+            <dd>{{ app.formData.workPhone }}</dd>
+          </div>
+        }
         <div>
           <dt>Correo electrónico</dt>
           <dd class="application-detail__wrap">{{ app.email ?? '—' }}</dd>

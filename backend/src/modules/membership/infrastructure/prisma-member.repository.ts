@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { DEFAULT_COUNTRY_ISO } from '../../../common/geo/default-country.js';
 import {
   parseIsoDate,
   toIsoDateOrNull,
@@ -42,7 +43,12 @@ export class PrismaMemberRepository
   extends TenantScopedRepository
   implements MemberRepository
 {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(DEFAULT_COUNTRY_ISO)
+    private readonly defaultCountryIso: string = 'CO',
+  ) {
     super();
   }
 
@@ -124,17 +130,29 @@ export class PrismaMemberRepository
     record: NewMemberRecord,
     transaction: Transaction,
   ): Promise<number> {
-    const created = await clientOf(this.prisma, transaction).member.create({
+    const client = clientOf(this.prisma, transaction);
+    const refs = await this.resolveMemberRefs(client, scope, record);
+    const created = await client.member.create({
       data: {
         denominationId: scope.denominationId,
         personId: record.personId,
         congregationId: record.congregationId,
         status: 'ACTIVE',
         joinedOn: parseIsoDate(record.joinedOn),
+        convertedOn: optionalDate(record.convertedOn),
         isBaptized: record.isBaptized,
         waterBaptismOn: optionalDate(record.waterBaptismOn),
+        baptismMunicipalityId: refs.baptismMunicipalityId,
         baptismPlace: record.baptismPlace,
+        baptizingPastorId: refs.baptizingPastorId,
+        holySpiritBaptismOn: optionalDate(record.holySpiritBaptismOn),
+        reconciledOn: optionalDate(record.reconciledOn),
+        previousCongregationId: refs.previousCongregationId,
         previousCongregationName: record.previousCongregationName,
+        isChristianEducationTeacher:
+          record.isChristianEducationTeacher ?? false,
+        desiredAreas: record.desiredAreas ?? null,
+        pastorNotes: record.pastorNotes ?? null,
       },
       select: { id: true },
     });
@@ -147,16 +165,102 @@ export class PrismaMemberRepository
     patch: MembershipDataPatch,
     transaction: Transaction,
   ): Promise<void> {
-    await clientOf(this.prisma, transaction).member.updateMany({
+    const client = clientOf(this.prisma, transaction);
+    const refs = await this.resolveMemberRefs(client, scope, patch);
+    await client.member.updateMany({
       where: this.scoped(scope, { id: memberId }),
       data: {
         joinedOn: optionalDate(patch.joinedOn),
+        convertedOn: optionalDate(patch.convertedOn),
         isBaptized: patch.isBaptized,
         waterBaptismOn: optionalDate(patch.waterBaptismOn),
+        ...(patch.baptismMunicipalityCode !== undefined
+          ? { baptismMunicipalityId: refs.baptismMunicipalityId ?? null }
+          : {}),
         baptismPlace: patch.baptismPlace,
+        ...(patch.baptizingPastorName !== undefined
+          ? { baptizingPastorId: refs.baptizingPastorId ?? null }
+          : {}),
+        holySpiritBaptismOn: optionalDate(patch.holySpiritBaptismOn),
+        reconciledOn: optionalDate(patch.reconciledOn),
+        ...(patch.previousCongregationId !== undefined
+          ? { previousCongregationId: refs.previousCongregationId ?? null }
+          : {}),
         previousCongregationName: patch.previousCongregationName,
+        ...(patch.isChristianEducationTeacher !== undefined
+          ? { isChristianEducationTeacher: patch.isChristianEducationTeacher }
+          : {}),
+        ...(patch.desiredAreas !== undefined
+          ? { desiredAreas: patch.desiredAreas }
+          : {}),
+        ...(patch.pastorNotes !== undefined
+          ? { pastorNotes: patch.pastorNotes }
+          : {}),
       },
     });
+  }
+
+  private async resolveMemberRefs(
+    client: Prisma.TransactionClient,
+    scope: TenantScope,
+    patch: {
+      baptismMunicipalityCode?: string | null;
+      baptizingPastorName?: string | null;
+      previousCongregationId?: number | null;
+    },
+  ): Promise<{
+    baptismMunicipalityId: number | undefined;
+    baptizingPastorId: number | undefined;
+    previousCongregationId: number | undefined;
+  }> {
+    const baptismMunicipality = patch.baptismMunicipalityCode
+      ? await client.municipality.findFirst({
+          where: {
+            code: patch.baptismMunicipalityCode,
+            region: { country: { isoAlpha2: this.defaultCountryIso } },
+          },
+          select: { id: true },
+        })
+      : undefined;
+
+    let baptizingPastorId: number | undefined;
+    if (patch.baptizingPastorName) {
+      const clean = patch.baptizingPastorName.trim().slice(0, 200);
+      const existing = await client.person.findFirst({
+        where: {
+          denominationId: scope.denominationId,
+          deletedAt: null,
+          fullName: clean,
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        baptizingPastorId = existing.id;
+      } else {
+        const created = await client.person.create({
+          data: { denominationId: scope.denominationId, fullName: clean },
+          select: { id: true },
+        });
+        baptizingPastorId = created.id;
+      }
+    }
+
+    const previousCongregation = patch.previousCongregationId
+      ? await client.congregation.findFirst({
+          where: {
+            id: patch.previousCongregationId,
+            denominationId: scope.denominationId,
+            deletedAt: null,
+          },
+          select: { id: true },
+        })
+      : undefined;
+
+    return {
+      baptismMunicipalityId: baptismMunicipality?.id,
+      baptizingPastorId,
+      previousCongregationId: previousCongregation?.id,
+    };
   }
 
   async updateStatus(
@@ -363,22 +467,48 @@ export class PrismaMemberRepository
 
   private toDetail(row: DetailPayload): MemberDetail {
     const { person } = row;
-    const phone = person.personContacts.find(
-      (contact) => contact.type !== 'EMAIL',
+    const mobile = person.personContacts.find(
+      (contact) => contact.type === 'MOBILE',
+    );
+    const landline = person.personContacts.find(
+      (contact) => contact.type === 'LANDLINE',
+    );
+    const workPhone = person.personContacts.find(
+      (contact) => contact.type === 'WORK_PHONE',
     );
     const email = person.personContacts.find(
       (contact) => contact.type === 'EMAIL',
     );
     const address = person.personAddresses[0];
+    const marriageAsSpouse1 = person.marriagesAsSpouse1?.[0];
+    const marriageAsSpouse2 = person.marriagesAsSpouse2?.[0];
+    const activeMarriage = marriageAsSpouse1 ?? marriageAsSpouse2 ?? null;
+    const spousePerson = marriageAsSpouse1
+      ? marriageAsSpouse1.spouse2
+      : marriageAsSpouse2
+        ? marriageAsSpouse2.spouse1
+        : null;
+    const spouseFullName = spousePerson ? personNames(spousePerson) : null;
     return {
       id: row.id,
       code: memberCodeOf(row.memberRegistryEntries),
       status: row.status,
       joinedOn: toIsoDateOrNull(row.joinedOn),
+      convertedOn: toIsoDateOrNull(row.convertedOn),
       isBaptized: row.isBaptized,
       waterBaptismOn: toIsoDateOrNull(row.waterBaptismOn),
+      baptismMunicipalityCode: row.baptismMunicipality?.code ?? null,
       baptismPlace: row.baptismPlace,
+      baptizingPastorName: row.baptizingPastor
+        ? personNames(row.baptizingPastor)
+        : null,
+      holySpiritBaptismOn: toIsoDateOrNull(row.holySpiritBaptismOn),
+      reconciledOn: toIsoDateOrNull(row.reconciledOn),
+      previousCongregationId: row.previousCongregationId,
       previousCongregationName: row.previousCongregationName,
+      isChristianEducationTeacher: row.isChristianEducationTeacher,
+      desiredAreas: row.desiredAreas,
+      pastorNotes: row.pastorNotes,
       congregationId: row.congregationId,
       congregationName: row.congregation.name,
       congregationMunicipalityCode: row.congregation.municipality?.code ?? null,
@@ -388,19 +518,31 @@ export class PrismaMemberRepository
         userId: person.userId,
         documentTypeCode: person.documentType?.code ?? null,
         documentNumber: person.documentNumber,
+        documentIssuePlaceCode: person.documentIssuePlace?.code ?? null,
         firstName: person.firstName ?? person.fullName ?? '',
         lastName: person.lastName ?? '',
         secondLastName: person.secondLastName,
         sex: person.sex,
         birthDate: toIsoDateOrNull(person.birthDate),
+        birthPlaceCode: person.birthPlace?.code ?? null,
         maritalStatusCode: person.maritalStatus?.code ?? null,
         educationLevelCode: person.educationLevel?.code ?? null,
         profession: person.profession,
         occupation: person.occupation,
-        phone: phone?.value ?? null,
+        workplace: person.workplace,
+        childrenCount: person.childrenCount,
+        phone: (mobile ?? landline)?.value ?? null,
+        landlinePhone: landline?.value ?? null,
+        workPhone: workPhone?.value ?? null,
         email: email?.value ?? null,
         address: address?.address ? address.address : null,
         municipalityCode: address?.municipality?.code ?? null,
+        neighborhood: address?.neighborhood?.name ?? null,
+        spouseFullName,
+        marriageIsCivil: activeMarriage?.isCivil ?? false,
+        marriageIsChristian: activeMarriage?.isChristian ?? false,
+        marriageIsCatholic: activeMarriage?.isCatholic ?? false,
+        tribunalOpinion: activeMarriage?.tribunalOpinion ?? null,
       },
     };
   }

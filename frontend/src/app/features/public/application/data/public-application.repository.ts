@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import {
   ApplicationStatusCheck,
   ApplicationSubmission,
@@ -7,6 +7,7 @@ import {
   MunicipalityOption,
   OpenCongregation,
   PublicCatalogs,
+  RegionOption,
   SubmissionReceipt,
 } from './public-application.models';
 
@@ -24,9 +25,14 @@ export abstract class PublicApplicationRepository {
   /** Document types and marital statuses of the form. */
   abstract getCatalogs(): Observable<PublicCatalogs>;
 
+  /** Departments, states or provinces of an active country (`GET /public/geo/regions`). */
+  listRegions(_countryId?: number | null): Observable<RegionOption[]> {
+    return of([]);
+  }
+
   /**
    * Municipalities whose name matches the text (any of them when it is empty), optionally of one
-   * country only; at most `filter.limit`.
+   * country and/or region only; at most `filter.limit`.
    */
   abstract searchMunicipalities(text: string, filter?: MunicipalityFilter): Observable<MunicipalityOption[]>;
 

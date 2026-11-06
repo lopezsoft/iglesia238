@@ -10,10 +10,12 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { userMessage } from '../../../../core/errors/domain-error';
+import { Municipality } from '../../../../core/models/catalogs';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import {
@@ -28,7 +30,13 @@ import { LegalEntityCountryField, legalEntityErrorTarget } from './legal-entity-
 import { MunicipalityPicked, MunicipalitySelectComponent } from './municipality-select.component';
 
 type LegalEntityField =
-  'legalName' | 'taxId' | 'legalRepresentative' | 'countryId' | 'municipalityCode' | 'email';
+  | 'legalName'
+  | 'taxId'
+  | 'legalRepresentative'
+  | 'countryId'
+  | 'regionCode'
+  | 'municipalityCode'
+  | 'email';
 
 export interface LegalEntitySaved {
   readonly legalEntity: LegalEntityRow;
@@ -45,6 +53,7 @@ export interface LegalEntitySaved {
 export class LegalEntityFormDialogComponent {
   private readonly repository = inject(OrganizationRepository);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly municipalitySelect = viewChild<MunicipalitySelectComponent>('municipalitySelect');
 
   readonly open = model(false);
   readonly legalEntity = input<LegalEntityRow | null>(null);
@@ -73,6 +82,7 @@ export class LegalEntityFormDialogComponent {
     ],
     legalRepresentative: ['', [Validators.required, Validators.maxLength(FIELD_LIMITS.legalName)]],
     countryId: [0, [Validators.required, Validators.min(1)]],
+    regionCode: [''],
     municipalityCode: ['', Validators.required],
     email: ['', [Validators.email, Validators.maxLength(FIELD_LIMITS.email)]],
     phone: ['', Validators.maxLength(FIELD_LIMITS.phone)],
@@ -82,6 +92,7 @@ export class LegalEntityFormDialogComponent {
   protected readonly country = new LegalEntityCountryField(
     this.form.controls.countryId,
     this.form.controls.municipalityCode,
+    this.form.controls.regionCode,
   );
 
   constructor() {
@@ -93,10 +104,19 @@ export class LegalEntityFormDialogComponent {
     });
   }
 
-  /** A municipality of the previous country cannot stay: the person picks one of the new country. */
+  /** A municipality or region of the previous country cannot stay: the person picks one of the new country. */
   protected onCountryChanged(): void {
     this.countryError.set(null);
+    this.form.controls.regionCode.setValue('');
     this.onMunicipalityCleared();
+  }
+
+  /** Changing the department/state clears any municipality from another department and focuses the city input. */
+  protected onRegionChanged(): void {
+    this.onMunicipalityCleared();
+    if (this.form.controls.regionCode.value) {
+      this.municipalitySelect()?.focusInput();
+    }
   }
 
   protected onMunicipalityPicked(picked: MunicipalityPicked): void {
@@ -106,9 +126,24 @@ export class LegalEntityFormDialogComponent {
     this.municipalityError.set(null);
   }
 
+  protected onMunicipalityEntityPicked(municipality: Municipality): void {
+    if (municipality.regionCode) {
+      this.form.controls.regionCode.setValue(municipality.regionCode);
+    }
+  }
+
   protected onMunicipalityCleared(): void {
     this.form.controls.municipalityCode.setValue('');
     this.municipalityText.set('');
+  }
+
+  protected showRegionError(): boolean {
+    return (
+      this.country.hasMunicipalities() !== false &&
+      this.form.controls.regionCode.touched &&
+      !this.form.controls.regionCode.value &&
+      !this.form.controls.municipalityCode.value
+    );
   }
 
   protected showError(control: LegalEntityField, error: string): boolean {
@@ -166,6 +201,7 @@ export class LegalEntityFormDialogComponent {
       legalRepresentative: current?.legalRepresentative ?? '',
       // 0 lets the country field preselect the default country.
       countryId: current?.countryId ?? 0,
+      regionCode: current?.regionCode ?? '',
       municipalityCode: current?.municipalityCode ?? '',
       email: current?.email ?? '',
       phone: current?.phone ?? '',

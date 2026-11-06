@@ -55,6 +55,35 @@ export interface ApplicationFormDataView {
   guardianRelationship: string | null;
   guardianPhone: string | null;
   guardianDocumentTypeCode: string | null;
+  documentIssuePlaceCode?: string | null;
+  birthPlaceCode?: string | null;
+  landlinePhone?: string | null;
+  educationLevelCode?: string | null;
+  profession?: string | null;
+  workplace?: string | null;
+  workPhone?: string | null;
+  marriageIsCivil?: boolean;
+  marriageIsChristian?: boolean;
+  marriageIsCatholic?: boolean;
+  spouseFullName?: string | null;
+  passedEcclesiasticalTribunal?: boolean | null;
+  tribunalOpinion?: string | null;
+  fatherFullName?: string | null;
+  motherFullName?: string | null;
+  childrenCount?: number | null;
+  childrenNames?: string | null;
+  convertedOn?: string | null;
+  waterBaptismOn?: string | null;
+  baptismMunicipalityCode?: string | null;
+  baptismPlace?: string | null;
+  baptizingPastorName?: string | null;
+  holySpiritBaptismOn?: string | null;
+  reconciledOn?: string | null;
+  previousCongregationId?: number | null;
+  pastPositionsText?: string | null;
+  currentPositionsText?: string | null;
+  desiredAreas?: string | null;
+  isChristianEducationTeacher?: boolean;
 }
 
 export interface ApplicationDetailView {

@@ -12,6 +12,7 @@ import type {
   MunicipalityKey,
   MunicipalityView,
   NeighborhoodView,
+  RegionView,
 } from './catalogs.reader.js';
 import {
   EnsureNeighborhoodUseCase,
@@ -19,7 +20,9 @@ import {
   GetMunicipalityUseCase,
   ListCountriesUseCase,
   ListNeighborhoodsUseCase,
+  ListRegionsUseCase,
   MAX_MUNICIPALITY_LIMIT,
+  REGION_MUNICIPALITY_LIMIT,
   SearchMunicipalitiesUseCase,
 } from './catalogs.use-cases.js';
 
@@ -40,6 +43,11 @@ const COUNTRIES: CountryView[] = [
     isActive: false,
     hasMunicipalities: false,
   },
+];
+
+const REGIONS: RegionView[] = [
+  { countryId: COLOMBIA_ID, code: '05', name: 'Antioquia' },
+  { countryId: COLOMBIA_ID, code: '13', name: 'Bolívar' },
 ];
 
 const MEDELLIN: MunicipalityView = {
@@ -65,6 +73,7 @@ class FakeCatalogsReader implements CatalogsReader {
     search: string | null;
     limit: number;
     countryId: number | null;
+    regionCode?: string | null;
   }[] = [];
   readonly keys: MunicipalityKey[] = [];
   neighborhoods: NeighborhoodView[] = [];
@@ -80,12 +89,25 @@ class FakeCatalogsReader implements CatalogsReader {
     );
   }
 
+  listRegions(countryId?: number | null) {
+    const resolvedCountryId = countryId ?? COLOMBIA_ID;
+    return Promise.resolve(
+      REGIONS.filter((region) => region.countryId === resolvedCountryId),
+    );
+  }
+
   searchMunicipalities(
     search: string | null,
     limit: number,
     countryId: number | null,
+    regionCode?: string | null,
   ) {
-    this.searches.push({ search, limit, countryId });
+    this.searches.push({
+      search,
+      limit,
+      countryId,
+      ...(regionCode !== undefined ? { regionCode } : {}),
+    });
     return Promise.resolve([MEDELLIN]);
   }
 
@@ -150,7 +172,11 @@ describe('catalog use cases', () => {
     it('limits the public answer to what the application form shows', async () => {
       const result = await new GetCatalogsUseCase(reader).publicSubset();
 
-      expect(Object.keys(result)).toEqual(['documentTypes', 'maritalStatuses']);
+      expect(Object.keys(result)).toEqual([
+        'documentTypes',
+        'maritalStatuses',
+        'educationLevels',
+      ]);
     });
   });
 
@@ -168,17 +194,35 @@ describe('catalog use cases', () => {
       });
     });
 
-    it('narrows the search to one country when it is given', async () => {
+    it('narrows the search to one country and region when given', async () => {
       await new SearchMunicipalitiesUseCase(reader).execute(
         'Medel',
         5,
         COLOMBIA_ID,
+        ' 05 ',
       );
 
       expect(reader.searches[0]).toEqual({
         search: 'Medel',
         limit: 5,
         countryId: COLOMBIA_ID,
+        regionCode: '05',
+      });
+    });
+
+    it('returns all municipalities of a region when regionCode is given without search or limit', async () => {
+      await new SearchMunicipalitiesUseCase(reader).execute(
+        undefined,
+        undefined,
+        COLOMBIA_ID,
+        '05',
+      );
+
+      expect(reader.searches[0]).toEqual({
+        search: null,
+        limit: REGION_MUNICIPALITY_LIMIT,
+        countryId: COLOMBIA_ID,
+        regionCode: '05',
       });
     });
 
@@ -197,7 +241,7 @@ describe('catalog use cases', () => {
     });
   });
 
-  describe('ListCountriesUseCase', () => {
+  describe('ListCountriesUseCase and ListRegionsUseCase', () => {
     const platformAdmin = buildTenantContext({
       kind: 'PLATFORM',
       permissions: ['denominations.manage'],
@@ -210,6 +254,12 @@ describe('catalog use cases', () => {
       );
 
       expect(countries).toEqual([COUNTRIES[0]]);
+    });
+
+    it('lists the regions of a country', async () => {
+      const regions = await new ListRegionsUseCase(reader).execute(COLOMBIA_ID);
+
+      expect(regions).toEqual(REGIONS);
     });
 
     it('adds the inactive ones only for the platform team', async () => {

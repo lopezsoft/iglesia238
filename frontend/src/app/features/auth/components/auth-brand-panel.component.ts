@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FeatureChipComponent } from '../../../shared/ui/feature-chip.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { BrandMarkComponent } from '../../../shared/ui/brand-mark.component';
 import { ShowcaseCardComponent } from '../../../shared/ui/showcase-card.component';
 
 /**
@@ -10,11 +10,11 @@ import { ShowcaseCardComponent } from '../../../shared/ui/showcase-card.componen
 @Component({
   selector: 'app-auth-brand-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, ShowcaseCardComponent, FeatureChipComponent],
+  imports: [BrandMarkComponent, ShowcaseCardComponent, FeatureChipComponent],
   styleUrl: './auth-brand-panel.component.scss',
   template: `
     <div class="brand">
-      <span class="brand__mark"><app-icon name="church" [size]="28" /></span>
+      <span class="brand__mark"><app-brand-mark [size]="48" /></span>
       <span class="brand__name">Iglesia <span class="brand__accent">238</span></span>
     </div>
 

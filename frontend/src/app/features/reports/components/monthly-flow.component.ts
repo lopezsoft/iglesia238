@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { PERIOD_STATUS_LABELS } from '../../accounting/data/accounting.models';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { CustomTooltipDirective } from '../../../shared/ui/custom-tooltip.directive';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { FinancialReport } from '../data/reports.models';
 
@@ -12,7 +13,7 @@ function millions(value: number): string {
 @Component({
   selector: 'app-monthly-flow',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, MoneyPipe],
+  imports: [CustomTooltipDirective, IconComponent, MoneyPipe],
   templateUrl: './monthly-flow.component.html',
   styleUrl: './monthly-flow.component.scss',
 })

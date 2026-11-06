@@ -13,7 +13,7 @@ import {
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom, pairwise, startWith } from 'rxjs';
+import { firstValueFrom, of, pairwise, startWith } from 'rxjs';
 import { DomainError, userMessage } from '../../../core/errors/domain-error';
 import { ErrorBannerComponent, LoadingComponent } from '../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../shared/ui/icon.component';
@@ -22,6 +22,7 @@ import { TextFieldComponent } from '../../../shared/ui/text-field.component';
 import { PASSWORD_HINT, newPasswordError } from '../../auth/password-form';
 import { ApplicationStepperComponent } from '../application/components/application-stepper.component';
 import { MunicipalityPickerComponent } from '../application/components/municipality-picker.component';
+import { PublicApplicationRepository } from '../application/data/public-application.repository';
 import { LegalEntityPickerComponent } from './components/legal-entity-picker.component';
 import { RegistrationDoneComponent } from './components/registration-done.component';
 import { createRegistrationForm } from './congregation-registration-form';
@@ -79,6 +80,7 @@ const MESSAGES = {
 })
 export class CongregationRegistrationPage {
   private readonly repository = inject(CongregationRegistrationRepository);
+  private readonly publicRepository = inject(PublicApplicationRepository);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly formElement = viewChild<ElementRef<HTMLFormElement>>('registrationForm');
@@ -104,6 +106,24 @@ export class CongregationRegistrationPage {
     this.legalEntities.hasValue()
       ? (this.legalEntities.value().find((entity) => entity.id === this.chosenEntityId()) ?? null)
       : null,
+  );
+
+  protected readonly regionsResource = rxResource({
+    params: () => {
+      const countryId = this.selectedEntity()?.countryId ?? null;
+      return countryId !== null ? { countryId } : undefined;
+    },
+    stream: ({ params }) =>
+      this.publicRepository.listRegions ? this.publicRepository.listRegions(params.countryId) : of([]),
+  });
+  protected readonly regions = computed(() =>
+    this.regionsResource.hasValue() ? this.regionsResource.value() : [],
+  );
+  protected readonly selectedRegionCode = toSignal(
+    this.form.controls.congregation.controls.regionCode.valueChanges.pipe(
+      startWith(this.form.controls.congregation.controls.regionCode.value),
+    ),
+    { initialValue: this.form.controls.congregation.controls.regionCode.value },
   );
 
   /** False when the country of the chosen legal entity has no municipality loaded. */
@@ -135,16 +155,34 @@ export class CongregationRegistrationPage {
 
   constructor() {
     // The municipality must be of the country of the legal entity: choosing an entity of another country
-    // (after going back to step 1) forgets the municipality picked for the previous one.
+    // (after going back to step 1) forgets the region and municipality picked for the previous one.
     this.form.controls.legalEntityId.valueChanges
       .pipe(startWith(this.form.controls.legalEntityId.value), pairwise(), takeUntilDestroyed(this.destroyRef))
       .subscribe(([previous, next]) => {
         if (previous !== null && this.countryOf(previous) !== this.countryOf(next)) {
           const congregation = this.form.controls.congregation.controls;
+          congregation.regionCode.reset('');
           congregation.municipalityCode.reset('');
           congregation.municipalityName.reset('');
         }
       });
+  }
+
+  protected onRegionChange(regionCode: string): void {
+    const congregation = this.form.controls.congregation.controls;
+    congregation.regionCode.setValue(regionCode);
+    congregation.municipalityCode.reset('');
+    congregation.municipalityName.reset('');
+  }
+
+  protected regionInvalid(): boolean {
+    const congregation = this.form.controls.congregation.controls;
+    return (
+      this.regions().length > 0 &&
+      !this.selectedRegionCode() &&
+      !congregation.municipalityCode.value &&
+      (congregation.regionCode.touched || this.revealed())
+    );
   }
 
   protected municipalityInvalid(): boolean {

@@ -8,6 +8,106 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.11.1 - 2026-11-06
+
+### Fixed
+
+- `FakeFamilyRepository.updateType` en `in-memory-membership.ts`: reemplazo inmutable de la fila familiar para satisfacer `readonly type` en `npm run typecheck` (`tsc --noEmit`) dentro del workflow de CI.
+
+## 0.11.0 - 2026-11-06
+
+### Added
+
+- Pipeline de **CI/CD en GitHub Actions** (`.github/workflows/ci-cd.yml`) para **Dokploy (`matiasimpulso.com`)**:
+  - **Job `ci-backend`:** validación de diccionario de datos (`npm run db:comments:check`), generación de Prisma Client, chequeo de tipos (`npm run typecheck`), compilación (`npm run build`) y ejecución de pruebas unitarias y de aislamiento multi-tenant (`npm run test`).
+  - **Job `ci-frontend`:** verificación de prohibición de atributo `title` nativo (`node scripts/check-native-title.js`), compilación Angular en producción (`npm run build -- --configuration=production`) y pruebas unitarias (`npx ng test --watch=false`).
+  - **Job `deploy-dokploy`:** disparo condicionado a la aprobación de ambos *quality gates* mediante el secret `DOKPLOY_WEBHOOK_URL`.
+
+## 0.10.0 - 2026-11-06
+
+### Added
+
+- Imagen de Docker unificada para despliegue en **Dokploy** (`matiasimpulso.com`):
+  - `Dockerfile` multi-stage en la raíz que compila el Frontend (Angular 22) y el Backend (NestJS 12 + Prisma 7) y los ejecuta en un único contenedor (`nginx` en `:80` + `node dist/main.js` en `127.0.0.1:3000`).
+  - `docker/entrypoint.prod.sh`: aplica automáticamente migraciones (`npx prisma migrate deploy`), sincroniza catálogos globales (`npx prisma db seed`), crea opcionalmente el primer administrador de plataforma si se definen `PLATFORM_ADMIN_EMAIL` y `PLATFORM_ADMIN_PASSWORD`, y supervisa los procesos de Nginx y NestJS.
+  - `docker/nginx/dokploy.conf` y `frontend/nginx.conf`: restauración de la IP real del visitante (`set_real_ip_from` / `real_ip_header X-Forwarded-For`) detrás del proxy Traefik de Dokploy y reenvío de `X-Forwarded-Proto`.
+
+## 0.9.2 - 2026-11-06
+
+### Fixed
+
+- Despliegue en producción (`docker-compose.prod.yml`, `.env.example` y `backend/.env.example`): el servicio `backend` ahora recibe `JWT_SECRET`, `JWT_EXPIRATION`, `REFRESH_TTL`, `REFRESH_MAX_LIFETIME`, `APP_BASE_URL`, `DEFAULT_COUNTRY_ISO`, `TRUST_PROXY=1` (detrás del Nginx del contenedor `frontend`) y las variables `SMTP_*`.
+
+## 0.9.1 - 2026-11-06
+
+### Security
+
+- Endurecimiento de aislamiento multi-tenant e higiene de datos personales (PII):
+  - `PrismaFamilyRepository.updateRelativePerson`: restricción por sede (`congregationId`) al actualizar el registro `Person` de un familiar, impidiendo que un usuario con alcance de sede modifique los datos personales de un miembro perteneciente a otra congregación de la misma denominación.
+  - `AddFamilyRelationUseCase` y `UpdateFamilyRelationUseCase`: validación de fecha de nacimiento (`assertPastOrToday`) para rechazar fechas futuras en familiares y verificación de conflicto de padre/madre inverso (`PARENT_ALREADY_SET`) al cambiar el tipo de parentesco.
+  - `sensitive-data-redactor`: redacción automática en logs y auditoría de los nuevos campos sensibles/PII (`fatherFullName`, `motherFullName`, `childrenNames`, `tribunalOpinion`).
+  - `PrismaPersonRepository.syncMarriage` y `SubmitApplicationDto`: alcance explícito por `denominationId` al actualizar matrimonios y límite `@Max(30)` en `childrenCount`.
+
+## 0.9.0 - 2026-11-06
+
+### Added
+
+- Flujo completo de visualización y edición en la ficha del miembro (`/members/:id`):
+  - **Datos personales y matrimoniales:** resolución automática de nombres de municipios (`municipalityCode`, `documentIssuePlaceCode`, `birthPlaceCode`, `baptismMunicipalityCode`) en `PersonalDataTabComponent`, selectores en cascada `Departamento` → `Municipio` (`[selectByRegion]="true"`) en `PersonFieldsComponent` y `MembershipEditDialogComponent`, y edición/sincronización de cónyuge y tipo de matrimonio (`spouseFullName`, `marriageIsCivil`, `marriageIsChristian`, `marriageIsCatholic`, `tribunalOpinion`) contra la tabla `marriages`.
+  - **Familiares (`FamilyTabComponent` y `PATCH /api/members/:id/family/:relationId`):** tarjeta de resumen matrimonial en la pestaña Familia, registro directo de familiares nuevos (sin requerir que existan previamente como miembros) y edición de familiares existentes (`type`, `firstName`, `lastName`, `secondLastName`, `sex`, `birthDate`).
+  - **Estudios (`StudiesTabComponent` y `PATCH /api/members/:id/studies/:studyId`):** edición de estudios registrados del miembro.
+
+## 0.8.0 - 2026-11-06
+
+### Added
+
+- Identidad visual de Iglesia 238: componente `<app-brand-mark>` (`BrandMarkComponent`) con variantes `sede` y `simple`, integrado en el panel de autenticación (`AuthBrandPanelComponent`), la barra lateral del shell (`ShellComponent`) y la cabecera pública (`PublicLayoutComponent`).
+- Recursos de marca e íconos de aplicación: `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, íconos PWA (`192x192` y `512x512`), `manifest.webmanifest`, tokens de degradado de marca (`--brand-mark-from` / `--brand-mark-to`) y catálogo visual en `frontend/public/brand/`.
+
+## 0.7.1 - 2026-11-06
+
+### Fixed
+
+- Los campos de municipio en el formulario público de solicitud (`/apply`: expedición, nacimiento, residencia y bautismo), en el registro público de sedes (`/register-congregation`) y en los modales de sedes y razones sociales (`/organization` y `/denominations`) ahora muestran un `<select>` desplegable con todos los municipios del departamento o estado seleccionado (`REGION_MUNICIPALITY_LIMIT = 1000` en `GET /api/public/geo/municipalities` y `GET /api/geo/municipalities`), eliminando la caja de búsqueda de texto y el autocompletado de direcciones del navegador.
+
+## 0.7.0 - 2026-11-06
+
+### Added
+
+- Normalización 3FN/FNBC del esquema de membresía (`20261106044100_normalize_member_baptism_and_origin`) proyectado para escala nacional (5.400 sedes): llave foránea `baptism_municipality_id` hacia `municipalities` y `previous_congregation_id` hacia `congregations` en la tabla `members`, junto con diccionario de datos actualizado (`docs/2026-11-05-2342-modelo-de-datos.md`).
+- Cobertura completa del formato oficial `Datos de membresía (F-701)` en el formulario público de solicitud (`/apply`), organizado en tres secciones en grilla *mobile-first* de dos columnas (`.form-grid`) con filtro por departamento/estado:
+  - Identificación, lugar de expedición, nacimiento, contacto (`MOBILE`, `LANDLINE`, `EMAIL`, `WORK_PHONE`), nivel educativo, profesión, ocupación y lugar de trabajo.
+  - Estado civil, tipo de matrimonio (civil, cristiano, católico), cónyuge, concepto del Tribunal Eclesiástico, padres y lista dinámica de hijos.
+  - Datos eclesiásticos y ministeriales: conversión, bautismo en agua (fecha, municipio, congregación y pastor que bautizó), bautismo del Espíritu Santo, reconciliación, iglesia de procedencia, cargos actuales/anteriores, áreas de servicio y maestro de Educación Cristiana.
+- Proyección transaccional al aprobar una solicitud (`ApproveApplicationUseCase` y `PrismaMembershipRegistry`) hacia las tablas normalizadas `persons`, `person_contacts`, `person_addresses`, `neighborhoods`, `family_relations`, `marriages`, `members`, `church_positions` y `member_positions`.
+- Visualización y edición de los nuevos campos personales, familiares y eclesiásticos en la revisión de solicitudes (`/applications`) y en la ficha del miembro (`/members/:id`).
+
+## 0.6.1 - 2026-11-05
+
+### Added
+
+- Selector en cascada `Departamento / estado *` → `Municipio *` en el registro público de sedes (`/register-congregation`), filtrando los municipios por el departamento o estado seleccionado del país de la razón social y organizando el paso «Tu sede» en grilla adaptable de dos columnas (`.form-grid`).
+
+### Fixed
+
+- Se corrigió el error `500 INTERNAL_SERVER_ERROR` (`PrismaClientValidationError`) al crear o actualizar razones sociales (`POST/PATCH /api/platform/legal-entities` y `POST/PATCH /api/organization/legal-entities`) y sedes (`POST/PATCH /api/organization/congregations`), omitiendo los campos transitorios `municipalityCode` y `neighborhood` antes de persistir en `legal_entities` y `congregations` con Prisma.
+
+## 0.6.0 - 2026-11-05
+
+### Added
+
+- Directiva propia de tooltips `[appCustomTooltip]` (`CustomTooltipDirective`) en el frontend, accesible por teclado (`focus`/`blur`, `Escape`) y con posicionamiento inteligente sobre el viewport, además del script de validación `node scripts/check-native-title.js` (`npm run lint:tooltips`).
+- Catálogo de departamentos y estados por país en la API (`GET /api/geo/regions?countryId=` y `GET /api/public/geo/regions?countryId=`) y filtro `regionCode` en `GET /api/geo/municipalities` y `GET /api/public/geo/municipalities`.
+- Selector en cascada `País *` → `Departamento / estado *` → `Municipio *` en los formularios de razones sociales (`/organization?tab=razones` y `/denominations?tab=razones`) y de sedes (`/organization?tab=sedes`), incluyendo `regionCode` en las vistas de organización y plataforma.
+- Foco automático (`autofocus`) en el primer campo editable al abrir cualquier diálogo modal (`DialogComponent`) y formularios de entidad legal y sede.
+
+### Changed
+
+- Rediseño *mobile-first* de todos los formularios (`.form-grid`) y modales (`.dialog`): 1 columna en móvil (`< 640px`) y máximo 2 columnas (`repeat(2, minmax(0, 1fr))`) desde `640px`, reduciendo el ancho de los diálogos amplios de `56rem` a `40rem` para evitar dispersión visual.
+- El servidor de desarrollo del frontend corre ahora en el puerto `4700` y abre automáticamente el navegador al iniciar (`ng serve`).
+- El pie de página (`<app-footer>` y layout público) permanece fijo en la parte inferior de la ventana (`position: sticky; bottom: 0`) igual que la barra superior, y actualiza la atribución de derechos a `© lopezsoft.net.co · Todos los derechos reservados`.
+- Se reemplazaron todos los atributos HTML nativos `title` en 18 componentes del frontend por `[appCustomTooltip]`.
+
 ## 0.5.0 - 2026-11-03
 
 ### Added

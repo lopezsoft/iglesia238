@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ApiStatusService } from '../core/http/api-status.service';
+import { CustomTooltipDirective } from '../shared/ui/custom-tooltip.directive';
 import { IconComponent } from '../shared/ui/icon.component';
 
 const RECHECK_MS = 60_000;
@@ -11,7 +12,7 @@ const RECHECK_MS = 60_000;
 @Component({
   selector: 'app-status-cluster',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent],
+  imports: [CustomTooltipDirective, IconComponent],
   host: { '(document:fullscreenchange)': 'syncFullscreen()' },
   styleUrl: './status-cluster.component.scss',
   template: `
@@ -22,19 +23,19 @@ const RECHECK_MS = 60_000;
         [class.is-online]="status() === 'online'"
         [class.is-offline]="status() === 'offline'"
         [attr.aria-label]="statusText()"
-        [attr.title]="statusText()"
+        [appCustomTooltip]="statusText()"
         (click)="recheck()"
       >
         <app-icon name="wifi" [size]="18" />
       </button>
-      <button type="button" class="cluster-pill__button" aria-label="Actualizar datos" title="Actualizar datos" (click)="reload()">
+      <button type="button" class="cluster-pill__button" aria-label="Actualizar datos" appCustomTooltip="Actualizar datos" (click)="reload()">
         <app-icon name="refresh" [size]="18" />
       </button>
       <button
         type="button"
         class="cluster-pill__button cluster-pill__button--optional"
         [attr.aria-label]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'"
-        [attr.title]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'"
+        [appCustomTooltip]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'"
         [attr.aria-pressed]="fullscreen()"
         (click)="toggleFullscreen()"
       >

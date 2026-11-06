@@ -14,7 +14,11 @@ import type {
 const WITH_MUNICIPALITY = {
   country: { select: { name: true } },
   municipality: {
-    select: { code: true, name: true, region: { select: { name: true } } },
+    select: {
+      code: true,
+      name: true,
+      region: { select: { code: true, name: true } },
+    },
   },
 } satisfies Prisma.LegalEntityInclude;
 
@@ -37,9 +41,24 @@ function toRecord(row: LegalEntityRow): LegalEntityRecord {
     countryName: row.country.name,
     municipalityCode: row.municipality?.code ?? null,
     municipalityName: row.municipality?.name ?? null,
+    regionCode: row.municipality?.region.code ?? null,
     regionName: row.municipality?.region.name ?? null,
     isActive: row.isActive,
     createdAt: row.createdAt,
+  };
+}
+
+function toRowData(data: LegalEntityData) {
+  return {
+    legalName: data.legalName,
+    tradeName: data.tradeName,
+    taxId: data.taxId,
+    legalRepresentative: data.legalRepresentative,
+    countryId: data.countryId,
+    municipalityId: data.municipalityId,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
   };
 }
 
@@ -112,7 +131,7 @@ export class PrismaLegalEntityRepository
   ): Promise<number> {
     const created = await clientOf(this.prisma, transaction).legalEntity.create(
       {
-        data: { denominationId: scope.denominationId, ...data },
+        data: { denominationId: scope.denominationId, ...toRowData(data) },
         select: { id: true },
       },
     );
@@ -127,7 +146,7 @@ export class PrismaLegalEntityRepository
   ): Promise<void> {
     await clientOf(this.prisma, transaction).legalEntity.updateMany({
       where: this.whereOf(scope, { id }),
-      data,
+      data: toRowData(data),
     });
   }
 

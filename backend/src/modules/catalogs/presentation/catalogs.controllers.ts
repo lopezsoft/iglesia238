@@ -40,6 +40,7 @@ import {
   GetMunicipalityUseCase,
   ListCountriesUseCase,
   ListNeighborhoodsUseCase,
+  ListRegionsUseCase,
   SearchMunicipalitiesUseCase,
 } from '../application/catalogs.use-cases.js';
 import {
@@ -59,6 +60,8 @@ import {
   NeighborhoodDto,
   PlatformCountryDto,
   PublicCatalogsResponseDto,
+  RegionDto,
+  RegionsQueryDto,
 } from './catalogs.dto.js';
 import {
   PRIVATE_CACHE,
@@ -117,6 +120,7 @@ export class CatalogsController {
 export class GeoController {
   constructor(
     private readonly listCountries: ListCountriesUseCase,
+    private readonly listRegions: ListRegionsUseCase,
     private readonly searchMunicipalities: SearchMunicipalitiesUseCase,
     private readonly getMunicipality: GetMunicipalityUseCase,
     private readonly listNeighborhoods: ListNeighborhoodsUseCase,
@@ -141,11 +145,21 @@ export class GeoController {
     return this.listCountries.execute(query.includeInactive ?? false, tenant);
   }
 
+  @Get('regions')
+  @ApiOperation({
+    summary: 'Departamentos, estados o provincias de un país activo',
+    description: 'Ordenados por nombre dentro de countryId.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [RegionDto] })
+  regions(@Query() query: RegionsQueryDto): Promise<RegionDto[]> {
+    return this.listRegions.execute(query.countryId);
+  }
+
   @Get('municipalities')
   @ApiOperation({
     summary: 'Busca municipios de los países activos',
     description:
-      'Por nombre o por inicio del código. countryId limita la búsqueda a un país. Devuelve hasta limit resultados.',
+      'Por nombre o por inicio del código. countryId limita la búsqueda a un país y regionCode a un departamento o estado. Devuelve hasta limit resultados.',
   })
   @ApiResponse({ status: HttpStatus.OK, type: [MunicipalityDto] })
   search(
@@ -155,6 +169,7 @@ export class GeoController {
       query.search,
       query.limit,
       query.countryId,
+      query.regionCode,
     );
   }
 
@@ -232,6 +247,7 @@ export class GeoController {
 export class PublicCatalogsController {
   constructor(
     private readonly catalogs: GetCatalogsUseCase,
+    private readonly listRegions: ListRegionsUseCase,
     private readonly searchMunicipalities: SearchMunicipalitiesUseCase,
   ) {}
 
@@ -259,12 +275,23 @@ export class PublicCatalogsController {
     );
   }
 
+  @Get('geo/regions')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'public-geo-regions', limit: 120, windowSeconds: FIFTEEN_MINUTES })
+  @ApiOperation({
+    summary: 'Departamentos, estados o provincias de un país activo (formularios públicos)',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [RegionDto] })
+  publicRegions(@Query() query: RegionsQueryDto): Promise<RegionDto[]> {
+    return this.listRegions.execute(query.countryId);
+  }
+
   @Get('geo/municipalities')
   @HttpCode(HttpStatus.OK)
   @RateLimit({ name: 'public-geo', limit: 240, windowSeconds: FIFTEEN_MINUTES })
   @ApiOperation({
     summary: 'Busca municipios de los países activos (formularios públicos)',
-    description: 'countryId limita la búsqueda a un país.',
+    description: 'countryId limita la búsqueda a un país y regionCode a un departamento o estado.',
   })
   @ApiResponse({ status: HttpStatus.OK, type: [MunicipalityDto] })
   publicMunicipalities(
@@ -274,6 +301,7 @@ export class PublicCatalogsController {
       query.search,
       query.limit,
       query.countryId,
+      query.regionCode,
     );
   }
 }

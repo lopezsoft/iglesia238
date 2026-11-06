@@ -9,6 +9,13 @@ export function catalogName(catalog: readonly CatalogEntry[], code: string | nul
   return catalog.find((entry) => entry.code === code)?.name ?? '—';
 }
 
+/** A region (departamento, estado or provincia) of a country, as GET /geo/regions returns it. */
+export interface Region {
+  readonly countryId: number;
+  readonly code: string;
+  readonly name: string;
+}
+
 /** A municipality with its official code (DIVIPOLA in Colombia), as the API returns it. */
 export interface Municipality {
   readonly code: string;

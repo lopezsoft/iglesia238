@@ -28,10 +28,56 @@ export interface ApplicationFormData {
   /** null: the applicant did not say. */
   isBaptized: boolean | null;
   guardian: ApplicationGuardian | null;
+  /** Optional normalized & extended fields from the IPUC membership form (F-701). */
+  documentIssuePlaceCode?: string | null;
+  birthPlaceCode?: string | null;
+  landlinePhone?: string | null;
+  educationLevelCode?: string | null;
+  profession?: string | null;
+  workplace?: string | null;
+  workPhone?: string | null;
+  marriageIsCivil?: boolean;
+  marriageIsChristian?: boolean;
+  marriageIsCatholic?: boolean;
+  spouseFullName?: string | null;
+  passedEcclesiasticalTribunal?: boolean | null;
+  tribunalOpinion?: string | null;
+  fatherFullName?: string | null;
+  motherFullName?: string | null;
+  childrenCount?: number | null;
+  childrenNames?: string | null;
+  convertedOn?: string | null;
+  waterBaptismOn?: string | null;
+  baptismMunicipalityCode?: string | null;
+  baptismPlace?: string | null;
+  baptizingPastorName?: string | null;
+  holySpiritBaptismOn?: string | null;
+  reconciledOn?: string | null;
+  previousCongregationId?: number | null;
+  pastPositionsText?: string | null;
+  currentPositionsText?: string | null;
+  desiredAreas?: string | null;
+  isChristianEducationTeacher?: boolean;
 }
 
 function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() !== '' ? value : null;
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
+
+function nonNegativeInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+function positiveInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1
+    ? value
+    : null;
+}
+
+function nullableBoolean(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null;
 }
 
 function readGuardian(value: unknown): ApplicationGuardian | null {
@@ -71,7 +117,38 @@ export function parseFormData(json: unknown): ApplicationFormData {
     neighborhood: text(raw.neighborhood),
     occupation: text(raw.occupation),
     previousCongregationName: text(raw.previousCongregationName),
-    isBaptized: typeof raw.isBaptized === 'boolean' ? raw.isBaptized : null,
+    isBaptized: nullableBoolean(raw.isBaptized),
     guardian: readGuardian(raw.guardian),
+    documentIssuePlaceCode: text(raw.documentIssuePlaceCode),
+    birthPlaceCode: text(raw.birthPlaceCode),
+    landlinePhone: text(raw.landlinePhone),
+    educationLevelCode: text(raw.educationLevelCode),
+    profession: text(raw.profession),
+    workplace: text(raw.workplace),
+    workPhone: text(raw.workPhone),
+    marriageIsCivil: raw.marriageIsCivil === true,
+    marriageIsChristian: raw.marriageIsChristian === true,
+    marriageIsCatholic: raw.marriageIsCatholic === true,
+    spouseFullName: text(raw.spouseFullName),
+    passedEcclesiasticalTribunal: nullableBoolean(
+      raw.passedEcclesiasticalTribunal,
+    ),
+    tribunalOpinion: text(raw.tribunalOpinion),
+    fatherFullName: text(raw.fatherFullName),
+    motherFullName: text(raw.motherFullName),
+    childrenCount: nonNegativeInt(raw.childrenCount),
+    childrenNames: text(raw.childrenNames),
+    convertedOn: text(raw.convertedOn),
+    waterBaptismOn: text(raw.waterBaptismOn),
+    baptismMunicipalityCode: text(raw.baptismMunicipalityCode),
+    baptismPlace: text(raw.baptismPlace),
+    baptizingPastorName: text(raw.baptizingPastorName),
+    holySpiritBaptismOn: text(raw.holySpiritBaptismOn),
+    reconciledOn: text(raw.reconciledOn),
+    previousCongregationId: positiveInt(raw.previousCongregationId),
+    pastPositionsText: text(raw.pastPositionsText),
+    currentPositionsText: text(raw.currentPositionsText),
+    desiredAreas: text(raw.desiredAreas),
+    isChristianEducationTeacher: raw.isChristianElemTeacher === true || raw.isChristianEducationTeacher === true,
   };
 }

@@ -67,6 +67,19 @@ export class PersonDetailDto {
   @ApiProperty(NULLABLE_STRING) email!: string | null;
   @ApiProperty(NULLABLE_STRING) address!: string | null;
   @ApiProperty(NULLABLE_STRING) municipalityCode!: string | null;
+  @ApiProperty(NULLABLE_STRING) documentIssuePlaceCode?: string | null;
+  @ApiProperty(NULLABLE_STRING) birthPlaceCode?: string | null;
+  @ApiProperty(NULLABLE_STRING) workplace?: string | null;
+  @ApiProperty(NULLABLE_NUMBER) childrenCount?: number | null;
+  @ApiProperty(NULLABLE_STRING) landlinePhone?: string | null;
+  @ApiProperty(NULLABLE_STRING) workPhone?: string | null;
+  @ApiProperty(NULLABLE_STRING) neighborhood?: string | null;
+  @ApiProperty(NULLABLE_STRING) spouseFullName?: string | null;
+  @ApiProperty({ type: Boolean, required: false }) marriageIsCivil?: boolean;
+  @ApiProperty({ type: Boolean, required: false })
+  marriageIsChristian?: boolean;
+  @ApiProperty({ type: Boolean, required: false }) marriageIsCatholic?: boolean;
+  @ApiProperty(NULLABLE_STRING) tribunalOpinion?: string | null;
 }
 
 export class MemberDetailDto {
@@ -74,10 +87,20 @@ export class MemberDetailDto {
   @ApiProperty({ example: 'SC-0130' }) code!: string;
   @ApiProperty({ enum: STATUSES }) status!: string;
   @ApiProperty(NULLABLE_STRING) joinedOn!: string | null;
+  @ApiProperty(NULLABLE_STRING) convertedOn?: string | null;
   @ApiProperty({ type: Boolean, nullable: true }) isBaptized!: boolean | null;
   @ApiProperty(NULLABLE_STRING) waterBaptismOn!: string | null;
+  @ApiProperty(NULLABLE_STRING) baptismMunicipalityCode?: string | null;
   @ApiProperty(NULLABLE_STRING) baptismPlace!: string | null;
+  @ApiProperty(NULLABLE_STRING) baptizingPastorName?: string | null;
+  @ApiProperty(NULLABLE_STRING) holySpiritBaptismOn?: string | null;
+  @ApiProperty(NULLABLE_STRING) reconciledOn?: string | null;
+  @ApiProperty(NULLABLE_NUMBER) previousCongregationId?: number | null;
   @ApiProperty(NULLABLE_STRING) previousCongregationName!: string | null;
+  @ApiProperty({ type: Boolean, required: false })
+  isChristianEducationTeacher?: boolean;
+  @ApiProperty(NULLABLE_STRING) desiredAreas?: string | null;
+  @ApiProperty(NULLABLE_STRING) pastorNotes?: string | null;
   @ApiProperty() congregationId!: number;
   @ApiProperty() congregationName!: string;
   @ApiProperty(NULLABLE_STRING) congregationMunicipalityCode!: string | null;
@@ -90,6 +113,12 @@ export class FamilyRelationViewDto {
   type!: string;
   @ApiProperty() relativeId!: number;
   @ApiProperty() fullName!: string;
+  @ApiProperty(NULLABLE_STRING) firstName?: string | null;
+  @ApiProperty(NULLABLE_STRING) lastName?: string | null;
+  @ApiProperty(NULLABLE_STRING) secondLastName?: string | null;
+  @ApiProperty({ enum: ['FEMALE', 'MALE'], nullable: true, required: false })
+  sex?: string | null;
+  @ApiProperty(NULLABLE_STRING) birthDate?: string | null;
   @ApiProperty(NULLABLE_STRING) documentTypeCode!: string | null;
   @ApiProperty({ ...NULLABLE_STRING, example: 'CC ···· 4817' })
   maskedDocument!: string | null;

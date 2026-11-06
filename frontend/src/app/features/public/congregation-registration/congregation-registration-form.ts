@@ -9,6 +9,7 @@ export function createRegistrationForm(fb: NonNullableFormBuilder) {
     legalEntityId: fb.control<number | null>(null, Validators.required),
     congregation: fb.group({
       name: ['', [Validators.required, Validators.maxLength(REGISTRATION_LIMITS.congregationName)]],
+      regionCode: [''],
       municipalityCode: ['', Validators.required],
       // Label of the municipality picked, only for display.
       municipalityName: [''],

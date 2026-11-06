@@ -15,21 +15,26 @@ import {
   type MunicipalityView,
   type NeighborhoodView,
   type PublicCatalogs,
+  type RegionView,
 } from './catalogs.reader.js';
 
 /** Permission that administers the countries; it also lets a session list the inactive ones. */
 export const COUNTRIES_MANAGE_PERMISSION = 'denominations.manage';
 
 export const DEFAULT_MUNICIPALITY_LIMIT = 20;
-export const MAX_MUNICIPALITY_LIMIT = 50;
+export const REGION_MUNICIPALITY_LIMIT = 1000;
+export const MAX_MUNICIPALITY_LIMIT = 1000;
 export const MAX_SEARCH_LENGTH = 80;
 export const MIN_NEIGHBORHOOD_LENGTH = 2;
 export const MAX_NEIGHBORHOOD_LENGTH = 120;
 
 const MUNICIPALITY_NOT_FOUND = 'El municipio no existe.';
 
-function clampLimit(limit: number | undefined): number {
-  const requested = limit ?? DEFAULT_MUNICIPALITY_LIMIT;
+function clampLimit(
+  limit: number | undefined,
+  defaultLimit = DEFAULT_MUNICIPALITY_LIMIT,
+): number {
+  const requested = limit ?? defaultLimit;
   return Math.min(Math.max(Math.trunc(requested), 1), MAX_MUNICIPALITY_LIMIT);
 }
 
@@ -51,9 +56,9 @@ export class GetCatalogsUseCase {
 
   /** Only what the public form shows: nothing about meetings or studies leaves the sign-in wall. */
   async publicSubset(): Promise<PublicCatalogs> {
-    const { documentTypes, maritalStatuses } =
+    const { documentTypes, maritalStatuses, educationLevels } =
       await this.reader.listGlobalCatalogs();
-    return { documentTypes, maritalStatuses };
+    return { documentTypes, maritalStatuses, educationLevels };
   }
 }
 
@@ -83,7 +88,19 @@ export class ListCountriesUseCase {
   }
 }
 
-/** Municipalities of active countries only, optionally of one country. */
+/** GET /geo/regions and GET /public/geo/regions: regions (departamentos/estados) of an active country. */
+@Injectable()
+export class ListRegionsUseCase {
+  constructor(
+    @Inject(CATALOGS_READER) private readonly reader: CatalogsReader,
+  ) {}
+
+  execute(countryId?: number | null): Promise<RegionView[]> {
+    return this.reader.listRegions(countryId ?? null);
+  }
+}
+
+/** Municipalities of active countries only, optionally of one country and/or region. */
 @Injectable()
 export class SearchMunicipalitiesUseCase {
   constructor(
@@ -94,11 +111,19 @@ export class SearchMunicipalitiesUseCase {
     search: string | undefined,
     limit: number | undefined,
     countryId: number | undefined = undefined,
+    regionCode: string | undefined = undefined,
   ): Promise<MunicipalityView[]> {
+    const normalizedSearch = cleanSearch(search);
+    const normalizedRegion = regionCode?.trim() || null;
+    const defaultLimit =
+      normalizedRegion !== null && normalizedSearch === null
+        ? REGION_MUNICIPALITY_LIMIT
+        : DEFAULT_MUNICIPALITY_LIMIT;
     return this.reader.searchMunicipalities(
-      cleanSearch(search),
-      clampLimit(limit),
+      normalizedSearch,
+      clampLimit(limit, defaultLimit),
       countryId ?? null,
+      ...(normalizedRegion === null ? [] : [normalizedRegion]),
     );
   }
 }

@@ -23,10 +23,10 @@ export class CatalogEntryDto {
 export class PublicCatalogsResponseDto {
   @ApiProperty({ type: [CatalogEntryDto] }) documentTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) maritalStatuses!: CatalogEntryDto[];
+  @ApiProperty({ type: [CatalogEntryDto] }) educationLevels!: CatalogEntryDto[];
 }
 
 export class CatalogsResponseDto extends PublicCatalogsResponseDto {
-  @ApiProperty({ type: [CatalogEntryDto] }) educationLevels!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) studyTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) meetingTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] })
@@ -62,6 +62,18 @@ export class CountryStatusBodyDto {
   @ApiProperty()
   @IsBoolean({ message: 'Indica si el país queda activo o inactivo.' })
   isActive!: boolean;
+}
+
+export class RegionDto {
+  @ApiProperty({ description: 'País del departamento, estado o provincia.' })
+  countryId!: number;
+  @ApiProperty({
+    example: '05',
+    description:
+      'Código oficial del departamento, estado o provincia dentro de su país (en Colombia, código DANE).',
+  })
+  code!: string;
+  @ApiProperty({ example: 'Antioquia' }) name!: string;
 }
 
 export class MunicipalityDto {
@@ -148,6 +160,19 @@ export class CountryQueryDto {
   countryId?: number;
 }
 
+export class RegionsQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'País cuyos departamentos, estados o provincias se consultan (GET /geo/countries). Sin él, el país por defecto.',
+    example: 46,
+  })
+  @Transform(toOptionalInt)
+  @IsOptional()
+  @IsInt({ message: 'El país no es válido.' })
+  @Min(1, { message: 'El país no es válido.' })
+  countryId?: number;
+}
+
 export class MunicipalitySearchQueryDto extends SearchQueryDto {
   @ApiPropertyOptional({
     description:
@@ -158,6 +183,16 @@ export class MunicipalitySearchQueryDto extends SearchQueryDto {
   @IsInt({ message: 'El país no es válido.' })
   @Min(1, { message: 'El país no es válido.' })
   countryId?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Solo los municipios de ese departamento, estado o provincia (GET /geo/regions).',
+    example: '05',
+  })
+  @IsOptional()
+  @IsString({ message: 'El departamento o estado no es válido.' })
+  @MaxLength(20, { message: 'El departamento o estado no es válido.' })
+  regionCode?: string;
 }
 
 export class CreateNeighborhoodDto {

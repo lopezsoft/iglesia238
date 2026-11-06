@@ -28,6 +28,7 @@ function trimmedMinLength(control: AbstractControl<string>): ValidationErrors | 
   selector: 'app-void-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DialogComponent, IconComponent],
+  host: { '[attr.title]': 'null' },
   template: `
     <app-dialog [(open)]="open" [title]="title()">
       <form [id]="uid + '-form'" class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>

@@ -48,6 +48,23 @@ export interface PersonData {
   address: string | null;
   municipalityCode: string | null;
   neighborhood: string | null;
+  documentIssuePlaceCode?: string | null;
+  birthPlaceCode?: string | null;
+  educationLevelCode?: string | null;
+  profession?: string | null;
+  workplace?: string | null;
+  childrenCount?: number | null;
+  landlinePhone?: string | null;
+  workPhone?: string | null;
+  fatherFullName?: string | null;
+  motherFullName?: string | null;
+  childrenNames?: string | null;
+  spouseFullName?: string | null;
+  marriageIsCivil?: boolean;
+  marriageIsChristian?: boolean;
+  marriageIsCatholic?: boolean;
+  passedEcclesiasticalTribunal?: boolean | null;
+  tribunalOpinion?: string | null;
 }
 
 export interface NewMember {
@@ -57,12 +74,37 @@ export interface NewMember {
   joinedOn: string;
   previousCongregationName: string | null;
   isBaptized: boolean | null;
+  previousCongregationId?: number | null;
+  convertedOn?: string | null;
+  waterBaptismOn?: string | null;
+  baptismMunicipalityCode?: string | null;
+  baptismPlace?: string | null;
+  baptizingPastorName?: string | null;
+  holySpiritBaptismOn?: string | null;
+  reconciledOn?: string | null;
+  isChristianEducationTeacher?: boolean;
+  desiredAreas?: string | null;
+  pastPositionsText?: string | null;
+  currentPositionsText?: string | null;
 }
 
 export interface MemberReactivation {
   memberId: number;
   congregationId: number;
   previousCongregationName: string | null;
+  previousCongregationId?: number | null;
+  convertedOn?: string | null;
+  isBaptized?: boolean | null;
+  waterBaptismOn?: string | null;
+  baptismMunicipalityCode?: string | null;
+  baptismPlace?: string | null;
+  baptizingPastorName?: string | null;
+  holySpiritBaptismOn?: string | null;
+  reconciledOn?: string | null;
+  isChristianEducationTeacher?: boolean;
+  desiredAreas?: string | null;
+  pastPositionsText?: string | null;
+  currentPositionsText?: string | null;
 }
 
 export interface NewRegistryEntry {

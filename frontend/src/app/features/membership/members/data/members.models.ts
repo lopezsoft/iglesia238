@@ -66,10 +66,19 @@ export interface MemberDetail {
   readonly code: string;
   readonly status: MemberStatus;
   readonly joinedOn: string | null;
+  readonly convertedOn?: string | null;
   readonly isBaptized: boolean | null;
   readonly waterBaptismOn: string | null;
+  readonly baptismMunicipalityCode?: string | null;
   readonly baptismPlace: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly previousCongregationId?: number | null;
   readonly previousCongregationName: string | null;
+  readonly isChristianEducationTeacher?: boolean | null;
+  readonly desiredAreas?: string | null;
+  readonly pastorNotes?: string | null;
   readonly congregationId: number;
   readonly congregationName: string;
   readonly congregationMunicipalityCode: string | null;
@@ -79,10 +88,18 @@ export interface MemberDetail {
 /** Membership data of the file (not of the person); `undefined` keeps the stored value, `null` clears it. */
 export interface MembershipDataInput {
   readonly joinedOn?: string | null;
+  readonly convertedOn?: string | null;
   readonly isBaptized?: boolean | null;
   readonly waterBaptismOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
   readonly baptismPlace?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
   readonly previousCongregationName?: string | null;
+  readonly isChristianEducationTeacher?: boolean | null;
+  readonly desiredAreas?: string | null;
+  readonly pastorNotes?: string | null;
 }
 
 export interface PersonUpdate {
@@ -91,15 +108,27 @@ export interface PersonUpdate {
   readonly secondLastName: string | null;
   readonly documentTypeCode: string | null;
   readonly documentNumber: string | null;
+  readonly documentIssuePlaceCode?: string | null;
   readonly birthDate: string | null;
+  readonly birthPlaceCode?: string | null;
   readonly sex: Sex | null;
   readonly maritalStatusCode: string | null;
   readonly educationLevelCode: string | null;
   readonly profession: string | null;
   readonly occupation: string | null;
+  readonly workplace?: string | null;
+  readonly childrenCount?: number | null;
+  readonly spouseFullName?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly tribunalOpinion?: string | null;
   readonly phone: string | null;
+  readonly landlinePhone?: string | null;
+  readonly workPhone?: string | null;
   readonly email: string | null;
   readonly address: string | null;
+  readonly neighborhood?: string | null;
   readonly municipalityCode: string | null;
 }
 
@@ -113,6 +142,11 @@ export interface FamilyRelationView {
   readonly type: FamilyRelationType;
   readonly relativeId: number;
   readonly fullName: string;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
   readonly documentTypeCode: string | null;
   /** "CC ···· 4817": the API never sends the full number of a relative. */
   readonly maskedDocument: string | null;
@@ -135,8 +169,22 @@ export interface PersonOption {
 }
 
 export interface FamilyRelationInput {
-  readonly relativeId: number;
+  readonly relativeId?: number | null;
   readonly type: FamilyRelationType;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
+}
+
+export interface UpdateFamilyRelationInput {
+  readonly type?: FamilyRelationType;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
 }
 
 // ---------- Studies ----------

@@ -10,11 +10,14 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { startWith } from 'rxjs';
+import { CatalogsStore } from '../../../../core/catalogs/catalogs.store';
 import { DomainError, userMessage } from '../../../../core/errors/domain-error';
+import { Municipality, Region } from '../../../../core/models/catalogs';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import {
@@ -29,6 +32,7 @@ import { MunicipalityPicked, MunicipalitySelectComponent } from './municipality-
 type CongregationField =
   | 'name'
   | 'legalEntityId'
+  | 'regionCode'
   | 'municipalityCode'
   | 'address'
   | 'email'
@@ -53,7 +57,9 @@ export interface CongregationSaved {
 })
 export class CongregationFormDialogComponent {
   private readonly repository = inject(OrganizationRepository);
+  private readonly catalogs = inject(CatalogsStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly municipalitySelect = viewChild<MunicipalitySelectComponent>('municipalitySelect');
 
   readonly open = model(false);
   readonly congregation = input<CongregationRow | null>(null);
@@ -96,6 +102,7 @@ export class CongregationFormDialogComponent {
     ],
     legalEntityId: ['', Validators.required],
     districtId: [''],
+    regionCode: [''],
     municipalityCode: ['', Validators.required],
     neighborhood: ['', Validators.maxLength(FIELD_LIMITS.neighborhood)],
     address: ['', [Validators.required, Validators.maxLength(FIELD_LIMITS.address)]],
@@ -119,6 +126,23 @@ export class CongregationFormDialogComponent {
   protected readonly municipalityBlockedText = computed(() =>
     this.legalEntityId() === '' ? 'Elige primero la razón social.' : null,
   );
+
+  /** Regions (departamentos/estados) of the country of the chosen legal entity. */
+  protected readonly regions = rxResource({
+    params: () => {
+      const countryId = this.selectedLegalEntity()?.countryId ?? 0;
+      return countryId > 0 && this.municipalitiesAvailable() ? { countryId } : undefined;
+    },
+    stream: ({ params }) => this.catalogs.loadRegions(params.countryId),
+  });
+  protected readonly regionOptions = computed<readonly Region[]>(() => {
+    const loaded = this.regions.hasValue() ? this.regions.value() : [];
+    return [...loaded].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+  });
+  protected readonly regionsLoadError = computed(() =>
+    this.regions.error() ? userMessage(this.regions.error()) : null,
+  );
+
   /** Legal entity the chosen municipality was searched for; its country decides whether it stays valid. */
   private municipalityLegalEntityId = '';
 
@@ -127,6 +151,15 @@ export class CongregationFormDialogComponent {
       if (this.open()) {
         const current = this.congregation();
         untracked(() => this.reset(current));
+      }
+    });
+
+    effect(() => {
+      const hasCountry = (this.selectedLegalEntity()?.countryId ?? 0) > 0;
+      if (!hasCountry || !this.municipalitiesAvailable()) {
+        this.form.controls.regionCode.disable({ emitEvent: false });
+      } else {
+        this.form.controls.regionCode.enable({ emitEvent: false });
       }
     });
   }
@@ -141,9 +174,18 @@ export class CongregationFormDialogComponent {
       this.loadedOptions()?.legalEntities.find((option) => option.id === Number(id))?.countryId ?? null;
     const previousCountry = countryOf(this.municipalityLegalEntityId);
     if (previousCountry === null || previousCountry !== countryOf(next)) {
+      this.form.controls.regionCode.setValue('');
       this.onMunicipalityCleared();
     }
     this.municipalityLegalEntityId = next;
+  }
+
+  /** Changing the department/state clears any municipality from another department and focuses the city input. */
+  protected onRegionChanged(): void {
+    this.onMunicipalityCleared();
+    if (this.form.controls.regionCode.value) {
+      this.municipalitySelect()?.focusInput();
+    }
   }
 
   protected onMunicipalityPicked(picked: MunicipalityPicked): void {
@@ -154,9 +196,24 @@ export class CongregationFormDialogComponent {
     this.municipalityLegalEntityId = this.form.controls.legalEntityId.value;
   }
 
+  protected onMunicipalityEntityPicked(municipality: Municipality): void {
+    if (municipality.regionCode) {
+      this.form.controls.regionCode.setValue(municipality.regionCode);
+    }
+  }
+
   protected onMunicipalityCleared(): void {
     this.form.controls.municipalityCode.setValue('');
     this.municipalityText.set('');
+  }
+
+  protected showRegionError(): boolean {
+    return (
+      this.municipalitiesAvailable() &&
+      this.form.controls.regionCode.touched &&
+      !this.form.controls.regionCode.value &&
+      !this.form.controls.municipalityCode.value
+    );
   }
 
   protected showError(control: CongregationField, error: string): boolean {
@@ -219,6 +276,7 @@ export class CongregationFormDialogComponent {
       code: current?.code ?? '',
       legalEntityId: current ? String(current.legalEntityId) : '',
       districtId: current?.districtId ? String(current.districtId) : '',
+      regionCode: current?.regionCode ?? '',
       municipalityCode: current?.municipalityCode ?? '',
       neighborhood: current?.neighborhood ?? '',
       address: current?.address ?? '',

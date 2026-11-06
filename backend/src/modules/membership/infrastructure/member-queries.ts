@@ -46,18 +46,62 @@ export const detailArgs = {
     person: {
       include: {
         documentType: { select: { code: true } },
+        documentIssuePlace: { select: { code: true } },
+        birthPlace: { select: { code: true } },
         maritalStatus: { select: { code: true } },
         educationLevel: { select: { code: true } },
         personContacts: {
-          where: { type: { in: ['MOBILE', 'LANDLINE', 'EMAIL'] } },
+          where: { type: { in: ['MOBILE', 'LANDLINE', 'EMAIL', 'WORK_PHONE'] } },
           orderBy: [{ isPrimary: 'desc' }, { id: 'asc' }],
         },
         personAddresses: {
           where: { isCurrent: true },
           orderBy: { id: 'desc' },
           take: 1,
-          include: { municipality: { select: { code: true } } },
+          include: {
+            municipality: { select: { code: true } },
+            neighborhood: { select: { name: true } },
+          },
         },
+        marriagesAsSpouse1: {
+          where: { endedOn: null },
+          orderBy: { id: 'desc' },
+          take: 1,
+          include: {
+            spouse2: {
+              select: {
+                firstName: true,
+                lastName: true,
+                secondLastName: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+        marriagesAsSpouse2: {
+          where: { endedOn: null },
+          orderBy: { id: 'desc' },
+          take: 1,
+          include: {
+            spouse1: {
+              select: {
+                firstName: true,
+                lastName: true,
+                secondLastName: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+    },
+    baptismMunicipality: { select: { code: true } },
+    baptizingPastor: {
+      select: {
+        firstName: true,
+        lastName: true,
+        secondLastName: true,
+        fullName: true,
       },
     },
     congregation: {

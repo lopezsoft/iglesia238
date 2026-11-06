@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { matchesText } from '../../../../shared/utils/pagination';
+import { CustomTooltipDirective } from '../../../../shared/ui/custom-tooltip.directive';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import { ACCOUNT_NATURE_LABELS } from '../../data/accounting.models';
@@ -9,7 +10,7 @@ import { AccountRow } from '../data/accounting-setup.models';
 @Component({
   selector: 'app-accounts-tree',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, StatusBadgeComponent],
+  imports: [CustomTooltipDirective, IconComponent, StatusBadgeComponent],
   template: `
     <section class="card card--flush" aria-labelledby="accounts-title">
       <div class="card__header tree-header">
@@ -93,7 +94,7 @@ import { AccountRow } from '../data/accounting-setup.models';
                         type="button"
                         class="btn btn--ghost btn--sm"
                         [disabled]="row.isActive && row.linkedTypes > 0"
-                        [attr.title]="row.isActive && row.linkedTypes > 0 ? 'Alimenta tipos de aporte' : null"
+                        [appCustomTooltip]="row.isActive && row.linkedTypes > 0 ? 'Alimenta tipos de aporte' : null"
                         [attr.aria-label]="(row.isActive ? 'Desactivar cuenta ' : 'Activar cuenta ') + row.code"
                         (click)="toggleActive.emit(row)"
                       >
@@ -106,7 +107,7 @@ import { AccountRow } from '../data/accounting-setup.models';
                         type="button"
                         class="btn btn--danger-ghost btn--sm"
                         [disabled]="!!deleteBlocker(row)"
-                        [attr.title]="deleteBlocker(row)"
+                        [appCustomTooltip]="deleteBlocker(row)"
                         [attr.aria-label]="'Eliminar cuenta ' + row.code"
                         (click)="remove.emit(row)"
                       >

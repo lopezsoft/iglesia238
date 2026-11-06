@@ -26,12 +26,6 @@ import {
       gap: $space-4;
     }
 
-    .policy-form__row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-      gap: $space-4;
-    }
-
     .policy-form__text {
       min-height: 16rem;
       font-family: inherit;
@@ -41,7 +35,7 @@ import {
   template: `
     <app-dialog [(open)]="open" [title]="policy() ? 'Editar borrador' : 'Nueva versión de la política'" variant="wide">
       <form id="policy-form" class="policy-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="policy-form__row">
+        <div class="form-grid">
           <div class="field">
             <label for="policy-version">Versión *</label>
             <input

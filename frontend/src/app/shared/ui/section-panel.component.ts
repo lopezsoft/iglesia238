@@ -11,7 +11,7 @@ import { ChipTone, IconChipComponent } from './icon-chip.component';
   selector: 'app-section-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconChipComponent],
-  host: { '[class]': '"tone-" + tone()' },
+  host: { '[class]': '"tone-" + tone()', '[attr.title]': 'null' },
   styles: `
     @use 'tokens' as *;
 

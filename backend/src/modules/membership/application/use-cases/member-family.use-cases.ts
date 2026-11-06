@@ -4,13 +4,16 @@ import type { AuditRecorder } from '../../../../common/audit/audit-recorder.port
 import {
   BusinessRuleException,
   ConflictDomainException,
+  InvalidInputException,
   NotFoundDomainException,
 } from '../../../../common/errors/domain.exception.js';
 import { TRANSACTION_RUNNER } from '../../../../common/persistence/transaction.js';
 import type { TransactionRunner } from '../../../../common/persistence/transaction.js';
 import type { TenantScope } from '../../../../common/tenancy/tenant-scope.js';
+import { bogotaDateOf } from '../../../../common/time/bogota-time.js';
 import { requireMember } from '../command-context.js';
 import type { CommandContext } from '../command-context.js';
+import { assertPastOrToday, emptyToNull } from '../member-rules.js';
 import type {
   FamilyRelationType,
   FamilyRelationView,
@@ -78,8 +81,22 @@ export class ListFamilyUseCase {
 }
 
 export interface AddRelationCommand {
-  readonly relativeId: number;
+  readonly relativeId?: number | null;
   readonly type: FamilyRelationType;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
+}
+
+export interface UpdateRelationCommand {
+  readonly type: FamilyRelationType;
+  readonly firstName: string;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
 }
 
 @Injectable()
@@ -100,21 +117,45 @@ export class AddFamilyRelationUseCase {
   ): Promise<void> {
     const { scope } = context;
     const member = await requireMember(this.members, scope, memberId);
-    if (command.relativeId === member.personId) {
+    const hasExistingId =
+      typeof command.relativeId === 'number' && command.relativeId > 0;
+
+    if (hasExistingId && command.relativeId === member.personId) {
       throw new BusinessRuleException(
         'Una persona no puede ser su propio familiar.',
         'INVALID_RELATION',
       );
     }
-    const relative = await this.persons.findExisting(scope, command.relativeId);
-    if (!relative) {
+
+    const cleanBirthDate = emptyToNull(command.birthDate);
+    if (!hasExistingId) {
+      const firstName = command.firstName?.trim() ?? '';
+      if (firstName.length < 2 || firstName.length > 100) {
+        throw new InvalidInputException(
+          'Escribe el nombre del familiar (entre 2 y 100 caracteres).',
+        );
+      }
+      if (cleanBirthDate !== null) {
+        assertPastOrToday(
+          cleanBirthDate,
+          bogotaDateOf(new Date()),
+          'La fecha de nacimiento del familiar no es válida o es futura.',
+        );
+      }
+    }
+
+    const relative = hasExistingId
+      ? await this.persons.findExisting(scope, command.relativeId as number)
+      : null;
+    if (hasExistingId && !relative) {
       throw new NotFoundDomainException(
         'La persona seleccionada no existe en la denominación.',
       );
     }
+
     const person = await this.persons.findExisting(scope, member.personId);
     const rows = await this.family.rowsOf(scope, member.personId);
-    if (rows.some((row) => row.relativeId === relative.id)) {
+    if (relative && rows.some((row) => row.relativeId === relative.id)) {
       throw new ConflictDomainException(
         'Esta persona ya está registrada como familiar.',
         'DUPLICATE_RELATION',
@@ -131,9 +172,8 @@ export class AddFamilyRelationUseCase {
     }
 
     const inverse = inverseTypeOf(command.type, person?.sex ?? null);
-    const relativeRows = inverse
-      ? await this.family.rowsOf(scope, relative.id)
-      : [];
+    const relativeRows =
+      inverse && relative ? await this.family.rowsOf(scope, relative.id) : [];
     const inverseExists = relativeRows.some(
       (row) => row.relativeId === member.personId,
     );
@@ -150,17 +190,31 @@ export class AddFamilyRelationUseCase {
     }
 
     await this.transactions.run(async (transaction) => {
+      const targetRelativeId = relative
+        ? relative.id
+        : await this.family.createRelativePerson!(
+            scope,
+            {
+              firstName: command.firstName!.trim(),
+              lastName: command.lastName ?? null,
+              secondLastName: command.secondLastName ?? null,
+              sex: command.sex ?? null,
+              birthDate: cleanBirthDate,
+            },
+            transaction,
+          );
+
       const id = await this.family.add(
         scope,
         member.personId,
-        relative.id,
+        targetRelativeId,
         command.type,
         transaction,
       );
       if (inverse && !inverseExists) {
         await this.family.add(
           scope,
-          relative.id,
+          targetRelativeId,
           member.personId,
           inverse,
           transaction,
@@ -174,6 +228,137 @@ export class AddFamilyRelationUseCase {
           actor: context.actor,
           congregationId: member.congregationId,
           changes: { type: { from: null, to: command.type } },
+          ipAddress: context.ipAddress,
+        },
+        transaction,
+      );
+    });
+  }
+}
+
+@Injectable()
+export class UpdateFamilyRelationUseCase {
+  constructor(
+    @Inject(MEMBER_REPOSITORY) private readonly members: MemberRepository,
+    @Inject(PERSON_REPOSITORY) private readonly persons: PersonRepository,
+    @Inject(FAMILY_REPOSITORY) private readonly family: FamilyRepository,
+    @Inject(TRANSACTION_RUNNER)
+    private readonly transactions: TransactionRunner,
+    @Inject(AUDIT_RECORDER) private readonly audit: AuditRecorder,
+  ) {}
+
+  async execute(
+    context: CommandContext,
+    memberId: number,
+    relationId: number,
+    command: UpdateRelationCommand,
+  ): Promise<void> {
+    const { scope } = context;
+    const member = await requireMember(this.members, scope, memberId);
+    const firstName = command.firstName.trim();
+    if (firstName.length < 2 || firstName.length > 100) {
+      throw new InvalidInputException(
+        'Escribe el nombre del familiar (entre 2 y 100 caracteres).',
+      );
+    }
+    const cleanBirthDate = emptyToNull(command.birthDate);
+    if (cleanBirthDate !== null) {
+      assertPastOrToday(
+        cleanBirthDate,
+        bogotaDateOf(new Date()),
+        'La fecha de nacimiento del familiar no es válida o es futura.',
+      );
+    }
+
+    const rows = await this.family.rowsOf(scope, member.personId);
+    const row = rows.find((candidate) => candidate.id === relationId);
+    if (!row) {
+      throw new NotFoundDomainException('El parentesco ya no existe.');
+    }
+
+    if (
+      command.type !== row.type &&
+      PARENT_TYPES.includes(command.type) &&
+      rows.some(
+        (candidate) =>
+          candidate.id !== relationId && candidate.type === command.type,
+      )
+    ) {
+      throw new ConflictDomainException(
+        parentMessage(command.type, false),
+        'PARENT_ALREADY_SET',
+      );
+    }
+
+    const person = await this.persons.findExisting(scope, member.personId);
+    const newInverse = inverseTypeOf(command.type, person?.sex ?? null);
+    const relativeRows = await this.family.rowsOf(scope, row.relativeId);
+    const oldInverses = relativeRows.filter(
+      (candidate) =>
+        candidate.relativeId === member.personId &&
+        INVERSES_TO_REMOVE[row.type].includes(candidate.type),
+    );
+    const oldInverseIds = new Set(oldInverses.map((item) => item.id));
+    const remainingRelativeRows = relativeRows.filter(
+      (candidate) => !oldInverseIds.has(candidate.id),
+    );
+    const inverseAlreadyExists = remainingRelativeRows.some(
+      (candidate) => candidate.relativeId === member.personId,
+    );
+    if (
+      command.type !== row.type &&
+      newInverse &&
+      !inverseAlreadyExists &&
+      PARENT_TYPES.includes(newInverse) &&
+      remainingRelativeRows.some((candidate) => candidate.type === newInverse)
+    ) {
+      throw new ConflictDomainException(
+        parentMessage(newInverse, true),
+        'PARENT_ALREADY_SET',
+      );
+    }
+
+    await this.transactions.run(async (transaction) => {
+      if (command.type !== row.type) {
+        await this.family.updateType!(
+          scope,
+          row.id,
+          command.type,
+          transaction,
+        );
+        for (const inverse of oldInverses) {
+          await this.family.remove(scope, inverse.id, transaction);
+        }
+        if (newInverse && !inverseAlreadyExists) {
+          await this.family.add(
+            scope,
+            row.relativeId,
+            member.personId,
+            newInverse,
+            transaction,
+          );
+        }
+      }
+      await this.family.updateRelativePerson!(
+        scope,
+        row.relativeId,
+        {
+          firstName,
+          lastName: command.lastName ?? null,
+          secondLastName: command.secondLastName ?? null,
+          sex: command.sex ?? null,
+          birthDate: cleanBirthDate,
+        },
+        transaction,
+      );
+      await this.audit.record(
+        {
+          action: 'UPDATED',
+          entity: 'FamilyRelation',
+          entityId: row.id,
+          actor: context.actor,
+          congregationId: member.congregationId,
+          changes: { type: { from: row.type, to: command.type } },
           ipAddress: context.ipAddress,
         },
         transaction,

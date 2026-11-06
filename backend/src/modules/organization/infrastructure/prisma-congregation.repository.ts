@@ -15,7 +15,11 @@ const WITH_RELATIONS = {
   legalEntity: { select: { legalName: true } },
   district: { select: { number: true } },
   municipality: {
-    select: { code: true, name: true, region: { select: { name: true } } },
+    select: {
+      code: true,
+      name: true,
+      region: { select: { code: true, name: true } },
+    },
   },
   neighborhood: { select: { name: true } },
 } satisfies Prisma.CongregationInclude;
@@ -36,6 +40,7 @@ function toRecord(row: CongregationRow): CongregationRecord {
     name: row.name,
     municipalityCode: row.municipality.code,
     municipalityName: row.municipality.name,
+    regionCode: row.municipality.region.code,
     regionName: row.municipality.region.name,
     neighborhood: row.neighborhood?.name ?? null,
     address: row.address,
@@ -44,6 +49,21 @@ function toRecord(row: CongregationRow): CongregationRecord {
     acceptsApplications: row.acceptsApplications,
     isActive: row.isActive,
     createdAt: row.createdAt,
+  };
+}
+
+function toRowData(data: CongregationData) {
+  return {
+    name: data.name,
+    code: data.code,
+    legalEntityId: data.legalEntityId,
+    districtId: data.districtId,
+    municipalityId: data.municipalityId,
+    neighborhoodId: data.neighborhoodId,
+    address: data.address,
+    phone: data.phone,
+    email: data.email,
+    acceptsApplications: data.acceptsApplications,
   };
 }
 
@@ -111,7 +131,7 @@ export class PrismaCongregationRepository
       this.prisma,
       transaction,
     ).congregation.create({
-      data: { denominationId: scope.denominationId, ...data },
+      data: { denominationId: scope.denominationId, ...toRowData(data) },
       select: { id: true },
     });
     return created.id;
@@ -125,7 +145,7 @@ export class PrismaCongregationRepository
   ): Promise<void> {
     await clientOf(this.prisma, transaction).congregation.updateMany({
       where: this.denominationWhere(scope, { id }),
-      data,
+      data: toRowData(data),
     });
   }
 

@@ -44,6 +44,42 @@ export function normalizePersonData(input: PersonData): PersonData {
     email: emptyToNull(input.email)?.toLowerCase() ?? null,
     address: emptyToNull(input.address),
     municipalityCode: emptyToNull(input.municipalityCode),
+    ...(input.documentIssuePlaceCode !== undefined
+      ? { documentIssuePlaceCode: emptyToNull(input.documentIssuePlaceCode) }
+      : {}),
+    ...(input.birthPlaceCode !== undefined
+      ? { birthPlaceCode: emptyToNull(input.birthPlaceCode) }
+      : {}),
+    ...(input.workplace !== undefined
+      ? { workplace: emptyToNull(input.workplace) }
+      : {}),
+    ...(input.childrenCount !== undefined
+      ? { childrenCount: input.childrenCount }
+      : {}),
+    ...(input.landlinePhone !== undefined
+      ? { landlinePhone: emptyToNull(input.landlinePhone) }
+      : {}),
+    ...(input.workPhone !== undefined
+      ? { workPhone: emptyToNull(input.workPhone) }
+      : {}),
+    ...(input.neighborhood !== undefined
+      ? { neighborhood: emptyToNull(input.neighborhood) }
+      : {}),
+    ...(input.spouseFullName !== undefined
+      ? { spouseFullName: emptyToNull(input.spouseFullName) }
+      : {}),
+    ...(input.marriageIsCivil !== undefined
+      ? { marriageIsCivil: input.marriageIsCivil }
+      : {}),
+    ...(input.marriageIsChristian !== undefined
+      ? { marriageIsChristian: input.marriageIsChristian }
+      : {}),
+    ...(input.marriageIsCatholic !== undefined
+      ? { marriageIsCatholic: input.marriageIsCatholic }
+      : {}),
+    ...(input.tribunalOpinion !== undefined
+      ? { tribunalOpinion: emptyToNull(input.tribunalOpinion) }
+      : {}),
   };
 }
 
@@ -112,6 +148,32 @@ export async function resolvePersonData(
     email: data.email,
     address: data.address,
     documentNumber: data.documentNumber,
+    ...(data.workplace !== undefined ? { workplace: data.workplace } : {}),
+    ...(data.childrenCount !== undefined
+      ? { childrenCount: data.childrenCount }
+      : {}),
+    ...(data.landlinePhone !== undefined
+      ? { landlinePhone: data.landlinePhone }
+      : {}),
+    ...(data.workPhone !== undefined ? { workPhone: data.workPhone } : {}),
+    ...(data.neighborhood !== undefined
+      ? { neighborhood: data.neighborhood }
+      : {}),
+    ...(data.spouseFullName !== undefined
+      ? { spouseFullName: data.spouseFullName }
+      : {}),
+    ...(data.marriageIsCivil !== undefined
+      ? { marriageIsCivil: data.marriageIsCivil }
+      : {}),
+    ...(data.marriageIsChristian !== undefined
+      ? { marriageIsChristian: data.marriageIsChristian }
+      : {}),
+    ...(data.marriageIsCatholic !== undefined
+      ? { marriageIsCatholic: data.marriageIsCatholic }
+      : {}),
+    ...(data.tribunalOpinion !== undefined
+      ? { tribunalOpinion: data.tribunalOpinion }
+      : {}),
     ...ids,
   };
 }

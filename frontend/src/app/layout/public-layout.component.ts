@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { IconComponent } from '../shared/ui/icon.component';
+import { BrandMarkComponent } from '../shared/ui/brand-mark.component';
 
 /** Layout of the pages that need no account: membership form and status check. */
 @Component({
   selector: 'app-public-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, IconComponent],
+  imports: [RouterOutlet, RouterLink, BrandMarkComponent],
   styles: `
     @use 'tokens' as *;
     @use 'mixins' as *;
@@ -19,6 +19,9 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .public-header {
+      position: sticky;
+      top: 0;
+      z-index: 8;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -42,9 +45,8 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .brand__mark {
-      @include icon-chip(2.5rem);
-      --tone-soft: #{$color-primary-soft};
-      --tone-fg: #{$color-brand-mark};
+      display: inline-flex;
+      flex-shrink: 0;
     }
 
     .brand__accent {
@@ -60,16 +62,38 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .public-footer {
-      padding: $space-4 $space-5;
+      position: sticky;
+      bottom: 0;
+      z-index: 8;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: $space-1;
+      min-height: $footer-height;
+      padding: $space-2 $space-5;
+      background: $color-surface;
+      border-top: 1px solid $color-border;
       color: $color-ink-subtle;
       font-size: $font-size-2xs;
       text-align: center;
+    }
+
+    .public-footer__brand {
+      color: $color-ink;
+      font-weight: $font-weight-semibold;
+      text-decoration: none;
+
+      &:hover {
+        color: $color-primary;
+        text-decoration: underline;
+      }
     }
   `,
   template: `
     <header class="public-header">
       <a class="brand" routerLink="/apply">
-        <span class="brand__mark"><app-icon name="church" [size]="22" /></span>
+        <span class="brand__mark"><app-brand-mark [size]="40" /></span>
         <span>Iglesia <span class="brand__accent">238</span></span>
       </a>
       <nav class="cluster" aria-label="Enlaces públicos">
@@ -81,7 +105,11 @@ import { IconComponent } from '../shared/ui/icon.component';
       <router-outlet />
     </main>
     <footer class="public-footer">
-      © {{ year }} Iglesia 238 · v{{ version }} · Tus datos se tratan conforme a la Ley 1581 de 2012.
+      © {{ year }}
+      <a class="public-footer__brand" href="https://lopezsoft.net.co" target="_blank" rel="noopener noreferrer"
+        >lopezsoft.net.co</a
+      >
+      · Todos los derechos reservados · v{{ version }} · Tus datos se tratan conforme a la Ley 1581 de 2012.
     </footer>
   `,
 })

@@ -170,6 +170,23 @@ export class ApproveApplicationUseCase {
     );
 
     let memberId: number;
+    const ecclesiasticalFields = {
+      previousCongregationName: record.formData.previousCongregationName,
+      previousCongregationId: record.formData.previousCongregationId ?? null,
+      convertedOn: record.formData.convertedOn ?? null,
+      isBaptized: record.formData.isBaptized,
+      waterBaptismOn: record.formData.waterBaptismOn ?? null,
+      baptismMunicipalityCode: record.formData.baptismMunicipalityCode ?? null,
+      baptismPlace: record.formData.baptismPlace ?? null,
+      baptizingPastorName: record.formData.baptizingPastorName ?? null,
+      holySpiritBaptismOn: record.formData.holySpiritBaptismOn ?? null,
+      reconciledOn: record.formData.reconciledOn ?? null,
+      isChristianEducationTeacher:
+        record.formData.isChristianEducationTeacher ?? false,
+      desiredAreas: record.formData.desiredAreas ?? null,
+      pastPositionsText: record.formData.pastPositionsText ?? null,
+      currentPositionsText: record.formData.currentPositionsText ?? null,
+    };
     if (existing?.member) {
       memberId = existing.member.id;
       await this.registry.reactivateMember(
@@ -177,7 +194,7 @@ export class ApproveApplicationUseCase {
         {
           memberId,
           congregationId: record.congregationId,
-          previousCongregationName: record.formData.previousCongregationName,
+          ...ecclesiasticalFields,
         },
         transaction,
       );
@@ -188,8 +205,7 @@ export class ApproveApplicationUseCase {
           personId,
           congregationId: record.congregationId,
           joinedOn: today,
-          previousCongregationName: record.formData.previousCongregationName,
-          isBaptized: record.formData.isBaptized,
+          ...ecclesiasticalFields,
         },
         transaction,
       );
@@ -402,6 +418,24 @@ export class ApproveApplicationUseCase {
       address: formData.address || null,
       municipalityCode: formData.municipalityCode || null,
       neighborhood: formData.neighborhood,
+      documentIssuePlaceCode: formData.documentIssuePlaceCode ?? null,
+      birthPlaceCode: formData.birthPlaceCode ?? null,
+      educationLevelCode: formData.educationLevelCode ?? null,
+      profession: formData.profession ?? null,
+      workplace: formData.workplace ?? null,
+      childrenCount: formData.childrenCount ?? null,
+      landlinePhone: formData.landlinePhone ?? null,
+      workPhone: formData.workPhone ?? null,
+      fatherFullName: formData.fatherFullName ?? null,
+      motherFullName: formData.motherFullName ?? null,
+      childrenNames: formData.childrenNames ?? null,
+      spouseFullName: formData.spouseFullName ?? null,
+      marriageIsCivil: formData.marriageIsCivil ?? false,
+      marriageIsChristian: formData.marriageIsChristian ?? false,
+      marriageIsCatholic: formData.marriageIsCatholic ?? false,
+      passedEcclesiasticalTribunal:
+        formData.passedEcclesiasticalTribunal ?? null,
+      tribunalOpinion: formData.tribunalOpinion ?? null,
     };
   }
 }

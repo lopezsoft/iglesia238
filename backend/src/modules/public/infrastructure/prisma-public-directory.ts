@@ -51,7 +51,7 @@ export class PrismaPublicDirectory implements PublicDirectory {
           select: {
             code: true,
             name: true,
-            region: { select: { name: true } },
+            region: { select: { name: true, countryId: true } },
           },
         },
         neighborhood: { select: { name: true } },
@@ -62,6 +62,7 @@ export class PrismaPublicDirectory implements PublicDirectory {
       id: row.id,
       denominationId: row.denominationId,
       denominationName: row.denomination.name,
+      countryId: row.municipality.region.countryId,
       name: row.name,
       municipalityCode: row.municipality.code,
       municipalityName: row.municipality.name,
@@ -152,6 +153,10 @@ export class PrismaPublicDirectory implements PublicDirectory {
 
   async maritalStatusExists(code: string): Promise<boolean> {
     return (await this.prisma.maritalStatus.count({ where: { code } })) > 0;
+  }
+
+  async educationLevelExists(code: string): Promise<boolean> {
+    return (await this.prisma.educationLevel.count({ where: { code } })) > 0;
   }
 
   async municipalityExists(code: string): Promise<boolean> {

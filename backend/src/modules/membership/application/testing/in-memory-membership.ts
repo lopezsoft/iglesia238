@@ -820,6 +820,80 @@ export class FakeFamilyRepository implements FamilyRepository {
     return Promise.resolve(id);
   }
 
+  updateType(
+    scope: TenantScope,
+    relationId: number,
+    type: FamilyRelationType,
+  ): Promise<void> {
+    const index = this.store.family.findIndex(
+      (item) =>
+        item.id === relationId && item.denominationId === scope.denominationId,
+    );
+    if (index >= 0) {
+      this.store.family[index] = { ...this.store.family[index], type };
+    }
+    return Promise.resolve();
+  }
+
+  createRelativePerson(
+    scope: TenantScope,
+    input: {
+      firstName: string;
+      lastName: string | null;
+      secondLastName: string | null;
+      sex: Sex | null;
+      birthDate: string | null;
+    },
+  ): Promise<number> {
+    const person = this.store.seedPerson({
+      denominationId: scope.denominationId,
+      firstName: input.firstName,
+      lastName: input.lastName ?? '',
+      secondLastName: input.secondLastName,
+      sex: input.sex,
+      birthDate: input.birthDate,
+      documentTypeId: null,
+      documentNumber: null,
+    });
+    return Promise.resolve(person.id);
+  }
+
+  updateRelativePerson(
+    scope: TenantScope,
+    relativeId: number,
+    input: {
+      firstName: string;
+      lastName: string | null;
+      secondLastName: string | null;
+      sex: Sex | null;
+      birthDate: string | null;
+    },
+  ): Promise<void> {
+    const person = this.store.persons.find(
+      (item) =>
+        item.id === relativeId && item.denominationId === scope.denominationId,
+    );
+    if (!person) {
+      return Promise.resolve();
+    }
+    const member = this.store.members.find(
+      (item) => item.personId === relativeId,
+    );
+    if (
+      scope.congregationId !== null &&
+      member &&
+      member.congregationId !== scope.congregationId
+    ) {
+      return Promise.resolve();
+    }
+    person.firstName = input.firstName;
+    person.lastName = input.lastName ?? '';
+    person.secondLastName = input.secondLastName;
+    person.sex = input.sex;
+    person.birthDate = input.birthDate;
+    return Promise.resolve();
+  }
+
   remove(scope: TenantScope, relationId: number): Promise<void> {
     this.store.family = this.store.family.filter(
       (row) =>

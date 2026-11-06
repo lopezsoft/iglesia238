@@ -362,6 +362,10 @@
   gap: $space-1;
   min-width: 0;
 
+  &--full {
+    grid-column: 1 / -1;
+  }
+
   > label,
   &__label {
     font-size: $font-size-xs;
@@ -371,12 +375,22 @@
 
   &__hint {
     font-size: $font-size-xs;
+    line-height: 1.35;
     color: $color-ink-muted;
+
+    &:empty {
+      display: none;
+    }
   }
 
   &__error {
     font-size: $font-size-xs;
+    line-height: 1.35;
     color: $color-danger;
+
+    &:empty {
+      display: none;
+    }
   }
 }
 
@@ -488,10 +502,16 @@
   }
 }
 
+// Rejilla de formulario mobile-first: 1 columna en móvil y 2 columnas simétricas desde sm.
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: $space-3;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: $space-3 $space-4;
+
+  @include from($breakpoint-sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .checkbox {
@@ -732,5 +752,38 @@
 @keyframes app-shimmer {
   to {
     background-position: -200% 0;
+  }
+}
+
+// Tooltip flotante gestionado por CustomTooltipDirective ([appCustomTooltip]).
+.app-custom-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 18rem;
+  padding: $space-1 + 0.125rem $space-3;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-xs;
+  background: $color-ink;
+  color: $color-surface;
+  box-shadow: $shadow-overlay;
+  font-family: $font-sans;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  line-height: 1.35;
+  text-align: center;
+  word-break: break-word;
+  pointer-events: none;
+  animation: app-tooltip-fade-in 120ms ease-out;
+}
+
+@keyframes app-tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

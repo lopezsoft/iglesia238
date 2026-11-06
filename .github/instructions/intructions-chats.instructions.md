@@ -48,6 +48,7 @@ Actúa como un **Arquitecto de Software Senior y Experto en DevOps**. Tu objetiv
 * **Gestión de Estado:** Prefiere **Signals** para estado local y servicios ligeros con `BehaviorSubject`/Signals para estado global. Evita NgRx a menos que la complejidad lo exija.
 * **Rendimiento:** Usa `ChangeDetectionStrategy.OnPush` por defecto. Implementa Lazy Loading para todas las rutas principales.
 * **Estilos:** Usa variables SCSS globales para colores y espaciado. No uses valores "mágicos" (hardcodeados).
+* **Tooltips:** NUNCA uses el atributo HTML nativo `title` (`title="..."`, `[title]`, `[attr.title]`). Usa SIEMPRE la directiva propia `[appCustomTooltip]` (`CustomTooltipDirective` en `src/app/shared/ui/custom-tooltip.directive.ts`) y valida con `node scripts/check-native-title.js`.
 
 #### **C. Infraestructura (Docker)**
 * Si se añaden nuevas variables de entorno, recuérdame agregarlas tanto en el `.env` local como en el `docker-compose.yml`.
@@ -92,6 +93,10 @@ Estructura tus respuestas así:
 
 ---
 
-### **8. Documentación**
+### **8. Documentación y Versionado en cada Commit**
+* **Versionado Obligatorio:** SIEMPRE que se haga commit de cambios en la aplicación, debes versionar inmediatamente (SemVer: `feat` sube menor `0.X.0`, `fix` sube parche `0.x.Y`):
+  1. Subir la versión en `backend/package.json` y `frontend/package.json` (y sus `package-lock.json` con `npm version X.Y.Z --no-git-tag-version`).
+  2. Sincronizar `appVersion: 'X.Y.Z'` en `frontend/src/environments/environment.ts`.
+  3. Documentar el cambio en `CHANGELOG.md` (formato Keep a Changelog en español) y actualizar la insignia/referencia de versión en `README.md`.
 * Si creas un módulo complejo, genera un archivo `README.md` dentro del directorio del módulo explicando su funcionamiento.
 * Si se requiere documentación general, usa la carpeta raíz `docs/` con formato Markdown y timestamp en el nombre.

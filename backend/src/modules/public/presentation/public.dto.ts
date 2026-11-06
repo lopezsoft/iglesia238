@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -216,6 +217,193 @@ export class SubmitApplicationDto implements SubmitApplicationInput {
   @IsString()
   @MaxLength(200)
   website: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(/^\d{1,10}$/, { message: 'El municipio de expedición no es válido.' })
+  documentIssuePlaceCode: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(/^\d{1,10}$/, { message: 'El municipio de nacimiento no es válido.' })
+  birthPlaceCode: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(PHONE, { message: 'Escribe un teléfono fijo válido.' })
+  landlinePhone: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  educationLevelCode: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  profession: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  workplace: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(PHONE, { message: 'Escribe un teléfono de trabajo válido.' })
+  workPhone: string | null = null;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  marriageIsCivil: boolean = false;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  marriageIsChristian: boolean = false;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  marriageIsCatholic: boolean = false;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  spouseFullName: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  passedEcclesiasticalTribunal: boolean | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  tribunalOpinion: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  fatherFullName: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  motherFullName: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(30)
+  childrenCount: number | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  childrenNames: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(ISO_DAY, { message: 'La fecha de conversión debe ser AAAA-MM-DD.' })
+  convertedOn: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(ISO_DAY, { message: 'La fecha de bautismo debe ser AAAA-MM-DD.' })
+  waterBaptismOn: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(/^\d{1,10}$/, { message: 'El municipio de bautismo no es válido.' })
+  baptismMunicipalityCode: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  baptismPlace: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  baptizingPastorName: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(ISO_DAY, {
+    message: 'La fecha de recepción del Espíritu Santo debe ser AAAA-MM-DD.',
+  })
+  holySpiritBaptismOn: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @Matches(ISO_DAY, {
+    message: 'La fecha de reconciliación debe ser AAAA-MM-DD.',
+  })
+  reconciledOn: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  previousCongregationId: number | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  pastPositionsText: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  currentPositionsText: string | null = null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  @NormalizedOptionalText()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  desiredAreas: string | null = null;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  isChristianEducationTeacher: boolean = false;
 }
 
 export class TrackingStatusRequestDto {

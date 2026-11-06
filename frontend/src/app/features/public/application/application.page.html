@@ -70,6 +70,9 @@
                   [group]="form.controls.personal"
                   [documentTypes]="options.documentTypes"
                   [maritalStatuses]="options.maritalStatuses"
+                  [educationLevels]="options.educationLevels ?? []"
+                  [regions]="regions.hasValue() ? regions.value() : []"
+                  [countryId]="selectedCongregation()?.countryId ?? null"
                   [age]="age()"
                   [revealErrors]="revealed().has('personal')"
                 />

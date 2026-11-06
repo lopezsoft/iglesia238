@@ -2,6 +2,12 @@
 import { Sex } from '../../../../core/models/membership.model';
 import { bogotaTodayIso } from '../../../../core/time/bogota-date';
 
+export interface RegionOption {
+  readonly code: string;
+  readonly name: string;
+  readonly countryId?: number;
+}
+
 /** Age from which an applicant answers for themself (Colombian majority). */
 export const ADULT_AGE = 18;
 
@@ -11,6 +17,7 @@ export interface OpenCongregation {
   readonly denominationId: number;
   readonly denominationName: string;
   readonly name: string;
+  readonly countryId?: number;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
   readonly regionName: string | null;
@@ -65,6 +72,35 @@ export interface ApplicationSubmission {
   readonly consentAccepted: boolean;
   /** Honeypot: hidden field that only bots fill in. */
   readonly website: string;
+  readonly documentIssuePlaceCode?: string | null;
+  readonly birthPlaceCode?: string | null;
+  readonly landlinePhone?: string | null;
+  readonly educationLevelCode?: string | null;
+  readonly profession?: string | null;
+  readonly workplace?: string | null;
+  readonly workPhone?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly spouseFullName?: string | null;
+  readonly passedEcclesiasticalTribunal?: boolean | null;
+  readonly tribunalOpinion?: string | null;
+  readonly fatherFullName?: string | null;
+  readonly motherFullName?: string | null;
+  readonly childrenCount?: number | null;
+  readonly childrenNames?: string | null;
+  readonly convertedOn?: string | null;
+  readonly waterBaptismOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
+  readonly baptismPlace?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly previousCongregationId?: number | null;
+  readonly pastPositionsText?: string | null;
+  readonly currentPositionsText?: string | null;
+  readonly desiredAreas?: string | null;
+  readonly isChristianEducationTeacher?: boolean;
 }
 
 /** The only thing the applicant gets back: the code to follow the application. */
@@ -95,12 +131,14 @@ export interface CatalogOption {
 export interface PublicCatalogs {
   readonly documentTypes: readonly CatalogOption[];
   readonly maritalStatuses: readonly CatalogOption[];
+  readonly educationLevels?: readonly CatalogOption[];
 }
 
 /** Result of the municipality search (GET /public/geo/municipalities). */
 export interface MunicipalityOption {
   readonly code: string;
   readonly name: string;
+  readonly regionCode?: string;
   readonly regionName: string;
 }
 
@@ -110,6 +148,8 @@ export interface MunicipalityFilter {
   readonly limit?: number;
   /** Only municipalities of this country; every country when it is left out. */
   readonly countryId?: number | null;
+  /** Only municipalities of this department or state; every region when left out. */
+  readonly regionCode?: string | null;
 }
 
 export function municipalityOptionLabel(option: Pick<MunicipalityOption, 'name' | 'regionName'>): string {

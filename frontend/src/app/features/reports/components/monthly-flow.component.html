@@ -27,7 +27,7 @@
             <span
               class="chart__bar chart__bar--income"
               [style.height.%]="bar.incomeHeight"
-              [title]="bar.incomeTitle"
+              [appCustomTooltip]="bar.incomeTitle"
             ></span>
           </div>
           <div class="chart__track">
@@ -35,7 +35,7 @@
             <span
               class="chart__bar chart__bar--expense"
               [style.height.%]="bar.expenseHeight"
-              [title]="bar.expenseTitle"
+              [appCustomTooltip]="bar.expenseTitle"
             ></span>
           </div>
         </div>

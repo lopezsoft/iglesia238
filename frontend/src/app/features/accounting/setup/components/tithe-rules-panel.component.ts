@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { CustomTooltipDirective } from '../../../../shared/ui/custom-tooltip.directive';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
 import { TitheRuleRow } from '../data/accounting-setup.models';
@@ -9,7 +10,7 @@ import { formatRate } from '../data/tithe-rate';
 @Component({
   selector: 'app-tithe-rules-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, IconComponent, StatusBadgeComponent],
+  imports: [CustomTooltipDirective, DatePipe, IconComponent, StatusBadgeComponent],
   template: `
     <section class="card card--flush" aria-labelledby="tithe-title">
       <div class="card__header panel-header">
@@ -71,7 +72,7 @@ import { formatRate } from '../data/tithe-rate';
                           type="button"
                           class="btn btn--secondary btn--sm"
                           [disabled]="rule.inUse"
-                          [attr.title]="rule.inUse ? 'Tiene liquidaciones emitidas' : null"
+                          [appCustomTooltip]="rule.inUse ? 'Tiene liquidaciones emitidas' : null"
                           [attr.aria-label]="'Editar porcentaje desde ' + rule.effectiveFrom"
                           (click)="edit.emit(rule)"
                         >
@@ -81,7 +82,7 @@ import { formatRate } from '../data/tithe-rate';
                           type="button"
                           class="btn btn--danger-ghost btn--sm"
                           [disabled]="rule.inUse"
-                          [attr.title]="rule.inUse ? 'Tiene liquidaciones emitidas' : null"
+                          [appCustomTooltip]="rule.inUse ? 'Tiene liquidaciones emitidas' : null"
                           [attr.aria-label]="'Eliminar porcentaje desde ' + rule.effectiveFrom"
                           (click)="remove.emit(rule)"
                         >

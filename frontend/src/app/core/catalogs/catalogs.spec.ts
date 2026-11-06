@@ -14,6 +14,7 @@ const CATALOGS = {
   meetingTypes: [{ code: 'SUNDAY_SCHOOL', name: 'Escuela Dominical' }],
   attendanceCategories: [{ code: 'CHILDREN', name: 'Niños' }],
 };
+const ANTIOQUIA = { countryId: 1, code: '05', name: 'Antioquia' };
 const MEDELLIN = { code: '05001', name: 'Medellín', regionCode: '05', regionName: 'Antioquia' };
 
 function setup() {
@@ -40,7 +41,6 @@ describe('HttpCatalogsRepository', () => {
     const all = firstValueFrom(repository.catalogs());
     http.expectOne('/api/catalogs').flush(CATALOGS);
     expect(await all).toEqual(CATALOGS);
-
   });
 
   it('searches municipalities with the text and the limit, signed in or public', async () => {
@@ -60,7 +60,7 @@ describe('HttpCatalogsRepository', () => {
     await anonymous;
   });
 
-  it('lists the countries and filters the municipalities by country', async () => {
+  it('lists the countries, regions and filters the municipalities by country and region', async () => {
     const { repository, http } = setup();
     const colombia = { id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true };
 
@@ -70,15 +70,27 @@ describe('HttpCatalogsRepository', () => {
     countriesRequest.flush([colombia]);
     expect(await countries).toEqual([colombia]);
 
-    const filtered = firstValueFrom(repository.searchMunicipalities({ search: 'chi', countryId: 1 }));
+    const regions = firstValueFrom(repository.regions(1));
+    const regionsRequest = http.expectOne((req) => req.url === '/api/geo/regions');
+    expect(regionsRequest.request.params.get('countryId')).toBe('1');
+    regionsRequest.flush([ANTIOQUIA]);
+    expect(await regions).toEqual([ANTIOQUIA]);
+
+    const filtered = firstValueFrom(
+      repository.searchMunicipalities({ search: 'med', countryId: 1, regionCode: '05' }),
+    );
     const request = http.expectOne((req) => req.url === '/api/geo/municipalities');
     expect(request.request.params.get('countryId')).toBe('1');
-    request.flush([]);
+    expect(request.request.params.get('regionCode')).toBe('05');
+    request.flush([MEDELLIN]);
     await filtered;
 
-    const unfiltered = firstValueFrom(repository.searchMunicipalities({ search: 'chi', countryId: null }));
+    const unfiltered = firstValueFrom(
+      repository.searchMunicipalities({ search: 'chi', countryId: null, regionCode: null }),
+    );
     const unfilteredRequest = http.expectOne((req) => req.url === '/api/geo/municipalities');
     expect(unfilteredRequest.request.params.has('countryId')).toBe(false);
+    expect(unfilteredRequest.request.params.has('regionCode')).toBe(false);
     unfilteredRequest.flush([]);
     await unfiltered;
   });
@@ -89,7 +101,6 @@ describe('HttpCatalogsRepository', () => {
     const municipality = firstValueFrom(repository.municipality('05001'));
     http.expectOne('/api/geo/municipalities/05001').flush(MEDELLIN);
     expect(await municipality).toEqual(MEDELLIN);
-
   });
 });
 
@@ -136,12 +147,13 @@ describe('CatalogsStore', () => {
     await resolved;
 
     expect(store.municipalityLabel('05001')).toBe('Medellín (Antioquia)');
+    expect(store.municipality('05001')?.regionCode).toBe('05');
     expect(store.municipalityLabel(null)).toBe('—');
     await firstValueFrom(store.resolveMunicipality('05001'));
     http.expectNone('/api/geo/municipalities/05001');
   });
 
-  it('asks for the countries once and again after a failure', async () => {
+  it('asks for the countries and regions once and again after a failure', async () => {
     const { store, http } = setup();
 
     const failed = firstValueFrom(store.loadCountries()).catch((error: unknown) => error);
@@ -154,6 +166,15 @@ describe('CatalogsStore', () => {
 
     await firstValueFrom(store.loadCountries());
     http.expectNone('/api/geo/countries');
+
+    const regionsFirst = firstValueFrom(store.loadRegions(1));
+    const regionsRequest = http.expectOne((req) => req.url === '/api/geo/regions');
+    expect(regionsRequest.request.params.get('countryId')).toBe('1');
+    regionsRequest.flush([ANTIOQUIA]);
+    expect(await regionsFirst).toEqual([ANTIOQUIA]);
+
+    await firstValueFrom(store.loadRegions(1));
+    http.expectNone('/api/geo/regions');
   });
 
   it('forgets the catalogs on reset', async () => {

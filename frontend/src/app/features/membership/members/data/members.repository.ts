@@ -23,6 +23,7 @@ import {
   StatusChangeInput,
   TransferInput,
   TransferResult,
+  UpdateFamilyRelationInput,
 } from './members.models';
 
 /**
@@ -55,11 +56,21 @@ export abstract class MembersRepository {
   /** Persons of the denomination that can be linked as relatives of the member. */
   abstract searchRelatives(memberId: number, text: string): Observable<PersonOption[]>;
   abstract addFamilyRelation(memberId: number, input: FamilyRelationInput): Observable<void>;
+  abstract updateFamilyRelation(
+    memberId: number,
+    relationId: number,
+    input: UpdateFamilyRelationInput,
+  ): Observable<void>;
   abstract removeFamilyRelation(memberId: number, relationId: number): Observable<void>;
 
   // Studies
   abstract studies(memberId: number): Observable<PersonStudy[]>;
   abstract addStudy(memberId: number, input: PersonStudyInput): Observable<void>;
+  abstract updateStudy(
+    memberId: number,
+    studyId: number,
+    input: PersonStudyInput,
+  ): Observable<void>;
   abstract removeStudy(memberId: number, studyId: number): Observable<void>;
 
   // Positions and pastoral rank

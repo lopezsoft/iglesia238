@@ -10,6 +10,7 @@ import type {
   MunicipalityKey,
   MunicipalityView,
   NeighborhoodView,
+  RegionView,
 } from '../application/catalogs.reader.js';
 
 /** Document type used internally for people without a document; it is never offered in a form. */
@@ -123,10 +124,29 @@ export class PrismaCatalogsReader implements CatalogsReader {
     }));
   }
 
+  async listRegions(countryId?: number | null): Promise<RegionView[]> {
+    const rows = await this.prisma.region.findMany({
+      where: {
+        code: { not: null },
+        ...(countryId != null
+          ? { countryId, country: { isActive: true } }
+          : { country: { isoAlpha2: this.defaultCountryIso, isActive: true } }),
+      },
+      select: { countryId: true, code: true, name: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return rows.map((row) => ({
+      countryId: row.countryId,
+      code: row.code ?? '',
+      name: row.name,
+    }));
+  }
+
   async searchMunicipalities(
     search: string | null,
     limit: number,
     countryId: number | null,
+    regionCode: string | null = null,
   ): Promise<MunicipalityView[]> {
     const rows = await this.prisma.municipality.findMany({
       where: {
@@ -135,6 +155,7 @@ export class PrismaCatalogsReader implements CatalogsReader {
         region: {
           country: { isActive: true },
           ...(countryId === null ? {} : { countryId }),
+          ...(regionCode === null ? {} : { code: regionCode }),
         },
         ...(search
           ? {

@@ -23,6 +23,7 @@ import {
   AddFamilyRelationUseCase,
   ListFamilyUseCase,
   RemoveFamilyRelationUseCase,
+  UpdateFamilyRelationUseCase,
 } from './application/use-cases/member-family.use-cases.js';
 import {
   ChangeMemberStatusUseCase,
@@ -53,6 +54,7 @@ import {
   AddStudyUseCase,
   ListStudiesUseCase,
   RemoveStudyUseCase,
+  UpdateStudyUseCase,
 } from './application/use-cases/member-studies.use-cases.js';
 import {
   SearchFamilyCandidatesUseCase,
@@ -97,9 +99,11 @@ const USE_CASES = [
   ListTransferDestinationsUseCase,
   ListFamilyUseCase,
   AddFamilyRelationUseCase,
+  UpdateFamilyRelationUseCase,
   RemoveFamilyRelationUseCase,
   ListStudiesUseCase,
   AddStudyUseCase,
+  UpdateStudyUseCase,
   RemoveStudyUseCase,
   GetMemberPositionsUseCase,
   ListPositionCatalogsUseCase,

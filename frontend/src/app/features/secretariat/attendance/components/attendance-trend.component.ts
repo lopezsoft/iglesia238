@@ -23,6 +23,7 @@ const MIN_BAR_PERCENT = 3;
 @Component({
   selector: 'app-attendance-trend',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[attr.title]': 'null' },
   templateUrl: './attendance-trend.component.html',
   styleUrl: './attendance-trend.component.scss',
 })

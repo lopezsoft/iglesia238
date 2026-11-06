@@ -39,6 +39,7 @@
           class="input"
           type="text"
           formControlName="tradeName"
+          placeholder="Opcional"
           autocomplete="off"
           [attr.maxlength]="limits.legalName"
         />
@@ -78,6 +79,7 @@
           class="input"
           type="text"
           formControlName="legalRepresentative"
+          placeholder="Nombre completo del representante"
           autocomplete="off"
           [attr.maxlength]="limits.legalName"
         />
@@ -118,18 +120,59 @@
       </div>
 
       <div class="field">
+        <label for="legal-entity-region"
+          >Departamento / estado{{ country.hasMunicipalities() === false ? '' : ' *' }}</label
+        >
+        <select
+          id="legal-entity-region"
+          class="select"
+          formControlName="regionCode"
+          [attr.aria-invalid]="showRegionError() ? 'true' : null"
+          aria-describedby="legal-entity-region-hint legal-entity-region-error"
+          (change)="onRegionChanged()"
+        >
+          <option value="">
+            {{
+              country.hasMunicipalities() === false
+                ? 'No hay departamentos cargados'
+                : country.regions.isLoading()
+                  ? 'Cargando departamentos…'
+                  : 'Selecciona el departamento o estado'
+            }}
+          </option>
+          @for (option of country.regionOptions(); track option.code) {
+            <option [value]="option.code">{{ option.name }}</option>
+          }
+        </select>
+        <span id="legal-entity-region-hint" class="field__hint"
+          >Filtra los municipios del departamento o estado seleccionado.</span
+        >
+        <span id="legal-entity-region-error" class="field__error" role="alert">
+          @if (country.regionsLoadError(); as message) {
+            {{ message }}
+          } @else if (showRegionError()) {
+            Selecciona el departamento o estado.
+          }
+        </span>
+      </div>
+
+      <div class="field">
         <label for="legal-entity-municipality"
           >Municipio{{ country.hasMunicipalities() === false ? '' : ' *' }}</label
         >
         <app-municipality-select
+          #municipalitySelect
           inputId="legal-entity-municipality"
+          [selectByRegion]="true"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
           [countryId]="country.selectedId() || null"
+          [regionCode]="form.controls.regionCode.value || null"
           [available]="country.hasMunicipalities()"
           [blockedText]="country.municipalityBlockedText()"
           [invalid]="!!municipalityError() || showError('municipalityCode', 'required')"
           (picked)="onMunicipalityPicked($event)"
+          (municipalityPicked)="onMunicipalityEntityPicked($event)"
           (cleared)="onMunicipalityCleared()"
         />
         @if (municipalityError(); as message) {
@@ -146,6 +189,7 @@
           class="input"
           type="text"
           formControlName="address"
+          placeholder="Ej.: Calle 30 # 7-45"
           [attr.maxlength]="limits.address"
         />
       </div>
@@ -157,6 +201,7 @@
           class="input"
           type="tel"
           formControlName="phone"
+          placeholder="Ej.: 601 745 2210"
           autocomplete="off"
           [attr.maxlength]="limits.phone"
         />
@@ -169,6 +214,7 @@
           class="input"
           type="email"
           formControlName="email"
+          placeholder="entidad@ejemplo.org"
           autocomplete="off"
           [attr.maxlength]="limits.email"
         />

@@ -102,15 +102,58 @@
       </div>
 
       <div class="field">
+        <label for="congregation-region"
+          >Departamento / estado{{ !municipalitiesAvailable() ? '' : ' *' }}</label
+        >
+        <select
+          id="congregation-region"
+          class="select"
+          formControlName="regionCode"
+          [attr.aria-invalid]="showRegionError() ? 'true' : null"
+          aria-describedby="congregation-region-hint congregation-region-error"
+          (change)="onRegionChanged()"
+        >
+          <option value="">
+            {{
+              !selectedLegalEntity()
+                ? 'Elige primero la razón social'
+                : !municipalitiesAvailable()
+                  ? 'No hay departamentos cargados'
+                  : regions.isLoading()
+                    ? 'Cargando departamentos…'
+                    : 'Selecciona el departamento o estado'
+            }}
+          </option>
+          @for (option of regionOptions(); track option.code) {
+            <option [value]="option.code">{{ option.name }}</option>
+          }
+        </select>
+        <span id="congregation-region-hint" class="field__hint"
+          >Filtra los municipios del departamento o estado seleccionado.</span
+        >
+        <span id="congregation-region-error" class="field__error" role="alert">
+          @if (regionsLoadError(); as message) {
+            {{ message }}
+          } @else if (showRegionError()) {
+            Selecciona el departamento o estado.
+          }
+        </span>
+      </div>
+
+      <div class="field">
         <label for="congregation-municipality">Municipio *</label>
         <app-municipality-select
+          #municipalitySelect
           inputId="congregation-municipality"
+          [selectByRegion]="true"
           [code]="form.controls.municipalityCode.value"
           [label]="municipalityText()"
           [countryId]="selectedLegalEntity()?.countryId ?? null"
+          [regionCode]="form.controls.regionCode.value || null"
           [blockedText]="municipalityBlockedText()"
           [invalid]="!!municipalityError() || showError('municipalityCode', 'required')"
           (picked)="onMunicipalityPicked($event)"
+          (municipalityPicked)="onMunicipalityEntityPicked($event)"
           (cleared)="onMunicipalityCleared()"
           (availabilityChange)="municipalitiesAvailable.set($event)"
         />

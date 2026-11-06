@@ -423,6 +423,8 @@ model Member {
   isBaptized                  Boolean?     @map("is_baptized")
   /// Fecha del bautismo en agua (fecha ISO); nula si no se conoce.
   waterBaptismOn              DateTime?    @map("water_baptism_on") @db.Date
+  /// Municipio donde fue bautizado en agua, cuando se identifica en el catálogo (FK a municipalities.id).
+  baptismMunicipalityId       Int?         @map("baptism_municipality_id")
   /// Lugar o iglesia donde fue bautizado, en texto libre.
   baptismPlace                String?      @map("baptism_place") @db.VarChar(150)
   /// Pastor que realizó el bautismo, registrado como persona (FK a persons.id).
@@ -431,6 +433,8 @@ model Member {
   holySpiritBaptismOn         DateTime?    @map("holy_spirit_baptism_on") @db.Date
   /// Fecha de reconciliación con la iglesia tras haberse apartado (fecha ISO); nula si no aplica.
   reconciledOn                DateTime?    @map("reconciled_on") @db.Date
+  /// Sede de procedencia dentro de la misma denominación, si el miembro venía de otra congregación registrada (FK a congregations.id).
+  previousCongregationId      Int?         @map("previous_congregation_id")
   /// Nombre de la iglesia de procedencia en texto libre, si el miembro venía de otra congregación.
   previousCongregationName    String?      @map("previous_congregation_name") @db.VarChar(150)
   /// Grado pastoral del miembro, si ejerce el ministerio (FK a pastoral_ranks.id).
@@ -450,7 +454,9 @@ model Member {
 
   person                 Person                  @relation("MemberPerson", fields: [denominationId, personId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   congregation           Congregation            @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  baptismMunicipality    Municipality?           @relation("MemberBaptismMunicipality", fields: [baptismMunicipalityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   baptizingPastor        Person?                 @relation("MemberBaptizingPastor", fields: [denominationId, baptizingPastorId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  previousCongregation   Congregation?           @relation("MemberPreviousCongregation", fields: [denominationId, previousCongregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   pastoralRank           PastoralRank?           @relation(fields: [denominationId, pastoralRankId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
   memberRegistryEntries  MemberRegistryEntry[]
   memberStatusHistories  MemberStatusHistory[]

@@ -18,6 +18,7 @@ export interface HeroComparison {
   selector: 'app-hero-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent, SparklineComponent],
+  host: { '[attr.title]': 'null' },
   styleUrl: './hero-card.component.scss',
   template: `
     <div class="hero__body">

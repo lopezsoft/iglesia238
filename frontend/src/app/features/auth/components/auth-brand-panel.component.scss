@@ -208,12 +208,11 @@
 
   &__mark {
     display: inline-grid;
+    flex-shrink: 0;
     place-items: center;
     width: 3rem;
     height: 3rem;
     border-radius: $radius-card;
-    background: $color-on-brand;
-    color: $color-brand-mark;
   }
 
   &__name {

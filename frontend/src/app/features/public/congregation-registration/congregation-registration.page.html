@@ -84,18 +84,52 @@
 
                 <div class="field">
                   <div class="register__field-head">
-                    <label class="field__label" for="register-municipality">Municipio *</label>
+                    <label class="field__label" for="register-region">Departamento / estado *</label>
                     @if (selectedEntity(); as entity) {
                       <span id="register-municipality-country" class="field__hint register__country">
                         País: {{ entity.countryName }}
                       </span>
                     }
                   </div>
+                  <select
+                    id="register-region"
+                    class="select"
+                    [value]="selectedRegionCode()"
+                    [disabled]="!municipalitiesAvailable() || regionsResource.isLoading()"
+                    [attr.aria-invalid]="regionInvalid() ? 'true' : null"
+                    [attr.aria-describedby]="regionInvalid() ? 'register-region-hint register-region-error' : 'register-region-hint'"
+                    (change)="onRegionChange($any($event.target).value)"
+                  >
+                    <option value="">
+                      {{
+                        regionsResource.isLoading()
+                          ? 'Cargando departamentos…'
+                          : 'Selecciona el departamento o estado…'
+                      }}
+                    </option>
+                    @for (region of regions(); track region.code) {
+                      <option [value]="region.code">{{ region.name }}</option>
+                    }
+                  </select>
+                  <span id="register-region-hint" class="field__hint">
+                    Filtra los municipios del departamento o estado seleccionado.
+                  </span>
+                  @if (regionInvalid()) {
+                    <p id="register-region-error" class="field__error" role="alert">
+                      Selecciona el departamento o estado.
+                    </p>
+                  }
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="register-municipality">Municipio *</label>
                   <app-municipality-picker
                     inputId="register-municipality"
                     [codeControl]="form.controls.congregation.controls.municipalityCode"
                     [nameControl]="form.controls.congregation.controls.municipalityName"
                     [countryId]="selectedEntity()?.countryId ?? null"
+                    [regionCode]="selectedRegionCode() || null"
+                    [requireRegion]="regions().length > 0"
                     [invalid]="municipalityInvalid()"
                     [describedBy]="municipalityDescribedBy() || null"
                     (availabilityChange)="municipalitiesAvailable.set($event)"
