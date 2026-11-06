@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import FaqSection from '../components/FaqSection.astro';
+---
+
+<BaseLayout
+  title="Cómo funciona Iglesia 238 — Flujo de Membresía F-701, Secretaría y Caja"
+  description="Descubre cómo registrar tu sede, recibir solicitudes F-701 en línea, emitir certificados en PDF y llevar la contabilidad mensual."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-eyebrow">Guía Paso a Paso</span>
+      <h1 class="section-title">Cómo funciona Iglesia 238 en tu congregación</h1>
+      <p class="section-subtitle" style="margin: 0 auto;">
+        Un flujo limpio y sin papel donde cada miembro, secretario, tesorero y pastor interactúa de forma ordenada.
+      </p>
+    </div>
+  </section>
+
+  <HowItWorks />
+  <FaqSection />
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 4.5rem 0 1.5rem;
+    text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.1), transparent 65%);
+  }
+</style>

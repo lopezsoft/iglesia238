@@ -1,0 +1,153 @@
+---
+---
+
+<section class="section">
+  <div class="container">
+    <div class="security-banner">
+      <div class="security-banner__copy">
+        <span class="sec-pill">🛡 Arquitectura de Seguridad & Habeas Data</span>
+        <h2>Protección de datos pastorales y contables conforme a la Ley 1581 de 2012</h2>
+        <p>
+          La información de los miembros, menores de edad y aportes financieros está protegida por aislamiento multi-tenant a nivel de base de datos, cifrado de sesión y redacción automática de datos sensibles.
+        </p>
+        <div class="sec-list">
+          <div class="sec-item">
+            <strong>Aislamiento multi-iglesia en BD</strong>
+            <span>Llaves foráneas compuestas por denominación y validación de alcance `X-Scope` en cada petición.</span>
+          </div>
+          <div class="sec-item">
+            <strong>Protección de menores y consentimiento</strong>
+            <span>Exige datos de acudiente para menores de 18 años, versiona políticas de privacidad y permite anonimización.</span>
+          </div>
+          <div class="sec-item">
+            <strong>Sesiones blindadas y auditoría</strong>
+            <span>Tokens de acceso en memoria, rotación de refresh token con detección de reúso y bitácora inmutable.</span>
+          </div>
+        </div>
+        <div style="margin-top: 1.75rem;">
+          <a href="/seguridad" class="btn btn--secondary">Conocer arquitectura de seguridad →</a>
+        </div>
+      </div>
+
+      <div class="security-banner__metrics">
+        <div class="sec-stat">
+          <strong>71</strong>
+          <span>Tablas normalizadas 3FN/FNBC con reglas CHECK</span>
+        </div>
+        <div class="sec-stat">
+          <strong>2.177+</strong>
+          <span>Pruebas automatizadas de negocio y aislamiento</span>
+        </div>
+        <div class="sec-stat">
+          <strong>0</strong>
+          <span>Exposición de documentos o PII en registros técnicos</span>
+        </div>
+        <div class="sec-stat">
+          <strong>100 %</strong>
+          <span>Trazabilidad contable sin borrado físico de recibos</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .security-banner {
+    background: linear-gradient(135deg, #0b1528 0%, #152c5b 100%);
+    color: #ffffff;
+    border-radius: 26px;
+    padding: 3.5rem;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3rem;
+    align-items: center;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sec-pill {
+    display: inline-block;
+    padding: 0.32rem 0.9rem;
+    border-radius: var(--radius-pill);
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    color: #93c5fd;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+
+  .security-banner__copy h2 {
+    font-size: clamp(1.7rem, 2.8vw, 2.3rem);
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+
+  .security-banner__copy p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 1rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .sec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .sec-item {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 0.9rem 1.15rem;
+  }
+
+  .sec-item strong {
+    display: block;
+    font-size: 0.92rem;
+    color: #ffffff;
+    margin-bottom: 0.15rem;
+  }
+
+  .sec-item span {
+    font-size: 0.83rem;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .security-banner__metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .sec-stat {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+  }
+
+  .sec-stat strong {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #60a5fa;
+    line-height: 1.1;
+    margin-bottom: 0.35rem;
+  }
+
+  .sec-stat span {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.35;
+  }
+
+  @media (max-width: 960px) {
+    .security-banner {
+      grid-template-columns: 1fr;
+      padding: 2.2rem 1.6rem;
+    }
+  }
+</style>

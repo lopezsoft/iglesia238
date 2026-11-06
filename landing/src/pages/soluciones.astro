@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SolutionsBento from '../components/SolutionsBento.astro';
+import InteractiveSuites from '../components/InteractiveSuites.astro';
+---
+
+<BaseLayout
+  title="Soluciones por Ministerio y Rol — Iglesia 238"
+  description="Conoce las herramientas de Iglesia 238 para Pastores, Secretaría, Tesorería y Administración Denominacional."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-eyebrow">Soluciones Especializadas</span>
+      <h1 class="section-title">Herramientas diseñadas para cada área ministerial</h1>
+      <p class="section-subtitle" style="margin: 0 auto;">
+        Desde la recepción de la solicitud F-701 en una congregación local hasta el consolidado financiero y de membresía de toda la denominación.
+      </p>
+    </div>
+  </section>
+
+  <SolutionsBento />
+  <InteractiveSuites />
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 4.5rem 0 1.5rem;
+    text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(42, 94, 232, 0.1), transparent 65%);
+  }
+</style>

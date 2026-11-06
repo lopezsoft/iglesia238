@@ -1,0 +1,198 @@
+---
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cta">
+      <div>
+        <h2>¿Listo para llevar tu sede al siguiente nivel de orden y cuidado pastoral?</h2>
+        <p>Registra tu congregación en minutos o ingresa a tu cuenta administrativa.</p>
+      </div>
+      <div class="footer-cta__buttons">
+        <a
+          href="https://app.iglesia238.com/register-congregation"
+          data-app-path="/register-congregation"
+          class="btn btn--primary btn--lg"
+        >
+          Registrar mi sede gratis →
+        </a>
+        <a
+          href="https://app.iglesia238.com/login"
+          data-app-path="/login"
+          class="btn btn--secondary btn--lg"
+        >
+          Iniciar sesión
+        </a>
+      </div>
+    </div>
+
+    <div class="footer-grid">
+      <div class="footer-brand-col">
+        <a href="/" class="footer-brand">
+          <img src="/brand/isotipo-a-sede.svg" alt="Iglesia 238" width="34" height="34" />
+          <span>IGLESIA <strong>238</strong></span>
+        </a>
+        <p>
+          Plataforma multi-iglesia y multi-sede para la administración de membresía oficial (F-701), secretaría, certificados en PDF, asistencia y contabilidad eclesiástica.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Plataforma</h4>
+        <ul>
+          <li><a href="/soluciones">Soluciones por ministerio</a></li>
+          <li><a href="/como-funciona">Cómo funciona</a></li>
+          <li><a href="/seguridad">Seguridad y Ley 1581</a></li>
+          <li><a href="/#preguntas">Preguntas frecuentes</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Accesos Directos</h4>
+        <ul>
+          <li><a href="https://app.iglesia238.com/login" data-app-path="/login">Iniciar sesión (Personal)</a></li>
+          <li><a href="https://app.iglesia238.com/register-congregation" data-app-path="/register-congregation">Registrar nueva sede</a></li>
+          <li><a href="https://app.iglesia238.com/apply" data-app-path="/apply">Formulario de membresía F-701</a></li>
+          <li><a href="https://app.iglesia238.com/apply/status" data-app-path="/apply/status">Consultar estado de solicitud</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Cumplimiento</h4>
+        <ul>
+          <li><span>Ley 1581 de 2012 (Colombia)</span></li>
+          <li><span>18 países hispanohablantes</span></li>
+          <li><span>DIVIPOLA DANE integrado</span></li>
+          <li><span>Aislamiento multi-tenant</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 <strong>lopezsoft.net.co</strong> · Todos los derechos reservados · v0.13.0</span>
+      <span>Tus datos se tratan conforme a la Ley 1581 de 2012.</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border);
+    padding: 4rem 0 2.5rem;
+  }
+
+  .footer-cta {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 2.5rem 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 3.5rem;
+  }
+
+  .footer-cta h2 {
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+    font-weight: 800;
+    color: var(--text-navy);
+    margin-bottom: 0.35rem;
+  }
+
+  .footer-cta p {
+    color: var(--text-body);
+    font-size: 0.96rem;
+  }
+
+  .footer-cta__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 2.5rem;
+    padding-bottom: 2.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-navy);
+    margin-bottom: 0.85rem;
+  }
+
+  .footer-brand strong {
+    color: var(--primary);
+  }
+
+  .footer-brand-col p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    max-width: 340px;
+  }
+
+  .footer-col h4 {
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-navy);
+    margin-bottom: 0.9rem;
+  }
+
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .footer-col a,
+  .footer-col span {
+    font-size: 0.88rem;
+    color: var(--text-body);
+    transition: color 0.16s ease;
+  }
+
+  .footer-col a:hover {
+    color: var(--primary);
+  }
+
+  .footer-bottom {
+    padding-top: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 960px) {
+    .footer-cta {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

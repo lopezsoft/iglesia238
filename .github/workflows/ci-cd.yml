@@ -79,6 +79,12 @@ jobs:
         working-directory: frontend
         run: npx ng test --watch=false
 
+      - name: Install & Build Astro Landing Site (iglesia238.com)
+        working-directory: landing
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
   deploy-dokploy:
     name: CD — Trigger Dokploy Deployment (iglesia238.com)
     needs: [ci-backend, ci-frontend]

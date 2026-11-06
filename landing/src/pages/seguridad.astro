@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SecurityCompliance from '../components/SecurityCompliance.astro';
+---
+
+<BaseLayout
+  title="Seguridad, Aislamiento Multi-Sede y Ley 1581 de 2012 — Iglesia 238"
+  description="Conoce cómo Iglesia 238 protege los datos personales, pastorales y financieros mediante aislamiento multi-tenant y cumplimiento de Habeas Data."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-eyebrow">Seguridad por Diseño</span>
+      <h1 class="section-title">Arquitectura blindada y cumplimiento legal</h1>
+      <p class="section-subtitle" style="margin: 0 auto;">
+        Protección criptográfica de sesiones, aislamiento por sede/denominación en base de datos y tratamiento responsable de datos personales.
+      </p>
+    </div>
+  </section>
+
+  <SecurityCompliance />
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding: 4.5rem 0 1.5rem;
+    text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.1), transparent 65%);
+  }
+</style>

@@ -33,6 +33,8 @@ out/
 backend/dist/
 frontend/dist/
 frontend/.angular/
+landing/dist/
+landing/.astro/
 .next/
 
 # ==========================================

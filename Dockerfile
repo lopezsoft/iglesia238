@@ -1,7 +1,15 @@
 # Dockerfile unificado para producción en Dokploy (iglesia238.com · app.iglesia238.com · api.iglesia238.com):
-# Empaqueta Sitio Principal (Landing) + Frontend (Angular 22 + Nginx) + Backend (NestJS 12 + Fastify) + Migraciones (Prisma 7) en un solo contenedor.
+# Empaqueta Sitio Principal (Astro 5) + Frontend (Angular 22 + Nginx) + Backend (NestJS 12 + Fastify) + Migraciones (Prisma 7) en un solo contenedor.
 
-# Etapa 1: compilación del Frontend (Angular)
+# Etapa 1: compilación del Sitio Principal en Astro (iglesia238.com)
+FROM node:22.23-alpine AS landing-builder
+WORKDIR /app/landing
+COPY landing/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY landing/ ./
+RUN npm run build
+
+# Etapa 2: compilación del Frontend en Angular (app.iglesia238.com)
 FROM node:22.23-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
@@ -9,7 +17,7 @@ RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
 RUN npm run build -- --configuration=production
 
-# Etapa 2: compilación del Backend (NestJS + Prisma Client)
+# Etapa 3: compilación del Backend en NestJS + Prisma Client (api.iglesia238.com)
 FROM node:22.23-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
@@ -18,7 +26,7 @@ COPY backend/ ./
 RUN npx prisma generate
 RUN npm run build
 
-# Etapa 3: imagen unificada de producción (Nginx Multi-Host + Node.js + Prisma)
+# Etapa 4: imagen unificada de producción (Nginx Multi-Host + Node.js + Prisma)
 FROM node:22.23-alpine AS production
 RUN apk add --no-cache nginx dumb-init openssl && mkdir -p /run/nginx /usr/share/nginx/landing
 
@@ -27,11 +35,10 @@ ENV NODE_ENV=production \
     PORT=3000 \
     TRUST_PROXY=1
 
-# 1. Sitio principal (iglesia238.com) en /usr/share/nginx/landing
-COPY landing/ /usr/share/nginx/landing/
-COPY frontend/public/favicon.svg /usr/share/nginx/landing/favicon.svg
+# 1. Sitio principal compilado con Astro (iglesia238.com) en /usr/share/nginx/landing
+COPY --from=landing-builder /app/landing/dist /usr/share/nginx/landing
 
-# 2. Aplicación Angular (app.iglesia238.com) en /usr/share/nginx/html
+# 2. Aplicación Angular compilada (app.iglesia238.com) en /usr/share/nginx/html
 COPY --from=frontend-builder /app/frontend/dist/frontend/browser /usr/share/nginx/html
 COPY docker/nginx/dokploy.conf /etc/nginx/http.d/default.conf
 

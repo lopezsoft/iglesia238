@@ -8,6 +8,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.0 - 2026-11-06
+
+### Added
+
+- Sitio web multipágina construido con **Astro 5** (`landing/`) para **`iglesia238.com`**:
+  - **Arquitectura Astro (`landing/src/`):** layout global (`BaseLayout.astro`), navegación con mega-menú desplegable (`Navbar.astro`), Hero con titular rotativo y réplica detallada de la interfaz de `app.iglesia238.com` con barra lateral, 8 KPIs, dos gráficos y 4 tarjetas flotantes animadas (`Hero.astro` + `AppMockup.astro`), pestañas interactivas de módulos (`InteractiveSuites.astro`), Bento Grid de roles (`SolutionsBento.astro`), pasos de puesta en marcha (`HowItWorks.astro`), bloque de seguridad y cumplimiento Ley 1581 de 2012 (`SecurityCompliance.astro`), acordeón FAQ (`FaqSection.astro`) y páginas dedicadas (`/`, `/soluciones`, `/como-funciona`, `/seguridad`).
+  - **Integración en Docker y CI/CD:** etapa `landing-builder` en el `Dockerfile` raíz y paso de compilación de Astro en `.github/workflows/ci-cd.yml`.
+
 ## 0.12.0 - 2026-11-06
 
 ### Added

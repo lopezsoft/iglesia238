@@ -1,0 +1,359 @@
+---
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="/" class="brand" aria-label="Iglesia 238 — Inicio">
+      <img src="/brand/isotipo-a-sede.svg" alt="Iglesia 238" class="brand__logo" width="38" height="38" />
+      <span class="brand__text">IGLESIA <span class="brand__highlight">238</span></span>
+    </a>
+
+    <nav class="main-nav" aria-label="Navegación principal">
+      <div class="nav-dropdown">
+        <a href="/soluciones" class:list={['nav-link', 'nav-link--dropdown', { active: currentPath.startsWith('/soluciones') }]}>
+          <span data-i18n="nav.solutions">Soluciones</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </a>
+        <div class="mega-menu">
+          <div class="mega-menu__grid">
+            <a href="/soluciones#membresia" class="mega-item">
+              <div class="mega-item__icon mega-item__icon--blue">🪪</div>
+              <div>
+                <div class="mega-item__title">Membresía y Formato F-701</div>
+                <div class="mega-item__desc">Inscripción pública en línea, núcleo familiar, bautismo y expediente 360°.</div>
+              </div>
+            </a>
+            <a href="/soluciones#secretaria" class="mega-item">
+              <div class="mega-item__icon mega-item__icon--purple">📜</div>
+              <div>
+                <div class="mega-item__title">Secretaría y Certificados PDF</div>
+                <div class="mega-item__desc">Certificados con consecutivo, carnés, asistencia, matrimonios y presentaciones.</div>
+              </div>
+            </a>
+            <a href="/soluciones#contabilidad" class="mega-item">
+              <div class="mega-item__icon mega-item__icon--emerald">💼</div>
+              <div>
+                <div class="mega-item__title">Contabilidad, Diezmos y Votos</div>
+                <div class="mega-item__desc">Recibos REC, libro de caja mensual, promesas de voto y liquidación de diezmos.</div>
+              </div>
+            </a>
+            <a href="/soluciones#gobierno" class="mega-item">
+              <div class="mega-item__icon mega-item__icon--amber">🏛</div>
+              <div>
+                <div class="mega-item__title">Gobierno Multi-Sede</div>
+                <div class="mega-item__desc">Razones sociales, distritos, sedes, traslados y auditoría centralizada.</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <a href="/#modulos" class="ai-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"></path>
+        </svg>
+        <span>IA & F-701</span>
+      </a>
+
+      <a href="/como-funciona" class:list={['nav-link', { active: currentPath.startsWith('/como-funciona') }]} data-i18n="nav.how">
+        Cómo funciona
+      </a>
+      <a href="/seguridad" class:list={['nav-link', { active: currentPath.startsWith('/seguridad') }]} data-i18n="nav.security">
+        Seguridad
+      </a>
+      <a href="/#modulos" class="nav-link" data-i18n="nav.features">Características</a>
+      <a href="/#preguntas" class="nav-link" data-i18n="nav.faq">FAQ</a>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" id="themeToggleBtn" class="icon-btn" aria-label="Cambiar modo de color">
+        <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+
+      <div class="lang-pill" role="group" aria-label="Idioma">
+        <button type="button" id="btnLangEs" class="active">ES</button>
+        <button type="button" id="btnLangEn">EN</button>
+      </div>
+
+      <a href="https://app.iglesia238.com/login" data-app-path="/login" class="signin-link" data-i18n="nav.login">
+        Iniciar sesión
+      </a>
+
+      <a
+        href="https://app.iglesia238.com/register-congregation"
+        data-app-path="/register-congregation"
+        class="btn btn--primary"
+        data-i18n="nav.cta"
+      >
+        Registrar mi sede
+      </a>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  (function () {
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const html = document.documentElement;
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('ig238-theme', next);
+      });
+    }
+  })();
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .site-header__inner {
+    height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 800;
+    font-size: 1.18rem;
+    letter-spacing: -0.03em;
+    color: var(--text-navy);
+  }
+
+  .brand__logo {
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(42, 94, 232, 0.25);
+  }
+
+  .brand__highlight {
+    color: var(--primary);
+  }
+
+  .main-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+  }
+
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: var(--text-body);
+    transition: color 0.18s ease;
+    padding: 0.4rem 0;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--primary);
+  }
+
+  .nav-dropdown {
+    position: relative;
+  }
+
+  .mega-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: -24px;
+    width: 580px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.1rem;
+    box-shadow: var(--shadow-xl);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-dropdown:hover .mega-menu,
+  .nav-dropdown:focus-within .mega-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .mega-menu__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .mega-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border-radius: 12px;
+    transition: background 0.16s ease;
+  }
+
+  .mega-item:hover {
+    background: var(--bg-subtle);
+  }
+
+  .mega-item__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .mega-item__icon--blue {
+    background: var(--primary-soft);
+  }
+  .mega-item__icon--purple {
+    background: var(--purple-soft);
+  }
+  .mega-item__icon--emerald {
+    background: var(--emerald-soft);
+  }
+  .mega-item__icon--amber {
+    background: var(--amber-soft);
+  }
+
+  .mega-item__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-navy);
+    margin-bottom: 0.2rem;
+  }
+
+  .mega-item__desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .ai-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+    border: 1px solid #ddd6fe;
+    color: #7c3aed;
+    font-size: 0.82rem;
+    font-weight: 800;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .ai-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.18);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-body);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .lang-pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 2px;
+  }
+
+  .lang-pill button {
+    border: none;
+    background: transparent;
+    padding: 0.24rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.16s ease;
+  }
+
+  .lang-pill button.active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .signin-link {
+    font-size: 0.93rem;
+    font-weight: 700;
+    color: var(--text-navy);
+    padding: 0.4rem 0.55rem;
+    transition: color 0.18s ease;
+  }
+
+  .signin-link:hover {
+    color: var(--primary);
+  }
+
+  @media (max-width: 1024px) {
+    .main-nav {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .signin-link,
+    .lang-pill {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,191 @@
+---
+---
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Gobierno por Roles y Alcances</span>
+      <h2 class="section-title">Diseñado para la realidad de cada ministerio</h2>
+      <p class="section-subtitle">
+        Cada usuario opera con los permisos exactos de su cargo, ya sea en una congregación local (`C:ID`) o supervisando toda la denominación (`D:ID`).
+      </p>
+    </div>
+
+    <div class="bento-grid">
+      <article class="bento-card bento-card--wide">
+        <div class="bento-card__top">
+          <span class="bento-icon bento-icon--blue">⛪</span>
+          <span class="bento-tag">Pastor Local y Distrital</span>
+        </div>
+        <h3>Visión pastoral completa de cada miembro y su núcleo familiar</h3>
+        <p>
+          Revisa y aprueba las solicitudes de membresía F-701, consulta el estado civil, cónyuge, concepto del Tribunal Eclesiástico, bautismo en agua y del Espíritu Santo, cargos ministeriales y reportes financieros de la sede.
+        </p>
+        <div class="bento-chips">
+          <span>Aprobación F-701</span>
+          <span>Expediente Familiar</span>
+          <span>Emisión de Certificados</span>
+          <span>Reportes Financieros</span>
+        </div>
+      </article>
+
+      <article class="bento-card">
+        <div class="bento-card__top">
+          <span class="bento-icon bento-icon--purple">📋</span>
+          <span class="bento-tag">Secretaría</span>
+        </div>
+        <h3>Cero papel en libros y certificados</h3>
+        <p>
+          Mantiene al día el censo de miembros, estudios, ficha socioeconómica, carnés, sesiones de asistencia, libro de matrimonios y presentación de niños.
+        </p>
+        <div class="bento-chips">
+          <span>Certificados PDF</span>
+          <span>Asistencia</span>
+          <span>Traslados</span>
+        </div>
+      </article>
+
+      <article class="bento-card">
+        <div class="bento-card__top">
+          <span class="bento-icon bento-icon--emerald">💼</span>
+          <span class="bento-tag">Tesorería</span>
+        </div>
+        <h3>Contabilidad eclesiástica transparente</h3>
+        <p>
+          Registra diezmos, ofrendas y colectas con recibo `REC`, controla promesas de voto con abonos, consolida el libro de caja y liquida diezmos por periodo.
+        </p>
+        <div class="bento-chips">
+          <span>Recibos REC</span>
+          <span>Votos</span>
+          <span>Libro de Caja</span>
+        </div>
+      </article>
+
+      <article class="bento-card bento-card--wide">
+        <div class="bento-card__top">
+          <span class="bento-icon bento-icon--amber">🏛</span>
+          <span class="bento-tag">Administración Denominacional</span>
+        </div>
+        <h3>Escala nacional con razones sociales, distritos y sedes</h3>
+        <p>
+          Aprovisiona nuevas sedes con su plan de cuentas, fondos, tipos de certificados y cargos eclesiásticos listos para operar. Audita accesos y exporta informes consolidados de toda la organización.
+        </p>
+        <div class="bento-chips">
+          <span>Multi-Denominación</span>
+          <span>Razones Sociales y NIT</span>
+          <span>Políticas Ley 1581</span>
+          <span>Auditoría Central</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .bento-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .bento-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(42, 94, 232, 0.35);
+  }
+
+  .bento-card--wide {
+    grid-column: span 2;
+  }
+
+  .bento-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+
+  .bento-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .bento-icon--blue {
+    background: var(--primary-soft);
+  }
+  .bento-icon--purple {
+    background: var(--purple-soft);
+  }
+  .bento-icon--emerald {
+    background: var(--emerald-soft);
+  }
+  .bento-icon--amber {
+    background: var(--amber-soft);
+  }
+
+  .bento-tag {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.26rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-navy);
+  }
+
+  .bento-card h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.65rem;
+  }
+
+  .bento-card p {
+    font-size: 0.95rem;
+    color: var(--text-body);
+    margin-bottom: 1.4rem;
+  }
+
+  .bento-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .bento-chips span {
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.7rem;
+    border-radius: 8px;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+  }
+
+  @media (max-width: 960px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+    .bento-card--wide {
+      grid-column: span 1;
+    }
+  }
+</style>

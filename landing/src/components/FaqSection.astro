@@ -1,0 +1,115 @@
+---
+---
+
+<section id="preguntas" class="section section--subtle">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Preguntas Frecuentes</span>
+      <h2 class="section-title">Resolvemos tus dudas sobre Iglesia 238</h2>
+      <p class="section-subtitle">
+        Todo lo que necesitas saber sobre el registro de sedes, el formato F-701 y la contabilidad eclesiástica.
+      </p>
+    </div>
+
+    <div class="faq-accordion">
+      <details class="faq-card" open>
+        <summary>
+          <span>¿Cómo registro una sede nueva de mi iglesia en la plataforma?</span>
+          <span class="faq-icon">＋</span>
+        </summary>
+        <p>
+          Ingresa a <a href="https://app.iglesia238.com/register-congregation" data-app-path="/register-congregation">Registrar mi sede</a>, elige la razón social activa de tu denominación, selecciona el departamento y municipio de la sede y registra tus datos de administrador. Al confirmar el enlace enviado a tu correo, quedas habilitado con los roles de Pastor, Secretaría y Tesorería de tu sede.
+        </p>
+      </details>
+
+      <details class="faq-card">
+        <summary>
+          <span>¿Por qué un miembro que llena el formulario público F-701 no aparece de inmediato en el listado oficial?</span>
+          <span class="faq-icon">＋</span>
+        </summary>
+        <p>
+          Para resguardar el libro oficial de membresía, toda solicitud enviada en `/apply` ingresa primero a la bandeja de <strong>Solicitudes de membresía</strong> en estado <em>Pendiente</em>. Cuando el Pastor o la Secretaría la revisa y aprueba, el sistema crea su ficha, registra su familia y matrimonio, y le asigna su número consecutivo de miembro.
+        </p>
+      </details>
+
+      <details class="faq-card">
+        <summary>
+          <span>¿Puedo editar el lugar de nacimiento, expedición, matrimonio, familiares y estudios de un miembro?</span>
+          <span class="faq-icon">＋</span>
+        </summary>
+        <p>
+          Sí. Desde la ficha del miembro (`/members/:id`) puedes actualizar sus municipios con selectores por departamento, estado civil, datos del cónyuge y tipo de matrimonio (civil, cristiano, católico), registrar o editar familiares directamente en la pestaña Familia y actualizar sus estudios.
+        </p>
+      </details>
+
+      <details class="faq-card">
+        <summary>
+          <span>¿Cómo se protege la información entre distintas sedes o denominaciones?</span>
+          <span class="faq-icon">＋</span>
+        </summary>
+        <p>
+          Cada consulta valida el alcance activo (`X-Scope`) contra los roles vigentes del usuario en tiempo real. Un usuario con alcance de sede solo puede operar dentro de su congregación, y todas las tablas de negocio tienen llaves compuestas por denominación en la base de datos.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq-accordion {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .faq-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.35rem 1.6rem;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .faq-card summary {
+    font-size: 1.04rem;
+    font-weight: 800;
+    color: var(--text-navy);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .faq-card summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .faq-card p {
+    margin-top: 0.9rem;
+    font-size: 0.95rem;
+    color: var(--text-body);
+    line-height: 1.65;
+  }
+
+  .faq-card a {
+    color: var(--primary);
+    font-weight: 700;
+  }
+</style>

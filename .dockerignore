@@ -1,6 +1,7 @@
 **/node_modules
 **/dist
 **/.angular
+**/.astro
 **/coverage
 **/out-tsc
 backend/src/generated

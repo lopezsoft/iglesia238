@@ -1,0 +1,289 @@
+---
+import AppMockup from './AppMockup.astro';
+---
+
+<section class="hero-section">
+  <div class="container hero-grid">
+    <!-- Columna izquierda: Mensaje principal (estilo matias.com.co / maticerts.com) -->
+    <div class="hero-copy">
+      <a href="#modulos" class="news-pill">
+        <span class="news-pill__dot"></span>
+        <span class="news-pill__sparkle">✦ Novedad 2026:</span>
+        <span class="news-pill__text">Formato F-701 digital y asistente con IA incluido →</span>
+      </a>
+
+      <h1 class="hero-heading">
+        La plataforma que impulsa el
+        <span class="hero-heading__dynamic">
+          <span id="rotatingWord">crecimiento</span>
+          <span class="hero-heading__cursor" aria-hidden="true">|</span>
+        </span>
+        de tu iglesia
+      </h1>
+
+      <p class="hero-lead">
+        Integra tu <strong>membresía oficial (F-701)</strong>, secretaría, certificados en PDF, asistencia, diezmos, votos y <strong>libro de caja</strong> en un solo lugar para que gobiernes cada sede con orden y transparencia.
+      </p>
+
+      <div class="hero-actions">
+        <a
+          href="https://app.iglesia238.com/register-congregation"
+          data-app-path="/register-congregation"
+          class="btn btn--primary btn--lg"
+        >
+          <span>Registrar mi sede</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+
+        <a
+          href="https://app.iglesia238.com/apply"
+          data-app-path="/apply"
+          class="btn btn--secondary btn--lg"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Solicitar membresía</span>
+        </a>
+      </div>
+
+      <p class="hero-subnote">
+        Sin trámites en papel · Activación inmediata por sede
+        <a href="https://app.iglesia238.com/apply/status" data-app-path="/apply/status">
+          Consultar el estado de mi solicitud F-701 →
+        </a>
+      </p>
+
+      <div class="hero-trust-grid">
+        <div class="trust-badge">
+          <span class="trust-badge__icon trust-badge__icon--emerald">✓</span>
+          <span>+5.400 sedes en arquitectura nacional</span>
+        </div>
+        <div class="trust-badge">
+          <span class="trust-badge__icon trust-badge__icon--blue">🛡</span>
+          <span>Ley 1581 de 2012 (Habeas Data)</span>
+        </div>
+        <div class="trust-badge">
+          <span class="trust-badge__icon trust-badge__icon--emerald">📄</span>
+          <span>Certificados y recibos REC en PDF</span>
+        </div>
+        <div class="trust-badge">
+          <span class="trust-badge__icon trust-badge__icon--purple">✦</span>
+          <span>Asistente de redacción con IA incluido</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Réplica interactiva de app.iglesia238.com + 4 tarjetas flotantes -->
+    <div class="hero-visual">
+      <AppMockup />
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const words = ['crecimiento', 'orden pastoral', 'libro de caja', 'cuidado familiar'];
+    const target = document.getElementById('rotatingWord');
+    if (!target) return;
+
+    let wordIndex = 0;
+    setInterval(() => {
+      wordIndex = (wordIndex + 1) % words.length;
+      target.style.opacity = '0';
+      setTimeout(() => {
+        target.textContent = words[wordIndex];
+        target.style.opacity = '1';
+      }, 180);
+    }, 3200);
+  })();
+</script>
+
+<style>
+  .hero-section {
+    position: relative;
+    padding: 3.8rem 0 5rem;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(42, 94, 232, 0.09), transparent 40%),
+      radial-gradient(circle at 82% 24%, rgba(16, 185, 129, 0.08), transparent 36%),
+      radial-gradient(circle at 65% 82%, rgba(124, 58, 237, 0.08), transparent 44%);
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.02fr 1.08fr;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  .news-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.36rem 0.95rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, rgba(243, 232, 255, 0.9) 0%, rgba(238, 244, 255, 0.95) 100%);
+    border: 1px solid #ddd6fe;
+    font-size: 0.8rem;
+    margin-bottom: 1.45rem;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.18s ease;
+  }
+
+  [data-theme="dark"] .news-pill {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: #334155;
+  }
+
+  .news-pill:hover {
+    transform: translateY(-1px);
+  }
+
+  .news-pill__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+  }
+
+  .news-pill__sparkle {
+    color: #9333ea;
+    font-weight: 800;
+  }
+
+  [data-theme="dark"] .news-pill__sparkle {
+    color: #c084fc;
+  }
+
+  .news-pill__text {
+    color: var(--text-navy);
+    font-weight: 700;
+  }
+
+  .hero-heading {
+    font-size: clamp(2.45rem, 4.3vw, 3.65rem);
+    font-weight: 800;
+    color: var(--text-navy);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.35rem;
+  }
+
+  .hero-heading__dynamic {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary);
+  }
+
+  #rotatingWord {
+    transition: opacity 0.18s ease;
+  }
+
+  .hero-heading__cursor {
+    color: var(--primary);
+    font-weight: 400;
+    margin-left: 2px;
+    animation: cursorBlink 1.05s steps(2, start) infinite;
+  }
+
+  @keyframes cursorBlink {
+    to {
+      visibility: hidden;
+    }
+  }
+
+  .hero-lead {
+    font-size: 1.08rem;
+    color: var(--text-body);
+    max-width: 550px;
+    margin-bottom: 1.9rem;
+    line-height: 1.65;
+  }
+
+  .hero-lead strong {
+    color: var(--text-navy);
+    font-weight: 700;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-subnote {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .hero-subnote a {
+    color: var(--primary);
+    font-weight: 700;
+    margin-left: 0.45rem;
+  }
+
+  .hero-subnote a:hover {
+    text-decoration: underline;
+  }
+
+  .hero-trust-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.44rem 0.9rem;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-navy);
+  }
+
+  .trust-badge__icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .trust-badge__icon--emerald {
+    background: var(--emerald-soft);
+    color: #059669;
+  }
+  .trust-badge__icon--blue {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+  .trust-badge__icon--purple {
+    background: var(--purple-soft);
+    color: var(--purple);
+  }
+
+  @media (max-width: 1080px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
