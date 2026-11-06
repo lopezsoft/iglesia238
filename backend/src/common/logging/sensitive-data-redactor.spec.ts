@@ -10,6 +10,10 @@ describe('redactSensitiveData', () => {
         email: 'a@b.co',
         firstName: 'Ana',
         guardianName: 'Luis',
+        fatherFullName: 'Pedro',
+        motherFullName: 'María',
+        childrenNames: 'Mateo, Lucas',
+        tribunalOpinion: 'Favorable',
         sex: 'FEMALE',
       },
     });
@@ -22,6 +26,10 @@ describe('redactSensitiveData', () => {
         email: '[REDACTED]',
         firstName: '[REDACTED]',
         guardianName: '[REDACTED]',
+        fatherFullName: '[REDACTED]',
+        motherFullName: '[REDACTED]',
+        childrenNames: '[REDACTED]',
+        tribunalOpinion: '[REDACTED]',
         sex: 'FEMALE',
       },
     });

@@ -174,8 +174,20 @@ export class PrismaFamilyRepository implements FamilyRepository {
     const secondLastName = input.secondLastName?.trim() || null;
     const fullName =
       composeFullName(firstName, lastName ?? '', secondLastName) || firstName;
+    // Never overwrite the personal data of a member from another congregation.
     await clientOf(this.prisma, transaction).person.updateMany({
-      where: { id: relativeId, denominationId: scope.denominationId },
+      where: {
+        id: relativeId,
+        denominationId: scope.denominationId,
+        ...(scope.congregationId === null
+          ? {}
+          : {
+              OR: [
+                { member: { is: null } },
+                { member: { is: { congregationId: scope.congregationId } } },
+              ],
+            }),
+      },
       data: {
         firstName: lastName ? firstName : null,
         lastName,

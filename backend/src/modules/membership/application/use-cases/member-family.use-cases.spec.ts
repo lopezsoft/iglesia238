@@ -7,6 +7,7 @@ import {
   AddFamilyRelationUseCase,
   ListFamilyUseCase,
   RemoveFamilyRelationUseCase,
+  UpdateFamilyRelationUseCase,
   inverseTypeOf,
 } from './member-family.use-cases.js';
 
@@ -21,6 +22,13 @@ function setup() {
     member,
     list: new ListFamilyUseCase(fakes.members, fakes.family),
     add: new AddFamilyRelationUseCase(
+      fakes.members,
+      fakes.persons,
+      fakes.family,
+      fakes.transactions,
+      fakes.audit,
+    ),
+    update: new UpdateFamilyRelationUseCase(
       fakes.members,
       fakes.persons,
       fakes.family,
@@ -151,6 +159,88 @@ describe('family relations', () => {
     ).rejects.toBeInstanceOf(NotFoundDomainException);
   });
 
+  it('creates an inline relative, updates relation data and rejects future birthDate', async () => {
+    const { add, update, list, member, store } = setup();
+    const context = commandContext(TENANT_A);
+
+    await expect(
+      add.execute(context, member.id, {
+        type: 'CHILD',
+        firstName: 'Mateo',
+        lastName: 'Rojas',
+        birthDate: '2999-01-01',
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_DATE' });
+
+    await add.execute(context, member.id, {
+      type: 'GUARDIAN',
+      firstName: 'Mateo',
+      lastName: 'Rojas',
+      birthDate: '2015-04-12',
+    });
+
+    const row = store.family.find((item) => item.personId === member.personId)!;
+    await expect(
+      update.execute(context, member.id, row.id, {
+        type: 'CHILD',
+        firstName: 'Mateo Andrés',
+        lastName: 'Rojas',
+        birthDate: '2999-01-01',
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_DATE' });
+
+    await update.execute(context, member.id, row.id, {
+      type: 'CHILD',
+      firstName: 'Mateo Andrés',
+      lastName: 'Rojas',
+      birthDate: '2015-04-12',
+    });
+
+    const updated = await list.execute(TENANT_A, member.id);
+    expect(updated).toMatchObject([
+      {
+        id: row.id,
+        type: 'CHILD',
+        fullName: 'Mateo Andrés Rojas',
+      },
+    ]);
+    expect(store.family).toContainEqual(
+      expect.objectContaining({
+        personId: row.relativeId,
+        relativeId: member.personId,
+        type: 'MOTHER',
+      }),
+    );
+  });
+
+  it('does not overwrite a relative Person record when that relative is a member of another congregation', async () => {
+    const { update, member, store } = setup();
+    const context = commandContext(TENANT_A);
+    const otherCongregationMember = store.seedMember(1, 99, {
+      person: { firstName: 'Carlos', lastName: 'Protegido' },
+    });
+    const relationId = store.nextId();
+    store.family.push({
+      id: relationId,
+      denominationId: 1,
+      personId: member.personId,
+      relativeId: otherCongregationMember.personId,
+      type: 'FATHER',
+    });
+
+    await update.execute(context, member.id, relationId, {
+      type: 'FATHER',
+      firstName: 'Intento Sobrescritura',
+      lastName: 'Alterado',
+    });
+
+    const protectedPerson = store.persons.find(
+      (item) => item.id === otherCongregationMember.personId,
+    );
+    expect(protectedPerson?.firstName).toBe('Carlos');
+    expect(protectedPerson?.lastName).toBe('Protegido');
+  });
+
   const fixture = setup();
   describeCrossTenantIsolation('ListFamilyUseCase', {
     arrange: (owner) =>
@@ -171,6 +261,31 @@ describe('family relations', () => {
         type: 'GUARDIAN',
       });
     },
+  });
+  describeCrossTenantIsolation('UpdateFamilyRelationUseCase', {
+    arrange: (owner) => {
+      const member = fixture.store.seedMember(
+        owner.denominationId,
+        owner.congregationId ?? 10,
+      );
+      const relative = fixture.store.seedPerson({
+        denominationId: owner.denominationId,
+      });
+      const relationId = fixture.store.nextId();
+      fixture.store.family.push({
+        id: relationId,
+        denominationId: owner.denominationId,
+        personId: member.personId,
+        relativeId: relative.id,
+        type: 'GUARDIAN',
+      });
+      return { memberId: member.id, relationId };
+    },
+    act: (scope, { memberId, relationId }) =>
+      fixture.update.execute(commandContext(scope), memberId, relationId, {
+        type: 'GUARDIAN',
+        firstName: 'Actualizado',
+      }),
   });
   describeCrossTenantIsolation('RemoveFamilyRelationUseCase', {
     arrange: (owner) => {

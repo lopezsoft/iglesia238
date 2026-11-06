@@ -10,8 +10,10 @@ import {
 import { TRANSACTION_RUNNER } from '../../../../common/persistence/transaction.js';
 import type { TransactionRunner } from '../../../../common/persistence/transaction.js';
 import type { TenantScope } from '../../../../common/tenancy/tenant-scope.js';
+import { bogotaDateOf } from '../../../../common/time/bogota-time.js';
 import { requireMember } from '../command-context.js';
 import type { CommandContext } from '../command-context.js';
+import { assertPastOrToday, emptyToNull } from '../member-rules.js';
 import type {
   FamilyRelationType,
   FamilyRelationView,
@@ -125,11 +127,19 @@ export class AddFamilyRelationUseCase {
       );
     }
 
+    const cleanBirthDate = emptyToNull(command.birthDate);
     if (!hasExistingId) {
       const firstName = command.firstName?.trim() ?? '';
       if (firstName.length < 2 || firstName.length > 100) {
         throw new InvalidInputException(
           'Escribe el nombre del familiar (entre 2 y 100 caracteres).',
+        );
+      }
+      if (cleanBirthDate !== null) {
+        assertPastOrToday(
+          cleanBirthDate,
+          bogotaDateOf(new Date()),
+          'La fecha de nacimiento del familiar no es válida o es futura.',
         );
       }
     }
@@ -189,7 +199,7 @@ export class AddFamilyRelationUseCase {
               lastName: command.lastName ?? null,
               secondLastName: command.secondLastName ?? null,
               sex: command.sex ?? null,
-              birthDate: command.birthDate ?? null,
+              birthDate: cleanBirthDate,
             },
             transaction,
           );
@@ -251,6 +261,14 @@ export class UpdateFamilyRelationUseCase {
         'Escribe el nombre del familiar (entre 2 y 100 caracteres).',
       );
     }
+    const cleanBirthDate = emptyToNull(command.birthDate);
+    if (cleanBirthDate !== null) {
+      assertPastOrToday(
+        cleanBirthDate,
+        bogotaDateOf(new Date()),
+        'La fecha de nacimiento del familiar no es válida o es futura.',
+      );
+    }
 
     const rows = await this.family.rowsOf(scope, member.personId);
     const row = rows.find((candidate) => candidate.id === relationId);
@@ -280,6 +298,25 @@ export class UpdateFamilyRelationUseCase {
         candidate.relativeId === member.personId &&
         INVERSES_TO_REMOVE[row.type].includes(candidate.type),
     );
+    const oldInverseIds = new Set(oldInverses.map((item) => item.id));
+    const remainingRelativeRows = relativeRows.filter(
+      (candidate) => !oldInverseIds.has(candidate.id),
+    );
+    const inverseAlreadyExists = remainingRelativeRows.some(
+      (candidate) => candidate.relativeId === member.personId,
+    );
+    if (
+      command.type !== row.type &&
+      newInverse &&
+      !inverseAlreadyExists &&
+      PARENT_TYPES.includes(newInverse) &&
+      remainingRelativeRows.some((candidate) => candidate.type === newInverse)
+    ) {
+      throw new ConflictDomainException(
+        parentMessage(newInverse, true),
+        'PARENT_ALREADY_SET',
+      );
+    }
 
     await this.transactions.run(async (transaction) => {
       if (command.type !== row.type) {
@@ -292,7 +329,7 @@ export class UpdateFamilyRelationUseCase {
         for (const inverse of oldInverses) {
           await this.family.remove(scope, inverse.id, transaction);
         }
-        if (newInverse) {
+        if (newInverse && !inverseAlreadyExists) {
           await this.family.add(
             scope,
             row.relativeId,
@@ -310,7 +347,7 @@ export class UpdateFamilyRelationUseCase {
           lastName: command.lastName ?? null,
           secondLastName: command.secondLastName ?? null,
           sex: command.sex ?? null,
-          birthDate: command.birthDate ?? null,
+          birthDate: cleanBirthDate,
         },
         transaction,
       );

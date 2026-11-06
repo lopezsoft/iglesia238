@@ -2,7 +2,7 @@ const REDACTED = '[REDACTED]';
 const MAX_DEPTH = 6;
 
 const SENSITIVE_KEY_PATTERN =
-  'pass(word)?|secret|token|authorization|cookie|api[-_]?key|document(number)?|email|phone|mobile|cell|whatsapp|address|birth|(full|first|last|display|guardian|spouse)[-_]?name|photo|notes|health|tax[-_]?id';
+  'pass(word)?|secret|token|authorization|cookie|api[-_]?key|document(number)?|email|phone|mobile|cell|whatsapp|address|birth|(full|first|last|display|guardian|spouse|father|mother|children)[-_]?name(s)?|tribunal[-_]?opinion|photo|notes|health|tax[-_]?id';
 
 const SENSITIVE_KEY = new RegExp(SENSITIVE_KEY_PATTERN, 'i');
 

@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -314,6 +315,7 @@ export class SubmitApplicationDto implements SubmitApplicationInput {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Max(30)
   childrenCount: number | null = null;
 
   @ApiPropertyOptional({ nullable: true, type: String })

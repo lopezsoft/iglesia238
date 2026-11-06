@@ -8,6 +8,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.9.1 - 2026-11-06
+
+### Security
+
+- Endurecimiento de aislamiento multi-tenant e higiene de datos personales (PII):
+  - `PrismaFamilyRepository.updateRelativePerson`: restricción por sede (`congregationId`) al actualizar el registro `Person` de un familiar, impidiendo que un usuario con alcance de sede modifique los datos personales de un miembro perteneciente a otra congregación de la misma denominación.
+  - `AddFamilyRelationUseCase` y `UpdateFamilyRelationUseCase`: validación de fecha de nacimiento (`assertPastOrToday`) para rechazar fechas futuras en familiares y verificación de conflicto de padre/madre inverso (`PARENT_ALREADY_SET`) al cambiar el tipo de parentesco.
+  - `sensitive-data-redactor`: redacción automática en logs y auditoría de los nuevos campos sensibles/PII (`fatherFullName`, `motherFullName`, `childrenNames`, `tribunalOpinion`).
+  - `PrismaPersonRepository.syncMarriage` y `SubmitApplicationDto`: alcance explícito por `denominationId` al actualizar matrimonios y límite `@Max(30)` en `childrenCount`.
+
 ## 0.9.0 - 2026-11-06
 
 ### Added

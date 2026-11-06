@@ -303,14 +303,14 @@ export class PrismaPersonRepository implements PersonRepository {
           select: { id: true, firstName: true, lastName: true },
         });
         if (spouse && !spouse.firstName && !spouse.lastName) {
-          await client.person.update({
-            where: { id: spouse.id },
+          await client.person.updateMany({
+            where: { id: spouse.id, denominationId },
             data: { fullName: data.spouseFullName.slice(0, 200) },
           });
         }
       }
-      await client.marriage.update({
-        where: { id: existing.id },
+      await client.marriage.updateMany({
+        where: { id: existing.id, denominationId },
         data: {
           isCivil,
           isChristian,
