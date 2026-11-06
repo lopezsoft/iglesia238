@@ -56,9 +56,8 @@
   }
 
   &__logo {
-    @include icon-chip(2.5rem);
-    --tone-soft: #{$color-primary-soft};
-    --tone-fg: #{$color-brand-mark};
+    display: inline-flex;
+    flex-shrink: 0;
   }
 
   &__brand-text {

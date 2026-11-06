@@ -3,7 +3,7 @@
 <div class="shell" [class.shell--menu-open]="menuOpen()">
   <nav #sidebar class="rail" aria-label="Navegación principal" id="main-navigation">
     <a class="rail__brand" [routerLink]="locked() ? '/confirm-email' : '/dashboard'" appCustomTooltip="Iglesia 238" appTooltipPosition="right">
-      <span class="rail__logo"><app-icon name="church" [size]="24" /></span>
+      <span class="rail__logo"><app-brand-mark [size]="40" /></span>
       <span class="rail__brand-text">
         <span class="rail__product">Iglesia 238</span>
         <span class="rail__scope">{{ activeScope()?.label }}</span>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Iglesia 238">
+  <defs>
+    <linearGradient id="ig-grad-c" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0" stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#1436B4"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#ig-grad-c)"/>
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M32 12.5 L50.5 26.5 V47 a4 4 0 0 1 -4 4 H17.5 a4 4 0 0 1 -4 -4 V26.5 Z
+    M26 51 V39.5 a6 6 0 0 1 12 0 V51 Z
+    M32 21.5 a3.2 3.2 0 1 0 0.01 0 Z"/>
+</svg>

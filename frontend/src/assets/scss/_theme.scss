@@ -69,6 +69,9 @@ $tone-values: (
   --gradient-hero: linear-gradient(120deg, #17367f 0%, #1d4fb8 55%, #2b6fe6 100%);
   --gradient-brand-panel: linear-gradient(160deg, #0a2461 0%, #123c93 45%, #1f5fd0 100%);
   --gradient-auth-form: radial-gradient(circle at 100% 0, rgb(31 86 196 / 6%), transparent 45%);
+  // Isotipo (degradado del tile de la marca)
+  --brand-mark-from: #2f7bff;
+  --brand-mark-to: #1436b4;
 
   // Sombras de tono azulado
   --shadow-card: 0 1px 2px rgb(20 35 63 / 4%), 0 4px 14px rgb(20 35 63 / 5%);

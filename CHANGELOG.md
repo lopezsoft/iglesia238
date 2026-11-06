@@ -8,6 +8,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.8.0 - 2026-11-06
+
+### Added
+
+- Identidad visual de Iglesia 238: componente `<app-brand-mark>` (`BrandMarkComponent`) con variantes `sede` y `simple`, integrado en el panel de autenticación (`AuthBrandPanelComponent`), la barra lateral del shell (`ShellComponent`) y la cabecera pública (`PublicLayoutComponent`).
+- Recursos de marca e íconos de aplicación: `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, íconos PWA (`192x192` y `512x512`), `manifest.webmanifest`, tokens de degradado de marca (`--brand-mark-from` / `--brand-mark-to`) y catálogo visual en `frontend/public/brand/`.
+
 ## 0.7.1 - 2026-11-06
 
 ### Fixed

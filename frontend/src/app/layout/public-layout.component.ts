@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { IconComponent } from '../shared/ui/icon.component';
+import { BrandMarkComponent } from '../shared/ui/brand-mark.component';
 
 /** Layout of the pages that need no account: membership form and status check. */
 @Component({
   selector: 'app-public-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, IconComponent],
+  imports: [RouterOutlet, RouterLink, BrandMarkComponent],
   styles: `
     @use 'tokens' as *;
     @use 'mixins' as *;
@@ -45,9 +45,8 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .brand__mark {
-      @include icon-chip(2.5rem);
-      --tone-soft: #{$color-primary-soft};
-      --tone-fg: #{$color-brand-mark};
+      display: inline-flex;
+      flex-shrink: 0;
     }
 
     .brand__accent {
@@ -94,7 +93,7 @@ import { IconComponent } from '../shared/ui/icon.component';
   template: `
     <header class="public-header">
       <a class="brand" routerLink="/apply">
-        <span class="brand__mark"><app-icon name="church" [size]="22" /></span>
+        <span class="brand__mark"><app-brand-mark [size]="40" /></span>
         <span>Iglesia <span class="brand__accent">238</span></span>
       </a>
       <nav class="cluster" aria-label="Enlaces públicos">

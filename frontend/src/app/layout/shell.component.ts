@@ -15,6 +15,7 @@ import { filter } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
 import { visibleNavGroups } from '../core/navigation/navigation';
 import { CustomTooltipDirective } from '../shared/ui/custom-tooltip.directive';
+import { BrandMarkComponent } from '../shared/ui/brand-mark.component';
 import { IconComponent } from '../shared/ui/icon.component';
 import { AppFooterComponent } from './app-footer.component';
 import { QuickCreateMenuComponent } from './quick-create-menu.component';
@@ -34,6 +35,7 @@ import { UserMenuComponent } from './user-menu.component';
     RouterLink,
     RouterLinkActive,
     CustomTooltipDirective,
+    BrandMarkComponent,
     IconComponent,
     AppFooterComponent,
     QuickCreateMenuComponent,

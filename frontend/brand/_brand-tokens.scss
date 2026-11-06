@@ -1,0 +1,14 @@
+// Iglesia 238 · tokens de marca
+// Uso: @use 'brand-tokens' as brand;  → brand.$brand-primary
+
+$brand-primary:        #1E5BFF; // azul de marca (acento "238", botones)
+$brand-primary-light:  #2F7BFF; // inicio del degradado del isotipo
+$brand-primary-deep:   #1436B4; // fin del degradado del isotipo
+$brand-primary-tint:   #E8F0FF; // fondos suaves / chips
+$brand-on-dark-accent: #8FB5FF; // "238" sobre fondos oscuros
+
+$brand-ink:            #0B1B3F; // texto "Iglesia" y titulares
+$brand-ink-muted:      #5B6B8C; // tagline / texto secundario
+
+$brand-gradient: linear-gradient(135deg, $brand-primary-light 0%, $brand-primary-deep 100%);
+$brand-radius-tile: 23.4%; // radio del tile del isotipo (15/64)
