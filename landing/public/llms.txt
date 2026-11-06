@@ -1,0 +1,17 @@
+# Iglesia 238 (https://iglesia238.com)
+
+> Plataforma multi-iglesia y multi-sede para administrar membresía oficial (Formato F-701), secretaría, certificados en PDF, asistencia, diezmos, votos y libro de caja en Latinoamérica.
+
+## Dominios oficiales
+- Sitio principal: https://iglesia238.com
+- Aplicación web: https://app.iglesia238.com
+- Registro público de sedes: https://app.iglesia238.com/register-congregation
+- Formulario público de membresía (F-701): https://app.iglesia238.com/apply
+- Consulta de estado de solicitud: https://app.iglesia238.com/apply/status
+- API REST: https://api.iglesia238.com
+
+## Módulos principales
+- **Membresía y Formato F-701:** Solicitud pública desde celular, validación de homónimos/duplicados, ficha 360° (cónyuge, tipo de matrimonio civil/cristiano/católico, familiares, estudios, cargos, bautismo en agua y Espíritu Santo) y libro de registro con consecutivo por sede.
+- **Secretaría Eclesiástica:** Emisión instantánea de certificados en PDF (bautismo, membresía, buena conducta), carnés de miembro, sesiones de asistencia por culto, matrimonios, presentación de niños y periodos pastorales.
+- **Contabilidad, Aportes y Votos:** Recibos consecutivos `REC` en PDF, promesas de voto con abonos parciales, libro de caja mensual por fondos, consolidación de ingresos, reversas auditadas, presupuestos y liquidación de diezmos.
+- **Seguridad y Cumplimiento Legal:** Aislamiento multi-tenant estricto por denominación y sede (`X-Scope`), cumplimiento de la Ley 1581 de 2012 (Habeas Data, consentimiento informado, acudientes para menores y anonimización) y bitácora de auditoría inmutable.

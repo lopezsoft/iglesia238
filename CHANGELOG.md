@@ -8,6 +8,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.1 - 2026-11-06
+
+### Added
+
+- **SEO Técnico, Semántico y GEO (AI Search) en `landing/` (`iglesia238.com`):**
+  - Datos estructurados **JSON-LD (`Schema.org`)** en [`BaseLayout.astro`](landing/src/layouts/BaseLayout.astro) con grafo `@graph`: `Organization`, `WebSite`, `SoftwareApplication`, `BreadcrumbList` dinámico por ruta y `FAQPage` para Rich Snippets en Google.
+  - Generador estático de [`/sitemap.xml`](landing/src/pages/sitemap.xml.ts) con prioridades y etiquetas `xhtml:link hreflang` (`es-CO`, `es-419`, `x-default`).
+  - [`robots.txt`](landing/public/robots.txt) y [`llms.txt`](landing/public/llms.txt) (contexto estructurado para motores de búsqueda con IA).
+  - URLs canónicas dinámicas, etiquetas Open Graph completas (`og:image` `1024x512`), Twitter/X Cards (`summary_large_image`), `apple-touch-icon.png` y `favicon.ico`.
+
 ## 0.13.0 - 2026-11-06
 
 ### Added

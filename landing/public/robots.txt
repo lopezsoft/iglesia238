@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://iglesia238.com/sitemap.xml
+Host: https://iglesia238.com

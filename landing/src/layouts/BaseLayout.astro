@@ -6,27 +6,192 @@ import Footer from '../components/Footer.astro';
 interface Props {
   title?: string;
   description?: string;
+  keywords?: string;
+  ogImage?: string;
+  includeFaqSchema?: boolean;
 }
 
 const {
-  title = 'Iglesia 238 — El sistema que impulsa el crecimiento y orden de tu iglesia',
-  description = 'Integra tu membresía oficial (F-701), secretaría, certificados en PDF, asistencia, diezmos, votos y libro de caja por sede y denominación en un solo lugar.',
+  title = 'Iglesia 238 — Software de Gestión Eclesiástica, Membresía F-701 y Contabilidad',
+  description = 'Plataforma multi-iglesia y multi-sede para administrar membresía oficial (F-701), secretaría, certificados en PDF, asistencia, diezmos, votos y libro de caja sin trámites en papel.',
+  keywords = 'software para iglesias, gestión eclesiástica, membresía de iglesia F-701, contabilidad para iglesias, libro de caja iglesia, certificados de bautismo en PDF, liquidación de diezmos, administración pastoral multi-sede, software congregaciones Colombia Latinoamérica',
+  ogImage = 'https://iglesia238.com/brand/png/iglesia238-logo-horizontal-1024.png',
+  includeFaqSchema = false,
 } = Astro.props;
+
+const siteUrl = 'https://iglesia238.com';
+const pathname = Astro.url.pathname;
+const canonicalUrl = new URL(pathname, siteUrl).toString();
+
+const breadcrumbItems = [
+  {
+    '@type': 'ListItem',
+    position: 1,
+    name: 'Inicio',
+    item: `${siteUrl}/`,
+  },
+];
+
+if (pathname !== '/') {
+  const cleanName =
+    pathname.includes('soluciones')
+      ? 'Soluciones por Ministerio'
+      : pathname.includes('como-funciona')
+        ? 'Cómo funciona'
+        : pathname.includes('seguridad')
+          ? 'Seguridad y Ley 1581'
+          : 'Página';
+  breadcrumbItems.push({
+    '@type': 'ListItem',
+    position: 2,
+    name: cleanName,
+    item: canonicalUrl,
+  });
+}
+
+const schemaGraph: Record<string, unknown>[] = [
+  {
+    '@type': 'Organization',
+    '@id': `${siteUrl}/#organization`,
+    name: 'Iglesia 238',
+    url: siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${siteUrl}/brand/png/iglesia238-isotipo-a-512.png`,
+      width: 512,
+      height: 512,
+    },
+    sameAs: ['https://app.iglesia238.com'],
+  },
+  {
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    url: siteUrl,
+    name: 'Iglesia 238',
+    inLanguage: 'es-CO',
+    publisher: {
+      '@id': `${siteUrl}/#organization`,
+    },
+  },
+  {
+    '@type': 'SoftwareApplication',
+    '@id': `${siteUrl}/#software`,
+    name: 'Iglesia 238',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web, Windows, macOS, Android, iOS',
+    url: 'https://app.iglesia238.com',
+    description,
+    featureList: [
+      'Formulario público de membresía oficial F-701',
+      'Expediente 360° del miembro, familia, matrimonio y estudios',
+      'Emisión de certificados de bautismo y membresía en PDF',
+      'Recibos consecutivos REC, promesas de voto y abonos',
+      'Libro de caja mensual por fondos y liquidación de diezmos',
+      'Aislamiento multi-sede y cumplimiento de Ley 1581 de 2012 (Habeas Data)',
+    ],
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'COP',
+      description: 'Registro y activación inmediata de sedes en línea',
+    },
+  },
+  {
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  },
+];
+
+if (includeFaqSchema) {
+  schemaGraph.push({
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: '¿Cómo registro una sede nueva de mi iglesia en la plataforma?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Ingresa a Registrar mi sede en app.iglesia238.com/register-congregation, elige la razón social activa de tu denominación, selecciona el departamento y municipio de la sede y registra tus datos de administrador. Al confirmar el enlace enviado a tu correo, quedas habilitado con los roles de Pastor, Secretaría y Tesorería de tu sede.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '¿Por qué un miembro que llena el formulario público F-701 no aparece de inmediato en el listado oficial?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Para resguardar el libro oficial de membresía, toda solicitud enviada en /apply ingresa primero a la bandeja de Solicitudes de membresía en estado Pendiente. Cuando el Pastor o la Secretaría la revisa y aprueba, el sistema crea su ficha, registra su familia y matrimonio, y le asigna su número consecutivo de miembro.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '¿Puedo editar el lugar de nacimiento, expedición, matrimonio, familiares y estudios de un miembro?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Sí. Desde la ficha del miembro (/members/:id) puedes actualizar sus municipios con selectores por departamento, estado civil, datos del cónyuge y tipo de matrimonio (civil, cristiano, católico), registrar o editar familiares directamente en la pestaña Familia y actualizar sus estudios.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '¿Cómo se protege la información entre distintas sedes o denominaciones?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Cada consulta valida el alcance activo (X-Scope) contra los roles vigentes del usuario en tiempo real. Un usuario con alcance de sede solo puede operar dentro de su congregación, y todas las tablas de negocio tienen llaves compuestas por denominación en la base de datos.',
+        },
+      },
+    ],
+  });
+}
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': schemaGraph,
+});
 ---
 
 <!doctype html>
-<html lang="es" data-theme="light">
+<html lang="es-CO" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Lopezsoft · Iglesia 238" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#2a5ee8" />
+
+    <!-- Canonical & Hreflang SEO -->
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="es-CO" href={canonicalUrl} />
+    <link rel="alternate" hreflang="es-419" href={canonicalUrl} />
+    <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
+
+    <!-- Favicons & Apple Touch Icon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Iglesia 238" />
+    <meta property="og:locale" content="es_CO" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content="https://iglesia238.com" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Iglesia 238 — Plataforma de Gestión Eclesiástica, Membresía F-701 y Contabilidad" />
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Datos estructurados JSON-LD (Schema.org: Organization + WebSite + SoftwareApplication + BreadcrumbList + FAQPage) -->
+    <script type="application/ld+json" set:html={jsonLd} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
