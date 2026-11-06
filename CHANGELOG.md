@@ -8,6 +8,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.11.0 - 2026-11-06
+
+### Added
+
+- Pipeline de **CI/CD en GitHub Actions** (`.github/workflows/ci-cd.yml`) para **Dokploy (`matiasimpulso.com`)**:
+  - **Job `ci-backend`:** validación de diccionario de datos (`npm run db:comments:check`), generación de Prisma Client, chequeo de tipos (`npm run typecheck`), compilación (`npm run build`) y ejecución de pruebas unitarias y de aislamiento multi-tenant (`npm run test`).
+  - **Job `ci-frontend`:** verificación de prohibición de atributo `title` nativo (`node scripts/check-native-title.js`), compilación Angular en producción (`npm run build -- --configuration=production`) y pruebas unitarias (`npx ng test --watch=false`).
+  - **Job `deploy-dokploy`:** disparo condicionado a la aprobación de ambos *quality gates* mediante el secret `DOKPLOY_WEBHOOK_URL`.
+
 ## 0.10.0 - 2026-11-06
 
 ### Added
