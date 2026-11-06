@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { toIsoDateOrNull } from '../../../common/mappers/value-mappers.js';
+import {
+  parseIsoDate,
+  toIsoDateOrNull,
+} from '../../../common/mappers/value-mappers.js';
+import { composeFullName } from '../../../common/people/full-name.js';
 import { bogotaDateOf } from '../../../common/time/bogota-time.js';
 import type { Transaction } from '../../../common/persistence/transaction.js';
 import type { TenantScope } from '../../../common/tenancy/tenant-scope.js';
@@ -11,6 +15,7 @@ import type {
   FamilyRelationType,
   FamilyRelationView,
   PersonStudyView,
+  RelativePersonInput,
 } from '../application/member.models.js';
 import type {
   FamilyRepository,
@@ -60,17 +65,23 @@ export class PrismaFamilyRepository implements FamilyRepository {
         member !== null &&
         (scope.congregationId === null ||
           member.congregationId === scope.congregationId);
+      const birthDate = toIsoDateOrNull(relative.birthDate);
       return {
         id,
         type,
         relativeId: relative.id,
         fullName: personNames(relative),
+        firstName: relative.firstName ?? relative.fullName ?? null,
+        lastName: relative.lastName ?? null,
+        secondLastName: relative.secondLastName ?? null,
+        sex: relative.sex ?? null,
+        birthDate,
         documentTypeCode: relative.documentType?.code ?? null,
         maskedDocument: maskDocument(
           relative.documentType?.code ?? null,
           relative.documentNumber,
         ),
-        age: ageOn(toIsoDateOrNull(relative.birthDate), today),
+        age: ageOn(birthDate, today),
         memberId: visible ? member.id : null,
         memberCode: member ? memberCodeOf(member.memberRegistryEntries) : null,
         congregationName: visible ? member.congregation.name : null,
@@ -111,6 +122,76 @@ export class PrismaFamilyRepository implements FamilyRepository {
       select: { id: true },
     });
     return created.id;
+  }
+
+  async updateType(
+    scope: TenantScope,
+    relationId: number,
+    type: FamilyRelationType,
+    transaction: Transaction,
+  ): Promise<void> {
+    await clientOf(this.prisma, transaction).familyRelation.updateMany({
+      where: { id: relationId, denominationId: scope.denominationId },
+      data: { type },
+    });
+  }
+
+  async createRelativePerson(
+    scope: TenantScope,
+    input: RelativePersonInput,
+    transaction: Transaction,
+  ): Promise<number> {
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName?.trim() || null;
+    const secondLastName = input.secondLastName?.trim() || null;
+    const fullName =
+      composeFullName(firstName, lastName ?? '', secondLastName) || firstName;
+    const created = await clientOf(this.prisma, transaction).person.create({
+      data: {
+        denominationId: scope.denominationId,
+        firstName: lastName ? firstName : null,
+        lastName,
+        secondLastName: lastName ? secondLastName : null,
+        fullName: fullName.slice(0, 200),
+        sex: input.sex ?? null,
+        birthDate: input.birthDate ? parseIsoDate(input.birthDate) : null,
+        documentTypeId: input.documentTypeId ?? null,
+        documentNumber: input.documentNumber ?? null,
+      },
+      select: { id: true },
+    });
+    return created.id;
+  }
+
+  async updateRelativePerson(
+    scope: TenantScope,
+    relativeId: number,
+    input: RelativePersonInput,
+    transaction: Transaction,
+  ): Promise<void> {
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName?.trim() || null;
+    const secondLastName = input.secondLastName?.trim() || null;
+    const fullName =
+      composeFullName(firstName, lastName ?? '', secondLastName) || firstName;
+    await clientOf(this.prisma, transaction).person.updateMany({
+      where: { id: relativeId, denominationId: scope.denominationId },
+      data: {
+        firstName: lastName ? firstName : null,
+        lastName,
+        secondLastName: lastName ? secondLastName : null,
+        fullName: fullName.slice(0, 200),
+        sex: input.sex ?? null,
+        birthDate: input.birthDate ? parseIsoDate(input.birthDate) : null,
+        ...(input.documentTypeId !== undefined &&
+        input.documentNumber !== undefined
+          ? {
+              documentTypeId: input.documentTypeId,
+              documentNumber: input.documentNumber,
+            }
+          : {}),
+      },
+    });
   }
 
   async remove(
@@ -196,6 +277,67 @@ export class PrismaStudyRepository implements StudyRepository {
       select: { id: true },
     });
     return created.id;
+  }
+
+  async update(
+    scope: TenantScope,
+    personId: number,
+    personStudyId: number,
+    record: NewStudyRecord,
+    transaction: Transaction,
+  ): Promise<boolean | 'DUPLICATE'> {
+    const client = clientOf(this.prisma, transaction);
+    const { denominationId } = scope;
+    const current = await client.personStudy.findFirst({
+      where: { id: personStudyId, personId, denominationId },
+      select: { id: true, studyId: true },
+    });
+    if (!current) {
+      return false;
+    }
+    const existingStudy = await client.study.findUnique({
+      where: {
+        denominationId_studyTypeId_name: {
+          denominationId,
+          studyTypeId: record.studyTypeId,
+          name: record.name,
+        },
+      },
+      select: { id: true },
+    });
+    const studyId =
+      existingStudy?.id ??
+      (
+        await client.study.create({
+          data: {
+            denominationId,
+            studyTypeId: record.studyTypeId,
+            name: record.name,
+          },
+          select: { id: true },
+        })
+      ).id;
+
+    if (studyId !== current.studyId) {
+      const repeated = await client.personStudy.findUnique({
+        where: { personId_studyId: { personId, studyId } },
+        select: { id: true },
+      });
+      if (repeated) {
+        return 'DUPLICATE';
+      }
+    }
+
+    await client.personStudy.update({
+      where: { id: personStudyId },
+      data: {
+        studyId,
+        status: record.status,
+        institution: record.institution,
+        year: record.year,
+      },
+    });
+    return true;
   }
 
   async remove(

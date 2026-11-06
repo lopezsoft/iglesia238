@@ -63,6 +63,36 @@ export const detailArgs = {
             neighborhood: { select: { name: true } },
           },
         },
+        marriagesAsSpouse1: {
+          where: { endedOn: null },
+          orderBy: { id: 'desc' },
+          take: 1,
+          include: {
+            spouse2: {
+              select: {
+                firstName: true,
+                lastName: true,
+                secondLastName: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+        marriagesAsSpouse2: {
+          where: { endedOn: null },
+          orderBy: { id: 'desc' },
+          take: 1,
+          include: {
+            spouse1: {
+              select: {
+                firstName: true,
+                lastName: true,
+                secondLastName: true,
+                fullName: true,
+              },
+            },
+          },
+        },
       },
     },
     baptismMunicipality: { select: { code: true } },

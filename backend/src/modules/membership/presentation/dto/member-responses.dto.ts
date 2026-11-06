@@ -74,6 +74,12 @@ export class PersonDetailDto {
   @ApiProperty(NULLABLE_STRING) landlinePhone?: string | null;
   @ApiProperty(NULLABLE_STRING) workPhone?: string | null;
   @ApiProperty(NULLABLE_STRING) neighborhood?: string | null;
+  @ApiProperty(NULLABLE_STRING) spouseFullName?: string | null;
+  @ApiProperty({ type: Boolean, required: false }) marriageIsCivil?: boolean;
+  @ApiProperty({ type: Boolean, required: false })
+  marriageIsChristian?: boolean;
+  @ApiProperty({ type: Boolean, required: false }) marriageIsCatholic?: boolean;
+  @ApiProperty(NULLABLE_STRING) tribunalOpinion?: string | null;
 }
 
 export class MemberDetailDto {
@@ -107,6 +113,12 @@ export class FamilyRelationViewDto {
   type!: string;
   @ApiProperty() relativeId!: number;
   @ApiProperty() fullName!: string;
+  @ApiProperty(NULLABLE_STRING) firstName?: string | null;
+  @ApiProperty(NULLABLE_STRING) lastName?: string | null;
+  @ApiProperty(NULLABLE_STRING) secondLastName?: string | null;
+  @ApiProperty({ enum: ['FEMALE', 'MALE'], nullable: true, required: false })
+  sex?: string | null;
+  @ApiProperty(NULLABLE_STRING) birthDate?: string | null;
   @ApiProperty(NULLABLE_STRING) documentTypeCode!: string | null;
   @ApiProperty({ ...NULLABLE_STRING, example: 'CC ···· 4817' })
   maskedDocument!: string | null;

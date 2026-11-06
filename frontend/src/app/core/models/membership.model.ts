@@ -25,6 +25,11 @@ export interface Person {
   readonly occupation: string | null;
   readonly workplace?: string | null;
   readonly childrenCount?: number | null;
+  readonly spouseFullName?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly tribunalOpinion?: string | null;
   readonly phone: string | null;
   readonly landlinePhone?: string | null;
   readonly workPhone?: string | null;

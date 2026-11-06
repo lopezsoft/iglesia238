@@ -173,6 +173,21 @@ export class PersonDataDto {
 
   @OptionalText('El barrio', 100)
   neighborhood?: string | null;
+
+  @OptionalText('El nombre completo del cónyuge', 200)
+  spouseFullName?: string | null;
+
+  @OptionalBoolean('Matrimonio civil')
+  marriageIsCivil?: boolean;
+
+  @OptionalBoolean('Matrimonio cristiano')
+  marriageIsChristian?: boolean;
+
+  @OptionalBoolean('Matrimonio católico')
+  marriageIsCatholic?: boolean;
+
+  @OptionalText('El concepto del tribunal eclesiástico', 255)
+  tribunalOpinion?: string | null;
 }
 
 export class CreateMemberDto {
@@ -316,11 +331,46 @@ export class ChangeStatusDto {
 // ---------- Family, studies, positions ----------
 
 export class FamilyRelationDto {
-  @RequiredInt('El familiar')
-  relativeId!: number;
+  @OptionalInt('El familiar')
+  relativeId?: number | null;
 
   @OneOf('El parentesco', RELATION_TYPES)
   type!: (typeof RELATION_TYPES)[number];
+
+  @OptionalText('Los nombres del familiar', 100)
+  firstName?: string | null;
+
+  @OptionalText('El primer apellido del familiar', 80)
+  lastName?: string | null;
+
+  @OptionalText('El segundo apellido del familiar', 80)
+  secondLastName?: string | null;
+
+  @OptionalOneOf('El sexo del familiar', SEXES)
+  sex?: (typeof SEXES)[number] | null;
+
+  @OptionalDate('La fecha de nacimiento del familiar')
+  birthDate?: string | null;
+}
+
+export class UpdateFamilyRelationDto {
+  @OneOf('El parentesco', RELATION_TYPES)
+  type!: (typeof RELATION_TYPES)[number];
+
+  @RequiredText('Los nombres del familiar', 100, 2)
+  firstName!: string;
+
+  @OptionalText('El primer apellido del familiar', 80)
+  lastName?: string | null;
+
+  @OptionalText('El segundo apellido del familiar', 80)
+  secondLastName?: string | null;
+
+  @OptionalOneOf('El sexo del familiar', SEXES)
+  sex?: (typeof SEXES)[number] | null;
+
+  @OptionalDate('La fecha de nacimiento del familiar')
+  birthDate?: string | null;
 }
 
 export class PersonStudyDto {

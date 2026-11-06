@@ -105,6 +105,11 @@ export interface PersonDetail {
   readonly landlinePhone?: string | null;
   readonly workPhone?: string | null;
   readonly neighborhood?: string | null;
+  readonly spouseFullName?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly tribunalOpinion?: string | null;
 }
 
 export interface MemberDetail {
@@ -166,6 +171,11 @@ export interface PersonData {
   readonly landlinePhone?: string | null;
   readonly workPhone?: string | null;
   readonly neighborhood?: string | null;
+  readonly spouseFullName?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly tribunalOpinion?: string | null;
 }
 
 /** Person data once the catalog codes were resolved to ids. */
@@ -238,6 +248,11 @@ export interface FamilyRelationView {
   readonly type: FamilyRelationType;
   readonly relativeId: number;
   readonly fullName: string;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
   readonly documentTypeCode: string | null;
   readonly maskedDocument: string | null;
   readonly age: number | null;
@@ -245,6 +260,16 @@ export interface FamilyRelationView {
   readonly memberCode: string | null;
   readonly congregationName: string | null;
   readonly memberStatus: MemberStatus | null;
+}
+
+export interface RelativePersonInput {
+  readonly firstName: string;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
+  readonly documentTypeId?: number | null;
+  readonly documentNumber?: string | null;
 }
 
 export interface FamilyRelationRow {

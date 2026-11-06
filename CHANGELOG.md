@@ -8,6 +8,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.9.0 - 2026-11-06
+
+### Added
+
+- Flujo completo de visualización y edición en la ficha del miembro (`/members/:id`):
+  - **Datos personales y matrimoniales:** resolución automática de nombres de municipios (`municipalityCode`, `documentIssuePlaceCode`, `birthPlaceCode`, `baptismMunicipalityCode`) en `PersonalDataTabComponent`, selectores en cascada `Departamento` → `Municipio` (`[selectByRegion]="true"`) en `PersonFieldsComponent` y `MembershipEditDialogComponent`, y edición/sincronización de cónyuge y tipo de matrimonio (`spouseFullName`, `marriageIsCivil`, `marriageIsChristian`, `marriageIsCatholic`, `tribunalOpinion`) contra la tabla `marriages`.
+  - **Familiares (`FamilyTabComponent` y `PATCH /api/members/:id/family/:relationId`):** tarjeta de resumen matrimonial en la pestaña Familia, registro directo de familiares nuevos (sin requerir que existan previamente como miembros) y edición de familiares existentes (`type`, `firstName`, `lastName`, `secondLastName`, `sex`, `birthDate`).
+  - **Estudios (`StudiesTabComponent` y `PATCH /api/members/:id/studies/:studyId`):** edición de estudios registrados del miembro.
+
 ## 0.8.0 - 2026-11-06
 
 ### Added

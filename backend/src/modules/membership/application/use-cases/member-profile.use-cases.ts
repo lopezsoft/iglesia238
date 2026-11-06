@@ -84,6 +84,11 @@ const PERSON_FIELDS: readonly (keyof PersonData)[] = [
   'address',
   'municipalityCode',
   'neighborhood',
+  'spouseFullName',
+  'marriageIsCivil',
+  'marriageIsChristian',
+  'marriageIsCatholic',
+  'tribunalOpinion',
 ];
 
 @Injectable()

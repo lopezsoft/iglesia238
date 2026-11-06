@@ -480,6 +480,15 @@ export class PrismaMemberRepository
       (contact) => contact.type === 'EMAIL',
     );
     const address = person.personAddresses[0];
+    const marriageAsSpouse1 = person.marriagesAsSpouse1?.[0];
+    const marriageAsSpouse2 = person.marriagesAsSpouse2?.[0];
+    const activeMarriage = marriageAsSpouse1 ?? marriageAsSpouse2 ?? null;
+    const spousePerson = marriageAsSpouse1
+      ? marriageAsSpouse1.spouse2
+      : marriageAsSpouse2
+        ? marriageAsSpouse2.spouse1
+        : null;
+    const spouseFullName = spousePerson ? personNames(spousePerson) : null;
     return {
       id: row.id,
       code: memberCodeOf(row.memberRegistryEntries),
@@ -529,6 +538,11 @@ export class PrismaMemberRepository
         address: address?.address ? address.address : null,
         municipalityCode: address?.municipality?.code ?? null,
         neighborhood: address?.neighborhood?.name ?? null,
+        spouseFullName,
+        marriageIsCivil: activeMarriage?.isCivil ?? false,
+        marriageIsChristian: activeMarriage?.isChristian ?? false,
+        marriageIsCatholic: activeMarriage?.isCatholic ?? false,
+        tribunalOpinion: activeMarriage?.tribunalOpinion ?? null,
       },
     };
   }

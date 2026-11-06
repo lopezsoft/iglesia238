@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { CatalogsStore } from '../../../../core/catalogs/catalogs.store';
 import { catalogName } from '../../../../core/models/catalogs';
@@ -32,6 +40,10 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dd class="mono">{{ document() }}</dd>
       </div>
       <div>
+        <dt>Lugar de expedición del documento</dt>
+        <dd>{{ documentIssuePlace() }}</dd>
+      </div>
+      <div>
         <dt>Fecha de nacimiento</dt>
         <dd>
           @if (person.birthDate) {
@@ -42,6 +54,10 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         </dd>
       </div>
       <div>
+        <dt>Lugar de nacimiento</dt>
+        <dd>{{ birthPlace() }}</dd>
+      </div>
+      <div>
         <dt>Sexo</dt>
         <dd>{{ person.sex ? sexLabels[person.sex] : '—' }}</dd>
       </div>
@@ -49,6 +65,20 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dt>Estado civil</dt>
         <dd>{{ maritalStatus() }}</dd>
       </div>
+      <div>
+        <dt>Nombre del cónyuge</dt>
+        <dd>{{ person.spouseFullName ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Tipo de matrimonio</dt>
+        <dd>{{ marriageTypes() }}</dd>
+      </div>
+      @if (person.tribunalOpinion) {
+        <div>
+          <dt>Concepto del Tribunal Eclesiástico</dt>
+          <dd>{{ person.tribunalOpinion }}</dd>
+        </div>
+      }
       <div>
         <dt>Nivel educativo</dt>
         <dd>{{ educationLevel() }}</dd>
@@ -116,6 +146,10 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
       <div>
         <dt>Bautismo en agua</dt>
         <dd>{{ baptism() }}</dd>
+      </div>
+      <div>
+        <dt>Municipio del bautismo</dt>
+        <dd>{{ baptismMunicipality() }}</dd>
       </div>
       @if (member().baptismPlace) {
         <div>
@@ -193,9 +227,35 @@ export class PersonalDataTabComponent {
   protected readonly educationLevel = computed(() =>
     catalogName(this.catalogs.educationLevels(), this.member().person.educationLevelCode),
   );
+  protected readonly documentIssuePlace = computed(() => {
+    const code = this.member().person.documentIssuePlaceCode ?? null;
+    return code ? this.catalogs.municipalityLabel(code) : '—';
+  });
+  protected readonly birthPlace = computed(() => {
+    const code = this.member().person.birthPlaceCode ?? null;
+    return code ? this.catalogs.municipalityLabel(code) : '—';
+  });
   protected readonly municipality = computed(() => {
     const code = this.member().person.municipalityCode;
     return code ? this.catalogs.municipalityLabel(code) : '—';
+  });
+  protected readonly baptismMunicipality = computed(() => {
+    const code = this.member().baptismMunicipalityCode ?? null;
+    return code ? this.catalogs.municipalityLabel(code) : '—';
+  });
+  protected readonly marriageTypes = computed(() => {
+    const person = this.member().person;
+    const types: string[] = [];
+    if (person.marriageIsCivil) {
+      types.push('Civil');
+    }
+    if (person.marriageIsChristian) {
+      types.push('Cristiano');
+    }
+    if (person.marriageIsCatholic) {
+      types.push('Católico');
+    }
+    return types.length > 0 ? types.join(', ') : '—';
   });
   protected readonly baptism = computed(() => {
     const member = this.member();
@@ -211,8 +271,22 @@ export class PersonalDataTabComponent {
   });
 
   constructor() {
-    // The labels come from the API: load the catalogs and resolve the municipality of the person.
+    // The labels come from the API: load the catalogs and resolve the municipalities of the person.
     this.catalogs.load().subscribe({ error: () => undefined });
+    effect(() => {
+      const member = this.member();
+      const codes = [
+        member.person.municipalityCode,
+        member.person.documentIssuePlaceCode,
+        member.person.birthPlaceCode,
+        member.baptismMunicipalityCode,
+      ];
+      for (const code of codes) {
+        if (code && this.catalogs.municipalityLabel(code) === '—') {
+          this.catalogs.resolveMunicipality(code).subscribe({ error: () => undefined });
+        }
+      }
+    });
   }
 }
 

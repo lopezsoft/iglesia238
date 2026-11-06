@@ -147,7 +147,11 @@
           <app-personal-data-tab [member]="member" (editMembership)="membershipOpen.set(true)" />
         }
         @case ('family') {
-          <app-family-tab [memberId]="member.id" />
+          <app-family-tab
+            [memberId]="member.id"
+            [member]="member"
+            (editPerson)="editOpen.set(true)"
+          />
         }
         @case ('studies') {
           <app-studies-tab [memberId]="member.id" />

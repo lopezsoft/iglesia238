@@ -244,6 +244,119 @@ export class PrismaPersonRepository implements PersonRepository {
       );
     }
     await this.syncAddress(client, denominationId, personId, data);
+    await this.syncMarriage(client, denominationId, personId, data);
+  }
+
+  private async syncMarriage(
+    client: Prisma.TransactionClient,
+    denominationId: number,
+    personId: number,
+    data: ResolvedPersonData,
+  ): Promise<void> {
+    if (
+      data.spouseFullName === undefined &&
+      data.marriageIsCivil === undefined &&
+      data.marriageIsChristian === undefined &&
+      data.marriageIsCatholic === undefined &&
+      data.tribunalOpinion === undefined
+    ) {
+      return;
+    }
+
+    const existing = await client.marriage.findFirst({
+      where: {
+        denominationId,
+        endedOn: null,
+        OR: [{ spouse1Id: personId }, { spouse2Id: personId }],
+      },
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        spouse1Id: true,
+        spouse2Id: true,
+        isCivil: true,
+        isChristian: true,
+        isCatholic: true,
+        tribunalOpinion: true,
+      },
+    });
+
+    const isCivil = data.marriageIsCivil ?? existing?.isCivil ?? false;
+    const isChristian =
+      data.marriageIsChristian ?? existing?.isChristian ?? false;
+    const isCatholic = data.marriageIsCatholic ?? existing?.isCatholic ?? false;
+    const tribunalOpinion =
+      data.tribunalOpinion !== undefined
+        ? data.tribunalOpinion
+          ? data.tribunalOpinion.slice(0, 255)
+          : null
+        : (existing?.tribunalOpinion ?? null);
+
+    if (existing) {
+      const spouseId =
+        existing.spouse1Id === personId
+          ? existing.spouse2Id
+          : existing.spouse1Id;
+      if (data.spouseFullName) {
+        const spouse = await client.person.findFirst({
+          where: { id: spouseId, denominationId },
+          select: { id: true, firstName: true, lastName: true },
+        });
+        if (spouse && !spouse.firstName && !spouse.lastName) {
+          await client.person.update({
+            where: { id: spouse.id },
+            data: { fullName: data.spouseFullName.slice(0, 200) },
+          });
+        }
+      }
+      await client.marriage.update({
+        where: { id: existing.id },
+        data: {
+          isCivil,
+          isChristian,
+          isCatholic,
+          tribunalOpinion,
+          registeredWith: isChristian
+            ? 'CHURCH'
+            : isCivil
+              ? 'NOTARY'
+              : null,
+        },
+      });
+      return;
+    }
+
+    if (
+      !data.spouseFullName &&
+      !isCivil &&
+      !isChristian &&
+      !isCatholic &&
+      !tribunalOpinion
+    ) {
+      return;
+    }
+
+    const spouse = await client.person.create({
+      data: {
+        denominationId,
+        fullName: (data.spouseFullName ?? 'Cónyuge').slice(0, 200),
+      },
+      select: { id: true },
+    });
+    const spouse1Id = Math.min(personId, spouse.id);
+    const spouse2Id = Math.max(personId, spouse.id);
+    await client.marriage.create({
+      data: {
+        denominationId,
+        spouse1Id,
+        spouse2Id,
+        isCivil,
+        isChristian,
+        isCatholic,
+        tribunalOpinion,
+        registeredWith: isChristian ? 'CHURCH' : isCivil ? 'NOTARY' : null,
+      },
+    });
   }
 
   /** The form edits one phone and one e-mail: the primary contact of that kind. */

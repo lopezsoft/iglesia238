@@ -16,6 +16,7 @@ import type {
   PersonSearchRow,
   PersonStudyView,
   PrivacyPolicyRef,
+  RelativePersonInput,
   SocioeconomicProfileData,
   SocioeconomicProfileView,
   StudyStatus,
@@ -44,6 +45,23 @@ export interface FamilyRepository {
     type: FamilyRelationType,
     transaction: Transaction,
   ): Promise<number>;
+  updateType?(
+    scope: TenantScope,
+    relationId: number,
+    type: FamilyRelationType,
+    transaction: Transaction,
+  ): Promise<void>;
+  createRelativePerson?(
+    scope: TenantScope,
+    input: RelativePersonInput,
+    transaction: Transaction,
+  ): Promise<number>;
+  updateRelativePerson?(
+    scope: TenantScope,
+    relativeId: number,
+    input: RelativePersonInput,
+    transaction: Transaction,
+  ): Promise<void>;
   remove(
     scope: TenantScope,
     relationId: number,
@@ -68,6 +86,13 @@ export interface StudyRepository {
     record: NewStudyRecord,
     transaction: Transaction,
   ): Promise<number | null>;
+  update?(
+    scope: TenantScope,
+    personId: number,
+    personStudyId: number,
+    record: NewStudyRecord,
+    transaction: Transaction,
+  ): Promise<boolean | 'DUPLICATE'>;
   remove(
     scope: TenantScope,
     personId: number,

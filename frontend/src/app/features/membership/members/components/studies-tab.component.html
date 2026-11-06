@@ -89,14 +89,25 @@
                     </button>
                   </span>
                 } @else {
-                  <button
-                    type="button"
-                    class="btn btn--danger-ghost btn--sm"
-                    [attr.aria-label]="'Eliminar estudio ' + row.name"
-                    (click)="confirmingId.set(row.id)"
-                  >
-                    Eliminar
-                  </button>
+                  <span class="cluster">
+                    <button
+                      type="button"
+                      class="btn btn--secondary btn--sm"
+                      [attr.aria-label]="'Editar estudio ' + row.name"
+                      (click)="openEdit(row)"
+                    >
+                      <app-icon name="edit" [size]="14" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn--danger-ghost btn--sm"
+                      [attr.aria-label]="'Eliminar estudio ' + row.name"
+                      (click)="confirmingId.set(row.id)"
+                    >
+                      Eliminar
+                    </button>
+                  </span>
                 }
               </td>
             }
@@ -107,7 +118,7 @@
   </div>
 }
 
-<app-dialog [(open)]="addOpen" title="Agregar estudio">
+<app-dialog [(open)]="addOpen" [title]="editingStudyId() !== null ? 'Editar estudio' : 'Agregar estudio'">
   <form id="study-add-form" class="stack" [formGroup]="form" (ngSubmit)="add()" novalidate>
     @if (command.error(); as text) {
       <p class="alert alert--danger" role="alert">{{ text }}</p>
@@ -172,7 +183,13 @@
       class="btn btn--primary"
       [disabled]="command.pending()"
     >
-      {{ command.pending() ? 'Guardando…' : 'Agregar' }}
+      {{
+        command.pending()
+          ? 'Guardando…'
+          : editingStudyId() !== null
+            ? 'Guardar cambios'
+            : 'Agregar'
+      }}
     </button>
   </div>
 </app-dialog>

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, finalize, of, shareReplay, tap, throwError } from 'rxjs';
-import { Country, Municipality, Region } from '../models/catalogs';
+import { Observable, catchError, finalize, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
+import { Country, Municipality, Region, defaultCountryId } from '../models/catalogs';
 import { Catalogs, CatalogsRepository } from './catalogs.repository';
 
 const UNKNOWN_LABEL = '—';
@@ -15,6 +15,7 @@ export class CatalogsStore {
   private readonly repository = inject(CatalogsRepository);
   private readonly loaded = signal<Catalogs | null>(null);
   private readonly municipalities = signal<ReadonlyMap<string, Municipality>>(new Map());
+  private readonly defaultRegionsSignal = signal<readonly Region[]>([]);
   private inFlight: Observable<Catalogs> | null = null;
   private countriesRequest: Observable<readonly Country[]> | null = null;
   private readonly regionsByCountry = new Map<number, Observable<readonly Region[]>>();
@@ -26,6 +27,7 @@ export class CatalogsStore {
   readonly studyTypes = computed(() => this.loaded()?.studyTypes ?? []);
   readonly meetingTypes = computed(() => this.loaded()?.meetingTypes ?? []);
   readonly attendanceCategories = computed(() => this.loaded()?.attendanceCategories ?? []);
+  readonly defaultRegions = this.defaultRegionsSignal.asReadonly();
 
   /** Loads the catalogs the first time and reuses them afterwards; concurrent calls share one request. */
   load(): Observable<Catalogs> {
@@ -43,6 +45,9 @@ export class CatalogsStore {
 
   /** Countries of the geography, asked once per session; a failed request is retried on the next call. */
   loadCountries(): Observable<readonly Country[]> {
+    if (typeof this.repository.countries !== 'function') {
+      return of([]);
+    }
     this.countriesRequest ??= this.repository.countries().pipe(
       catchError((error: unknown) => {
         this.countriesRequest = null;
@@ -72,16 +77,33 @@ export class CatalogsStore {
     return request;
   }
 
+  /** Loads the regions (departamentos) of the default country (Colombia, or first active country). */
+  loadDefaultRegions(): Observable<readonly Region[]> {
+    const existing = this.defaultRegionsSignal();
+    if (existing.length > 0) {
+      return of(existing);
+    }
+    return this.loadCountries().pipe(
+      switchMap((countries) => {
+        const countryId = defaultCountryId(countries) ?? countries[0]?.id ?? 0;
+        return countryId > 0 ? this.loadRegions(countryId) : of([]);
+      }),
+      tap((regions) => this.defaultRegionsSignal.set(regions)),
+    );
+  }
+
   /** Asks the API again on the next `loadCountries()` (a country was activated or deactivated). */
   forgetCountries(): void {
     this.countriesRequest = null;
     this.regionsByCountry.clear();
+    this.defaultRegionsSignal.set([]);
   }
 
   /** Forgets everything (a new session may see different data). */
   reset(): void {
     this.loaded.set(null);
     this.municipalities.set(new Map());
+    this.defaultRegionsSignal.set([]);
     this.inFlight = null;
     this.countriesRequest = null;
     this.regionsByCountry.clear();

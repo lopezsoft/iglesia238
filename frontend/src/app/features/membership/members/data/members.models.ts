@@ -118,6 +118,11 @@ export interface PersonUpdate {
   readonly occupation: string | null;
   readonly workplace?: string | null;
   readonly childrenCount?: number | null;
+  readonly spouseFullName?: string | null;
+  readonly marriageIsCivil?: boolean;
+  readonly marriageIsChristian?: boolean;
+  readonly marriageIsCatholic?: boolean;
+  readonly tribunalOpinion?: string | null;
   readonly phone: string | null;
   readonly landlinePhone?: string | null;
   readonly workPhone?: string | null;
@@ -137,6 +142,11 @@ export interface FamilyRelationView {
   readonly type: FamilyRelationType;
   readonly relativeId: number;
   readonly fullName: string;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
   readonly documentTypeCode: string | null;
   /** "CC ···· 4817": the API never sends the full number of a relative. */
   readonly maskedDocument: string | null;
@@ -159,8 +169,22 @@ export interface PersonOption {
 }
 
 export interface FamilyRelationInput {
-  readonly relativeId: number;
+  readonly relativeId?: number | null;
   readonly type: FamilyRelationType;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
+}
+
+export interface UpdateFamilyRelationInput {
+  readonly type?: FamilyRelationType;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly secondLastName?: string | null;
+  readonly sex?: Sex | null;
+  readonly birthDate?: string | null;
 }
 
 // ---------- Studies ----------

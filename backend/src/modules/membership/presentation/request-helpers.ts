@@ -60,6 +60,21 @@ export function toPersonData(dto: PersonDataDto): PersonData {
     ...(dto.neighborhood !== undefined
       ? { neighborhood: dto.neighborhood }
       : {}),
+    ...(dto.spouseFullName !== undefined
+      ? { spouseFullName: dto.spouseFullName }
+      : {}),
+    ...(dto.marriageIsCivil !== undefined
+      ? { marriageIsCivil: dto.marriageIsCivil }
+      : {}),
+    ...(dto.marriageIsChristian !== undefined
+      ? { marriageIsChristian: dto.marriageIsChristian }
+      : {}),
+    ...(dto.marriageIsCatholic !== undefined
+      ? { marriageIsCatholic: dto.marriageIsCatholic }
+      : {}),
+    ...(dto.tribunalOpinion !== undefined
+      ? { tribunalOpinion: dto.tribunalOpinion }
+      : {}),
   };
 }
 

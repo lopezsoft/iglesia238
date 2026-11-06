@@ -143,9 +143,11 @@ export class FakeMembersRepository extends MembersRepository {
   override family = () => of([]);
   override searchRelatives = () => of([]);
   override addFamilyRelation = () => of(undefined);
+  override updateFamilyRelation = () => of(undefined);
   override removeFamilyRelation = () => of(undefined);
   override studies = () => of([]);
   override addStudy = () => of(undefined);
+  override updateStudy = () => of(undefined);
   override removeStudy = () => of(undefined);
   override positions = () =>
     of({
@@ -194,10 +196,13 @@ export function authStub(options: AuthStubOptions = {}) {
 export function catalogsStub() {
   return {
     load: () => of({}),
+    loadDefaultRegions: () => of([{ code: '05', name: 'Antioquia' }]),
+    defaultRegions: () => [{ code: '05', name: 'Antioquia' }],
     documentTypes: () => [{ code: 'CC', name: 'Cédula de ciudadanía' }],
     maritalStatuses: () => [{ code: 'SINGLE', name: 'Soltero(a)' }],
     educationLevels: () => [{ code: 'PRIMARY', name: 'Primaria' }],
     studyTypes: () => [],
+    municipality: () => undefined,
     municipalityLabel: () => '—',
     resolveMunicipality: () =>
       of({ code: '05001', name: 'Medellín', regionCode: '05', regionName: 'Antioquia' }),
@@ -218,6 +223,8 @@ export function polyfillDialog(): void {
 /** CatalogsRepository stand-in for the municipality search that the person form embeds. */
 export function catalogsRepositoryStub() {
   return {
+    countries: () => of([{ id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true }]),
+    regions: () => of([{ countryId: 1, code: '05', name: 'Antioquia' }]),
     searchMunicipalities: () => of([]),
     municipality: () =>
       of({ code: '05001', name: 'Medellín', regionCode: '05', regionName: 'Antioquia' }),

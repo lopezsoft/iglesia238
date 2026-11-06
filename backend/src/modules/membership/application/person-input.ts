@@ -65,6 +65,21 @@ export function normalizePersonData(input: PersonData): PersonData {
     ...(input.neighborhood !== undefined
       ? { neighborhood: emptyToNull(input.neighborhood) }
       : {}),
+    ...(input.spouseFullName !== undefined
+      ? { spouseFullName: emptyToNull(input.spouseFullName) }
+      : {}),
+    ...(input.marriageIsCivil !== undefined
+      ? { marriageIsCivil: input.marriageIsCivil }
+      : {}),
+    ...(input.marriageIsChristian !== undefined
+      ? { marriageIsChristian: input.marriageIsChristian }
+      : {}),
+    ...(input.marriageIsCatholic !== undefined
+      ? { marriageIsCatholic: input.marriageIsCatholic }
+      : {}),
+    ...(input.tribunalOpinion !== undefined
+      ? { tribunalOpinion: emptyToNull(input.tribunalOpinion) }
+      : {}),
   };
 }
 
@@ -143,6 +158,21 @@ export async function resolvePersonData(
     ...(data.workPhone !== undefined ? { workPhone: data.workPhone } : {}),
     ...(data.neighborhood !== undefined
       ? { neighborhood: data.neighborhood }
+      : {}),
+    ...(data.spouseFullName !== undefined
+      ? { spouseFullName: data.spouseFullName }
+      : {}),
+    ...(data.marriageIsCivil !== undefined
+      ? { marriageIsCivil: data.marriageIsCivil }
+      : {}),
+    ...(data.marriageIsChristian !== undefined
+      ? { marriageIsChristian: data.marriageIsChristian }
+      : {}),
+    ...(data.marriageIsCatholic !== undefined
+      ? { marriageIsCatholic: data.marriageIsCatholic }
+      : {}),
+    ...(data.tribunalOpinion !== undefined
+      ? { tribunalOpinion: data.tribunalOpinion }
       : {}),
     ...ids,
   };

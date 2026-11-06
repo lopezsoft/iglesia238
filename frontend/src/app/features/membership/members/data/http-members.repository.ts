@@ -26,6 +26,7 @@ import {
   StatusChangeInput,
   TransferInput,
   TransferResult,
+  UpdateFamilyRelationInput,
 } from './members.models';
 import { MembersRepository } from './members.repository';
 
@@ -106,6 +107,14 @@ export class HttpMembersRepository extends MembersRepository {
     return this.http.post<void>(apiUrl(`${BASE}/${memberId}/family`), input);
   }
 
+  override updateFamilyRelation(
+    memberId: number,
+    relationId: number,
+    input: UpdateFamilyRelationInput,
+  ): Observable<void> {
+    return this.http.patch<void>(apiUrl(`${BASE}/${memberId}/family/${relationId}`), input);
+  }
+
   override removeFamilyRelation(memberId: number, relationId: number): Observable<void> {
     return this.http.delete<void>(apiUrl(`${BASE}/${memberId}/family/${relationId}`));
   }
@@ -116,6 +125,14 @@ export class HttpMembersRepository extends MembersRepository {
 
   override addStudy(memberId: number, input: PersonStudyInput): Observable<void> {
     return this.http.post<void>(apiUrl(`${BASE}/${memberId}/studies`), input);
+  }
+
+  override updateStudy(
+    memberId: number,
+    studyId: number,
+    input: PersonStudyInput,
+  ): Observable<void> {
+    return this.http.patch<void>(apiUrl(`${BASE}/${memberId}/studies/${studyId}`), input);
   }
 
   override removeStudy(memberId: number, studyId: number): Observable<void> {
