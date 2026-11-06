@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.9.2 - 2026-11-06
+
+### Fixed
+
+- Despliegue en producción (`docker-compose.prod.yml`, `.env.example` y `backend/.env.example`): el servicio `backend` ahora recibe `JWT_SECRET`, `JWT_EXPIRATION`, `REFRESH_TTL`, `REFRESH_MAX_LIFETIME`, `APP_BASE_URL`, `DEFAULT_COUNTRY_ISO`, `TRUST_PROXY=1` (detrás del Nginx del contenedor `frontend`) y las variables `SMTP_*`.
+
 ## 0.9.1 - 2026-11-06
 
 ### Security
