@@ -8,6 +8,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.10.0 - 2026-11-06
+
+### Added
+
+- Imagen de Docker unificada para despliegue en **Dokploy** (`matiasimpulso.com`):
+  - `Dockerfile` multi-stage en la raíz que compila el Frontend (Angular 22) y el Backend (NestJS 12 + Prisma 7) y los ejecuta en un único contenedor (`nginx` en `:80` + `node dist/main.js` en `127.0.0.1:3000`).
+  - `docker/entrypoint.prod.sh`: aplica automáticamente migraciones (`npx prisma migrate deploy`), sincroniza catálogos globales (`npx prisma db seed`), crea opcionalmente el primer administrador de plataforma si se definen `PLATFORM_ADMIN_EMAIL` y `PLATFORM_ADMIN_PASSWORD`, y supervisa los procesos de Nginx y NestJS.
+  - `docker/nginx/dokploy.conf` y `frontend/nginx.conf`: restauración de la IP real del visitante (`set_real_ip_from` / `real_ip_header X-Forwarded-For`) detrás del proxy Traefik de Dokploy y reenvío de `X-Forwarded-Proto`.
+
 ## 0.9.2 - 2026-11-06
 
 ### Fixed
