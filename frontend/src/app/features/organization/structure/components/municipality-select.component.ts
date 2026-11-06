@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -31,8 +33,9 @@ let nextId = 0;
 
 /**
  * Searchable municipality field backed by the API catalog: type a few letters and pick one result. The
- * form keeps the code; the parent keeps the label to show it when the field is set. With `countryId` the
- * search only covers that country, and a country without municipalities shows a note instead of the search.
+ * form keeps the code; the parent keeps the label to show it when the field is set. With `countryId` and
+ * `regionCode` the search only covers that country/region, and a country without municipalities shows a
+ * note instead of the search.
  */
 @Component({
   selector: 'app-municipality-select',
@@ -194,6 +197,8 @@ export class MunicipalitySelectComponent {
   readonly invalid = input(false);
   /** Country the search is limited to; `null` searches every country. */
   readonly countryId = input<number | null>(null);
+  /** Region (departamento/estado) the search is limited to; `null` or `''` searches every region. */
+  readonly regionCode = input<string | null>(null);
   /**
    * Whether the country has municipalities, when the parent already knows it (from GET /geo/countries).
    * `null`: the component asks the API with a one-result search of the country.
@@ -202,11 +207,14 @@ export class MunicipalitySelectComponent {
   /** Shown instead of the search while a prerequisite is missing, e.g. "Elige primero el país." */
   readonly blockedText = input<string | null>(null);
   readonly picked = output<MunicipalityPicked>();
+  /** Full municipality row chosen by the user, including its `regionCode` and `regionName`. */
+  readonly municipalityPicked = output<Municipality>();
   readonly cleared = output<void>();
   /** False once it is known that the country has no municipality to pick. */
   readonly availabilityChange = output<boolean>();
 
   private readonly catalogs = inject(CatalogsRepository);
+  private readonly injector = inject(Injector);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   private readonly instance = nextId++;
@@ -215,6 +223,12 @@ export class MunicipalitySelectComponent {
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly activeIndex = signal(0);
+
+  /** Normalized region code when a department/state is selected; `null` otherwise. */
+  private readonly normalizedRegionCode = computed(() => {
+    const value = this.regionCode()?.trim();
+    return value ? value : null;
+  });
 
   /** One-result search that tells whether the country has municipalities at all. */
   private readonly probe = rxResource({
@@ -235,19 +249,37 @@ export class MunicipalitySelectComponent {
     () => this.blockedText() ?? (this.hasMunicipalities() ? null : NO_MUNICIPALITIES_MESSAGE),
   );
 
+  /**
+   * When a department/state (`regionCode`) is selected and the combobox is open, list its municipalities
+   * immediately (even before typing 2 letters) and filter as the user types. Without a region, wait for
+   * at least 2 letters (`MIN_SEARCH_LENGTH`).
+   */
+  private readonly canSearch = computed(() => {
+    const text = this.query().trim();
+    if (text.length >= MIN_SEARCH_LENGTH) {
+      return true;
+    }
+    return this.normalizedRegionCode() !== null && this.open();
+  });
+
   protected readonly results = rxResource({
     params: () =>
-      this.query().trim().length >= MIN_SEARCH_LENGTH
-        ? { text: this.query().trim(), countryId: this.countryId() }
+      this.canSearch()
+        ? {
+            text: this.query().trim(),
+            countryId: this.countryId(),
+            regionCode: this.normalizedRegionCode(),
+          }
         : undefined,
     // A new query unsubscribes the previous one, so the timer debounces the typing.
     stream: ({ params }) =>
-      timer(DEBOUNCE_MS).pipe(
+      timer(params.text.length === 0 ? 0 : DEBOUNCE_MS).pipe(
         switchMap(() =>
           this.catalogs.searchMunicipalities({
             search: params.text,
             limit: RESULT_LIMIT,
             ...(params.countryId === null ? {} : { countryId: params.countryId }),
+            ...(params.regionCode === null ? {} : { regionCode: params.regionCode }),
           }),
         ),
       ),
@@ -263,11 +295,19 @@ export class MunicipalitySelectComponent {
   protected readonly options = computed<readonly Municipality[]>(() =>
     this.results.hasValue() ? this.results.value() : [],
   );
-  protected readonly showList = computed(() => this.open() && this.query().trim().length >= MIN_SEARCH_LENGTH);
+  protected readonly showList = computed(() => this.open() && this.canSearch());
   protected readonly errorMessage = computed(() => userMessage(this.results.error()));
   protected readonly activeId = computed(() =>
     this.showList() && this.options().length > 0 ? this.optionId(this.activeIndex()) : null,
   );
+
+  /** Moves focus to the search input once it is rendered in the DOM. */
+  focusInput(): void {
+    const apply = () => this.searchInput()?.nativeElement.focus();
+    apply();
+    queueMicrotask(apply);
+    afterNextRender(apply, { injector: this.injector });
+  }
 
   protected optionId(index: number): string {
     return `${this.listId}-${index}`;
@@ -304,6 +344,7 @@ export class MunicipalitySelectComponent {
     // Enter must not submit the form and mousedown must not blur the input before the click lands.
     event.preventDefault();
     this.picked.emit({ code: option.code, label: `${option.name} (${option.regionName})` });
+    this.municipalityPicked.emit(option);
     this.query.set('');
     this.open.set(false);
   }
@@ -311,6 +352,6 @@ export class MunicipalitySelectComponent {
   protected clear(): void {
     this.cleared.emit();
     this.query.set('');
-    queueMicrotask(() => this.searchInput()?.nativeElement.focus());
+    this.focusInput();
   }
 }

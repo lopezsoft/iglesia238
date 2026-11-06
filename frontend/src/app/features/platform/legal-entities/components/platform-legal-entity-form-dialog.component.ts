@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   inject,
@@ -10,10 +11,12 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { userMessage } from '../../../../core/errors/domain-error';
+import { Municipality } from '../../../../core/models/catalogs';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { TAX_ID_PATTERN } from '../../../organization/structure/data/organization.models';
@@ -40,6 +43,7 @@ type Field =
   | 'taxId'
   | 'legalRepresentative'
   | 'countryId'
+  | 'regionCode'
   | 'municipalityCode'
   | 'email';
 
@@ -58,6 +62,8 @@ export interface PlatformLegalEntitySaved {
 export class PlatformLegalEntityFormDialogComponent {
   private readonly repository = inject(PlatformLegalEntitiesRepository);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly legalNameInput = viewChild<ElementRef<HTMLInputElement>>('legalNameInput');
+  private readonly municipalitySelect = viewChild<MunicipalitySelectComponent>('municipalitySelect');
 
   readonly open = model(false);
   readonly legalEntity = input<PlatformLegalEntityRow | null>(null);
@@ -87,6 +93,7 @@ export class PlatformLegalEntityFormDialogComponent {
     ],
     legalRepresentative: ['', [Validators.required, Validators.maxLength(LEGAL_ENTITY_LIMITS.legalName)]],
     countryId: [0, [Validators.required, Validators.min(1)]],
+    regionCode: [''],
     municipalityCode: ['', Validators.required],
     email: ['', [Validators.email, Validators.maxLength(LEGAL_ENTITY_LIMITS.email)]],
     phone: ['', Validators.maxLength(LEGAL_ENTITY_LIMITS.phone)],
@@ -96,6 +103,7 @@ export class PlatformLegalEntityFormDialogComponent {
   protected readonly country = new LegalEntityCountryField(
     this.form.controls.countryId,
     this.form.controls.municipalityCode,
+    this.form.controls.regionCode,
   );
 
   constructor() {
@@ -108,10 +116,26 @@ export class PlatformLegalEntityFormDialogComponent {
     });
   }
 
-  /** A municipality of the previous country cannot stay: the person picks one of the new country. */
+  /** Moving past the church selector focuses the legal name input right away. */
+  protected onDenominationChanged(): void {
+    if (this.form.controls.denominationId.value > 0) {
+      this.legalNameInput()?.nativeElement.focus();
+    }
+  }
+
+  /** A municipality or region of the previous country cannot stay: the person picks one of the new country. */
   protected onCountryChanged(): void {
     this.countryError.set(null);
+    this.form.controls.regionCode.setValue('');
     this.onMunicipalityCleared();
+  }
+
+  /** Changing the department/state clears any municipality from another department and focuses the city input. */
+  protected onRegionChanged(): void {
+    this.onMunicipalityCleared();
+    if (this.form.controls.regionCode.value) {
+      this.municipalitySelect()?.focusInput();
+    }
   }
 
   protected onMunicipalityPicked(picked: MunicipalityPicked): void {
@@ -121,9 +145,24 @@ export class PlatformLegalEntityFormDialogComponent {
     this.municipalityError.set(null);
   }
 
+  protected onMunicipalityEntityPicked(municipality: Municipality): void {
+    if (municipality.regionCode) {
+      this.form.controls.regionCode.setValue(municipality.regionCode);
+    }
+  }
+
   protected onMunicipalityCleared(): void {
     this.form.controls.municipalityCode.setValue('');
     this.municipalityText.set('');
+  }
+
+  protected showRegionError(): boolean {
+    return (
+      this.country.hasMunicipalities() !== false &&
+      this.form.controls.regionCode.touched &&
+      !this.form.controls.regionCode.value &&
+      !this.form.controls.municipalityCode.value
+    );
   }
 
   protected showError(control: Field, error: string): boolean {
@@ -178,14 +217,17 @@ export class PlatformLegalEntityFormDialogComponent {
   }
 
   private reset(current: PlatformLegalEntityRow | null, preselected: number | null): void {
+    const singleOptionId = this.options().length === 1 ? this.options()[0].id : 0;
+    const initialDenominationId = current?.denominationId ?? preselected ?? singleOptionId;
     this.form.reset({
-      denominationId: current?.denominationId ?? preselected ?? 0,
+      denominationId: initialDenominationId,
       legalName: current?.legalName ?? '',
       tradeName: current?.tradeName ?? '',
       taxId: current?.taxId ?? '',
       legalRepresentative: current?.legalRepresentative ?? '',
       // 0 lets the country field preselect the default country.
       countryId: current?.countryId ?? 0,
+      regionCode: current?.regionCode ?? '',
       municipalityCode: current?.municipalityCode ?? '',
       email: current?.email ?? '',
       phone: current?.phone ?? '',
@@ -199,6 +241,9 @@ export class PlatformLegalEntityFormDialogComponent {
     this.municipalityText.set(current ? municipalityLabel(current) : '');
     this.country.keepCurrent(current);
     this.clearApiErrors();
+    if (initialDenominationId > 0) {
+      queueMicrotask(() => this.legalNameInput()?.nativeElement.focus());
+    }
   }
 
   private clearApiErrors(): void {

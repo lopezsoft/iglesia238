@@ -80,15 +80,18 @@ describe('ShellComponent', () => {
     const links = Array.from(element.querySelectorAll<HTMLAnchorElement>('.rail__link'));
     const shortLabels = links.map((link) => link.querySelector('.rail__label')?.textContent?.trim());
     expect(shortLabels).toEqual(['Inicio', 'Sedes', 'Política', 'Usuarios', 'Miembros']);
-    expect(links.find((link) => link.getAttribute('title') === 'Sedes y razones sociales')).toBeDefined();
+    expect(links.every((link) => link.getAttribute('title') === null)).toBe(true);
+    expect(links.find((link) => link.getAttribute('data-tooltip') === 'Sedes y razones sociales')).toBeDefined();
   });
 
-  it('has no demo banner and shows the app version in the footer', async () => {
+  it('has no demo banner and shows the copyright and app version in the footer', async () => {
     const { element } = await render();
 
     expect(element.querySelector('.demo-banner')).toBeNull();
     expect(element.textContent).not.toContain('Modo demostración');
-    expect(element.querySelector('app-footer')?.textContent).toContain(`Versión ${environment.appVersion}`);
+    const footer = element.querySelector('app-footer');
+    expect(footer?.textContent).toContain('lopezsoft.net.co');
+    expect(footer?.textContent).toContain(`Versión ${environment.appVersion}`);
   });
 
   it('offers only the quick actions the active scope allows', async () => {
@@ -149,7 +152,8 @@ describe('ShellComponent', () => {
 
       const links = Array.from(element.querySelectorAll<HTMLAnchorElement>('.rail__link'));
       expect(links.map((link) => link.getAttribute('href'))).toEqual(['/confirm-email']);
-      expect(links[0].getAttribute('title')).toBe('Confirma tu correo');
+      expect(links[0].getAttribute('title')).toBeNull();
+      expect(links[0].getAttribute('data-tooltip')).toBe('Confirma tu correo');
       expect(element.querySelector('a[href="/users"]')).toBeNull();
       expect(element.querySelector('.rail__brand')?.getAttribute('href')).toBe('/confirm-email');
     });

@@ -25,7 +25,7 @@ Cómo se comunica con la API:
 
 ```bash
 npm install
-npm start                 # http://localhost:4200, con proxy de /api hacia http://localhost:3000
+npm start                 # http://localhost:4700 (se abre automáticamente), con proxy de /api hacia http://localhost:3000
 npm test                  # pruebas unitarias (ng test, Vitest)
 npm run build             # build de producción en dist/frontend/browser
 ```

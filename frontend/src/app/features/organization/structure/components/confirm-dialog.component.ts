@@ -6,6 +6,7 @@ import { DialogComponent } from '../../../../shared/ui/dialog.component';
   selector: 'app-confirm-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DialogComponent],
+  host: { '[attr.title]': 'null' },
   template: `
     <app-dialog [(open)]="open" [title]="title()">
       <div class="stack">

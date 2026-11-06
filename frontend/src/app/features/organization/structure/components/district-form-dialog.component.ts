@@ -41,41 +41,43 @@ export interface DistrictSaved {
           </div>
         }
 
-        <div class="field">
-          <label for="district-number">Número *</label>
-          <input
-            id="district-number"
-            class="input mono"
-            type="text"
-            formControlName="number"
-            autocomplete="off"
-            placeholder="Ej.: 3"
-            [attr.maxlength]="limits.districtNumber"
-            aria-describedby="district-number-hint district-number-error"
-          />
-          <span id="district-number-hint" class="field__hint"
-            >Único dentro de la denominación.</span
-          >
-          <span id="district-number-error" class="field__error" aria-live="polite">
-            @if (numberError(); as message) {
-              {{ message }}
-            } @else if (form.controls.number.touched && form.controls.number.hasError('required')) {
-              El número es obligatorio.
-            }
-          </span>
-        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="district-number">Número *</label>
+            <input
+              id="district-number"
+              class="input mono"
+              type="text"
+              formControlName="number"
+              autocomplete="off"
+              placeholder="Ej.: 3"
+              [attr.maxlength]="limits.districtNumber"
+              aria-describedby="district-number-hint district-number-error"
+            />
+            <span id="district-number-hint" class="field__hint"
+              >Único dentro de la denominación.</span
+            >
+            <span id="district-number-error" class="field__error" aria-live="polite">
+              @if (numberError(); as message) {
+                {{ message }}
+              } @else if (form.controls.number.touched && form.controls.number.hasError('required')) {
+                El número es obligatorio.
+              }
+            </span>
+          </div>
 
-        <div class="field">
-          <label for="district-name">Nombre</label>
-          <input
-            id="district-name"
-            class="input"
-            type="text"
-            formControlName="name"
-            autocomplete="off"
-            placeholder="Ej.: Distrito Sabana"
-            [attr.maxlength]="limits.districtName"
-          />
+          <div class="field">
+            <label for="district-name">Nombre</label>
+            <input
+              id="district-name"
+              class="input"
+              type="text"
+              formControlName="name"
+              autocomplete="off"
+              placeholder="Ej.: Distrito Sabana"
+              [attr.maxlength]="limits.districtName"
+            />
+          </div>
         </div>
       </form>
 

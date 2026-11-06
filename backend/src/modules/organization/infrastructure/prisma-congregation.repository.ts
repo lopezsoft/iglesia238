@@ -15,7 +15,11 @@ const WITH_RELATIONS = {
   legalEntity: { select: { legalName: true } },
   district: { select: { number: true } },
   municipality: {
-    select: { code: true, name: true, region: { select: { name: true } } },
+    select: {
+      code: true,
+      name: true,
+      region: { select: { code: true, name: true } },
+    },
   },
   neighborhood: { select: { name: true } },
 } satisfies Prisma.CongregationInclude;
@@ -36,6 +40,7 @@ function toRecord(row: CongregationRow): CongregationRecord {
     name: row.name,
     municipalityCode: row.municipality.code,
     municipalityName: row.municipality.name,
+    regionCode: row.municipality.region.code,
     regionName: row.municipality.region.name,
     neighborhood: row.neighborhood?.name ?? null,
     address: row.address,

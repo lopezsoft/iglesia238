@@ -1,8 +1,10 @@
 @use 'tokens' as *;
+@use 'mixins' as *;
 
 .dialog {
-  width: min(36rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 2rem);
+  width: calc(100vw - 1.5rem);
+  max-width: $dialog-max-width;
+  max-height: calc(100dvh - 1.5rem);
   padding: 0;
   border: 1px solid $color-border;
   border-radius: $radius-panel;
@@ -10,19 +12,29 @@
   color: $color-ink;
   box-shadow: $shadow-overlay;
 
+  @include from($breakpoint-sm) {
+    width: min($dialog-max-width, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2.5rem);
+  }
+
   &::backdrop {
     background: $color-backdrop;
   }
 
   &--wide {
-    width: min(56rem, calc(100vw - 2rem));
+    max-width: $dialog-wide-max-width;
+
+    @include from($breakpoint-sm) {
+      width: min($dialog-wide-max-width, calc(100vw - 2rem));
+    }
   }
 
   &--drawer {
     margin: 0 0 0 auto;
     width: min(32rem, 100vw);
-    height: 100vh;
-    max-height: 100vh;
+    max-width: 32rem;
+    height: 100dvh;
+    max-height: 100dvh;
     border-radius: 0;
     border-width: 0 0 0 1px;
   }
@@ -42,12 +54,20 @@
     padding: $space-3 $space-4;
     border-bottom: 1px solid $color-border;
     background: $color-surface-tint;
+
+    @include from($breakpoint-sm) {
+      padding: $space-3 $space-5;
+    }
   }
 
   &__body {
     flex: 1;
     overflow-y: auto;
     padding: $space-4;
+
+    @include from($breakpoint-sm) {
+      padding: $space-4 $space-5;
+    }
   }
 
   &__footer {
@@ -55,9 +75,13 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: $space-3;
-    padding: $space-4 $space-5;
+    padding: $space-3 $space-4;
     border-top: 1px solid $color-border;
     background: $color-surface-tint;
+
+    @include from($breakpoint-sm) {
+      padding: $space-3 $space-5;
+    }
 
     &:empty {
       display: none;

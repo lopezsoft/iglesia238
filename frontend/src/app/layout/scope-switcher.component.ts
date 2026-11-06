@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { Router } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { Scope, scopeKey } from '../core/auth/session.model';
+import { CustomTooltipDirective } from '../shared/ui/custom-tooltip.directive';
 import { DropdownComponent } from '../shared/ui/dropdown.component';
 import { IconComponent, IconName } from '../shared/ui/icon.component';
 
@@ -19,7 +20,7 @@ const KIND_ICON: Readonly<Record<Scope['kind'], IconName>> = {
 @Component({
   selector: 'app-scope-switcher',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DropdownComponent, IconComponent],
+  imports: [CustomTooltipDirective, DropdownComponent, IconComponent],
   styleUrl: './scope-switcher.component.scss',
   template: `
     @if (options().length > 1) {
@@ -50,7 +51,7 @@ const KIND_ICON: Readonly<Record<Scope['kind'], IconName>> = {
         }
       </app-dropdown>
     } @else if (activeScope(); as scope) {
-      <span class="scope-pill" [attr.title]="'Actuando en ' + scope.label">
+      <span class="scope-pill" [appCustomTooltip]="'Actuando en ' + scope.label">
         <span class="scope-pill__content">
           <app-icon [name]="activeIcon()" [size]="16" />
           <span class="scope-pill__label">{{ scope.label }}</span>

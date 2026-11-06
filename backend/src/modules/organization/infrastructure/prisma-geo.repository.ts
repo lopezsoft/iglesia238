@@ -31,7 +31,7 @@ export class PrismaGeoRepository implements GeoRepository {
         id: true,
         code: true,
         name: true,
-        region: { select: { name: true, countryId: true } },
+        region: { select: { code: true, name: true, countryId: true } },
       },
     });
     return row
@@ -40,6 +40,7 @@ export class PrismaGeoRepository implements GeoRepository {
           countryId: row.region.countryId,
           code: row.code ?? code,
           name: row.name,
+          regionCode: row.region.code,
           regionName: row.region.name,
         }
       : null;

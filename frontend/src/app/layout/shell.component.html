@@ -2,7 +2,7 @@
 <a class="skip-link" href="#main-content" (click)="skipToContent($event)">Saltar al contenido</a>
 <div class="shell" [class.shell--menu-open]="menuOpen()">
   <nav #sidebar class="rail" aria-label="Navegación principal" id="main-navigation">
-    <a class="rail__brand" [routerLink]="locked() ? '/confirm-email' : '/dashboard'" title="Iglesia 238">
+    <a class="rail__brand" [routerLink]="locked() ? '/confirm-email' : '/dashboard'" appCustomTooltip="Iglesia 238" appTooltipPosition="right">
       <span class="rail__logo"><app-icon name="church" [size]="24" /></span>
       <span class="rail__brand-text">
         <span class="rail__product">Iglesia 238</span>
@@ -20,7 +20,8 @@
                 class="rail__link is-active"
                 routerLink="/confirm-email"
                 aria-current="page"
-                title="Confirma tu correo"
+                appCustomTooltip="Confirma tu correo"
+                appTooltipPosition="right"
               >
                 <span class="rail__icon"><app-icon name="mail" [size]="22" variant="line" /></span>
                 <span class="rail__label" aria-hidden="true">Correo</span>
@@ -43,7 +44,8 @@
                   [routerLink]="item.path"
                   routerLinkActive="is-active"
                   ariaCurrentWhenActive="page"
-                  [attr.title]="item.label"
+                  [appCustomTooltip]="item.label"
+                  appTooltipPosition="right"
                 >
                   <span class="rail__icon">
                     <app-icon [name]="item.icon" [size]="22" [variant]="link.isActive ? 'duotone' : 'line'" />

@@ -16,6 +16,7 @@ export interface CongregationView {
   readonly name: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly neighborhood: string | null;
   readonly address: string | null;
@@ -40,6 +41,7 @@ export interface LegalEntityView {
   readonly countryName: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly isActive: boolean;
   readonly createdAt: string;

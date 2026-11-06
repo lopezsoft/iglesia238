@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { CustomTooltipDirective } from './custom-tooltip.directive';
 
 /**
  * Button that opens a floating menu. Project the button content in `[dropdown-trigger]` and the
@@ -20,6 +21,7 @@ import {
 @Component({
   selector: 'app-dropdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CustomTooltipDirective],
   host: {
     '(document:keydown.escape)': 'closeAndFocus()',
     '(document:pointerdown)': 'closeOnOutsidePress($event)',
@@ -33,7 +35,7 @@ import {
       aria-haspopup="menu"
       [attr.aria-expanded]="open()"
       [attr.aria-label]="label()"
-      [attr.title]="tooltip()"
+      [appCustomTooltip]="tooltip()"
       (click)="toggle()"
       (keydown.arrowdown)="openFromKeyboard($event)"
     >

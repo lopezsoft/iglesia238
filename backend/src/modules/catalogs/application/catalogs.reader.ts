@@ -35,6 +35,13 @@ export interface CountryView {
   readonly hasMunicipalities: boolean;
 }
 
+export interface RegionView {
+  readonly countryId: number;
+  /** Official code of the region (in Colombia, the 2-digit DANE department code: 05). */
+  readonly code: string;
+  readonly name: string;
+}
+
 export interface MunicipalityView {
   readonly countryId: number;
   /** Official code, unique inside its region (in Colombia, the DIVIPOLA code: 05001). */
@@ -68,11 +75,14 @@ export interface CatalogsReader {
   listGlobalCatalogs(): Promise<GlobalCatalogs>;
   /** Ordered by name. Only the active ones unless `includeInactive`. */
   listCountries(includeInactive: boolean): Promise<CountryView[]>;
-  /** Municipalities of active countries only; `countryId` narrows them to one country. */
+  /** Regions (departamentos/estados) of an active country, ordered by name. */
+  listRegions(countryId: number): Promise<RegionView[]>;
+  /** Municipalities of active countries only; `countryId` and `regionCode` narrow them down. */
   searchMunicipalities(
     search: string | null,
     limit: number,
     countryId: number | null,
+    regionCode?: string | null,
   ): Promise<MunicipalityView[]>;
   findMunicipality(key: MunicipalityKey): Promise<MunicipalityView | null>;
   /** Null when the municipality does not exist. */

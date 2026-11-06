@@ -23,7 +23,11 @@ const PLATFORM_SELECT = {
   denomination: { select: { name: true } },
   country: { select: { name: true } },
   municipality: {
-    select: { code: true, name: true, region: { select: { name: true } } },
+    select: {
+      code: true,
+      name: true,
+      region: { select: { code: true, name: true } },
+    },
   },
   _count: { select: { congregations: { where: { deletedAt: null } } } },
 } satisfies Prisma.LegalEntitySelect;
@@ -48,6 +52,7 @@ function toRecord(row: PlatformRow): PlatformLegalEntityRecord {
     countryName: row.country.name,
     municipalityCode: row.municipality?.code ?? null,
     municipalityName: row.municipality?.name ?? null,
+    regionCode: row.municipality?.region.code ?? null,
     regionName: row.municipality?.region.name ?? null,
     isActive: row.isActive,
     createdAt: row.createdAt,

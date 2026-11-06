@@ -234,6 +234,7 @@ export class CongregationDto {
   @ApiProperty() name!: string;
   @ApiProperty({ nullable: true }) municipalityCode!: string | null;
   @ApiProperty({ nullable: true }) municipalityName!: string | null;
+  @ApiPropertyOptional({ nullable: true }) regionCode?: string | null;
   @ApiProperty({ nullable: true }) regionName!: string | null;
   @ApiProperty({ nullable: true }) neighborhood!: string | null;
   @ApiProperty({ nullable: true }) address!: string | null;
@@ -258,6 +259,7 @@ export class LegalEntityDto {
   @ApiProperty({ example: 'Colombia' }) countryName!: string;
   @ApiProperty({ nullable: true }) municipalityCode!: string | null;
   @ApiProperty({ nullable: true }) municipalityName!: string | null;
+  @ApiPropertyOptional({ nullable: true }) regionCode?: string | null;
   @ApiProperty({ nullable: true }) regionName!: string | null;
   @ApiProperty() isActive!: boolean;
   @ApiProperty() createdAt!: string;

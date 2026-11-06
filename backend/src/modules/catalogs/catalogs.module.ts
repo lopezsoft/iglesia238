@@ -10,6 +10,7 @@ import {
   GetMunicipalityUseCase,
   ListCountriesUseCase,
   ListNeighborhoodsUseCase,
+  ListRegionsUseCase,
   SearchMunicipalitiesUseCase,
 } from './application/catalogs.use-cases.js';
 import {
@@ -26,8 +27,8 @@ import {
 } from './presentation/catalogs.controllers.js';
 
 /**
- * Global catalogs and geography (countries, municipalities, neighborhoods), with the public subset for
- * the apply form, and the platform administration of the active countries.
+ * Global catalogs and geography (countries, regions, municipalities, neighborhoods), with the public
+ * subset for the apply form, and the platform administration of the active countries.
  */
 @Module({
   imports: [PrismaModule],
@@ -42,6 +43,7 @@ import {
     { provide: PLATFORM_COUNTRY_STORE, useClass: PrismaPlatformCountryStore },
     GetCatalogsUseCase,
     ListCountriesUseCase,
+    ListRegionsUseCase,
     ListPlatformCountriesUseCase,
     SetCountryActiveUseCase,
     SearchMunicipalitiesUseCase,

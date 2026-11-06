@@ -9,6 +9,7 @@ export interface PlatformLegalEntityRow extends LegalEntity {
   /** Sedes registered under this legal entity. */
   readonly congregationCount: number;
   readonly municipalityName?: string | null;
+  readonly regionCode?: string | null;
   readonly regionName?: string | null;
   readonly createdAt?: string;
 }

@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { CustomTooltipDirective } from '../../../../shared/ui/custom-tooltip.directive';
 import { EmptyStateComponent, PaginationComponent } from '../../../../shared/ui/feedback.components';
 import { IconComponent } from '../../../../shared/ui/icon.component';
 import { BadgeTone, StatusBadgeComponent } from '../../../../shared/ui/status-badge.component';
@@ -23,7 +24,16 @@ const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
 @Component({
   selector: 'app-contributions-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, EmptyStateComponent, IconComponent, MoneyPipe, PaginationComponent, RouterLink, StatusBadgeComponent],
+  imports: [
+    CustomTooltipDirective,
+    DatePipe,
+    EmptyStateComponent,
+    IconComponent,
+    MoneyPipe,
+    PaginationComponent,
+    RouterLink,
+    StatusBadgeComponent,
+  ],
   template: `
     <section class="card card--flush" aria-labelledby="table-title">
       <div class="card__header">
@@ -96,7 +106,7 @@ const STATUS_TONES: Readonly<Record<ContributionDisplayStatus, BadgeTone>> = {
                   }
                   @if (canWrite() && row.status === 'RECORDED') {
                     @if (row.voidBlock === 'CONSOLIDATED') {
-                      <button type="button" class="btn btn--ghost btn--sm" disabled title="Consolidado en el Libro de caja: reversa primero la consolidación" [attr.aria-label]="'Recibo ' + row.receiptNumber + ' consolidado en el Libro de caja: reversa primero la consolidación para anularlo'">
+                      <button type="button" class="btn btn--ghost btn--sm" disabled appCustomTooltip="Consolidado en el Libro de caja: reversa primero la consolidación" [attr.aria-label]="'Recibo ' + row.receiptNumber + ' consolidado en el Libro de caja: reversa primero la consolidación para anularlo'">
                         <app-icon name="lock" [size]="14" /> Anular
                       </button>
                     } @else {

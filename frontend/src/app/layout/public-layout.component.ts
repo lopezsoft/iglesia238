@@ -19,6 +19,9 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .public-header {
+      position: sticky;
+      top: 0;
+      z-index: 8;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -60,10 +63,32 @@ import { IconComponent } from '../shared/ui/icon.component';
     }
 
     .public-footer {
-      padding: $space-4 $space-5;
+      position: sticky;
+      bottom: 0;
+      z-index: 8;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: $space-1;
+      min-height: $footer-height;
+      padding: $space-2 $space-5;
+      background: $color-surface;
+      border-top: 1px solid $color-border;
       color: $color-ink-subtle;
       font-size: $font-size-2xs;
       text-align: center;
+    }
+
+    .public-footer__brand {
+      color: $color-ink;
+      font-weight: $font-weight-semibold;
+      text-decoration: none;
+
+      &:hover {
+        color: $color-primary;
+        text-decoration: underline;
+      }
     }
   `,
   template: `
@@ -81,7 +106,11 @@ import { IconComponent } from '../shared/ui/icon.component';
       <router-outlet />
     </main>
     <footer class="public-footer">
-      © {{ year }} Iglesia 238 · v{{ version }} · Tus datos se tratan conforme a la Ley 1581 de 2012.
+      © {{ year }}
+      <a class="public-footer__brand" href="https://lopezsoft.net.co" target="_blank" rel="noopener noreferrer"
+        >lopezsoft.net.co</a
+      >
+      · Todos los derechos reservados · v{{ version }} · Tus datos se tratan conforme a la Ley 1581 de 2012.
     </footer>
   `,
 })

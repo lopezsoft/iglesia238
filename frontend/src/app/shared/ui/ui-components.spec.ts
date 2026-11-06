@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideRouter } from '@angular/router';
+import { CustomTooltipDirective } from './custom-tooltip.directive';
 import { DropdownComponent } from './dropdown.component';
 import { ReadOnlyNoticeComponent } from './feedback.components';
 import { HeroCardComponent } from './hero-card.component';
@@ -255,5 +256,50 @@ describe('TextFieldComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelector('input').value).toBe('desde-el-formulario');
+  });
+});
+
+@Component({
+  imports: [CustomTooltipDirective],
+  template: `
+    <button type="button" [appCustomTooltip]="tooltipText()">Acción</button>
+  `,
+})
+class TooltipHost {
+  readonly tooltipText = signal<string | null>('Guardar cambios');
+}
+
+describe('CustomTooltipDirective', () => {
+  it('shows a floating tooltip on hover/focus without native title attribute and hides on leave/Escape', async () => {
+    const fixture = TestBed.createComponent(TooltipHost);
+    await fixture.whenStable();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button')!;
+
+    expect(button.hasAttribute('title')).toBe(false);
+    expect(button.getAttribute('data-tooltip')).toBe('Guardar cambios');
+    expect(document.body.querySelector('.app-custom-tooltip')).toBeNull();
+
+    button.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    await fixture.whenStable();
+
+    const tooltip = document.body.querySelector<HTMLElement>('.app-custom-tooltip');
+    expect(tooltip).not.toBeNull();
+    expect(tooltip?.getAttribute('role')).toBe('tooltip');
+    expect(tooltip?.textContent).toBe('Guardar cambios');
+    expect(button.getAttribute('aria-describedby')).toContain(tooltip!.id);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(document.body.querySelector('.app-custom-tooltip')).toBeNull();
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+
+    button.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await fixture.whenStable();
+    expect(document.body.querySelector('.app-custom-tooltip')?.textContent).toBe('Guardar cambios');
+
+    fixture.componentInstance.tooltipText.set(null);
+    await fixture.whenStable();
+    expect(document.body.querySelector('.app-custom-tooltip')).toBeNull();
+    expect(button.getAttribute('data-tooltip')).toBeNull();
   });
 });

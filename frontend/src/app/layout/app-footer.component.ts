@@ -1,24 +1,47 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { CustomTooltipDirective } from '../shared/ui/custom-tooltip.directive';
 import { IconComponent } from '../shared/ui/icon.component';
 
-/** Copyright line and version pill at the bottom of the authenticated layout. */
+/** Copyright line and version pill fixed/sticky at the bottom of the authenticated layout, mirroring `.topbar`. */
 @Component({
   selector: 'app-footer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent],
+  imports: [CustomTooltipDirective, IconComponent],
   styles: `
     @use 'tokens' as *;
+    @use 'mixins' as *;
 
     :host {
+      position: sticky;
+      bottom: 0;
+      z-index: 8;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: $space-2 $space-4;
-      padding: $space-4 $space-5;
+      min-height: $footer-height;
+      padding: $space-2 $space-4;
+      background: $color-surface;
+      border-top: 1px solid $color-border;
       color: $color-ink-subtle;
       font-size: $font-size-2xs;
+
+      @include from($breakpoint-md) {
+        padding: $space-2 $space-5;
+      }
+    }
+
+    .footer__brand {
+      color: $color-ink;
+      font-weight: $font-weight-semibold;
+      text-decoration: none;
+
+      &:hover {
+        color: $color-primary;
+        text-decoration: underline;
+      }
     }
 
     .footer__version {
@@ -28,14 +51,20 @@ import { IconComponent } from '../shared/ui/icon.component';
       padding: 3px $space-3;
       border: 1px solid $color-primary-soft;
       border-radius: $radius-pill;
-      background: $color-surface;
+      background: $color-surface-2;
       color: $color-primary;
       font-weight: $font-weight-bold;
     }
   `,
   template: `
-    <p>© {{ year }} Iglesia 238 · Todos los derechos reservados</p>
-    <span class="footer__version" [attr.title]="'Versión ' + version">
+    <p>
+      © {{ year }}
+      <a class="footer__brand" href="https://lopezsoft.net.co" target="_blank" rel="noopener noreferrer"
+        >lopezsoft.net.co</a
+      >
+      · Todos los derechos reservados
+    </p>
+    <span class="footer__version" [appCustomTooltip]="'Versión ' + version">
       <app-icon name="shield-check" [size]="12" />
       Versión {{ version }}
     </span>

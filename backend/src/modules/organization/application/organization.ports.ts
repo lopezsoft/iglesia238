@@ -24,6 +24,7 @@ export interface MunicipalityRef {
   /** Official code, unique inside its region (in Colombia, the DIVIPOLA code of DANE). */
   readonly code: string;
   readonly name: string;
+  readonly regionCode?: string | null;
   readonly regionName: string;
 }
 
@@ -50,6 +51,7 @@ export interface LegalEntityRecord {
   readonly countryName: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -74,6 +76,7 @@ export interface CongregationRecord {
   readonly name: string;
   readonly municipalityCode: string | null;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly neighborhood: string | null;
   readonly address: string | null;

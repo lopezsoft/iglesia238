@@ -29,6 +29,7 @@ export class LoadingComponent {
   selector: 'app-empty-state',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent],
+  host: { '[attr.title]': 'null' },
   styles: `
     @use 'tokens' as *;
 

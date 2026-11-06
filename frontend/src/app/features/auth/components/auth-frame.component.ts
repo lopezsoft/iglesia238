@@ -21,7 +21,11 @@ import { AuthBrandPanelComponent } from './auth-brand-panel.component';
           <ng-content select="[auth-extra]" />
         </section>
         <footer class="auth__footer">
-          © {{ year }} Iglesia 238 · v{{ version }}
+          <span>
+            © {{ year }}
+            <a href="https://lopezsoft.net.co" target="_blank" rel="noopener noreferrer">lopezsoft.net.co</a>
+            · Todos los derechos reservados · v{{ version }}
+          </span>
           <span>Tus datos se tratan conforme a la Ley 1581 de 2012.</span>
         </footer>
       </main>

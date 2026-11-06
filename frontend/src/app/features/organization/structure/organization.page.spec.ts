@@ -6,8 +6,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { Scope, SessionUser } from '../../../core/auth/session.model';
 import { CatalogsRepository, MunicipalitySearch } from '../../../core/catalogs/catalogs.repository';
 import { DomainError } from '../../../core/errors/domain-error';
-import { Country, Municipality } from '../../../core/models/catalogs';
+import { Country, Municipality, Region } from '../../../core/models/catalogs';
 import { CongregationFormDialogComponent } from './components/congregation-form-dialog.component';
+import { LegalEntityFormDialogComponent } from './components/legal-entity-form-dialog.component';
 import { MunicipalitySelectComponent } from './components/municipality-select.component';
 import {
   CongregationFormOptions,
@@ -85,6 +86,7 @@ const SEDE: CongregationRow = {
   name: 'Sede Central',
   municipalityCode: '13001',
   municipalityName: 'Cartagena de Indias',
+  regionCode: '13',
   regionName: 'Bolívar',
   neighborhood: 'Centro',
   address: 'Calle 30 # 7-45',
@@ -108,6 +110,7 @@ const ENTITY: LegalEntityRow = {
   countryName: 'Colombia',
   municipalityCode: '13001',
   municipalityName: 'Cartagena de Indias',
+  regionCode: '13',
   regionName: 'Bolívar',
   isActive: true,
   createdAt: '2026-10-01T15:00:00.000Z',
@@ -140,6 +143,7 @@ class FakeOrganizationRepository extends OrganizationRepository {
   policyInForce = true;
   formOptions: CongregationFormOptions = { legalEntities: [], districts: [] };
   readonly created: CongregationInput[] = [];
+  readonly createdLegalEntities: LegalEntityInput[] = [];
   listCongregations(): Observable<CongregationRow[]> {
     return of([SEDE]);
   }
@@ -162,7 +166,8 @@ class FakeOrganizationRepository extends OrganizationRepository {
   listLegalEntities(): Observable<LegalEntityRow[]> {
     return of([ENTITY]);
   }
-  createLegalEntity(_input: LegalEntityInput): Observable<LegalEntityRow> {
+  createLegalEntity(input: LegalEntityInput): Observable<LegalEntityRow> {
+    this.createdLegalEntities.push(input);
     return of(ENTITY);
   }
   updateLegalEntity(): Observable<LegalEntityRow> {
@@ -182,9 +187,14 @@ class FakeOrganizationRepository extends OrganizationRepository {
   }
 }
 
+const REGIONS: Region[] = [
+  { countryId: 1, code: '05', name: 'Antioquia' },
+  { countryId: 1, code: '13', name: 'Bolívar' },
+];
 const MUNICIPALITIES: Municipality[] = [
   { code: '13001', name: 'Cartagena de Indias', regionCode: '13', regionName: 'Bolívar' },
   { code: '13430', name: 'Magangué', regionCode: '13', regionName: 'Bolívar' },
+  { code: '05001', name: 'Medellín', regionCode: '05', regionName: 'Antioquia' },
 ];
 const COUNTRIES: Country[] = [{ id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicipalities: true }];
 
@@ -197,13 +207,22 @@ class FakeCatalogsRepository extends CatalogsRepository {
   countries() {
     return of(COUNTRIES);
   }
+  override regions(countryId: number) {
+    return of(REGIONS.filter((region) => region.countryId === countryId));
+  }
   searchMunicipalities(query: MunicipalitySearch) {
     this.searches.push(query);
     // Only Colombia (id 1) has municipalities in this fake; an unfiltered search covers it too.
     if (query.countryId !== undefined && query.countryId !== null && query.countryId !== 1) {
       return of([]);
     }
-    return of(MUNICIPALITIES.filter((item) => item.name.toLowerCase().includes(query.search.toLowerCase())));
+    return of(
+      MUNICIPALITIES.filter(
+        (item) =>
+          (!query.regionCode || item.regionCode === query.regionCode) &&
+          item.name.toLowerCase().includes(query.search.toLowerCase()),
+      ),
+    );
   }
   municipality() {
     return of(MUNICIPALITIES[0]);
@@ -331,6 +350,62 @@ describe('MunicipalitySelectComponent', () => {
     expect(element.querySelector('.picked__label')?.textContent).toContain('Cartagena de Indias (Bolívar)');
     element.querySelector<HTMLButtonElement>('.picked .btn')?.click();
     expect(cleared).toEqual([true]);
+  });
+});
+
+describe('LegalEntityFormDialogComponent', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
+    };
+  });
+
+  it('focuses the first input on open, links country -> region -> municipality and focuses the municipality input when a region is chosen', async () => {
+    const organization = new FakeOrganizationRepository();
+    const catalogs = configure(undefined, organization);
+    const fixture = TestBed.createComponent(LegalEntityFormDialogComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentInstance.open.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const nameInput = element.querySelector<HTMLInputElement>('#legal-entity-name')!;
+    expect(document.activeElement).toBe(nameInput);
+
+    const regionSelect = element.querySelector<HTMLSelectElement>('#legal-entity-region')!;
+    expect(Array.from(regionSelect.options).map((option) => option.textContent?.trim())).toEqual([
+      'Selecciona el departamento o estado',
+      'Antioquia',
+      'Bolívar',
+    ]);
+
+    regionSelect.value = '05';
+    regionSelect.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const municipalityInput = element.querySelector<HTMLInputElement>('#legal-entity-municipality')!;
+    expect(document.activeElement).toBe(municipalityInput);
+    expect(catalogs.searches.at(-1)).toEqual({
+      search: '',
+      limit: 15,
+      countryId: 1,
+      regionCode: '05',
+    });
+
+    const option = element.querySelector<HTMLElement>('[role="option"]')!;
+    expect(option.textContent).toContain('Medellín');
+    option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(element.querySelector('.picked__label')?.textContent).toContain('Medellín (Antioquia)');
+    document.body.removeChild(fixture.nativeElement);
   });
 });
 

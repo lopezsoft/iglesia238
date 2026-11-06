@@ -8,6 +8,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.6.0 - 2026-11-05
+
+### Added
+
+- Directiva propia de tooltips `[appCustomTooltip]` (`CustomTooltipDirective`) en el frontend, accesible por teclado (`focus`/`blur`, `Escape`) y con posicionamiento inteligente sobre el viewport, además del script de validación `node scripts/check-native-title.js` (`npm run lint:tooltips`).
+- Catálogo de departamentos y estados por país en la API (`GET /api/geo/regions?countryId=` y `GET /api/public/geo/regions?countryId=`) y filtro `regionCode` en `GET /api/geo/municipalities` y `GET /api/public/geo/municipalities`.
+- Selector en cascada `País *` → `Departamento / estado *` → `Municipio *` en los formularios de razones sociales (`/organization?tab=razones` y `/denominations?tab=razones`) y de sedes (`/organization?tab=sedes`), incluyendo `regionCode` en las vistas de organización y plataforma.
+- Foco automático (`autofocus`) en el primer campo editable al abrir cualquier diálogo modal (`DialogComponent`) y formularios de entidad legal y sede.
+
+### Changed
+
+- Rediseño *mobile-first* de todos los formularios (`.form-grid`) y modales (`.dialog`): 1 columna en móvil (`< 640px`) y máximo 2 columnas (`repeat(2, minmax(0, 1fr))`) desde `640px`, reduciendo el ancho de los diálogos amplios de `56rem` a `40rem` para evitar dispersión visual.
+- El servidor de desarrollo del frontend corre ahora en el puerto `4700` y abre automáticamente el navegador al iniciar (`ng serve`).
+- El pie de página (`<app-footer>` y layout público) permanece fijo en la parte inferior de la ventana (`position: sticky; bottom: 0`) igual que la barra superior, y actualiza la atribución de derechos a `© lopezsoft.net.co · Todos los derechos reservados`.
+- Se reemplazaron todos los atributos HTML nativos `title` en 18 componentes del frontend por `[appCustomTooltip]`.
+
 ## 0.5.0 - 2026-11-03
 
 ### Added

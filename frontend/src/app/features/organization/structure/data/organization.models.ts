@@ -35,6 +35,7 @@ export interface CongregationRow extends Congregation {
   readonly legalEntityName: string;
   readonly districtNumber: string | null;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly createdAt: string;
 }
@@ -42,6 +43,7 @@ export interface CongregationRow extends Congregation {
 export interface LegalEntityRow extends LegalEntity {
   readonly countryName: string;
   readonly municipalityName: string | null;
+  readonly regionCode?: string | null;
   readonly regionName: string | null;
   readonly createdAt: string;
 }

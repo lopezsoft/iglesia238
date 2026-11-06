@@ -8,7 +8,7 @@ import { SCRIPTED_PASSWORD, ScriptedAuthGateway } from '../../../../core/auth/te
 import { sessionOf } from '../../../../core/auth/testing/scripted-sessions';
 import { CatalogsRepository, MunicipalitySearch } from '../../../../core/catalogs/catalogs.repository';
 import { DomainError } from '../../../../core/errors/domain-error';
-import { Country, Municipality } from '../../../../core/models/catalogs';
+import { Country, Municipality, Region } from '../../../../core/models/catalogs';
 import { DenominationsPage } from '../../denominations/denominations.page';
 import { DenominationsRepository } from '../../denominations/data/denominations.repository';
 import { DenominationSummary } from '../../denominations/data/denominations.models';
@@ -48,6 +48,7 @@ const ROW: PlatformLegalEntityRow = {
   countryName: 'Colombia',
   municipalityCode: '25175',
   municipalityName: 'Chía',
+  regionCode: '25',
   regionName: 'Cundinamarca',
   isActive: true,
   congregationCount: 2,
@@ -87,15 +88,19 @@ const COLOMBIA: Country = { id: 1, isoAlpha2: 'CO', name: 'Colombia', hasMunicip
 const EMPTY_COUNTRY: Country = { id: 2, isoAlpha2: 'XX', name: 'País de prueba', hasMunicipalities: false };
 /** Deactivated by the platform: the API no longer lists it (it is only here to prove the filter). */
 const INACTIVE_COUNTRY: Country = { id: 3, isoAlpha2: 'YY', name: 'País inactivo', hasMunicipalities: true, isActive: false };
+const CUNDINAMARCA: Region = { countryId: 1, code: '25', name: 'Cundinamarca' };
 const CHIA: Municipality = { code: '25175', name: 'Chía', regionCode: '25', regionName: 'Cundinamarca', countryId: 1 };
 
 class FakeCatalogs {
   readonly searches: MunicipalitySearch[] = [];
   catalogs = () => of({});
   countries = () => of([EMPTY_COUNTRY, INACTIVE_COUNTRY, COLOMBIA]);
+  regions = (countryId: number) => of(countryId === COLOMBIA.id ? [CUNDINAMARCA] : []);
   searchMunicipalities = (query: MunicipalitySearch) => {
     this.searches.push(query);
-    return of(query.countryId === COLOMBIA.id ? [CHIA] : []);
+    return of(
+      query.countryId === COLOMBIA.id && (!query.regionCode || query.regionCode === '25') ? [CHIA] : [],
+    );
   };
   municipality = () => of(undefined);
 }
@@ -256,11 +261,16 @@ describe('PlatformLegalEntityFormDialogComponent', () => {
     fixture.componentInstance.open.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
+    fixture.detectChanges();
     const component = fixture.componentInstance as unknown as {
       form: {
         patchValue(value: Record<string, unknown>): void;
         getRawValue(): Record<string, unknown>;
-        controls: { denominationId: { disabled: boolean }; municipalityCode: { value: string } };
+        controls: {
+          denominationId: { disabled: boolean };
+          regionCode: { value: string };
+          municipalityCode: { value: string };
+        };
       };
       submit(): void;
     };
@@ -326,14 +336,28 @@ describe('PlatformLegalEntityFormDialogComponent', () => {
     expect(element.querySelector('#platform-le-tax-id-error')?.textContent).toContain('Ya existe una razón social con ese NIT.');
   });
 
-  it('locks the church when editing', async () => {
+  it('locks the church when editing and preselects the region of the municipality', async () => {
     const { component } = await render(ROW);
 
     expect(component.form.controls.denominationId.disabled).toBe(true);
+    expect(component.form.controls.regionCode.value).toBe('25');
   });
 
-  it('preselects the default country and lists only the country names', async () => {
-    const { element, component } = await render();
+  it('preselects the default country, lists its regions, focuses the legal name input, and focuses municipality when a region is chosen', async () => {
+    await setup();
+    const fixture = TestBed.createComponent(PlatformLegalEntityFormDialogComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentRef.setInput('legalEntity', null);
+    fixture.componentRef.setInput('denominations', [{ id: 2, name: SION.name, isActive: true }]);
+    fixture.componentRef.setInput('defaultDenominationId', null);
+    fixture.componentInstance.open.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const nameInput = element.querySelector<HTMLInputElement>('#platform-le-name')!;
+    expect(document.activeElement).toBe(nameInput);
 
     const select = element.querySelector<HTMLSelectElement>('#platform-le-country')!;
     expect(element.querySelector('label[for="platform-le-country"]')?.textContent).toContain('País *');
@@ -342,8 +366,28 @@ describe('PlatformLegalEntityFormDialogComponent', () => {
       'Colombia',
       'País de prueba',
     ]);
-    expect(component.form.getRawValue()['countryId']).toBe(1);
     expect(select.selectedOptions[0].textContent?.trim()).toBe('Colombia');
+
+    const regionSelect = element.querySelector<HTMLSelectElement>('#platform-le-region')!;
+    expect(Array.from(regionSelect.options).map((option) => option.textContent?.trim())).toEqual([
+      'Selecciona el departamento o estado',
+      'Cundinamarca',
+    ]);
+
+    regionSelect.value = '25';
+    regionSelect.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const municipalityInput = element.querySelector<HTMLInputElement>('#platform-le-municipality')!;
+    expect(document.activeElement).toBe(municipalityInput);
+    expect(catalogsRepository.searches.at(-1)).toEqual({
+      search: '',
+      limit: 15,
+      countryId: 1,
+      regionCode: '25',
+    });
+    document.body.removeChild(fixture.nativeElement);
   });
 
   it('searches the municipalities of the chosen country only', async () => {

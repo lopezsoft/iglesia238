@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, of, shareReplay, tap, throwError } from 'rxjs';
-import { Country, Municipality } from '../models/catalogs';
+import { Country, Municipality, Region } from '../models/catalogs';
 import { Catalogs, CatalogsRepository } from './catalogs.repository';
 
 const UNKNOWN_LABEL = '—';
@@ -17,6 +17,7 @@ export class CatalogsStore {
   private readonly municipalities = signal<ReadonlyMap<string, Municipality>>(new Map());
   private inFlight: Observable<Catalogs> | null = null;
   private countriesRequest: Observable<readonly Country[]> | null = null;
+  private readonly regionsByCountry = new Map<number, Observable<readonly Region[]>>();
 
   readonly isLoaded = computed(() => this.loaded() !== null);
   readonly documentTypes = computed(() => this.loaded()?.documentTypes ?? []);
@@ -52,9 +53,29 @@ export class CatalogsStore {
     return this.countriesRequest;
   }
 
+  /** Regions (departamentos/estados) of a country, asked once per country in the session. */
+  loadRegions(countryId: number): Observable<readonly Region[]> {
+    if (countryId <= 0 || typeof this.repository.regions !== 'function') {
+      return of([]);
+    }
+    let request = this.regionsByCountry.get(countryId);
+    if (!request) {
+      request = this.repository.regions(countryId).pipe(
+        catchError((error: unknown) => {
+          this.regionsByCountry.delete(countryId);
+          return throwError(() => error);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+      this.regionsByCountry.set(countryId, request);
+    }
+    return request;
+  }
+
   /** Asks the API again on the next `loadCountries()` (a country was activated or deactivated). */
   forgetCountries(): void {
     this.countriesRequest = null;
+    this.regionsByCountry.clear();
   }
 
   /** Forgets everything (a new session may see different data). */
@@ -63,6 +84,7 @@ export class CatalogsStore {
     this.municipalities.set(new Map());
     this.inFlight = null;
     this.countriesRequest = null;
+    this.regionsByCountry.clear();
   }
 
   /** Keeps municipalities returned by a search so their labels can be printed later. */
@@ -75,6 +97,11 @@ export class CatalogsStore {
       municipalities.forEach((municipality) => next.set(municipality.code, municipality));
       return next;
     });
+  }
+
+  /** Cached municipality for a code seen before, or `undefined`. Reactive. */
+  municipality(code: string | null): Municipality | undefined {
+    return code ? this.municipalities().get(code) : undefined;
   }
 
   /** "Medellín (Antioquia)" for a code seen before; a dash while it is unknown. Reactive. */

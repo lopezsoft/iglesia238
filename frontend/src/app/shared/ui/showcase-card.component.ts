@@ -11,7 +11,7 @@ import { SparklineComponent } from './sparkline.component';
   selector: 'app-showcase-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent, SparklineComponent],
-  host: { 'aria-hidden': 'true' },
+  host: { 'aria-hidden': 'true', '[attr.title]': 'null' },
   styles: `
     @use 'tokens' as *;
     @use 'mixins' as *;

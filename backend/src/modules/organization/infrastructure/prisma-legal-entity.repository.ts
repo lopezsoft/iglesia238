@@ -14,7 +14,11 @@ import type {
 const WITH_MUNICIPALITY = {
   country: { select: { name: true } },
   municipality: {
-    select: { code: true, name: true, region: { select: { name: true } } },
+    select: {
+      code: true,
+      name: true,
+      region: { select: { code: true, name: true } },
+    },
   },
 } satisfies Prisma.LegalEntityInclude;
 
@@ -37,6 +41,7 @@ function toRecord(row: LegalEntityRow): LegalEntityRecord {
     countryName: row.country.name,
     municipalityCode: row.municipality?.code ?? null,
     municipalityName: row.municipality?.name ?? null,
+    regionCode: row.municipality?.region.code ?? null,
     regionName: row.municipality?.region.name ?? null,
     isActive: row.isActive,
     createdAt: row.createdAt,

@@ -6,7 +6,7 @@ function readerWith(prisma: object) {
 }
 
 describe('PrismaCatalogsReader geography', () => {
-  it('searches municipalities of active countries only, optionally of one country', async () => {
+  it('searches municipalities of active countries only, optionally of one country and region', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {
         code: '05001',
@@ -18,12 +18,18 @@ describe('PrismaCatalogsReader geography', () => {
 
     const rows = await reader.searchMunicipalities(null, 20, 48);
     await reader.searchMunicipalities(null, 20, null);
+    await reader.searchMunicipalities('Med', 15, 48, '05');
 
     const where = (call: number) =>
       (findMany.mock.calls[call][0] as { where: { region: unknown } }).where
         .region;
     expect(where(0)).toEqual({ country: { isActive: true }, countryId: 48 });
     expect(where(1)).toEqual({ country: { isActive: true } });
+    expect(where(2)).toEqual({
+      country: { isActive: true },
+      countryId: 48,
+      code: '05',
+    });
     expect(rows).toEqual([
       {
         countryId: 48,
@@ -33,6 +39,22 @@ describe('PrismaCatalogsReader geography', () => {
         regionName: 'Antioquia',
       },
     ]);
+  });
+
+  it('lists the regions of an active country sorted by name', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      { countryId: 48, code: '05', name: 'Antioquia' },
+    ]);
+    const reader = readerWith({ region: { findMany } });
+
+    const regions = await reader.listRegions(48);
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { countryId: 48, code: { not: null }, country: { isActive: true } },
+      select: { countryId: true, code: true, name: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    expect(regions).toEqual([{ countryId: 48, code: '05', name: 'Antioquia' }]);
   });
 
   it('resolves a code inside the given country, or inside the default one, never alone', async () => {

@@ -15,6 +15,7 @@ import {
   type MunicipalityView,
   type NeighborhoodView,
   type PublicCatalogs,
+  type RegionView,
 } from './catalogs.reader.js';
 
 /** Permission that administers the countries; it also lets a session list the inactive ones. */
@@ -83,7 +84,19 @@ export class ListCountriesUseCase {
   }
 }
 
-/** Municipalities of active countries only, optionally of one country. */
+/** GET /geo/regions and GET /public/geo/regions: regions (departamentos/estados) of an active country. */
+@Injectable()
+export class ListRegionsUseCase {
+  constructor(
+    @Inject(CATALOGS_READER) private readonly reader: CatalogsReader,
+  ) {}
+
+  execute(countryId: number): Promise<RegionView[]> {
+    return this.reader.listRegions(countryId);
+  }
+}
+
+/** Municipalities of active countries only, optionally of one country and/or region. */
 @Injectable()
 export class SearchMunicipalitiesUseCase {
   constructor(
@@ -94,11 +107,14 @@ export class SearchMunicipalitiesUseCase {
     search: string | undefined,
     limit: number | undefined,
     countryId: number | undefined = undefined,
+    regionCode: string | undefined = undefined,
   ): Promise<MunicipalityView[]> {
+    const normalizedRegion = regionCode?.trim() || null;
     return this.reader.searchMunicipalities(
       cleanSearch(search),
       clampLimit(limit),
       countryId ?? null,
+      ...(normalizedRegion === null ? [] : [normalizedRegion]),
     );
   }
 }
