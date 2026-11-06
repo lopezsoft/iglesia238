@@ -73,6 +73,15 @@ function toExistingPerson(row: PersonRow): ExistingPerson {
   };
 }
 
+interface ResolvedCatalogs {
+  documentTypeId: number;
+  maritalStatusId: number | null;
+  educationLevelId: number | null;
+  municipalityId: number | null;
+  documentIssuePlaceId: number | null;
+  birthPlaceId: number | null;
+}
+
 /** Writes the membership tables on behalf of the approval of an application. */
 @Injectable()
 export class PrismaMembershipRegistry implements MembershipRegistry {
@@ -149,21 +158,30 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         denominationId: scope.denominationId,
         documentTypeId: catalog.documentTypeId,
         documentNumber: data.documentNumber,
+        documentIssuePlaceId: catalog.documentIssuePlaceId,
         firstName: data.firstName,
         lastName: data.lastName,
         secondLastName: data.secondLastName,
         sex: data.sex,
         birthDate: data.birthDate ? parseIsoDate(data.birthDate) : null,
+        birthPlaceId: catalog.birthPlaceId,
         maritalStatusId: catalog.maritalStatusId,
+        educationLevelId: catalog.educationLevelId,
+        profession: data.profession ?? null,
         occupation: data.occupation,
+        workplace: data.workplace ?? null,
+        childrenCount: data.childrenCount ?? null,
       },
       select: { id: true },
     });
     await this.addContactsAndAddress(client, scope, person.id, data, catalog, {
       phone: true,
+      landlinePhone: true,
       email: true,
+      workPhone: true,
       address: true,
     });
+    await this.syncFamilyAndMarriage(client, scope, person.id, data);
     return person.id;
   }
 
@@ -182,8 +200,14 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         secondLastName: true,
         sex: true,
         birthDate: true,
+        documentIssuePlaceId: true,
+        birthPlaceId: true,
         maritalStatusId: true,
+        educationLevelId: true,
+        profession: true,
         occupation: true,
+        workplace: true,
+        childrenCount: true,
         personContacts: { select: { type: true } },
         personAddresses: { where: { isCurrent: true }, select: { id: true } },
       },
@@ -203,20 +227,52 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     if (!current.birthDate && data.birthDate) {
       fill.birthDate = parseIsoDate(data.birthDate);
     }
+    if (
+      current.documentIssuePlaceId === null &&
+      catalog.documentIssuePlaceId !== null
+    ) {
+      fill.documentIssuePlaceId = catalog.documentIssuePlaceId;
+    }
+    if (current.birthPlaceId === null && catalog.birthPlaceId !== null) {
+      fill.birthPlaceId = catalog.birthPlaceId;
+    }
     if (current.maritalStatusId === null && catalog.maritalStatusId !== null) {
       fill.maritalStatusId = catalog.maritalStatusId;
     }
-    if (!current.occupation && data.occupation)
+    if (
+      current.educationLevelId === null &&
+      catalog.educationLevelId !== null
+    ) {
+      fill.educationLevelId = catalog.educationLevelId;
+    }
+    if (!current.profession && data.profession) {
+      fill.profession = data.profession;
+    }
+    if (!current.occupation && data.occupation) {
       fill.occupation = data.occupation;
+    }
+    if (!current.workplace && data.workplace) {
+      fill.workplace = data.workplace;
+    }
+    if (
+      current.childrenCount === null &&
+      data.childrenCount !== null &&
+      data.childrenCount !== undefined
+    ) {
+      fill.childrenCount = data.childrenCount;
+    }
     if (Object.keys(fill).length > 0) {
       await client.person.update({ where: { id: personId }, data: fill });
     }
 
     await this.addContactsAndAddress(client, scope, personId, data, catalog, {
       phone: !current.personContacts.some((c) => c.type === 'MOBILE'),
+      landlinePhone: !current.personContacts.some((c) => c.type === 'LANDLINE'),
       email: !current.personContacts.some((c) => c.type === 'EMAIL'),
+      workPhone: !current.personContacts.some((c) => c.type === 'WORK_PHONE'),
       address: current.personAddresses.length === 0,
     });
+    await this.syncFamilyAndMarriage(client, scope, personId, data);
   }
 
   async createMember(
@@ -224,18 +280,49 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     member: NewMember,
     transaction: Transaction,
   ): Promise<number> {
-    const created = await clientOf(this.prisma, transaction).member.create({
+    const client = clientOf(this.prisma, transaction);
+    const resolved = await this.resolveMemberRefs(client, scope, member);
+
+    const created = await client.member.create({
       data: {
         denominationId: scope.denominationId,
         personId: member.personId,
         congregationId: member.congregationId,
         status: 'ACTIVE',
         joinedOn: parseIsoDate(member.joinedOn),
-        previousCongregationName: member.previousCongregationName,
+        convertedOn: member.convertedOn
+          ? parseIsoDate(member.convertedOn)
+          : null,
         isBaptized: member.isBaptized,
+        waterBaptismOn: member.waterBaptismOn
+          ? parseIsoDate(member.waterBaptismOn)
+          : null,
+        baptismMunicipalityId: resolved.baptismMunicipalityId,
+        baptismPlace: member.baptismPlace ?? null,
+        baptizingPastorId: resolved.baptizingPastorId,
+        holySpiritBaptismOn: member.holySpiritBaptismOn
+          ? parseIsoDate(member.holySpiritBaptismOn)
+          : null,
+        reconciledOn: member.reconciledOn
+          ? parseIsoDate(member.reconciledOn)
+          : null,
+        previousCongregationId: resolved.previousCongregationId,
+        previousCongregationName: member.previousCongregationName,
+        isChristianEducationTeacher:
+          member.isChristianEducationTeacher ?? false,
+        desiredAreas: member.desiredAreas ?? null,
       },
       select: { id: true },
     });
+
+    await this.syncMemberPositions(
+      client,
+      scope,
+      created.id,
+      member.pastPositionsText,
+      member.currentPositionsText,
+      member.joinedOn,
+    );
     return created.id;
   }
 
@@ -244,7 +331,10 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     reactivation: MemberReactivation,
     transaction: Transaction,
   ): Promise<void> {
-    await clientOf(this.prisma, transaction).member.updateMany({
+    const client = clientOf(this.prisma, transaction);
+    const resolved = await this.resolveMemberRefs(client, scope, reactivation);
+
+    await client.member.updateMany({
       where: {
         id: reactivation.memberId,
         denominationId: scope.denominationId,
@@ -255,6 +345,47 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         congregationId: reactivation.congregationId,
         ...(reactivation.previousCongregationName
           ? { previousCongregationName: reactivation.previousCongregationName }
+          : {}),
+        ...(resolved.previousCongregationId !== null
+          ? { previousCongregationId: resolved.previousCongregationId }
+          : {}),
+        ...(reactivation.convertedOn
+          ? { convertedOn: parseIsoDate(reactivation.convertedOn) }
+          : {}),
+        ...(reactivation.isBaptized !== null &&
+        reactivation.isBaptized !== undefined
+          ? { isBaptized: reactivation.isBaptized }
+          : {}),
+        ...(reactivation.waterBaptismOn
+          ? { waterBaptismOn: parseIsoDate(reactivation.waterBaptismOn) }
+          : {}),
+        ...(resolved.baptismMunicipalityId !== null
+          ? { baptismMunicipalityId: resolved.baptismMunicipalityId }
+          : {}),
+        ...(reactivation.baptismPlace
+          ? { baptismPlace: reactivation.baptismPlace }
+          : {}),
+        ...(resolved.baptizingPastorId !== null
+          ? { baptizingPastorId: resolved.baptizingPastorId }
+          : {}),
+        ...(reactivation.holySpiritBaptismOn
+          ? {
+              holySpiritBaptismOn: parseIsoDate(
+                reactivation.holySpiritBaptismOn,
+              ),
+            }
+          : {}),
+        ...(reactivation.reconciledOn
+          ? { reconciledOn: parseIsoDate(reactivation.reconciledOn) }
+          : {}),
+        ...(reactivation.isChristianEducationTeacher !== undefined
+          ? {
+              isChristianEducationTeacher:
+                reactivation.isChristianEducationTeacher,
+            }
+          : {}),
+        ...(reactivation.desiredAreas
+          ? { desiredAreas: reactivation.desiredAreas }
           : {}),
       },
     });
@@ -350,15 +481,35 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     }
   }
 
+  private async resolveMunicipalityByCode(
+    client: Client,
+    code: string | null | undefined,
+  ): Promise<number | null> {
+    if (!code) {
+      return null;
+    }
+    const row = await client.municipality.findFirst({
+      where: {
+        code,
+        region: { country: { isoAlpha2: this.defaultCountryIso } },
+      },
+      select: { id: true },
+    });
+    return row?.id ?? null;
+  }
+
   private async resolveCatalogs(
     client: Client,
     data: PersonData,
-  ): Promise<{
-    documentTypeId: number;
-    maritalStatusId: number | null;
-    municipalityId: number | null;
-  }> {
-    const [documentType, maritalStatus, municipality] = await Promise.all([
+  ): Promise<ResolvedCatalogs> {
+    const [
+      documentType,
+      maritalStatus,
+      educationLevel,
+      municipalityId,
+      documentIssuePlaceId,
+      birthPlaceId,
+    ] = await Promise.all([
       client.documentType.findUnique({
         where: { code: data.documentTypeCode },
         select: { id: true },
@@ -369,15 +520,15 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
             select: { id: true },
           })
         : null,
-      data.municipalityCode
-        ? client.municipality.findFirst({
-            where: {
-              code: data.municipalityCode,
-              region: { country: { isoAlpha2: this.defaultCountryIso } },
-            },
+      data.educationLevelCode
+        ? client.educationLevel.findUnique({
+            where: { code: data.educationLevelCode },
             select: { id: true },
           })
         : null,
+      this.resolveMunicipalityByCode(client, data.municipalityCode),
+      this.resolveMunicipalityByCode(client, data.documentIssuePlaceCode),
+      this.resolveMunicipalityByCode(client, data.birthPlaceCode),
     ]);
     if (!documentType) {
       throw new BusinessRuleException(
@@ -388,7 +539,10 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     return {
       documentTypeId: documentType.id,
       maritalStatusId: maritalStatus?.id ?? null,
-      municipalityId: municipality?.id ?? null,
+      educationLevelId: educationLevel?.id ?? null,
+      municipalityId,
+      documentIssuePlaceId,
+      birthPlaceId,
     };
   }
 
@@ -398,7 +552,13 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
     personId: number,
     data: PersonData,
     catalog: { municipalityId: number | null },
-    include: { phone: boolean; email: boolean; address: boolean },
+    include: {
+      phone: boolean;
+      landlinePhone: boolean;
+      email: boolean;
+      workPhone: boolean;
+      address: boolean;
+    },
   ): Promise<void> {
     const { denominationId } = scope;
     if (include.phone && data.phone) {
@@ -412,6 +572,17 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         },
       });
     }
+    if (include.landlinePhone && data.landlinePhone) {
+      await client.personContact.create({
+        data: {
+          denominationId,
+          personId,
+          type: 'LANDLINE',
+          value: data.landlinePhone,
+          isPrimary: !data.phone,
+        },
+      });
+    }
     if (include.email && data.email) {
       await client.personContact.create({
         data: {
@@ -420,6 +591,17 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
           type: 'EMAIL',
           value: data.email,
           isPrimary: true,
+        },
+      });
+    }
+    if (include.workPhone && data.workPhone) {
+      await client.personContact.create({
+        data: {
+          denominationId,
+          personId,
+          type: 'WORK_PHONE',
+          value: data.workPhone,
+          isPrimary: false,
         },
       });
     }
@@ -443,6 +625,305 @@ export class PrismaMembershipRegistry implements MembershipRegistry {
         },
       });
     }
+  }
+
+  private async syncFamilyAndMarriage(
+    client: Client,
+    scope: TenantScope,
+    personId: number,
+    data: PersonData,
+  ): Promise<void> {
+    const { denominationId } = scope;
+
+    if (data.fatherFullName) {
+      await this.ensureParentRelation(
+        client,
+        denominationId,
+        personId,
+        'FATHER',
+        'MALE',
+        data.fatherFullName,
+      );
+    }
+    if (data.motherFullName) {
+      await this.ensureParentRelation(
+        client,
+        denominationId,
+        personId,
+        'MOTHER',
+        'FEMALE',
+        data.motherFullName,
+      );
+    }
+    if (data.childrenNames) {
+      const existingChildren = await client.familyRelation.count({
+        where: { denominationId, personId, type: 'CHILD' },
+      });
+      if (existingChildren === 0) {
+        const names = data.childrenNames
+          .split(/[,;]+/)
+          .map((item) => item.trim())
+          .filter((item) => item !== '');
+        const inverseType = data.sex === 'MALE' ? 'FATHER' : 'MOTHER';
+        for (const fullName of names) {
+          const child = await client.person.create({
+            data: { denominationId, fullName: fullName.slice(0, 200) },
+            select: { id: true },
+          });
+          await client.familyRelation.create({
+            data: {
+              denominationId,
+              personId,
+              relativeId: child.id,
+              type: 'CHILD',
+            },
+          });
+          await client.familyRelation.create({
+            data: {
+              denominationId,
+              personId: child.id,
+              relativeId: personId,
+              type: inverseType,
+            },
+          });
+        }
+      }
+    }
+
+    const hasMarriageInfo =
+      Boolean(data.spouseFullName) ||
+      Boolean(data.tribunalOpinion) ||
+      data.passedEcclesiasticalTribunal !== null &&
+        data.passedEcclesiasticalTribunal !== undefined;
+
+    if (hasMarriageInfo) {
+      const existingMarriage = await client.marriage.findFirst({
+        where: {
+          denominationId,
+          OR: [{ spouse1Id: personId }, { spouse2Id: personId }],
+        },
+        select: { id: true },
+      });
+      if (!existingMarriage) {
+        const spouse = await client.person.create({
+          data: {
+            denominationId,
+            fullName: (data.spouseFullName ?? 'Cónyuge').slice(0, 200),
+          },
+          select: { id: true },
+        });
+        const spouse1Id = Math.min(personId, spouse.id);
+        const spouse2Id = Math.max(personId, spouse.id);
+        const tribunalSummary = data.tribunalOpinion
+          ? data.passedEcclesiasticalTribunal !== null &&
+            data.passedEcclesiasticalTribunal !== undefined
+            ? `Tribunal Eclesiástico (${data.passedEcclesiasticalTribunal ? 'Sí' : 'No'}): ${data.tribunalOpinion}`
+            : data.tribunalOpinion
+          : data.passedEcclesiasticalTribunal !== null &&
+              data.passedEcclesiasticalTribunal !== undefined
+            ? `Pasó por Tribunal Eclesiástico: ${data.passedEcclesiasticalTribunal ? 'Sí' : 'No'}`
+            : null;
+        await client.marriage.create({
+          data: {
+            denominationId,
+            spouse1Id,
+            spouse2Id,
+            isCivil: data.marriageIsCivil ?? false,
+            isChristian: data.marriageIsChristian ?? false,
+            isCatholic: data.marriageIsCatholic ?? false,
+            registeredWith: data.marriageIsChristian
+              ? 'CHURCH'
+              : data.marriageIsCivil
+                ? 'NOTARY'
+                : null,
+            tribunalOpinion: tribunalSummary
+              ? tribunalSummary.slice(0, 255)
+              : null,
+          },
+        });
+      }
+    }
+  }
+
+  private async ensureParentRelation(
+    client: Client,
+    denominationId: number,
+    personId: number,
+    type: 'FATHER' | 'MOTHER',
+    sex: 'MALE' | 'FEMALE',
+    fullName: string,
+  ): Promise<void> {
+    const existing = await client.familyRelation.findFirst({
+      where: { denominationId, personId, type },
+      select: { id: true },
+    });
+    if (existing) {
+      return;
+    }
+    const parent = await client.person.create({
+      data: { denominationId, fullName: fullName.slice(0, 200), sex },
+      select: { id: true },
+    });
+    await client.familyRelation.create({
+      data: { denominationId, personId, relativeId: parent.id, type },
+    });
+    await client.familyRelation.create({
+      data: {
+        denominationId,
+        personId: parent.id,
+        relativeId: personId,
+        type: 'CHILD',
+      },
+    });
+  }
+
+  private async resolveMemberRefs(
+    client: Client,
+    scope: TenantScope,
+    member: {
+      baptismMunicipalityCode?: string | null;
+      baptizingPastorName?: string | null;
+      previousCongregationId?: number | null;
+    },
+  ): Promise<{
+    baptismMunicipalityId: number | null;
+    baptizingPastorId: number | null;
+    previousCongregationId: number | null;
+  }> {
+    const [baptismMunicipalityId, previousCongregation, baptizingPastorId] =
+      await Promise.all([
+        this.resolveMunicipalityByCode(client, member.baptismMunicipalityCode),
+        member.previousCongregationId
+          ? client.congregation.findFirst({
+              where: {
+                id: member.previousCongregationId,
+                denominationId: scope.denominationId,
+                deletedAt: null,
+              },
+              select: { id: true },
+            })
+          : null,
+        this.findOrCreatePastorPerson(
+          client,
+          scope.denominationId,
+          member.baptizingPastorName,
+        ),
+      ]);
+
+    return {
+      baptismMunicipalityId,
+      baptizingPastorId,
+      previousCongregationId: previousCongregation?.id ?? null,
+    };
+  }
+
+  private async findOrCreatePastorPerson(
+    client: Client,
+    denominationId: number,
+    name: string | null | undefined,
+  ): Promise<number | null> {
+    if (!name || name.trim() === '') {
+      return null;
+    }
+    const clean = name.trim().slice(0, 200);
+    const existing = await client.person.findFirst({
+      where: {
+        denominationId,
+        deletedAt: null,
+        fullName: clean,
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      return existing.id;
+    }
+    const created = await client.person.create({
+      data: { denominationId, fullName: clean },
+      select: { id: true },
+    });
+    return created.id;
+  }
+
+  private async syncMemberPositions(
+    client: Client,
+    scope: TenantScope,
+    memberId: number,
+    pastPositionsText: string | null | undefined,
+    currentPositionsText: string | null | undefined,
+    joinedOn: string,
+  ): Promise<void> {
+    const { denominationId } = scope;
+    const parseList = (raw: string | null | undefined): string[] =>
+      (raw ?? '')
+        .split(/[,;]+/)
+        .map((item) => item.trim().slice(0, 80))
+        .filter((item) => item.length >= 2);
+
+    const pastNames = parseList(pastPositionsText);
+    const currentNames = parseList(currentPositionsText);
+    if (pastNames.length === 0 && currentNames.length === 0) {
+      return;
+    }
+
+    const date = parseIsoDate(joinedOn);
+    for (const name of currentNames) {
+      const positionId = await this.findOrCreateChurchPosition(
+        client,
+        denominationId,
+        name,
+      );
+      await client.memberPosition.create({
+        data: {
+          denominationId,
+          memberId,
+          positionId,
+          startedOn: date,
+          endedOn: null,
+        },
+      });
+    }
+    for (const name of pastNames) {
+      if (
+        currentNames.some(
+          (current) => current.toLowerCase() === name.toLowerCase(),
+        )
+      ) {
+        continue;
+      }
+      const positionId = await this.findOrCreateChurchPosition(
+        client,
+        denominationId,
+        name,
+      );
+      await client.memberPosition.create({
+        data: {
+          denominationId,
+          memberId,
+          positionId,
+          startedOn: null,
+          endedOn: date,
+        },
+      });
+    }
+  }
+
+  private async findOrCreateChurchPosition(
+    client: Client,
+    denominationId: number,
+    name: string,
+  ): Promise<number> {
+    const existing = await client.churchPosition.findUnique({
+      where: { denominationId_name: { denominationId, name } },
+      select: { id: true },
+    });
+    if (existing) {
+      return existing.id;
+    }
+    const created = await client.churchPosition.create({
+      data: { denominationId, name, isActive: true },
+      select: { id: true },
+    });
+    return created.id;
   }
 
   private async findOrCreateNeighborhood(

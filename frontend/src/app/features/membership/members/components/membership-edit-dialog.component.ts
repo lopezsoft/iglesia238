@@ -47,6 +47,16 @@ type BaptismChoice = '' | 'YES' | 'NO';
             />
           </div>
           <div class="field">
+            <label for="membership-converted-on">Fecha de conversión</label>
+            <input
+              id="membership-converted-on"
+              class="input"
+              type="date"
+              formControlName="convertedOn"
+              [max]="today"
+            />
+          </div>
+          <div class="field">
             <label for="membership-baptized">Bautismo en agua</label>
             <select id="membership-baptized" class="select" formControlName="baptism">
               <option value="">Sin dato</option>
@@ -66,13 +76,41 @@ type BaptismChoice = '' | 'YES' | 'NO';
               />
             </div>
             <div class="field">
-              <label for="membership-baptism-place">Lugar del bautismo</label>
+              <label for="membership-baptism-place">Congregación o lugar del bautismo</label>
               <input id="membership-baptism-place" class="input" formControlName="baptismPlace" />
               @if (form.controls.baptismPlace.invalid) {
                 <span class="field__error">Máximo 150 caracteres.</span>
               }
             </div>
+            <div class="field">
+              <label for="membership-baptizing-pastor">Pastor que bautizó</label>
+              <input
+                id="membership-baptizing-pastor"
+                class="input"
+                formControlName="baptizingPastorName"
+              />
+            </div>
           }
+          <div class="field">
+            <label for="membership-holy-spirit">Bautismo del Espíritu Santo</label>
+            <input
+              id="membership-holy-spirit"
+              class="input"
+              type="date"
+              formControlName="holySpiritBaptismOn"
+              [max]="today"
+            />
+          </div>
+          <div class="field">
+            <label for="membership-reconciled-on">Fecha de reconciliación</label>
+            <input
+              id="membership-reconciled-on"
+              class="input"
+              type="date"
+              formControlName="reconciledOn"
+              [max]="today"
+            />
+          </div>
           <div class="field">
             <label for="membership-previous">Iglesia o sede anterior</label>
             <input
@@ -83,6 +121,30 @@ type BaptismChoice = '' | 'YES' | 'NO';
             @if (form.controls.previousCongregationName.invalid) {
               <span class="field__error">Máximo 150 caracteres.</span>
             }
+          </div>
+          <div class="field">
+            <label for="membership-teacher">Maestro(a) de Educación Cristiana</label>
+            <select id="membership-teacher" class="select" formControlName="teacher">
+              <option value="">Sin dato</option>
+              <option value="YES">Sí</option>
+              <option value="NO">No</option>
+            </select>
+          </div>
+          <div class="field field--full">
+            <label for="membership-desired-areas">Áreas de servicio en las que desea servir</label>
+            <input
+              id="membership-desired-areas"
+              class="input"
+              formControlName="desiredAreas"
+            />
+          </div>
+          <div class="field field--full">
+            <label for="membership-pastor-notes">Observaciones del pastor</label>
+            <input
+              id="membership-pastor-notes"
+              class="input"
+              formControlName="pastorNotes"
+            />
           </div>
         </div>
         <p class="text-muted text-small">
@@ -117,10 +179,17 @@ export class MembershipEditDialogComponent {
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     joinedOn: [''],
+    convertedOn: [''],
     baptism: ['' as BaptismChoice],
     waterBaptismOn: [''],
     baptismPlace: ['', Validators.maxLength(150)],
+    baptizingPastorName: ['', Validators.maxLength(150)],
+    holySpiritBaptismOn: [''],
+    reconciledOn: [''],
     previousCongregationName: ['', Validators.maxLength(150)],
+    teacher: ['' as BaptismChoice],
+    desiredAreas: ['', Validators.maxLength(500)],
+    pastorNotes: ['', Validators.maxLength(1000)],
   });
 
   constructor() {
@@ -133,10 +202,23 @@ export class MembershipEditDialogComponent {
         this.error.set(null);
         this.form.reset({
           joinedOn: member.joinedOn ?? '',
+          convertedOn: member.convertedOn ?? '',
           baptism: member.isBaptized === null ? '' : member.isBaptized ? 'YES' : 'NO',
           waterBaptismOn: member.waterBaptismOn ?? '',
           baptismPlace: member.baptismPlace ?? '',
+          baptizingPastorName: member.baptizingPastorName ?? '',
+          holySpiritBaptismOn: member.holySpiritBaptismOn ?? '',
+          reconciledOn: member.reconciledOn ?? '',
           previousCongregationName: member.previousCongregationName ?? '',
+          teacher:
+            member.isChristianEducationTeacher === null ||
+            member.isChristianEducationTeacher === undefined
+              ? ''
+              : member.isChristianEducationTeacher
+                ? 'YES'
+                : 'NO',
+          desiredAreas: member.desiredAreas ?? '',
+          pastorNotes: member.pastorNotes ?? '',
         });
       });
     });
@@ -166,10 +248,17 @@ export class MembershipEditDialogComponent {
     const baptized = value.baptism === 'YES';
     return {
       joinedOn: optional(value.joinedOn),
+      convertedOn: optional(value.convertedOn),
       isBaptized: value.baptism === '' ? null : baptized,
       waterBaptismOn: baptized ? optional(value.waterBaptismOn) : null,
       baptismPlace: baptized ? optional(value.baptismPlace) : null,
+      baptizingPastorName: baptized ? optional(value.baptizingPastorName) : null,
+      holySpiritBaptismOn: optional(value.holySpiritBaptismOn),
+      reconciledOn: optional(value.reconciledOn),
       previousCongregationName: optional(value.previousCongregationName),
+      isChristianEducationTeacher: value.teacher === '' ? null : value.teacher === 'YES',
+      desiredAreas: optional(value.desiredAreas),
+      pastorNotes: optional(value.pastorNotes),
     };
   }
 }

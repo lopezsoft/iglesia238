@@ -23,10 +23,10 @@ export class CatalogEntryDto {
 export class PublicCatalogsResponseDto {
   @ApiProperty({ type: [CatalogEntryDto] }) documentTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) maritalStatuses!: CatalogEntryDto[];
+  @ApiProperty({ type: [CatalogEntryDto] }) educationLevels!: CatalogEntryDto[];
 }
 
 export class CatalogsResponseDto extends PublicCatalogsResponseDto {
-  @ApiProperty({ type: [CatalogEntryDto] }) educationLevels!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) studyTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] }) meetingTypes!: CatalogEntryDto[];
   @ApiProperty({ type: [CatalogEntryDto] })
@@ -161,15 +161,16 @@ export class CountryQueryDto {
 }
 
 export class RegionsQueryDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'País cuyos departamentos, estados o provincias se consultan (GET /geo/countries).',
-    example: 1,
+      'País cuyos departamentos, estados o provincias se consultan (GET /geo/countries). Sin él, el país por defecto.',
+    example: 46,
   })
   @Transform(toOptionalInt)
+  @IsOptional()
   @IsInt({ message: 'El país no es válido.' })
   @Min(1, { message: 'El país no es válido.' })
-  countryId!: number;
+  countryId?: number;
 }
 
 export class MunicipalitySearchQueryDto extends SearchQueryDto {

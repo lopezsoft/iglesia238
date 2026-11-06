@@ -88,9 +88,10 @@ class FakeCatalogsReader implements CatalogsReader {
     );
   }
 
-  listRegions(countryId: number) {
+  listRegions(countryId?: number | null) {
+    const resolvedCountryId = countryId ?? COLOMBIA_ID;
     return Promise.resolve(
-      REGIONS.filter((region) => region.countryId === countryId),
+      REGIONS.filter((region) => region.countryId === resolvedCountryId),
     );
   }
 
@@ -170,7 +171,11 @@ describe('catalog use cases', () => {
     it('limits the public answer to what the application form shows', async () => {
       const result = await new GetCatalogsUseCase(reader).publicSubset();
 
-      expect(Object.keys(result)).toEqual(['documentTypes', 'maritalStatuses']);
+      expect(Object.keys(result)).toEqual([
+        'documentTypes',
+        'maritalStatuses',
+        'educationLevels',
+      ]);
     });
   });
 

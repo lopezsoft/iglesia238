@@ -12,18 +12,25 @@ export interface Person {
   readonly userId: number | null;
   readonly documentTypeCode: string | null;
   readonly documentNumber: string | null;
+  readonly documentIssuePlaceCode?: string | null;
   readonly firstName: string;
   readonly lastName: string;
   readonly secondLastName: string | null;
   readonly sex: Sex | null;
   readonly birthDate: string | null;
+  readonly birthPlaceCode?: string | null;
   readonly maritalStatusCode: string | null;
   readonly educationLevelCode: string | null;
   readonly profession: string | null;
   readonly occupation: string | null;
+  readonly workplace?: string | null;
+  readonly childrenCount?: number | null;
   readonly phone: string | null;
+  readonly landlinePhone?: string | null;
+  readonly workPhone?: string | null;
   readonly email: string | null;
   readonly address: string | null;
+  readonly neighborhood?: string | null;
   readonly municipalityCode: string | null;
 }
 

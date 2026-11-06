@@ -196,6 +196,61 @@ export class ApplicationFormDataDto implements ApplicationFormDataView {
   @ApiProperty({ nullable: true, type: String }) guardianPhone!: string | null;
   @ApiProperty({ nullable: true, type: String }) guardianDocumentTypeCode!:
     string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  documentIssuePlaceCode?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  birthPlaceCode?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  landlinePhone?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  educationLevelCode?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  profession?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  workplace?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  workPhone?: string | null;
+  @ApiPropertyOptional({ type: Boolean }) marriageIsCivil?: boolean;
+  @ApiPropertyOptional({ type: Boolean }) marriageIsChristian?: boolean;
+  @ApiPropertyOptional({ type: Boolean }) marriageIsCatholic?: boolean;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  spouseFullName?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Boolean })
+  passedEcclesiasticalTribunal?: boolean | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  tribunalOpinion?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  fatherFullName?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  motherFullName?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  childrenCount?: number | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  childrenNames?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  convertedOn?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  waterBaptismOn?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  baptismMunicipalityCode?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  baptismPlace?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  baptizingPastorName?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  holySpiritBaptismOn?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  reconciledOn?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  previousCongregationId?: number | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  pastPositionsText?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  currentPositionsText?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  desiredAreas?: string | null;
+  @ApiPropertyOptional({ type: Boolean })
+  isChristianEducationTeacher?: boolean;
 }
 
 export class ApplicationDetailDto implements ApplicationDetailView {

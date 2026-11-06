@@ -7,7 +7,11 @@ export type ConsentChannel = 'WEB_FORM' | 'PAPER';
 export type FamilyRelationType = 'FATHER' | 'MOTHER' | 'CHILD' | 'GUARDIAN';
 export type StudyStatus = 'IN_PROGRESS' | 'COMPLETED';
 export type TransferStatus =
-  'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  | 'REQUESTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 export const MEMBER_STATUSES: readonly MemberStatus[] = [
   'ACTIVE',
@@ -19,7 +23,12 @@ export const MEMBER_STATUSES: readonly MemberStatus[] = [
 // ---------- List ----------
 
 export type AgeRange =
-  'ALL' | 'CHILDREN' | 'TEENAGERS' | 'YOUNG_ADULTS' | 'ADULTS' | 'SENIORS';
+  | 'ALL'
+  | 'CHILDREN'
+  | 'TEENAGERS'
+  | 'YOUNG_ADULTS'
+  | 'ADULTS'
+  | 'SENIORS';
 
 /** `NONE` lists members without an open position; a number is a ChurchPosition id. */
 export type PositionFilter = 'ALL' | 'NONE' | number;
@@ -89,6 +98,13 @@ export interface PersonDetail {
   readonly email: string | null;
   readonly address: string | null;
   readonly municipalityCode: string | null;
+  readonly documentIssuePlaceCode?: string | null;
+  readonly birthPlaceCode?: string | null;
+  readonly workplace?: string | null;
+  readonly childrenCount?: number | null;
+  readonly landlinePhone?: string | null;
+  readonly workPhone?: string | null;
+  readonly neighborhood?: string | null;
 }
 
 export interface MemberDetail {
@@ -100,6 +116,15 @@ export interface MemberDetail {
   readonly waterBaptismOn: string | null;
   readonly baptismPlace: string | null;
   readonly previousCongregationName: string | null;
+  readonly convertedOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly previousCongregationId?: number | null;
+  readonly isChristianEducationTeacher?: boolean;
+  readonly desiredAreas?: string | null;
+  readonly pastorNotes?: string | null;
   readonly congregationId: number;
   readonly congregationName: string;
   readonly congregationMunicipalityCode: string | null;
@@ -134,6 +159,13 @@ export interface PersonData {
   readonly email: string | null;
   readonly address: string | null;
   readonly municipalityCode: string | null;
+  readonly documentIssuePlaceCode?: string | null;
+  readonly birthPlaceCode?: string | null;
+  readonly workplace?: string | null;
+  readonly childrenCount?: number | null;
+  readonly landlinePhone?: string | null;
+  readonly workPhone?: string | null;
+  readonly neighborhood?: string | null;
 }
 
 /** Person data once the catalog codes were resolved to ids. */
@@ -143,11 +175,15 @@ export interface ResolvedPersonData extends Omit<
   | 'maritalStatusCode'
   | 'educationLevelCode'
   | 'municipalityCode'
+  | 'documentIssuePlaceCode'
+  | 'birthPlaceCode'
 > {
   readonly documentTypeId: number | null;
   readonly maritalStatusId: number | null;
   readonly educationLevelId: number | null;
   readonly municipalityId: number | null;
+  readonly documentIssuePlaceId?: number | null;
+  readonly birthPlaceId?: number | null;
 }
 
 export interface MembershipDataPatch {
@@ -156,6 +192,15 @@ export interface MembershipDataPatch {
   readonly waterBaptismOn?: string | null;
   readonly baptismPlace?: string | null;
   readonly previousCongregationName?: string | null;
+  readonly convertedOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly previousCongregationId?: number | null;
+  readonly isChristianEducationTeacher?: boolean;
+  readonly desiredAreas?: string | null;
+  readonly pastorNotes?: string | null;
 }
 
 export interface NewMemberRecord {
@@ -166,6 +211,15 @@ export interface NewMemberRecord {
   readonly waterBaptismOn: string | null;
   readonly baptismPlace: string | null;
   readonly previousCongregationName: string | null;
+  readonly convertedOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly previousCongregationId?: number | null;
+  readonly isChristianEducationTeacher?: boolean;
+  readonly desiredAreas?: string | null;
+  readonly pastorNotes?: string | null;
 }
 
 export interface ExistingPerson {
@@ -373,7 +427,11 @@ export type PersonSearchPurpose =
   | 'CONTRIBUTOR';
 
 export type PersonEligibility =
-  'child' | 'spouse' | 'parent' | 'pastor' | 'officiant';
+  | 'child'
+  | 'spouse'
+  | 'parent'
+  | 'pastor'
+  | 'officiant';
 
 export interface PersonSearchCriteria {
   readonly purpose: PersonSearchPurpose;

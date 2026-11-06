@@ -124,9 +124,14 @@ export class PrismaCatalogsReader implements CatalogsReader {
     }));
   }
 
-  async listRegions(countryId: number): Promise<RegionView[]> {
+  async listRegions(countryId?: number | null): Promise<RegionView[]> {
     const rows = await this.prisma.region.findMany({
-      where: { countryId, code: { not: null }, country: { isActive: true } },
+      where: {
+        code: { not: null },
+        ...(countryId != null
+          ? { countryId, country: { isActive: true } }
+          : { country: { isoAlpha2: this.defaultCountryIso, isActive: true } }),
+      },
       select: { countryId: true, code: true, name: true },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });

@@ -67,16 +67,23 @@ const PERSON_FIELDS: readonly (keyof PersonData)[] = [
   'secondLastName',
   'documentTypeCode',
   'documentNumber',
+  'documentIssuePlaceCode',
   'birthDate',
+  'birthPlaceCode',
   'sex',
   'maritalStatusCode',
   'educationLevelCode',
   'profession',
   'occupation',
+  'workplace',
+  'childrenCount',
   'phone',
+  'landlinePhone',
+  'workPhone',
   'email',
   'address',
   'municipalityCode',
+  'neighborhood',
 ];
 
 @Injectable()
@@ -104,6 +111,7 @@ export class UpdateMemberPersonUseCase {
 
     const changed = PERSON_FIELDS.filter(
       (field) =>
+        data[field] !== undefined &&
         data[field] !== current.person[field as keyof typeof current.person],
     );
 
@@ -141,10 +149,17 @@ export class UpdateMemberPersonUseCase {
 
 const MEMBERSHIP_FIELDS = [
   'joinedOn',
+  'convertedOn',
   'isBaptized',
   'waterBaptismOn',
+  'baptismMunicipalityCode',
   'baptismPlace',
+  'holySpiritBaptismOn',
+  'reconciledOn',
+  'previousCongregationId',
   'previousCongregationName',
+  'isChristianEducationTeacher',
+  'desiredAreas',
 ] as const;
 
 @Injectable()
@@ -167,10 +182,19 @@ export class UpdateMembershipDataUseCase {
     const clean = this.clean(patch);
     const snapshot = (source: MembershipDataPatch) => ({
       joinedOn: source.joinedOn ?? null,
+      convertedOn: source.convertedOn ?? null,
       isBaptized: source.isBaptized ?? null,
       waterBaptismOn: source.waterBaptismOn ?? null,
+      baptismMunicipalityCode: source.baptismMunicipalityCode ?? null,
       baptismPlace: source.baptismPlace ?? null,
+      baptizingPastorName: source.baptizingPastorName ?? null,
+      holySpiritBaptismOn: source.holySpiritBaptismOn ?? null,
+      reconciledOn: source.reconciledOn ?? null,
+      previousCongregationId: source.previousCongregationId ?? null,
       previousCongregationName: source.previousCongregationName ?? null,
+      isChristianEducationTeacher: source.isChristianEducationTeacher ?? false,
+      desiredAreas: source.desiredAreas ?? null,
+      pastorNotes: source.pastorNotes ?? null,
     });
 
     await this.transactions.run(async (transaction) => {
@@ -205,18 +229,27 @@ export class UpdateMembershipDataUseCase {
     const clean: {
       -readonly [K in keyof MembershipDataPatch]: MembershipDataPatch[K];
     } = {};
-    for (const key of ['joinedOn', 'waterBaptismOn'] as const) {
+    const dateLabels = {
+      joinedOn: 'La fecha de ingreso no es válida o es futura.',
+      convertedOn: 'La fecha de conversión no es válida o es futura.',
+      waterBaptismOn: 'La fecha del bautismo no es válida o es futura.',
+      holySpiritBaptismOn:
+        'La fecha de recepción del Espíritu Santo no es válida o es futura.',
+      reconciledOn: 'La fecha de reconciliación no es válida o es futura.',
+    } as const;
+
+    for (const key of [
+      'joinedOn',
+      'convertedOn',
+      'waterBaptismOn',
+      'holySpiritBaptismOn',
+      'reconciledOn',
+    ] as const) {
       const value = patch[key];
       if (value !== undefined) {
         const date = emptyToNull(value);
         if (date !== null) {
-          assertPastOrToday(
-            date,
-            today,
-            key === 'joinedOn'
-              ? 'La fecha de ingreso no es válida o es futura.'
-              : 'La fecha del bautismo no es válida o es futura.',
-          );
+          assertPastOrToday(date, today, dateLabels[key]);
         }
         clean[key] = date;
       }
@@ -230,10 +263,23 @@ export class UpdateMembershipDataUseCase {
         'INVALID_BAPTISM',
       );
     }
-    for (const key of ['baptismPlace', 'previousCongregationName'] as const) {
+    for (const key of [
+      'baptismMunicipalityCode',
+      'baptismPlace',
+      'baptizingPastorName',
+      'previousCongregationName',
+      'desiredAreas',
+      'pastorNotes',
+    ] as const) {
       if (patch[key] !== undefined) {
         clean[key] = emptyToNull(patch[key]);
       }
+    }
+    if (patch.previousCongregationId !== undefined) {
+      clean.previousCongregationId = patch.previousCongregationId;
+    }
+    if (patch.isChristianEducationTeacher !== undefined) {
+      clean.isChristianEducationTeacher = patch.isChristianEducationTeacher;
     }
     return clean;
   }

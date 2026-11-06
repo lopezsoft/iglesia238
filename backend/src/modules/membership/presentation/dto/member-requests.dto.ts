@@ -123,8 +123,14 @@ export class PersonDataDto {
   @OptionalText('El número de documento', 30)
   documentNumber?: string | null;
 
+  @OptionalText('El lugar de expedición del documento', 10)
+  documentIssuePlaceCode?: string | null;
+
   @OptionalDate('La fecha de nacimiento')
   birthDate?: string | null;
+
+  @OptionalText('El lugar de nacimiento', 10)
+  birthPlaceCode?: string | null;
 
   @OptionalOneOf('El sexo', SEXES)
   sex?: (typeof SEXES)[number] | null;
@@ -141,8 +147,20 @@ export class PersonDataDto {
   @OptionalText('La ocupación', 120)
   occupation?: string | null;
 
+  @OptionalText('El lugar de trabajo', 150)
+  workplace?: string | null;
+
+  @OptionalInt('El número de hijos', 0, 30)
+  childrenCount?: number | null;
+
   @OptionalText('El teléfono', 30)
   phone?: string | null;
+
+  @OptionalText('El teléfono fijo', 30)
+  landlinePhone?: string | null;
+
+  @OptionalText('El teléfono del trabajo', 30)
+  workPhone?: string | null;
 
   @OptionalText('El correo electrónico', 191)
   email?: string | null;
@@ -152,6 +170,9 @@ export class PersonDataDto {
 
   @OptionalText('El municipio', 10)
   municipalityCode?: string | null;
+
+  @OptionalText('El barrio', 100)
+  neighborhood?: string | null;
 }
 
 export class CreateMemberDto {
@@ -182,17 +203,44 @@ export class CreateMemberDto {
   @OptionalDate('La fecha de ingreso')
   joinedOn?: string | null;
 
+  @OptionalDate('La fecha de conversión')
+  convertedOn?: string | null;
+
   @OptionalBoolean('El bautismo en agua')
   isBaptized?: boolean | null;
 
   @OptionalDate('La fecha del bautismo')
   waterBaptismOn?: string | null;
 
+  @OptionalText('El municipio del bautismo', 10)
+  baptismMunicipalityCode?: string | null;
+
   @OptionalText('El lugar del bautismo', 150)
   baptismPlace?: string | null;
 
+  @OptionalText('El pastor que bautizó', 150)
+  baptizingPastorName?: string | null;
+
+  @OptionalDate('La fecha de recepción del Espíritu Santo')
+  holySpiritBaptismOn?: string | null;
+
+  @OptionalDate('La fecha de reconciliación')
+  reconciledOn?: string | null;
+
+  @OptionalInt('La sede anterior')
+  previousCongregationId?: number | null;
+
   @OptionalText('La iglesia anterior', 150)
   previousCongregationName?: string | null;
+
+  @OptionalBoolean('Maestro de educación cristiana')
+  isChristianEducationTeacher?: boolean;
+
+  @OptionalText('Los campos en los que le gustaría desempeñarse', 255)
+  desiredAreas?: string | null;
+
+  @OptionalText('Las observaciones del pastor', 2000)
+  pastorNotes?: string | null;
 
   @OptionalText('El libro del registro', 20)
   registryBook?: string | null;
@@ -214,17 +262,44 @@ export class UpdateMembershipDto {
   @OptionalDate('La fecha de ingreso')
   joinedOn?: string | null;
 
+  @OptionalDate('La fecha de conversión')
+  convertedOn?: string | null;
+
   @OptionalBoolean('El bautismo en agua')
   isBaptized?: boolean | null;
 
   @OptionalDate('La fecha del bautismo')
   waterBaptismOn?: string | null;
 
+  @OptionalText('El municipio del bautismo', 10)
+  baptismMunicipalityCode?: string | null;
+
   @OptionalText('El lugar del bautismo', 150)
   baptismPlace?: string | null;
 
+  @OptionalText('El pastor que bautizó', 150)
+  baptizingPastorName?: string | null;
+
+  @OptionalDate('La fecha de recepción del Espíritu Santo')
+  holySpiritBaptismOn?: string | null;
+
+  @OptionalDate('La fecha de reconciliación')
+  reconciledOn?: string | null;
+
+  @OptionalInt('La sede anterior')
+  previousCongregationId?: number | null;
+
   @OptionalText('La iglesia anterior', 150)
   previousCongregationName?: string | null;
+
+  @OptionalBoolean('Maestro de educación cristiana')
+  isChristianEducationTeacher?: boolean;
+
+  @OptionalText('Los campos en los que le gustaría desempeñarse', 255)
+  desiredAreas?: string | null;
+
+  @OptionalText('Las observaciones del pastor', 2000)
+  pastorNotes?: string | null;
 }
 
 export class ChangeStatusDto {

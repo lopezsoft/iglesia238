@@ -4,6 +4,7 @@ export interface OpenCongregationRecord {
   id: number;
   denominationId: number;
   denominationName: string;
+  countryId?: number;
   name: string;
   municipalityCode: string | null;
   municipalityName: string | null;
@@ -63,6 +64,7 @@ export interface PublicDirectory {
 
   documentTypeExists(code: string): Promise<boolean>;
   maritalStatusExists(code: string): Promise<boolean>;
+  educationLevelExists?(code: string): Promise<boolean>;
   /** Inside the default country (DEFAULT_COUNTRY_ISO): the form sends a bare code. */
   municipalityExists(code: string): Promise<boolean>;
 }

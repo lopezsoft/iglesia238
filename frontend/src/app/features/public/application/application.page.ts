@@ -100,6 +100,11 @@ export class ApplicationPage {
     stream: ({ params }) => this.repository.getCurrentPolicy(params.denominationId),
   });
 
+  protected readonly regions = rxResource({
+    params: () => ({ countryId: this.selectedCongregation()?.countryId ?? null }),
+    stream: ({ params }) => this.repository.listRegions(params.countryId),
+  });
+
   /** Age of the applicant; null while the birth date is empty or invalid. */
   protected readonly age = computed(() => {
     const birthDate = this.birthDate();
@@ -239,6 +244,12 @@ export class ApplicationPage {
 
   private buildSubmission(policyId: number, sex: Sex): ApplicationSubmission {
     const { congregationId, personal, guardian, consent } = this.form.getRawValue();
+    const tribunalFlag =
+      personal.passedEcclesiasticalTribunal === 'yes'
+        ? true
+        : personal.passedEcclesiasticalTribunal === 'no'
+          ? false
+          : null;
     return {
       congregationId: congregationId ?? 0,
       policyId,
@@ -270,6 +281,34 @@ export class ApplicationPage {
         : null,
       consentAccepted: consent.accepted,
       website: consent.website,
+      ...(personal.documentIssuePlaceCode ? { documentIssuePlaceCode: personal.documentIssuePlaceCode } : {}),
+      ...(personal.birthPlaceCode ? { birthPlaceCode: personal.birthPlaceCode } : {}),
+      ...(personal.landlinePhone.trim() ? { landlinePhone: personal.landlinePhone.trim() } : {}),
+      ...(personal.educationLevelCode ? { educationLevelCode: personal.educationLevelCode } : {}),
+      ...(personal.profession.trim() ? { profession: personal.profession.trim() } : {}),
+      ...(personal.workplace.trim() ? { workplace: personal.workplace.trim() } : {}),
+      ...(personal.workPhone.trim() ? { workPhone: personal.workPhone.trim() } : {}),
+      ...(personal.marriageIsCivil ? { marriageIsCivil: true } : {}),
+      ...(personal.marriageIsChristian ? { marriageIsChristian: true } : {}),
+      ...(personal.marriageIsCatholic ? { marriageIsCatholic: true } : {}),
+      ...(personal.spouseFullName.trim() ? { spouseFullName: personal.spouseFullName.trim() } : {}),
+      ...(tribunalFlag !== null ? { passedEcclesiasticalTribunal: tribunalFlag } : {}),
+      ...(personal.tribunalOpinion.trim() ? { tribunalOpinion: personal.tribunalOpinion.trim() } : {}),
+      ...(personal.fatherFullName.trim() ? { fatherFullName: personal.fatherFullName.trim() } : {}),
+      ...(personal.motherFullName.trim() ? { motherFullName: personal.motherFullName.trim() } : {}),
+      ...(personal.childrenCount !== null ? { childrenCount: Number(personal.childrenCount) } : {}),
+      ...(personal.childrenNames.trim() ? { childrenNames: personal.childrenNames.trim() } : {}),
+      ...(personal.convertedOn ? { convertedOn: personal.convertedOn } : {}),
+      ...(personal.waterBaptismOn ? { waterBaptismOn: personal.waterBaptismOn } : {}),
+      ...(personal.baptismMunicipalityCode ? { baptismMunicipalityCode: personal.baptismMunicipalityCode } : {}),
+      ...(personal.baptismPlace.trim() ? { baptismPlace: personal.baptismPlace.trim() } : {}),
+      ...(personal.baptizingPastorName.trim() ? { baptizingPastorName: personal.baptizingPastorName.trim() } : {}),
+      ...(personal.holySpiritBaptismOn ? { holySpiritBaptismOn: personal.holySpiritBaptismOn } : {}),
+      ...(personal.reconciledOn ? { reconciledOn: personal.reconciledOn } : {}),
+      ...(personal.pastPositionsText.trim() ? { pastPositionsText: personal.pastPositionsText.trim() } : {}),
+      ...(personal.currentPositionsText.trim() ? { currentPositionsText: personal.currentPositionsText.trim() } : {}),
+      ...(personal.desiredAreas.trim() ? { desiredAreas: personal.desiredAreas.trim() } : {}),
+      ...(personal.isChristianEducationTeacher ? { isChristianEducationTeacher: true } : {}),
     };
   }
 

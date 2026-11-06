@@ -22,7 +22,7 @@ export interface GlobalCatalogs {
 /** The part the public application form needs. */
 export type PublicCatalogs = Pick<
   GlobalCatalogs,
-  'documentTypes' | 'maritalStatuses'
+  'documentTypes' | 'maritalStatuses' | 'educationLevels'
 >;
 
 export interface CountryView {
@@ -75,8 +75,8 @@ export interface CatalogsReader {
   listGlobalCatalogs(): Promise<GlobalCatalogs>;
   /** Ordered by name. Only the active ones unless `includeInactive`. */
   listCountries(includeInactive: boolean): Promise<CountryView[]>;
-  /** Regions (departamentos/estados) of an active country, ordered by name. */
-  listRegions(countryId: number): Promise<RegionView[]>;
+  /** Regions (departamentos/estados) of an active country (or default country when omitted), ordered by name. */
+  listRegions(countryId?: number | null): Promise<RegionView[]>;
   /** Municipalities of active countries only; `countryId` and `regionCode` narrow them down. */
   searchMunicipalities(
     search: string | null,

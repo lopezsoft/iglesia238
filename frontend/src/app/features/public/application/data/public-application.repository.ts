@@ -26,7 +26,7 @@ export abstract class PublicApplicationRepository {
   abstract getCatalogs(): Observable<PublicCatalogs>;
 
   /** Departments, states or provinces of an active country (`GET /public/geo/regions`). */
-  listRegions(_countryId: number): Observable<RegionOption[]> {
+  listRegions(_countryId?: number | null): Observable<RegionOption[]> {
     return of([]);
   }
 

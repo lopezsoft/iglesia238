@@ -52,9 +52,9 @@ export class GetCatalogsUseCase {
 
   /** Only what the public form shows: nothing about meetings or studies leaves the sign-in wall. */
   async publicSubset(): Promise<PublicCatalogs> {
-    const { documentTypes, maritalStatuses } =
+    const { documentTypes, maritalStatuses, educationLevels } =
       await this.reader.listGlobalCatalogs();
-    return { documentTypes, maritalStatuses };
+    return { documentTypes, maritalStatuses, educationLevels };
   }
 }
 
@@ -91,8 +91,8 @@ export class ListRegionsUseCase {
     @Inject(CATALOGS_READER) private readonly reader: CatalogsReader,
   ) {}
 
-  execute(countryId: number): Promise<RegionView[]> {
-    return this.reader.listRegions(countryId);
+  execute(countryId?: number | null): Promise<RegionView[]> {
+    return this.reader.listRegions(countryId ?? null);
   }
 }
 

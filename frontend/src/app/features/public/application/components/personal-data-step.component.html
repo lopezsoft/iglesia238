@@ -1,181 +1,429 @@
 <fieldset class="step" [formGroup]="group()">
-  <legend class="step__legend">Datos personales</legend>
+  <legend class="step__legend">Datos de membresía (Formato F-701)</legend>
   <p class="text-muted step__lead">
-    Los campos marcados con * son obligatorios. Usa los datos tal como aparecen en tu documento.
+    Los campos marcados con * son obligatorios. Usa los datos tal como aparecen en tu documento de identidad.
   </p>
 
-  <div class="form-grid">
-    <div class="field">
-      <label for="firstName">Nombres *</label>
-      <input id="firstName" class="input" type="text" formControlName="firstName" autocomplete="given-name"
-        required [attr.aria-describedby]="errorId('firstName')" [attr.aria-invalid]="ariaInvalid('firstName')" />
-      @if (invalid('firstName')) {
-        <p id="firstName-error" class="field__error">Escribe tus nombres.</p>
-      }
-    </div>
+  <!-- 1. Datos personales, ubicación y laborales -->
+  <div class="step-section">
+    <h3 class="step-section__title">1. Datos personales, ubicación y laborales</h3>
+    <p class="step-section__hint">Identificación oficial, lugar de residencia, contacto y escolaridad.</p>
 
-    <div class="field">
-      <label for="lastName">Primer apellido *</label>
-      <input id="lastName" class="input" type="text" formControlName="lastName" autocomplete="family-name"
-        required [attr.aria-describedby]="errorId('lastName')" [attr.aria-invalid]="ariaInvalid('lastName')" />
-      @if (invalid('lastName')) {
-        <p id="lastName-error" class="field__error">Escribe tu primer apellido.</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="secondLastName">Segundo apellido</label>
-      <input id="secondLastName" class="input" type="text" formControlName="secondLastName" autocomplete="additional-name"
-        [attr.aria-describedby]="errorId('secondLastName')" [attr.aria-invalid]="ariaInvalid('secondLastName')" />
-      @if (invalid('secondLastName')) {
-        <p id="secondLastName-error" class="field__error">Máximo 80 caracteres.</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="documentTypeCode">Tipo de documento *</label>
-      <select id="documentTypeCode" class="select" formControlName="documentTypeCode" required>
-        @for (type of documentTypes(); track type.code) {
-          <option [value]="type.code">{{ type.code }} · {{ type.name }}</option>
+    <div class="form-grid">
+      <div class="field">
+        <label for="firstName">Nombres *</label>
+        <input id="firstName" class="input" type="text" formControlName="firstName" autocomplete="given-name"
+          required [attr.aria-describedby]="errorId('firstName')" [attr.aria-invalid]="ariaInvalid('firstName')" />
+        @if (invalid('firstName')) {
+          <p id="firstName-error" class="field__error">Escribe tus nombres.</p>
         }
-      </select>
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="documentNumber">Número de documento *</label>
-      <input id="documentNumber" class="input" type="text" formControlName="documentNumber" inputmode="text"
-        autocomplete="off" required [attr.aria-describedby]="describedBy('documentNumber', 'documentNumber-hint')"
-        [attr.aria-invalid]="ariaInvalid('documentNumber')" />
-      @if (invalid('documentNumber')) {
-        <p id="documentNumber-error" class="field__error">
-          {{ group().controls.documentNumber.hasError('required') ? 'Escribe el número de documento.' : 'Usa solo letras y números (3 a 20), sin puntos ni espacios.' }}
+      <div class="field">
+        <label for="lastName">Primer apellido *</label>
+        <input id="lastName" class="input" type="text" formControlName="lastName" autocomplete="family-name"
+          required [attr.aria-describedby]="errorId('lastName')" [attr.aria-invalid]="ariaInvalid('lastName')" />
+        @if (invalid('lastName')) {
+          <p id="lastName-error" class="field__error">Escribe tu primer apellido.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="secondLastName">Segundo apellido</label>
+        <input id="secondLastName" class="input" type="text" formControlName="secondLastName" autocomplete="additional-name"
+          [attr.aria-describedby]="errorId('secondLastName')" [attr.aria-invalid]="ariaInvalid('secondLastName')" />
+        @if (invalid('secondLastName')) {
+          <p id="secondLastName-error" class="field__error">Máximo 80 caracteres.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="sex">Sexo *</label>
+        <select id="sex" class="select" formControlName="sex" required [attr.aria-describedby]="errorId('sex')"
+          [attr.aria-invalid]="ariaInvalid('sex')">
+          <option value="" disabled>Selecciona…</option>
+          @for (option of sexOptions; track option.code) {
+            <option [value]="option.code">{{ option.name }}</option>
+          }
+        </select>
+        @if (invalid('sex')) {
+          <p id="sex-error" class="field__error">Selecciona una opción.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="documentTypeCode">Tipo de documento *</label>
+        <select id="documentTypeCode" class="select" formControlName="documentTypeCode" required>
+          @for (type of documentTypes(); track type.code) {
+            <option [value]="type.code">{{ type.code }} · {{ type.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="documentNumber">Número de documento *</label>
+        <input id="documentNumber" class="input" type="text" formControlName="documentNumber" inputmode="text"
+          autocomplete="off" required [attr.aria-describedby]="describedBy('documentNumber', 'documentNumber-hint')"
+          [attr.aria-invalid]="ariaInvalid('documentNumber')" />
+        @if (invalid('documentNumber')) {
+          <p id="documentNumber-error" class="field__error">
+            {{ group().controls.documentNumber.hasError('required') ? 'Escribe el número de documento.' : 'Usa solo letras y números (3 a 20), sin puntos ni espacios.' }}
+          </p>
+        }
+        <p id="documentNumber-hint" class="field__hint">Sin puntos ni espacios.</p>
+      </div>
+
+      @if (regions().length > 0) {
+        <div class="field">
+          <label for="issuePlaceRegionCode">Departamento de expedición</label>
+          <select id="issuePlaceRegionCode" class="select" [value]="issuePlaceRegionCode()"
+            (change)="onIssuePlaceRegionChange($any($event.target).value)">
+            <option value="">Todos los departamentos…</option>
+            @for (region of regions(); track region.code) {
+              <option [value]="region.code">{{ region.name }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div class="field">
+        <label for="documentIssuePlace-search">Municipio de expedición del documento</label>
+        <app-municipality-picker
+          inputId="documentIssuePlace-search"
+          [countryId]="countryId()"
+          [regionCode]="issuePlaceRegionCode() || null"
+          [codeControl]="group().controls.documentIssuePlaceCode"
+          [nameControl]="group().controls.documentIssuePlaceName"
+        />
+      </div>
+
+      <div class="field">
+        <label for="birthDate">Fecha de nacimiento *</label>
+        <input id="birthDate" class="input" type="date" formControlName="birthDate" autocomplete="bday" required
+          [attr.aria-describedby]="describedBy('birthDate', 'birthDate-hint')" [attr.aria-invalid]="ariaInvalid('birthDate')" />
+        @if (invalid('birthDate')) {
+          <p id="birthDate-error" class="field__error">{{ birthDateMessage() }}</p>
+        }
+        <p id="birthDate-hint" class="field__hint" aria-live="polite">
+          @if (isMinor()) {
+            Tienes {{ age() }} años: en el siguiente paso te pediremos los datos de tu acudiente.
+          } @else {
+            Si eres menor de 18 años te pediremos los datos de tu acudiente.
+          }
         </p>
-      }
-      <p id="documentNumber-hint" class="field__hint">Sin puntos ni espacios.</p>
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="birthDate">Fecha de nacimiento *</label>
-      <input id="birthDate" class="input" type="date" formControlName="birthDate" autocomplete="bday" required
-        [attr.aria-describedby]="describedBy('birthDate', 'birthDate-hint')" [attr.aria-invalid]="ariaInvalid('birthDate')" />
-      @if (invalid('birthDate')) {
-        <p id="birthDate-error" class="field__error">{{ birthDateMessage() }}</p>
+      <div class="field">
+        <label for="birthPlace-search">Lugar de nacimiento (municipio)</label>
+        <app-municipality-picker
+          inputId="birthPlace-search"
+          [countryId]="countryId()"
+          [regionCode]="birthPlaceRegionCode() || null"
+          [codeControl]="group().controls.birthPlaceCode"
+          [nameControl]="group().controls.birthPlaceName"
+        />
+      </div>
+
+      @if (regions().length > 0) {
+        <div class="field">
+          <label for="residenceRegionCode">Departamento / estado de residencia</label>
+          <select id="residenceRegionCode" class="select" [value]="residenceRegionCode()"
+            (change)="onResidenceRegionChange($any($event.target).value)">
+            <option value="">Todos los departamentos…</option>
+            @for (region of regions(); track region.code) {
+              <option [value]="region.code">{{ region.name }}</option>
+            }
+          </select>
+          <p class="field__hint">Filtra los municipios del departamento seleccionado.</p>
+        </div>
       }
-      <p id="birthDate-hint" class="field__hint" aria-live="polite">
-        @if (isMinor()) {
-          Tienes {{ age() }} años: en el siguiente paso te pediremos los datos de tu acudiente.
-        } @else {
-          Si eres menor de 18 años te pediremos los datos de tu acudiente.
+
+      <div class="field">
+        <label for="municipality-search">Municipio de residencia *</label>
+        <app-municipality-picker
+          inputId="municipality-search"
+          [countryId]="countryId()"
+          [regionCode]="residenceRegionCode() || null"
+          [codeControl]="group().controls.municipalityCode"
+          [nameControl]="group().controls.municipalityName"
+          [invalid]="invalid('municipalityCode')"
+          [describedBy]="errorId('municipalityCode')"
+        />
+        @if (invalid('municipalityCode')) {
+          <p id="municipalityCode-error" class="field__error">Busca y selecciona tu municipio.</p>
         }
-      </p>
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="sex">Sexo *</label>
-      <select id="sex" class="select" formControlName="sex" required [attr.aria-describedby]="errorId('sex')"
-        [attr.aria-invalid]="ariaInvalid('sex')">
-        <option value="" disabled>Selecciona…</option>
-        @for (option of sexOptions; track option.code) {
-          <option [value]="option.code">{{ option.name }}</option>
+      <div class="field">
+        <label for="address">Dirección de residencia *</label>
+        <input id="address" class="input" type="text" formControlName="address" autocomplete="street-address" required
+          [attr.aria-describedby]="errorId('address')" [attr.aria-invalid]="ariaInvalid('address')" />
+        @if (invalid('address')) {
+          <p id="address-error" class="field__error">Escribe tu dirección (máximo 120 caracteres).</p>
         }
-      </select>
-      @if (invalid('sex')) {
-        <p id="sex-error" class="field__error">Selecciona una opción.</p>
-      }
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="maritalStatusCode">Estado civil *</label>
-      <select id="maritalStatusCode" class="select" formControlName="maritalStatusCode" required
-        [attr.aria-describedby]="errorId('maritalStatusCode')" [attr.aria-invalid]="ariaInvalid('maritalStatusCode')">
-        <option value="" disabled>Selecciona…</option>
-        @for (status of maritalStatuses(); track status.code) {
-          <option [value]="status.code">{{ status.name }}</option>
+      <div class="field">
+        <label for="neighborhood">Barrio</label>
+        <input id="neighborhood" class="input" type="text" formControlName="neighborhood" autocomplete="off"
+          [attr.aria-invalid]="ariaInvalid('neighborhood')" />
+        @if (invalid('neighborhood')) {
+          <p id="neighborhood-error" class="field__error">Máximo 120 caracteres.</p>
         }
-      </select>
-      @if (invalid('maritalStatusCode')) {
-        <p id="maritalStatusCode-error" class="field__error">Selecciona tu estado civil.</p>
-      }
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="phone">Teléfono celular *</label>
-      <input id="phone" class="input" type="tel" formControlName="phone" autocomplete="tel" required
-        [attr.aria-describedby]="errorId('phone')" [attr.aria-invalid]="ariaInvalid('phone')" />
-      @if (invalid('phone')) {
-        <p id="phone-error" class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="email">Correo electrónico</label>
-      <input id="email" class="input" type="email" formControlName="email" autocomplete="email"
-        [attr.aria-describedby]="describedBy('email', 'email-hint')" [attr.aria-invalid]="ariaInvalid('email')" />
-      @if (invalid('email')) {
-        <p id="email-error" class="field__error">Escribe un correo válido o déjalo vacío.</p>
-      }
-      <p id="email-hint" class="field__hint">Opcional. Lo usaremos para contactarte sobre tu solicitud.</p>
-    </div>
-
-    <div class="field">
-      <label for="address">Dirección de residencia *</label>
-      <input id="address" class="input" type="text" formControlName="address" autocomplete="street-address" required
-        [attr.aria-describedby]="errorId('address')" [attr.aria-invalid]="ariaInvalid('address')" />
-      @if (invalid('address')) {
-        <p id="address-error" class="field__error">Escribe tu dirección (máximo 120 caracteres).</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="municipality-search">Municipio *</label>
-      <app-municipality-picker
-        inputId="municipality-search"
-        [codeControl]="group().controls.municipalityCode"
-        [nameControl]="group().controls.municipalityName"
-        [invalid]="invalid('municipalityCode')"
-        [describedBy]="errorId('municipalityCode')"
-      />
-      @if (invalid('municipalityCode')) {
-        <p id="municipalityCode-error" class="field__error">Busca y selecciona tu municipio.</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="neighborhood">Barrio</label>
-      <input id="neighborhood" class="input" type="text" formControlName="neighborhood" autocomplete="off"
-        [attr.aria-invalid]="ariaInvalid('neighborhood')" />
-      @if (invalid('neighborhood')) {
-        <p id="neighborhood-error" class="field__error">Máximo 120 caracteres.</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="occupation">Ocupación u oficio</label>
-      <input id="occupation" class="input" type="text" formControlName="occupation" autocomplete="organization-title"
-        [attr.aria-invalid]="ariaInvalid('occupation')" />
-      @if (invalid('occupation')) {
-        <p id="occupation-error" class="field__error">Máximo 120 caracteres.</p>
-      }
-    </div>
-
-    <div class="field">
-      <label for="baptism">¿Estás bautizado(a)?</label>
-      <select id="baptism" class="select" formControlName="baptism">
-        @for (option of baptismOptions; track option.value) {
-          <option [value]="option.value">{{ option.name }}</option>
+      <div class="field">
+        <label for="phone">Teléfono celular *</label>
+        <input id="phone" class="input" type="tel" formControlName="phone" autocomplete="tel" required
+          [attr.aria-describedby]="errorId('phone')" [attr.aria-invalid]="ariaInvalid('phone')" />
+        @if (invalid('phone')) {
+          <p id="phone-error" class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</p>
         }
-      </select>
-    </div>
+      </div>
 
-    <div class="field">
-      <label for="previousCongregationName">Iglesia de la que vienes</label>
-      <input id="previousCongregationName" class="input" type="text" formControlName="previousCongregationName"
-        autocomplete="off" [attr.aria-describedby]="describedBy('previousCongregationName', 'previousCongregationName-hint')"
-        [attr.aria-invalid]="ariaInvalid('previousCongregationName')" />
-      @if (invalid('previousCongregationName')) {
-        <p id="previousCongregationName-error" class="field__error">Máximo 150 caracteres.</p>
+      <div class="field">
+        <label for="landlinePhone">Teléfono fijo</label>
+        <input id="landlinePhone" class="input" type="tel" formControlName="landlinePhone" autocomplete="tel-local"
+          [attr.aria-invalid]="ariaInvalid('landlinePhone')" />
+        @if (invalid('landlinePhone')) {
+          <p id="landlinePhone-error" class="field__error">Escribe un teléfono válido (7 a 20 dígitos) o déjalo vacío.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="email">Correo electrónico</label>
+        <input id="email" class="input" type="email" formControlName="email" autocomplete="email"
+          [attr.aria-describedby]="describedBy('email', 'email-hint')" [attr.aria-invalid]="ariaInvalid('email')" />
+        @if (invalid('email')) {
+          <p id="email-error" class="field__error">Escribe un correo válido o déjalo vacío.</p>
+        }
+        <p id="email-hint" class="field__hint">Opcional. Lo usaremos para contactarte sobre tu solicitud.</p>
+      </div>
+
+      <div class="field">
+        <label for="educationLevelCode">Nivel educativo / Escolaridad</label>
+        <select id="educationLevelCode" class="select" formControlName="educationLevelCode">
+          <option value="">Selecciona…</option>
+          @for (level of educationLevels(); track level.code) {
+            <option [value]="level.code">{{ level.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profession">Profesión</label>
+        <input id="profession" class="input" type="text" formControlName="profession" autocomplete="off"
+          placeholder="Ej. Ingeniero, Contador, Licenciado" [attr.aria-invalid]="ariaInvalid('profession')" />
+      </div>
+
+      <div class="field">
+        <label for="occupation">Ocupación u oficio</label>
+        <input id="occupation" class="input" type="text" formControlName="occupation" autocomplete="organization-title"
+          [attr.aria-invalid]="ariaInvalid('occupation')" />
+        @if (invalid('occupation')) {
+          <p id="occupation-error" class="field__error">Máximo 120 caracteres.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="workplace">Lugar de trabajo</label>
+        <input id="workplace" class="input" type="text" formControlName="workplace" autocomplete="organization"
+          placeholder="Empresa o lugar donde labora" [attr.aria-invalid]="ariaInvalid('workplace')" />
+      </div>
+
+      <div class="field">
+        <label for="workPhone">Teléfono de trabajo</label>
+        <input id="workPhone" class="input" type="tel" formControlName="workPhone" autocomplete="off"
+          [attr.aria-invalid]="ariaInvalid('workPhone')" />
+        @if (invalid('workPhone')) {
+          <p id="workPhone-error" class="field__error">Escribe un teléfono válido (7 a 20 dígitos) o déjalo vacío.</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Datos familiares -->
+  <div class="step-section">
+    <h3 class="step-section__title">2. Datos familiares</h3>
+    <p class="step-section__hint">Estado civil, cónyuge, padres e hijos.</p>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="maritalStatusCode">Estado civil *</label>
+        <select id="maritalStatusCode" class="select" formControlName="maritalStatusCode" required
+          [attr.aria-describedby]="errorId('maritalStatusCode')" [attr.aria-invalid]="ariaInvalid('maritalStatusCode')">
+          <option value="" disabled>Selecciona…</option>
+          @for (status of maritalStatuses(); track status.code) {
+            <option [value]="status.code">{{ status.name }}</option>
+          }
+        </select>
+        @if (invalid('maritalStatusCode')) {
+          <p id="maritalStatusCode-error" class="field__error">Selecciona tu estado civil.</p>
+        }
+      </div>
+
+      @if (isMarriedOrUnion()) {
+        <div class="field">
+          <label>Tipo de matrimonio</label>
+          <div class="checkbox-row" role="group" aria-label="Tipo de matrimonio">
+            <label>
+              <input type="checkbox" formControlName="marriageIsCivil" />
+              Civil
+            </label>
+            <label>
+              <input type="checkbox" formControlName="marriageIsChristian" />
+              Cristiano
+            </label>
+            <label>
+              <input type="checkbox" formControlName="marriageIsCatholic" />
+              Católico
+            </label>
+          </div>
+        </div>
+
+        <div class="field field--full">
+          <label for="spouseFullName">Nombre completo del cónyuge</label>
+          <input id="spouseFullName" class="input" type="text" formControlName="spouseFullName" autocomplete="off"
+            placeholder="Nombres y apellidos de tu esposo(a)" />
+        </div>
       }
-      <p id="previousCongregationName-hint" class="field__hint">Opcional. Déjalo vacío si no asistías a ninguna.</p>
+
+      @if (isDivorcedOrSeparated()) {
+        <div class="field">
+          <label for="passedEcclesiasticalTribunal">¿Pasó por el Tribunal Eclesiástico?</label>
+          <select id="passedEcclesiasticalTribunal" class="select" formControlName="passedEcclesiasticalTribunal">
+            <option value="">Selecciona…</option>
+            <option value="yes">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="tribunalOpinion">Concepto del Tribunal Eclesiástico</label>
+          <input id="tribunalOpinion" class="input" type="text" formControlName="tribunalOpinion"
+            placeholder="Ej. Favorable / Desfavorable / En trámite" />
+        </div>
+      }
+
+      <div class="field">
+        <label for="fatherFullName">Nombre completo del padre</label>
+        <input id="fatherFullName" class="input" type="text" formControlName="fatherFullName" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="motherFullName">Nombre completo de la madre</label>
+        <input id="motherFullName" class="input" type="text" formControlName="motherFullName" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="childrenCount">Número de hijos</label>
+        <input id="childrenCount" class="input" type="number" min="0" max="30" formControlName="childrenCount" />
+      </div>
+
+      <div class="field">
+        <label for="childrenNames">Nombres de los hijos</label>
+        <input id="childrenNames" class="input" type="text" formControlName="childrenNames" autocomplete="off"
+          placeholder="Separados por coma (ej. Juan Pérez, María Pérez)" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Datos eclesiásticos y ministeriales -->
+  <div class="step-section">
+    <h3 class="step-section__title">3. Datos eclesiásticos y ministeriales</h3>
+    <p class="step-section__hint">Conversión, bautismo en agua, recepción del Espíritu Santo y servicio en la iglesia.</p>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="convertedOn">Fecha de conversión</label>
+        <input id="convertedOn" class="input" type="date" formControlName="convertedOn" />
+      </div>
+
+      <div class="field">
+        <label for="baptism">¿Estás bautizado(a) en el Nombre de Jesús?</label>
+        <select id="baptism" class="select" formControlName="baptism">
+          @for (option of baptismOptions; track option.value) {
+            <option [value]="option.value">{{ option.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (isBaptizedYes()) {
+        <div class="field">
+          <label for="waterBaptismOn">Fecha de bautismo en agua</label>
+          <input id="waterBaptismOn" class="input" type="date" formControlName="waterBaptismOn" />
+        </div>
+
+        <div class="field">
+          <label for="baptismMunicipality-search">Municipio de bautismo</label>
+          <app-municipality-picker
+            inputId="baptismMunicipality-search"
+            [countryId]="countryId()"
+            [regionCode]="baptismRegionCode() || null"
+            [codeControl]="group().controls.baptismMunicipalityCode"
+            [nameControl]="group().controls.baptismMunicipalityName"
+          />
+        </div>
+
+        <div class="field">
+          <label for="baptismPlace">Congregación o lugar de bautismo</label>
+          <input id="baptismPlace" class="input" type="text" formControlName="baptismPlace" autocomplete="off"
+            placeholder="Nombre de la sede o lugar donde fue bautizado(a)" />
+        </div>
+
+        <div class="field">
+          <label for="baptizingPastorName">Nombre del pastor que lo(a) bautizó</label>
+          <input id="baptizingPastorName" class="input" type="text" formControlName="baptizingPastorName" autocomplete="off" />
+        </div>
+      }
+
+      <div class="field">
+        <label for="holySpiritBaptismOn">Fecha recepción del Espíritu Santo</label>
+        <input id="holySpiritBaptismOn" class="input" type="date" formControlName="holySpiritBaptismOn" />
+      </div>
+
+      <div class="field">
+        <label for="reconciledOn">Fecha de reconciliación (si aplica)</label>
+        <input id="reconciledOn" class="input" type="date" formControlName="reconciledOn" />
+      </div>
+
+      <div class="field">
+        <label for="previousCongregationName">Iglesia o congregación de la que vienes</label>
+        <input id="previousCongregationName" class="input" type="text" formControlName="previousCongregationName"
+          autocomplete="off" [attr.aria-describedby]="describedBy('previousCongregationName', 'previousCongregationName-hint')"
+          [attr.aria-invalid]="ariaInvalid('previousCongregationName')" />
+        @if (invalid('previousCongregationName')) {
+          <p id="previousCongregationName-error" class="field__error">Máximo 150 caracteres.</p>
+        }
+        <p id="previousCongregationName-hint" class="field__hint">Opcional. Déjalo vacío si no asistías a ninguna.</p>
+      </div>
+
+      <div class="field">
+        <label for="currentPositionsText">Cargo actual (si desempeña alguno)</label>
+        <input id="currentPositionsText" class="input" type="text" formControlName="currentPositionsText"
+          placeholder="Ej. Líder de Jóvenes, Ujier" />
+      </div>
+
+      <div class="field">
+        <label for="pastPositionsText">Cargos que ha desempeñado</label>
+        <input id="pastPositionsText" class="input" type="text" formControlName="pastPositionsText"
+          placeholder="Separados por coma (ej. Secretario, Tesorero)" />
+      </div>
+
+      <div class="field">
+        <label for="desiredAreas">Campos en los que le gustaría desempeñarse</label>
+        <input id="desiredAreas" class="input" type="text" formControlName="desiredAreas"
+          placeholder="Ej. Música, Evangelismo, Educación Cristiana, Damas" />
+      </div>
+
+      <div class="field field--full">
+        <div class="checkbox-row">
+          <label for="isChristianEducationTeacher">
+            <input id="isChristianEducationTeacher" type="checkbox" formControlName="isChristianEducationTeacher" />
+            ¿Es maestro(a) de Educación Cristiana (Escuela Dominical) actualmente?
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 </fieldset>

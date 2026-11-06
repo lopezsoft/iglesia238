@@ -43,6 +43,23 @@ export function toPersonData(dto: PersonDataDto): PersonData {
     email: dto.email ?? null,
     address: dto.address ?? null,
     municipalityCode: dto.municipalityCode ?? null,
+    ...(dto.documentIssuePlaceCode !== undefined
+      ? { documentIssuePlaceCode: dto.documentIssuePlaceCode }
+      : {}),
+    ...(dto.birthPlaceCode !== undefined
+      ? { birthPlaceCode: dto.birthPlaceCode }
+      : {}),
+    ...(dto.workplace !== undefined ? { workplace: dto.workplace } : {}),
+    ...(dto.childrenCount !== undefined
+      ? { childrenCount: dto.childrenCount }
+      : {}),
+    ...(dto.landlinePhone !== undefined
+      ? { landlinePhone: dto.landlinePhone }
+      : {}),
+    ...(dto.workPhone !== undefined ? { workPhone: dto.workPhone } : {}),
+    ...(dto.neighborhood !== undefined
+      ? { neighborhood: dto.neighborhood }
+      : {}),
   };
 }
 

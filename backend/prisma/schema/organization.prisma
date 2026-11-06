@@ -59,6 +59,7 @@ model Municipality {
 
   documentIssuedPersons Person[]        @relation("PersonDocumentIssuePlace")
   bornPersons           Person[]        @relation("PersonBirthPlace")
+  baptizedMembers       Member[]        @relation("MemberBaptismMunicipality")
   personAddresses       PersonAddress[]
   neighborhoods         Neighborhood[]
   legalEntities         LegalEntity[]
@@ -238,6 +239,7 @@ model Congregation {
   budgets                Budget[]
   userRoles              UserRole[]
   members                Member[]
+  previousMembers        Member[]                @relation("MemberPreviousCongregation")
   memberRegistryEntries  MemberRegistryEntry[]
   membershipApplications MembershipApplication[]
   ministries             Ministry[]

@@ -148,6 +148,26 @@ import { PersonForm } from './person-form';
       </div>
 
       <div class="field">
+        <label [for]="id('workplace')">Lugar de trabajo</label>
+        <input [id]="id('workplace')" class="input" formControlName="workplace" />
+        @if (showError('workplace')) {
+          <span class="field__error">Máximo 150 caracteres.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label [for]="id('children-count')">Número de hijos</label>
+        <input
+          [id]="id('children-count')"
+          class="input"
+          type="number"
+          min="0"
+          max="30"
+          formControlName="childrenCount"
+        />
+      </div>
+
+      <div class="field">
         <label [for]="id('phone')">Teléfono celular</label>
         <input
           [id]="id('phone')"
@@ -157,6 +177,32 @@ import { PersonForm } from './person-form';
           autocomplete="tel"
         />
         @if (showError('phone')) {
+          <span class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</span>
+        }
+      </div>
+
+      <div class="field">
+        <label [for]="id('landline-phone')">Teléfono fijo</label>
+        <input
+          [id]="id('landline-phone')"
+          class="input mono"
+          type="tel"
+          formControlName="landlinePhone"
+        />
+        @if (showError('landlinePhone')) {
+          <span class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</span>
+        }
+      </div>
+
+      <div class="field">
+        <label [for]="id('work-phone')">Teléfono oficina</label>
+        <input
+          [id]="id('work-phone')"
+          class="input mono"
+          type="tel"
+          formControlName="workPhone"
+        />
+        @if (showError('workPhone')) {
           <span class="field__error">Escribe un teléfono válido (7 a 20 dígitos).</span>
         }
       </div>
@@ -184,6 +230,14 @@ import { PersonForm } from './person-form';
           (picked)="onMunicipalityPicked($event)"
           (cleared)="onMunicipalityCleared()"
         />
+      </div>
+
+      <div class="field">
+        <label [for]="id('neighborhood')">Barrio</label>
+        <input [id]="id('neighborhood')" class="input" formControlName="neighborhood" />
+        @if (showError('neighborhood')) {
+          <span class="field__error">Máximo 100 caracteres.</span>
+        }
       </div>
 
       <div class="field field--full">

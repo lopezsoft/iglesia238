@@ -44,8 +44,11 @@ export class HttpPublicApplicationRepository extends PublicApplicationRepository
     return this.http.get<PublicCatalogs>(apiUrl('/public/catalogs'));
   }
 
-  override listRegions(countryId: number): Observable<RegionOption[]> {
-    const params = new HttpParams().set('countryId', countryId);
+  override listRegions(countryId?: number | null): Observable<RegionOption[]> {
+    const params =
+      countryId !== undefined && countryId !== null
+        ? new HttpParams().set('countryId', countryId)
+        : new HttpParams();
     return this.http.get<RegionOption[]>(apiUrl('/public/geo/regions'), { params });
   }
 

@@ -150,6 +150,33 @@ export interface ApplicationFormData {
   readonly guardianRelationship: string | null;
   readonly guardianPhone: string | null;
   readonly guardianDocumentTypeCode: string | null;
+  readonly documentIssuePlaceCode?: string | null;
+  readonly birthPlaceCode?: string | null;
+  readonly landlinePhone?: string | null;
+  readonly educationLevelCode?: string | null;
+  readonly profession?: string | null;
+  readonly workplace?: string | null;
+  readonly workPhone?: string | null;
+  readonly isCivilMarriage?: boolean | null;
+  readonly isChristianMarriage?: boolean | null;
+  readonly isCatholicMarriage?: boolean | null;
+  readonly spouseFullName?: string | null;
+  readonly fatherFullName?: string | null;
+  readonly motherFullName?: string | null;
+  readonly childrenCount?: number | null;
+  readonly childrenNames?: readonly string[];
+  readonly tribunalOpinion?: string | null;
+  readonly convertedOn?: string | null;
+  readonly waterBaptismOn?: string | null;
+  readonly baptismMunicipalityCode?: string | null;
+  readonly baptismPlace?: string | null;
+  readonly baptizingPastorName?: string | null;
+  readonly holySpiritBaptismOn?: string | null;
+  readonly reconciledOn?: string | null;
+  readonly currentPositionsText?: string | null;
+  readonly pastPositionsText?: string | null;
+  readonly desiredAreas?: string | null;
+  readonly isChristianEducationTeacher?: boolean | null;
 }
 
 export interface ApplicationDetail {

@@ -62,8 +62,20 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dd>{{ person.occupation ?? '—' }}</dd>
       </div>
       <div>
+        <dt>Lugar de trabajo</dt>
+        <dd>{{ person.workplace ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Número de hijos</dt>
+        <dd>{{ person.childrenCount ?? '—' }}</dd>
+      </div>
+      <div>
         <dt>Dirección</dt>
         <dd>{{ person.address ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Barrio</dt>
+        <dd>{{ person.neighborhood ?? '—' }}</dd>
       </div>
       <div>
         <dt>Municipio de residencia</dt>
@@ -72,6 +84,14 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
       <div>
         <dt>Teléfono celular</dt>
         <dd class="mono">{{ person.phone ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Teléfono fijo</dt>
+        <dd class="mono">{{ person.landlinePhone ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Teléfono oficina</dt>
+        <dd class="mono">{{ person.workPhone ?? '—' }}</dd>
       </div>
       <div>
         <dt>Correo electrónico</dt>
@@ -90,15 +110,33 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
     </div>
     <dl class="details">
       <div>
+        <dt>Fecha de conversión</dt>
+        <dd>{{ member().convertedOn ? (member().convertedOn | date: 'dd/MM/yyyy') : '—' }}</dd>
+      </div>
+      <div>
         <dt>Bautismo en agua</dt>
         <dd>{{ baptism() }}</dd>
       </div>
       @if (member().baptismPlace) {
         <div>
-          <dt>Lugar del bautismo</dt>
+          <dt>Congregación o lugar del bautismo</dt>
           <dd>{{ member().baptismPlace }}</dd>
         </div>
       }
+      @if (member().baptizingPastorName) {
+        <div>
+          <dt>Pastor que bautizó</dt>
+          <dd>{{ member().baptizingPastorName }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Bautismo del Espíritu Santo</dt>
+        <dd>{{ member().holySpiritBaptismOn ? (member().holySpiritBaptismOn | date: 'dd/MM/yyyy') : '—' }}</dd>
+      </div>
+      <div>
+        <dt>Fecha de reconciliación</dt>
+        <dd>{{ member().reconciledOn ? (member().reconciledOn | date: 'dd/MM/yyyy') : '—' }}</dd>
+      </div>
       <div>
         <dt>Fecha de ingreso a la denominación</dt>
         <dd>{{ member().joinedOn ? (member().joinedOn | date: 'dd/MM/yyyy') : '—' }}</dd>
@@ -107,6 +145,31 @@ import { MemberDetail, SEX_LABELS, documentLabel, todayIso } from '../data/membe
         <dt>Iglesia o sede anterior</dt>
         <dd>{{ member().previousCongregationName ?? '—' }}</dd>
       </div>
+      <div>
+        <dt>Maestro(a) de Educación Cristiana</dt>
+        <dd>
+          {{
+            member().isChristianEducationTeacher === null ||
+            member().isChristianEducationTeacher === undefined
+              ? '—'
+              : member().isChristianEducationTeacher
+                ? 'Sí'
+                : 'No'
+          }}
+        </dd>
+      </div>
+      @if (member().desiredAreas) {
+        <div>
+          <dt>Áreas de servicio</dt>
+          <dd>{{ member().desiredAreas }}</dd>
+        </div>
+      }
+      @if (member().pastorNotes) {
+        <div>
+          <dt>Observaciones del pastor</dt>
+          <dd>{{ member().pastorNotes }}</dd>
+        </div>
+      }
     </dl>
   `,
 })

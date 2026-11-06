@@ -1,3 +1,47 @@
+@use 'tokens' as *;
 @use 'step';
 
 @include step.step-fieldset;
+
+.step-section {
+  margin-top: $space-5;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+
+  &:first-of-type {
+    margin-top: $space-2;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  &__title {
+    margin: 0 0 $space-1;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-ink;
+  }
+
+  &__hint {
+    margin: 0 0 $space-3;
+    font-size: $font-size-xs;
+    color: $color-ink-muted;
+  }
+}
+
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  align-items: center;
+  min-height: 2.375rem;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-regular;
+    color: $color-ink;
+    cursor: pointer;
+  }
+}

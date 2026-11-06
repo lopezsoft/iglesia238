@@ -99,15 +99,19 @@ export class PrismaPersonRepository implements PersonRepository {
         denominationId: scope.denominationId,
         documentTypeId: data.documentTypeId,
         documentNumber: data.documentNumber,
+        documentIssuePlaceId: data.documentIssuePlaceId ?? null,
         firstName: data.firstName,
         lastName: data.lastName,
         secondLastName: data.secondLastName,
         sex: data.sex,
         birthDate: data.birthDate ? parseIsoDate(data.birthDate) : null,
+        birthPlaceId: data.birthPlaceId ?? null,
         maritalStatusId: data.maritalStatusId,
         educationLevelId: data.educationLevelId,
         profession: data.profession,
         occupation: data.occupation,
+        workplace: data.workplace ?? null,
+        childrenCount: data.childrenCount ?? null,
       },
       select: { id: true },
     });
@@ -127,15 +131,25 @@ export class PrismaPersonRepository implements PersonRepository {
       data: {
         documentTypeId: data.documentTypeId,
         documentNumber: data.documentNumber,
+        ...(data.documentIssuePlaceId !== undefined
+          ? { documentIssuePlaceId: data.documentIssuePlaceId }
+          : {}),
         firstName: data.firstName,
         lastName: data.lastName,
         secondLastName: data.secondLastName,
         sex: data.sex,
         birthDate: data.birthDate ? parseIsoDate(data.birthDate) : null,
+        ...(data.birthPlaceId !== undefined
+          ? { birthPlaceId: data.birthPlaceId }
+          : {}),
         maritalStatusId: data.maritalStatusId,
         educationLevelId: data.educationLevelId,
         profession: data.profession,
         occupation: data.occupation,
+        ...(data.workplace !== undefined ? { workplace: data.workplace } : {}),
+        ...(data.childrenCount !== undefined
+          ? { childrenCount: data.childrenCount }
+          : {}),
       },
     });
     await this.syncContacts(client, scope.denominationId, personId, data);
@@ -197,10 +211,20 @@ export class PrismaPersonRepository implements PersonRepository {
       client,
       denominationId,
       personId,
-      PHONE_TYPES,
+      data.landlinePhone !== undefined ? ['MOBILE'] : PHONE_TYPES,
       'MOBILE',
       data.phone,
     );
+    if (data.landlinePhone !== undefined) {
+      await this.syncContact(
+        client,
+        denominationId,
+        personId,
+        ['LANDLINE'],
+        'LANDLINE',
+        data.landlinePhone,
+      );
+    }
     await this.syncContact(
       client,
       denominationId,
@@ -209,6 +233,16 @@ export class PrismaPersonRepository implements PersonRepository {
       'EMAIL',
       data.email,
     );
+    if (data.workPhone !== undefined) {
+      await this.syncContact(
+        client,
+        denominationId,
+        personId,
+        ['WORK_PHONE'],
+        'WORK_PHONE',
+        data.workPhone,
+      );
+    }
     await this.syncAddress(client, denominationId, personId, data);
   }
 
@@ -265,9 +299,20 @@ export class PrismaPersonRepository implements PersonRepository {
       }
       return;
     }
+    const neighborhoodId =
+      data.municipalityId !== null && data.neighborhood
+        ? await this.findOrCreateNeighborhood(
+            client,
+            data.municipalityId,
+            data.neighborhood,
+          )
+        : data.neighborhood === null
+          ? null
+          : undefined;
     const values = {
       address: data.address ?? '',
       municipalityId: data.municipalityId,
+      ...(neighborhoodId !== undefined ? { neighborhoodId } : {}),
     };
     if (existing) {
       await client.personAddress.update({
@@ -279,6 +324,25 @@ export class PrismaPersonRepository implements PersonRepository {
         data: { denominationId, personId, isCurrent: true, ...values },
       });
     }
+  }
+
+  private async findOrCreateNeighborhood(
+    client: Prisma.TransactionClient,
+    municipalityId: number,
+    name: string,
+  ): Promise<number> {
+    const existing = await client.neighborhood.findUnique({
+      where: { municipalityId_name: { municipalityId, name } },
+      select: { id: true },
+    });
+    if (existing) {
+      return existing.id;
+    }
+    const created = await client.neighborhood.create({
+      data: { municipalityId, name },
+      select: { id: true },
+    });
+    return created.id;
   }
 }
 
@@ -292,36 +356,47 @@ export class PrismaCatalogResolver implements CatalogResolver {
   ) {}
 
   async resolve(codes: CatalogCodes): Promise<CatalogResolution> {
-    const [documentType, maritalStatus, educationLevel, municipality] =
-      await Promise.all([
-        codes.documentTypeCode === null
-          ? null
-          : this.prisma.documentType.findUnique({
-              where: { code: codes.documentTypeCode },
-              select: { id: true },
-            }),
-        codes.maritalStatusCode === null
-          ? null
-          : this.prisma.maritalStatus.findUnique({
-              where: { code: codes.maritalStatusCode },
-              select: { id: true },
-            }),
-        codes.educationLevelCode === null
-          ? null
-          : this.prisma.educationLevel.findUnique({
-              where: { code: codes.educationLevelCode },
-              select: { id: true },
-            }),
-        codes.municipalityCode === null
-          ? null
-          : this.prisma.municipality.findFirst({
-              where: {
-                code: codes.municipalityCode,
-                region: { country: { isoAlpha2: this.defaultCountryIso } },
-              },
-              select: { id: true },
-            }),
-      ]);
+    const findMuni = (code: string | null | undefined) =>
+      !code
+        ? null
+        : this.prisma.municipality.findFirst({
+            where: {
+              code,
+              region: { country: { isoAlpha2: this.defaultCountryIso } },
+            },
+            select: { id: true },
+          });
+
+    const [
+      documentType,
+      maritalStatus,
+      educationLevel,
+      municipality,
+      documentIssuePlace,
+      birthPlace,
+    ] = await Promise.all([
+      codes.documentTypeCode === null
+        ? null
+        : this.prisma.documentType.findUnique({
+            where: { code: codes.documentTypeCode },
+            select: { id: true },
+          }),
+      codes.maritalStatusCode === null
+        ? null
+        : this.prisma.maritalStatus.findUnique({
+            where: { code: codes.maritalStatusCode },
+            select: { id: true },
+          }),
+      codes.educationLevelCode === null
+        ? null
+        : this.prisma.educationLevel.findUnique({
+            where: { code: codes.educationLevelCode },
+            select: { id: true },
+          }),
+      findMuni(codes.municipalityCode),
+      findMuni(codes.documentIssuePlaceCode),
+      findMuni(codes.birthPlaceCode),
+    ]);
 
     const unknown: CatalogResolution['unknown'][number][] = [];
     if (codes.documentTypeCode !== null && !documentType)
@@ -332,6 +407,9 @@ export class PrismaCatalogResolver implements CatalogResolver {
       unknown.push('educationLevel');
     if (codes.municipalityCode !== null && !municipality)
       unknown.push('municipality');
+    if (codes.documentIssuePlaceCode && !documentIssuePlace)
+      unknown.push('municipality');
+    if (codes.birthPlaceCode && !birthPlace) unknown.push('municipality');
 
     return {
       ids: {
@@ -339,6 +417,12 @@ export class PrismaCatalogResolver implements CatalogResolver {
         maritalStatusId: maritalStatus?.id ?? null,
         educationLevelId: educationLevel?.id ?? null,
         municipalityId: municipality?.id ?? null,
+        ...(codes.documentIssuePlaceCode !== undefined
+          ? { documentIssuePlaceId: documentIssuePlace?.id ?? null }
+          : {}),
+        ...(codes.birthPlaceCode !== undefined
+          ? { birthPlaceId: birthPlace?.id ?? null }
+          : {}),
       },
       unknown,
     };

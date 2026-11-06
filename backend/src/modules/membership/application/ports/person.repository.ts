@@ -52,6 +52,8 @@ export interface CatalogCodes {
   readonly maritalStatusCode: string | null;
   readonly educationLevelCode: string | null;
   readonly municipalityCode: string | null;
+  readonly documentIssuePlaceCode?: string | null;
+  readonly birthPlaceCode?: string | null;
 }
 
 export interface CatalogIds {
@@ -59,10 +61,15 @@ export interface CatalogIds {
   readonly maritalStatusId: number | null;
   readonly educationLevelId: number | null;
   readonly municipalityId: number | null;
+  readonly documentIssuePlaceId?: number | null;
+  readonly birthPlaceId?: number | null;
 }
 
 export type CatalogKind =
-  'documentType' | 'maritalStatus' | 'educationLevel' | 'municipality';
+  | 'documentType'
+  | 'maritalStatus'
+  | 'educationLevel'
+  | 'municipality';
 
 export interface CatalogResolution {
   readonly ids: CatalogIds;

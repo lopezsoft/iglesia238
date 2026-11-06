@@ -8,6 +8,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.7.0 - 2026-11-06
+
+### Added
+
+- Normalización 3FN/FNBC del esquema de membresía (`20261106044100_normalize_member_baptism_and_origin`) proyectado para escala nacional (5.400 sedes): llave foránea `baptism_municipality_id` hacia `municipalities` y `previous_congregation_id` hacia `congregations` en la tabla `members`, junto con diccionario de datos actualizado (`docs/2026-11-05-2342-modelo-de-datos.md`).
+- Cobertura completa del formato oficial `Datos de membresía (F-701)` en el formulario público de solicitud (`/apply`), organizado en tres secciones en grilla *mobile-first* de dos columnas (`.form-grid`) con filtro por departamento/estado:
+  - Identificación, lugar de expedición, nacimiento, contacto (`MOBILE`, `LANDLINE`, `EMAIL`, `WORK_PHONE`), nivel educativo, profesión, ocupación y lugar de trabajo.
+  - Estado civil, tipo de matrimonio (civil, cristiano, católico), cónyuge, concepto del Tribunal Eclesiástico, padres y lista dinámica de hijos.
+  - Datos eclesiásticos y ministeriales: conversión, bautismo en agua (fecha, municipio, congregación y pastor que bautizó), bautismo del Espíritu Santo, reconciliación, iglesia de procedencia, cargos actuales/anteriores, áreas de servicio y maestro de Educación Cristiana.
+- Proyección transaccional al aprobar una solicitud (`ApproveApplicationUseCase` y `PrismaMembershipRegistry`) hacia las tablas normalizadas `persons`, `person_contacts`, `person_addresses`, `neighborhoods`, `family_relations`, `marriages`, `members`, `church_positions` y `member_positions`.
+- Visualización y edición de los nuevos campos personales, familiares y eclesiásticos en la revisión de solicitudes (`/applications`) y en la ficha del miembro (`/members/:id`).
+
 ## 0.6.1 - 2026-11-05
 
 ### Added

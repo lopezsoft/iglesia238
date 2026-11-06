@@ -1,6 +1,6 @@
 {
   "name": "church-management-api",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Multi-tenant church management API: membership, secretariat and accounting",
   "author": "",
   "private": true,
