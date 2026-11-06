@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.2 - 2026-11-06
+
+### Fixed
+
+- **Fidelidad de dominio en `landing/` (`iglesia238.com`):** eliminación de menciones inexistentes en el producto («Asistente con IA», cifras inventadas y conmutador de idioma decorativo) en [`Navbar.astro`](landing/src/components/Navbar.astro), [`Hero.astro`](landing/src/components/Hero.astro) y [`AppMockup.astro`](landing/src/components/AppMockup.astro), reemplazándolas exclusivamente por funcionalidades y datos reales del proyecto (**Formato F-701**, **Certificados y Carnés PDF**, **18 países hispanohablantes / 9.229 municipios**, **Multi-denominación, distritos y sedes** y menú lateral alineado con `NAV_GROUPS`).
+
 ## 0.13.1 - 2026-11-06
 
 ### Added
