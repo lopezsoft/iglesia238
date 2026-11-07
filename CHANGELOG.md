@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.7 - 2026-11-07
+
+### Added
+
+- **Disparo manual `workflow_dispatch` en `.github/workflows/ci-cd.yml`:** soporte para ejecutar el pipeline completo de CI/CD y el webhook de despliegue hacia Dokploy tanto en cada `push` como manualmente desde la pestaña *Actions* de GitHub.
+
 ## 0.13.6 - 2026-11-07
 
 ### Fixed
