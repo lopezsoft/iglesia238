@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.6 - 2026-11-07
+
+### Fixed
+
+- **Normalización automática de `DATABASE_URL` en `docker/entrypoint.prod.sh`:** conversión transparente del esquema `mariadb://` (generado por la interfaz de Dokploy) a `mysql://` antes de ejecutar Prisma y la validación de entorno de NestJS.
+
 ## 0.13.5 - 2026-11-07
 
 ### Fixed

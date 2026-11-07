@@ -8,6 +8,13 @@ set -e
 
 cd /app/backend
 
+# Dokploy genera URLs con esquema mariadb://, mientras que Prisma (provider = "mysql") y Environment exigen mysql://
+case "${DATABASE_URL:-}" in
+  mariadb://*)
+    export DATABASE_URL="mysql://${DATABASE_URL#mariadb://}"
+    ;;
+esac
+
 echo "[iglesia238] Aplicando migraciones de base de datos (prisma migrate deploy)..."
 npx prisma migrate deploy
 
