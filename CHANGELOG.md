@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.15.0 - 2026-11-07
+
+### Added
+
+- **Auto-actualización del frontend al detectar nueva versión (`VersionUpdateService` y `/version.json`):** generación automática de `frontend/public/version.json` sincronizada con `package.json` y `environment.ts` (`frontend/scripts/write-version-manifest.mjs`), verificación periódica cada 60s, al recuperar el foco de la pestaña (`visibilitychange`/`focus`) y en navegación de rutas (`NavigationEnd`), recuperación automática ante errores de chunks diferidos (`ChunkLoadError` / `Failed to fetch dynamically imported module`) en `GlobalErrorHandler` y `withNavigationErrorHandler`, y cabeceras `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` en Nginx (`docker/nginx/dokploy.conf` y `frontend/nginx.conf`).
+
 ## 0.14.0 - 2026-11-07
 
 ### Added
