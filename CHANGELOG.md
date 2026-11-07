@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.5 - 2026-11-07
+
+### Fixed
+
+- **CSP del bloque `iglesia238.com` en `docker/nginx/dokploy.conf`:** habilitación de `script-src 'self' 'unsafe-inline'` y preservación de cabeceras de seguridad en `location /` del sitio estático en Astro para permitir la ejecución de los scripts ligeros de cambio de tema, palabras rotativas del Hero y pestañas interactivas en producción.
+
 ## 0.13.4 - 2026-11-06
 
 ### Fixed
