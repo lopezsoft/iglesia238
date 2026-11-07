@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.4 - 2026-11-06
+
+### Fixed
+
+- **Versión de Node.js en GitHub Actions (`.github/workflows/ci-cd.yml`):** actualización de `node-version` de `"22.22.3"` a `">=22.23.4"` en los jobs `ci-backend` y `ci-frontend` para cumplir el requerimiento de motor de `astro@7.4.7` (`node >= 22.23.4`).
+
 ## 0.13.3 - 2026-11-06
 
 ### Fixed
