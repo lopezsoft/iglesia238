@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.13.3 - 2026-11-06
+
+### Fixed
+
+- **Espaciado y alineación en una sola línea del Navbar (`landing/src/components/Navbar.astro`):** contenedor ampliado a `1320px`, `white-space: nowrap` y `flex-shrink: 0` en marca (`IGLESIA 238`), píldora (`Formato F-701`), enlaces de navegación (`Soluciones`, `Cómo funciona`, `Seguridad`, `Preguntas`) y acciones (`Iniciar sesión`, `Registrar mi sede`), eliminando el salto de línea apilado y el enlace redundante «Características».
+
 ## 0.13.2 - 2026-11-06
 
 ### Fixed
