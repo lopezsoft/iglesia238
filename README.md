@@ -1,6 +1,6 @@
 # Iglesia 238: gestión multi-iglesia
 
-**Versión 0.13.7**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
+**Versión 0.14.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
 
 Plataforma para administrar varias denominaciones con sus sedes: membresía, secretaría y contabilidad. Cada denominación ve solo sus datos.
 

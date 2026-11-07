@@ -10,6 +10,7 @@ import {
   InvalidInputException,
   NotFoundDomainException,
 } from '../../../common/errors/domain.exception.js';
+import { renderTransactionalEmailHtml } from '../../../common/mail/email-template.js';
 import { MAILER, type Mailer } from '../../../common/mail/mailer.port.js';
 import { toIsoDateTime } from '../../../common/mappers/value-mappers.js';
 import {
@@ -81,7 +82,7 @@ export interface InviteUserCommand {
   readonly ipAddress: string | null;
 }
 
-function invitationMessage(to: string, link: string) {
+export function invitationMessage(to: string, link: string) {
   return {
     to,
     kind: 'INVITATION',
@@ -94,16 +95,27 @@ function invitationMessage(to: string, link: string) {
       '',
       'Si no esperabas esta invitación, ignora este mensaje.',
     ].join('\n'),
-    html: [
-      '<p>Te invitaron a usar Iglesia 238, el sistema de gestión de tu iglesia.</p>',
-      `<p>Crea tu contraseña con este enlace (funciona una sola vez y vence en ${INVITATION_TTL_HOURS} horas):</p>`,
-      `<p><a href="${link}">Crear mi contraseña</a></p>`,
-      '<p>Si no esperabas esta invitación, ignora este mensaje.</p>',
-    ].join('\n'),
+    html: renderTransactionalEmailHtml({
+      preheader: `Fuiste invitado a Iglesia 238. Activa tu cuenta y define tu contraseña (enlace válido por ${INVITATION_TTL_HOURS} horas).`,
+      badgeText: 'Invitación de acceso',
+      badgeTone: 'primary',
+      heading: 'Te invitaron a Iglesia 238',
+      paragraphs: [
+        'Has recibido una invitación para acceder a Iglesia 238, el sistema de gestión ministerial, administrativa y contable de tu iglesia.',
+        'Para activar tu cuenta y crear tu contraseña personal, haz clic en el siguiente botón:',
+      ],
+      action: {
+        label: 'Crear mi contraseña',
+        url: link,
+        validityNote: `Enlace de un solo uso · Vence en ${INVITATION_TTL_HOURS} horas.`,
+      },
+      securityNote:
+        'Si no esperabas esta invitación, puedes ignorar este mensaje con tranquilidad; tu cuenta no se activará sin tu confirmación.',
+    }),
   };
 }
 
-function recoveryNoticeMessage(to: string) {
+export function recoveryNoticeMessage(to: string) {
   return {
     to,
     kind: 'RECOVERY_NOTICE',
@@ -113,10 +125,19 @@ function recoveryNoticeMessage(to: string) {
       '',
       'Si no lo esperabas, avisa a tu administrador o al equipo de plataforma.',
     ].join('\n'),
-    html: [
-      '<p>Un administrador de tu denominación generó un enlace de un solo uso para cambiar tu contraseña en Iglesia 238.</p>',
-      '<p>Si no lo esperabas, avisa a tu administrador o al equipo de plataforma.</p>',
-    ].join('\n'),
+    html: renderTransactionalEmailHtml({
+      preheader:
+        'Aviso de seguridad: un administrador generó un enlace de recuperación para tu cuenta en Iglesia 238.',
+      badgeText: 'Aviso de seguridad',
+      badgeTone: 'warning',
+      heading: 'Se generó un enlace para cambiar tu contraseña',
+      paragraphs: [
+        'Un administrador autorizado de tu denominación generó un enlace de un solo uso para restablecer tu contraseña en Iglesia 238.',
+        'Por seguridad, este correo es únicamente informativo y no contiene ningún enlace de acceso.',
+      ],
+      securityNote:
+        'Si no solicitaste ni esperabas esta acción, comunícate de inmediato con el administrador de tu denominación o con el equipo de plataforma.',
+    }),
   };
 }
 

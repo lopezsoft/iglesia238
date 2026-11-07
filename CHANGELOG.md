@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.14.0 - 2026-11-07
+
+### Added
+
+- **Plantillas HTML personalizadas de correos transaccionales (`backend/src/common/mail/email-template.ts`):** diseño institucional responsivo para Nodemailer / AWS SES con cabecera corporativa de **Iglesia 238**, etiquetas de estado (`Invitación de acceso`, `Verificación de correo`, `Recuperación de acceso`, `Aviso de seguridad`), botón CTA destacado, bloque alternativo de copia de enlace, nota de seguridad, pie institucional y escape estricto anti-XSS en los 5 correos de la plataforma (`INVITATION`, `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `REGISTRATION_NOTICE`, `RECOVERY_NOTICE`).
+
 ## 0.13.7 - 2026-11-07
 
 ### Added
