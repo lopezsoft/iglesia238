@@ -101,4 +101,8 @@ jobs:
             exit 0
           fi
           echo "Disparando despliegue en Dokploy para iglesia238.com..."
-          curl --fail --silent --show-error -X POST "$DOKPLOY_WEBHOOK_URL"
+          curl --fail --silent --show-error -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -d '{"ref":"refs/heads/main"}' \
+            "$DOKPLOY_WEBHOOK_URL"

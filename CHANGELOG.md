@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.15.1 - 2026-11-07
+
+### Fixed
+
+- **Payload del webhook de despliegue en `.github/workflows/ci-cd.yml`:** envío explícito de cabeceras `Content-Type: application/json`, `X-GitHub-Event: push` y cuerpo `{"ref":"refs/heads/main"}` al invocar `DOKPLOY_WEBHOOK_URL` para que el endpoint de Custom Git en Dokploy valide la rama `main` y ejecute el despliegue automáticamente en cada `push`.
+
 ## 0.15.0 - 2026-11-07
 
 ### Added
