@@ -1,7 +1,9 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, model, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { userMessage } from '../../../../core/errors/domain-error';
+import { FileDownloadService } from '../../../../shared/utils/file-download.service';
+import { IconComponent } from '../../../../shared/ui/icon.component';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { DialogComponent } from '../../../../shared/ui/dialog.component';
 import { ErrorBannerComponent, LoadingComponent } from '../../../../shared/ui/feedback.components';
@@ -15,7 +17,7 @@ import { TitheSettlementsRepository } from '../data/tithe-settlements.repository
 @Component({
   selector: 'app-settlement-detail-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DialogComponent, ErrorBannerComponent, LoadingComponent, MoneyPipe, StatusBadgeComponent],
+  imports: [DatePipe, DialogComponent, ErrorBannerComponent, IconComponent, LoadingComponent, MoneyPipe, StatusBadgeComponent],
   template: `
     <app-dialog [(open)]="open" variant="wide" [title]="'Liquidación ' + (settlement()?.number ?? '')">
       @if (detail.error(); as error) {
@@ -147,6 +149,18 @@ import { TitheSettlementsRepository } from '../data/tithe-settlements.repository
         </div>
       }
       <div dialog-footer>
+        @if (actError(); as message) {
+          <p class="alert alert--danger" role="alert">{{ message }}</p>
+        }
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="!detail.hasValue() || downloading()"
+          (click)="downloadAct()"
+        >
+          <app-icon name="download" />
+          Descargar acta (PDF)
+        </button>
         <button type="button" class="btn btn--secondary" (click)="open.set(false)">Cerrar</button>
       </div>
     </app-dialog>
@@ -154,6 +168,7 @@ import { TitheSettlementsRepository } from '../data/tithe-settlements.repository
 })
 export class SettlementDetailDialogComponent {
   private readonly repository = inject(TitheSettlementsRepository);
+  private readonly downloads = inject(FileDownloadService);
 
   readonly open = model(false);
   readonly settlement = input.required<TitheSettlementRow | null>();
@@ -169,4 +184,28 @@ export class SettlementDetailDialogComponent {
     params: () => this.target() ?? undefined,
     stream: ({ params }) => this.repository.detail(params),
   });
+
+  protected readonly downloading = signal(false);
+  /** An error of the last download; it is forgotten when the dialog shows another settlement. */
+  protected readonly actError = linkedSignal<number | null, string | null>({ source: this.target, computation: () => null });
+
+  /** The act is printed by the API (letterhead, signatures); a voided settlement prints too, marked as voided. */
+  protected downloadAct(): void {
+    const settlement = this.settlement();
+    if (!settlement || this.downloading()) {
+      return;
+    }
+    this.downloading.set(true);
+    this.actError.set(null);
+    this.repository.reportPdf(settlement.id).subscribe({
+      next: (file) => {
+        this.downloads.save(file.blob, file.filename);
+        this.downloading.set(false);
+      },
+      error: (error: unknown) => {
+        this.actError.set(userMessage(error));
+        this.downloading.set(false);
+      },
+    });
+  }
 }

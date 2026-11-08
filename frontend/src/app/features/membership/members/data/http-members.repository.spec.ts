@@ -98,6 +98,20 @@ describe('HttpMembersRepository', () => {
       expect((await file).type).toBe('text/csv');
     });
 
+    it('downloads the printable directory as a PDF Blob with the same filters', async () => {
+      const { repository, http } = setup();
+
+      const file = firstValueFrom(repository.exportPdf({ ...ALL, status: 'ACTIVE', text: 'ana' }));
+      const request = http.expectOne((req) => req.url === '/api/members/report.pdf');
+      expect(request.request.responseType).toBe('blob');
+      expect(request.request.headers.get('Accept')).toBe('application/pdf');
+      expect(request.request.params.get('status')).toBe('ACTIVE');
+      expect(request.request.params.get('text')).toBe('ana');
+      request.flush(new Blob(['%PDF-'], { type: 'application/pdf' }));
+
+      expect((await file).type).toBe('application/pdf');
+    });
+
     it('reads the position catalog', () => {
       const { repository, http } = setup();
 

@@ -76,6 +76,14 @@ export class HttpAttendanceRepository extends AttendanceRepository {
     });
   }
 
+  override exportPdf(filter: AttendanceFilter): Observable<Blob> {
+    return this.http.get(apiUrl('/attendance-sessions/report.pdf'), {
+      params: queryParams(filterParams(filter)),
+      headers: { Accept: 'application/pdf' },
+      responseType: 'blob',
+    });
+  }
+
   override exportCsv(filter: AttendanceFilter): Observable<Blob> {
     return this.http.get(apiUrl('/attendance-sessions/export'), {
       params: queryParams(filterParams(filter)),

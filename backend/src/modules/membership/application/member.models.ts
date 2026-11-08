@@ -7,11 +7,7 @@ export type ConsentChannel = 'WEB_FORM' | 'PAPER';
 export type FamilyRelationType = 'FATHER' | 'MOTHER' | 'CHILD' | 'GUARDIAN';
 export type StudyStatus = 'IN_PROGRESS' | 'COMPLETED';
 export type TransferStatus =
-  | 'REQUESTED'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'COMPLETED'
-  | 'CANCELLED';
+  'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
 
 export const MEMBER_STATUSES: readonly MemberStatus[] = [
   'ACTIVE',
@@ -23,12 +19,7 @@ export const MEMBER_STATUSES: readonly MemberStatus[] = [
 // ---------- List ----------
 
 export type AgeRange =
-  | 'ALL'
-  | 'CHILDREN'
-  | 'TEENAGERS'
-  | 'YOUNG_ADULTS'
-  | 'ADULTS'
-  | 'SENIORS';
+  'ALL' | 'CHILDREN' | 'TEENAGERS' | 'YOUNG_ADULTS' | 'ADULTS' | 'SENIORS';
 
 /** `NONE` lists members without an open position; a number is a ChurchPosition id. */
 export type PositionFilter = 'ALL' | 'NONE' | number;
@@ -452,11 +443,7 @@ export type PersonSearchPurpose =
   | 'CONTRIBUTOR';
 
 export type PersonEligibility =
-  | 'child'
-  | 'spouse'
-  | 'parent'
-  | 'pastor'
-  | 'officiant';
+  'child' | 'spouse' | 'parent' | 'pastor' | 'officiant';
 
 export interface PersonSearchCriteria {
   readonly purpose: PersonSearchPurpose;

@@ -1,10 +1,14 @@
 export const REPORT_PDF_RENDERER = Symbol('REPORT_PDF_RENDERER');
 
-/** Who issues the report: the legal entity (with its NIT) and the sede. The same lines every printed document shows. */
+/**
+ * Who issues the report: the legal entity (with its NIT) and the sede. The same lines every printed document shows.
+ * A report of the whole denomination has no single legal entity: `legalName` and `taxId` are null and
+ * `congregationName` says what it covers ("Todas las sedes").
+ */
 export interface ReportLetterhead {
   readonly denominationName: string;
-  readonly legalName: string;
-  readonly taxId: string;
+  readonly legalName: string | null;
+  readonly taxId: string | null;
   readonly congregationName: string;
 }
 

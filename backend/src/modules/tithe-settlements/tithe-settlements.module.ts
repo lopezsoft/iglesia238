@@ -8,6 +8,7 @@ import {
 } from './application/list-tithe-settlements.use-case.js';
 import { PreviewTitheSettlementUseCase } from './application/preview-tithe-settlement.use-case.js';
 import { TitheDraftService } from './application/tithe-draft.service.js';
+import { TitheSettlementReportService } from './application/tithe-settlement-report.service.js';
 import { TitheSettlementWidgets } from './application/tithe-settlement.widgets.js';
 import {
   TITHE_RULE_READER,
@@ -32,6 +33,7 @@ import { TitheSettlementsController } from './presentation/tithe-settlements.con
     VoidTitheSettlementUseCase,
     ListTitheSettlementsUseCase,
     GetTitheSettlementUseCase,
+    TitheSettlementReportService,
     TitheSettlementWidgets,
     { provide: TITHE_SETTLEMENT_READER, useClass: PrismaTitheSettlementReader },
     { provide: TITHE_SETTLEMENT_WRITER, useClass: PrismaTitheSettlementWriter },

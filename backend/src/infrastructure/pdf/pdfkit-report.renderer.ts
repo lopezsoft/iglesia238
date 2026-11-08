@@ -135,19 +135,19 @@ class ReportLayout {
       .text(letterhead.denominationName, left + logoSpace, top, {
         width: width - logoSpace,
       });
-    doc
-      .font('Helvetica')
-      .fontSize(8.5)
-      .fillColor(PALETTE.muted)
-      .text(
-        `Razón social: ${letterhead.legalName}  ·  NIT ${letterhead.taxId}`,
+    doc.font('Helvetica').fontSize(8.5).fillColor(PALETTE.muted);
+    if (letterhead.legalName) {
+      const nit = letterhead.taxId ? `  ·  NIT ${letterhead.taxId}` : '';
+      doc.text(
+        `Razón social: ${letterhead.legalName}${nit}`,
         left + logoSpace,
         doc.y + 2,
         { width: width - logoSpace },
-      )
-      .text(letterhead.congregationName, left + logoSpace, doc.y + 1, {
-        width: width - logoSpace,
-      });
+      );
+    }
+    doc.text(letterhead.congregationName, left + logoSpace, doc.y + 1, {
+      width: width - logoSpace,
+    });
     doc.y = Math.max(doc.y, top + (report.logo ? LOGO_BOX[1] : 0)) + 8;
     this.rule(doc.y, PALETTE.rule);
 

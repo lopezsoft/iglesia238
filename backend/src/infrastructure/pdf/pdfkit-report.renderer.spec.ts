@@ -96,6 +96,38 @@ describe('PdfkitReportRenderer', () => {
     ).toBe(true);
   });
 
+  it('prints a letterhead of the whole denomination, without a legal entity or a NIT it does not have', async () => {
+    const { texts } = await drawnTexts(() =>
+      renderer.render({
+        ...BASE,
+        letterhead: {
+          denominationName: 'Iglesia Cristiana Monte de Sion',
+          legalName: null,
+          taxId: null,
+          congregationName: 'Todas las sedes',
+        },
+      }),
+    );
+
+    expect(texts).toContain('Iglesia Cristiana Monte de Sion');
+    expect(texts).toContain('Todas las sedes');
+    expect(texts.some((text) => text.includes('Razón social'))).toBe(false);
+    expect(texts.some((text) => text.includes('NIT'))).toBe(false);
+  });
+
+  it('prints the legal name even when it has no NIT', async () => {
+    const { texts } = await drawnTexts(() =>
+      renderer.render({
+        ...BASE,
+        letterhead: { ...BASE.letterhead, taxId: null },
+      }),
+    );
+
+    expect(texts).toContain(
+      'Razón social: Corporación Iglesia Cristiana Monte de Sion',
+    );
+  });
+
   it('is portrait by default and landscape when asked', async () => {
     const portrait = await renderer.render(BASE);
     const landscape = await renderer.render({

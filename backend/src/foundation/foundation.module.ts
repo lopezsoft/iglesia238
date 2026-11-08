@@ -13,6 +13,7 @@ import { MAILER } from '../common/mail/mailer.port.js';
 import { DocumentNumberingService } from '../common/numbering/document-numbering.service.js';
 import { DOCUMENT_SEQUENCE_STORE } from '../common/numbering/document-sequence.store.js';
 import { TRANSACTION_RUNNER } from '../common/persistence/transaction.js';
+import { ReportIssuer } from '../common/reports/report-issuer.js';
 import { REPORT_LETTERHEAD_READER } from '../common/reports/report-letterhead.js';
 import { REPORT_PDF_RENDERER } from '../common/reports/report-pdf.js';
 import { FILE_STORAGE } from '../common/storage/file-storage.port.js';
@@ -134,6 +135,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
     },
     DocumentBrandingService,
     { provide: REPORT_PDF_RENDERER, useClass: PdfkitReportRenderer },
+    ReportIssuer,
     {
       provide: REPORT_LETTERHEAD_READER,
       useClass: PrismaReportLetterheadReader,
@@ -159,6 +161,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
     DocumentBrandingService,
     REPORT_PDF_RENDERER,
     REPORT_LETTERHEAD_READER,
+    ReportIssuer,
     TRANSACTION_RUNNER,
     AUDIT_RECORDER,
     DocumentNumberingService,

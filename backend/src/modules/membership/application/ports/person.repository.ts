@@ -66,10 +66,7 @@ export interface CatalogIds {
 }
 
 export type CatalogKind =
-  | 'documentType'
-  | 'maritalStatus'
-  | 'educationLevel'
-  | 'municipality';
+  'documentType' | 'maritalStatus' | 'educationLevel' | 'municipality';
 
 export interface CatalogResolution {
   readonly ids: CatalogIds;

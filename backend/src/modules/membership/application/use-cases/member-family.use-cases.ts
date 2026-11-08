@@ -145,7 +145,7 @@ export class AddFamilyRelationUseCase {
     }
 
     const relative = hasExistingId
-      ? await this.persons.findExisting(scope, command.relativeId as number)
+      ? await this.persons.findExisting(scope, command.relativeId)
       : null;
     if (hasExistingId && !relative) {
       throw new NotFoundDomainException(
@@ -320,12 +320,7 @@ export class UpdateFamilyRelationUseCase {
 
     await this.transactions.run(async (transaction) => {
       if (command.type !== row.type) {
-        await this.family.updateType!(
-          scope,
-          row.id,
-          command.type,
-          transaction,
-        );
+        await this.family.updateType!(scope, row.id, command.type, transaction);
         for (const inverse of oldInverses) {
           await this.family.remove(scope, inverse.id, transaction);
         }

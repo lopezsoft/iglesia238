@@ -136,12 +136,26 @@ describe('MembersPage', () => {
     expect(element.textContent).toContain('Se descargó el listado de miembros.');
   });
 
+  it('downloads the filtered list as a printable directory (PDF) with its own file name and message', async () => {
+    const { fixture, repo, saved, element } = render();
+    await fixture.whenStable();
+
+    element.querySelector<HTMLButtonElement>('button[aria-label="Descargar en PDF"]')!.click();
+    await fixture.whenStable();
+
+    expect(repo.pdfExports).toHaveLength(1);
+    expect(repo.exports).toHaveLength(0);
+    expect(saved[0].filename).toMatch(/^directorio-miembros-\d{4}-\d{2}-\d{2}\.pdf$/);
+    expect(element.textContent).toContain('Se descargó el directorio de miembros.');
+  });
+
   it('hides the registration and the export from a role that cannot write members', async () => {
     const { fixture, element } = render({ permissions: ['members.read'] });
     await fixture.whenStable();
 
     expect(element.textContent).not.toContain('Registrar miembro');
     expect(element.querySelector('button[aria-label="Descargar en CSV"]')).toBeNull();
+    expect(element.querySelector('button[aria-label="Descargar en PDF"]')).toBeNull();
     expect(element.textContent).toContain('Ver ficha');
   });
 });

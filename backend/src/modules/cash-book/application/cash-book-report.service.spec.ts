@@ -4,11 +4,8 @@ import {
   NotFoundDomainException,
 } from '../../../common/errors/domain.exception.js';
 import { CSV_BOM } from '../../../common/export/csv-document.js';
-import type { ReportLetterheadReader } from '../../../common/reports/report-letterhead.js';
-import type {
-  ReportDocument,
-  ReportPdfRenderer,
-} from '../../../common/reports/report-pdf.js';
+import { ReportIssuer } from '../../../common/reports/report-issuer.js';
+import type { ReportDocument } from '../../../common/reports/report-pdf.js';
 import type { Clock } from '../../../common/time/bogota-time.js';
 import { buildTenantContext } from '../../../../test/support/tenants.js';
 import {
@@ -101,16 +98,22 @@ function build(
   options: { letterhead?: typeof LETTERHEAD | null; branding?: object } = {},
 ) {
   const view = vi.fn().mockResolvedValue(book);
-  const render = vi.fn<(report: ReportDocument) => Promise<Buffer>>().mockResolvedValue(Buffer.from('%PDF-fake'));
-  const letterhead = options.letterhead === undefined ? LETTERHEAD : options.letterhead;
-  const service = new CashBookReportService(
-    { view } as unknown as CashBookQueryService,
-    { find: vi.fn().mockResolvedValue(letterhead) } as ReportLetterheadReader,
-    { render } as ReportPdfRenderer,
+  const render = vi
+    .fn<(report: ReportDocument) => Promise<Buffer>>()
+    .mockResolvedValue(Buffer.from('%PDF-fake'));
+  const letterhead =
+    options.letterhead === undefined ? LETTERHEAD : options.letterhead;
+  const issuer = new ReportIssuer(
+    { find: vi.fn().mockResolvedValue(letterhead) },
+    { render },
     {
       current: vi.fn().mockResolvedValue(options.branding ?? {}),
     } as unknown as DocumentBrandingService,
     { today: () => '2026-11-08' } as Clock,
+  );
+  const service = new CashBookReportService(
+    { view } as unknown as CashBookQueryService,
+    issuer,
   );
   return { service, view, render };
 }
@@ -145,7 +148,9 @@ describe('CashBookReportService.pdf', () => {
 
     const report = sent(render);
     expect(report.title).toBe('Libro de caja');
-    expect(report.subtitle).toBe('Fondo General · Noviembre 2026 · Periodo abierto');
+    expect(report.subtitle).toBe(
+      'Fondo General · Noviembre 2026 · Periodo abierto',
+    );
     expect(report.orientation).toBe('landscape');
     expect(report.generatedOn).toBe('2026-11-08');
     expect(report.letterhead).toEqual(LETTERHEAD);
@@ -184,7 +189,15 @@ describe('CashBookReportService.pdf', () => {
     const report = sent(render);
     expect(report.rows).toEqual([
       {
-        cells: ['01/11/2026', '', '', 'Saldo inicial', '', '', money(1_000_000)],
+        cells: [
+          '01/11/2026',
+          '',
+          '',
+          'Saldo inicial',
+          '',
+          '',
+          money(1_000_000),
+        ],
         style: 'strong',
       },
       {
@@ -231,7 +244,13 @@ describe('CashBookReportService.pdf', () => {
     const { service, render } = build(
       bookWith([
         ...NORMAL_ROWS,
-        row({ id: 3, description: 'Compra de sillas', direction: 'OUT', amount: 50_000, status: 'REVERSED' }),
+        row({
+          id: 3,
+          description: 'Compra de sillas',
+          direction: 'OUT',
+          amount: 50_000,
+          status: 'REVERSED',
+        }),
         row({
           id: 4,
           description: 'Compra de sillas',
@@ -250,7 +269,9 @@ describe('CashBookReportService.pdf', () => {
     expect(reversed.style).toBe('muted');
     expect(reversed.cells[3]).toBe('Compra de sillas (reversada)');
     expect(reversal.style).toBe('muted');
-    expect(reversal.cells[3]).toBe('Compra de sillas (reversa de CE-2026-00046)');
+    expect(reversal.cells[3]).toBe(
+      'Compra de sillas (reversa de CE-2026-00046)',
+    );
     expect(report.notes?.[0]).toContain('en gris');
   });
 
@@ -263,7 +284,13 @@ describe('CashBookReportService.pdf', () => {
   });
 
   it('prints the opening balance and zero totals for a month without movements', async () => {
-    const empty = bookWith([], { income: 0, expense: 0, closing: 1_000_000, inCount: 0, outCount: 0 });
+    const empty = bookWith([], {
+      income: 0,
+      expense: 0,
+      closing: 1_000_000,
+      inCount: 0,
+      outCount: 0,
+    });
     const { service, render } = build(empty);
 
     await service.pdf(treasurer, INPUT);
@@ -279,7 +306,11 @@ describe('CashBookReportService.pdf', () => {
 
     await service.pdf(treasurer, INPUT);
 
-    expect(sent(render).signatures).toEqual(['Tesorero(a)', 'Pastor(a)', 'Fiscal / Revisor']);
+    expect(sent(render).signatures).toEqual([
+      'Tesorero(a)',
+      'Pastor(a)',
+      'Fiscal / Revisor',
+    ]);
   });
 
   it('dresses the report with the logo and the color of the denomination', async () => {
@@ -305,52 +336,76 @@ describe('CashBookReportService.pdf', () => {
 
   it.each([
     ['Fondo General', 'libro-de-caja-2026-11-fondo-general.pdf'],
-    ['Fondo de Construcción', 'libro-de-caja-2026-11-fondo-de-construccion.pdf'],
-    ['  Misiones & Ayuda / Social!! ', 'libro-de-caja-2026-11-misiones-ayuda-social.pdf'],
+    [
+      'Fondo de Construcción',
+      'libro-de-caja-2026-11-fondo-de-construccion.pdf',
+    ],
+    [
+      '  Misiones & Ayuda / Social!! ',
+      'libro-de-caja-2026-11-misiones-ayuda-social.pdf',
+    ],
     ['¿¿¿', 'libro-de-caja-2026-11-fondo.pdf'],
-  ])('names the file after the month and the fund: %s', async (fundName, expected) => {
-    const { service } = build(bookWith(NORMAL_ROWS, { fundName }));
+  ])(
+    'names the file after the month and the fund: %s',
+    async (fundName, expected) => {
+      const { service } = build(bookWith(NORMAL_ROWS, { fundName }));
 
-    const file = await service.pdf(treasurer, INPUT);
+      const file = await service.pdf(treasurer, INPUT);
 
-    expect(file.filename).toBe(expected);
-  });
+      expect(file.filename).toBe(expected);
+    },
+  );
 
   it('refuses a month too big for one report, without drawing anything', async () => {
     const { service, render } = build(
       bookWith(NORMAL_ROWS, { totalRows: CASH_BOOK_REPORT_MAX_LINES + 1 }),
     );
 
-    const failure = await service.pdf(treasurer, INPUT).catch((error: unknown) => error);
+    const failure = await service
+      .pdf(treasurer, INPUT)
+      .catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(BusinessRuleException);
-    expect((failure as { code: string }).code).toBe('CASH_BOOK_REPORT_TOO_LARGE');
+    expect((failure as { code: string }).code).toBe(
+      'CASH_BOOK_REPORT_TOO_LARGE',
+    );
     expect(render).not.toHaveBeenCalled();
   });
 
   it('accepts a month at exactly the cap', async () => {
-    const { service } = build(bookWith(NORMAL_ROWS, { totalRows: CASH_BOOK_REPORT_MAX_LINES }));
+    const { service } = build(
+      bookWith(NORMAL_ROWS, { totalRows: CASH_BOOK_REPORT_MAX_LINES }),
+    );
 
     await expect(service.pdf(treasurer, INPUT)).resolves.toBeDefined();
   });
 
   it('answers 404 when the sede does not exist', async () => {
-    const { service, render } = build(bookWith(NORMAL_ROWS), { letterhead: null });
+    const { service, render } = build(bookWith(NORMAL_ROWS), {
+      letterhead: null,
+    });
 
-    await expect(service.pdf(treasurer, INPUT)).rejects.toBeInstanceOf(NotFoundDomainException);
+    await expect(service.pdf(treasurer, INPUT)).rejects.toBeInstanceOf(
+      NotFoundDomainException,
+    );
     expect(render).not.toHaveBeenCalled();
   });
 
   it('lets the errors of the book (a period or a fund that does not exist) through', async () => {
     const { service, view } = build(bookWith(NORMAL_ROWS));
-    view.mockRejectedValue(new NotFoundDomainException('El periodo no existe', 'PERIOD_NOT_FOUND'));
+    view.mockRejectedValue(
+      new NotFoundDomainException('El periodo no existe', 'PERIOD_NOT_FOUND'),
+    );
 
-    await expect(service.pdf(treasurer, INPUT)).rejects.toMatchObject({ code: 'PERIOD_NOT_FOUND' });
+    await expect(service.pdf(treasurer, INPUT)).rejects.toMatchObject({
+      code: 'PERIOD_NOT_FOUND',
+    });
   });
 });
 
 describe('CashBookReportService.csv', () => {
-  const lines = (content: string) => content.replace(CSV_BOM, '').trimEnd().split('\r\n');
+  const lines = (content: string) =>
+    content.replace(CSV_BOM, '').trimEnd().split('\r\n');
 
   it('is a UTF-8 spreadsheet with BOM, semicolons and a header', async () => {
     const { service } = build(bookWith(NORMAL_ROWS));
@@ -392,7 +447,9 @@ describe('CashBookReportService.csv', () => {
 
   it('neutralizes a description that a spreadsheet would run as a formula', async () => {
     const { service } = build(
-      bookWith([row({ description: '=HYPERLINK("http://malo.example","clic")' })]),
+      bookWith([
+        row({ description: '=HYPERLINK("http://malo.example","clic")' }),
+      ]),
     );
 
     const content = (await service.csv(treasurer, INPUT)).content;
@@ -416,6 +473,8 @@ describe('CashBookReportService.csv', () => {
       bookWith(NORMAL_ROWS, { totalRows: CASH_BOOK_REPORT_MAX_LINES + 1 }),
     );
 
-    await expect(service.csv(treasurer, INPUT)).rejects.toBeInstanceOf(BusinessRuleException);
+    await expect(service.csv(treasurer, INPUT)).rejects.toBeInstanceOf(
+      BusinessRuleException,
+    );
   });
 });

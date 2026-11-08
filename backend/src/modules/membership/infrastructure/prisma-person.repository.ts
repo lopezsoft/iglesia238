@@ -316,11 +316,7 @@ export class PrismaPersonRepository implements PersonRepository {
           isChristian,
           isCatholic,
           tribunalOpinion,
-          registeredWith: isChristian
-            ? 'CHURCH'
-            : isCivil
-              ? 'NOTARY'
-              : null,
+          registeredWith: isChristian ? 'CHURCH' : isCivil ? 'NOTARY' : null,
         },
       });
       return;

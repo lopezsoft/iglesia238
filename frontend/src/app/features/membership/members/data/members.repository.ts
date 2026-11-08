@@ -36,6 +36,8 @@ export abstract class MembersRepository {
   abstract list(query: MemberListQuery): Observable<MemberListPage>;
   /** CSV of every row matching the filters (members.read and members.write). */
   abstract exportCsv(filters: MemberFilters): Observable<Blob>;
+  /** The same list as a printable directory with the letterhead of the sede (PDF), same permissions as the CSV. */
+  abstract exportPdf(filters: MemberFilters): Observable<Blob>;
   abstract positionCatalog(): Observable<ChurchPosition[]>;
 
   // Registration

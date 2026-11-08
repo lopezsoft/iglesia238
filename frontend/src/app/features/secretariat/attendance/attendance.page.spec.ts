@@ -180,6 +180,12 @@ class FakeRepository extends AttendanceRepository {
     this.exported.push(filter);
     return of(new Blob(['csv']));
   }
+
+  readonly exportedPdf: AttendanceFilter[] = [];
+  override exportPdf(filter: AttendanceFilter) {
+    this.exportedPdf.push(filter);
+    return of(new Blob(['%PDF-']));
+  }
 }
 
 async function render(repository = new FakeRepository(), downloads = { save: vi.fn() }) {
@@ -374,6 +380,22 @@ describe('AttendancePage', () => {
       { congregationId: 10, meetingTypeCode: 'SUNDAY_SCHOOL', from: null, to: null },
     ]);
     expect(downloads.save).toHaveBeenCalledWith(expect.any(Blob), 'asistencia-sunday_school.csv');
+  });
+
+  it('downloads the attendance sheet as a PDF with the same filters, and not the CSV', async () => {
+    const { fixture, element, repository, downloads } = await render();
+    const pdf = Array.from(element.querySelectorAll('app-export-actions button')).find((button) =>
+      text(button).includes('PDF'),
+    ) as HTMLButtonElement;
+
+    pdf.click();
+    await fixture.whenStable();
+
+    expect(repository.exportedPdf).toEqual([
+      { congregationId: 10, meetingTypeCode: 'SUNDAY_SCHOOL', from: null, to: null },
+    ]);
+    expect(repository.exported).toEqual([]);
+    expect(downloads.save).toHaveBeenCalledWith(expect.any(Blob), 'asistencia-sunday_school.pdf');
   });
 
   it('shows an error banner with retry when the options fail to load', async () => {

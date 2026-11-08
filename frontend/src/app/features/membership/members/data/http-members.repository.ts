@@ -54,6 +54,14 @@ export class HttpMembersRepository extends MembersRepository {
     });
   }
 
+  override exportPdf(filters: MemberFilters): Observable<Blob> {
+    return this.http.get(apiUrl(`${BASE}/report.pdf`), {
+      params: this.filterParams(filters),
+      headers: { Accept: 'application/pdf' },
+      responseType: 'blob',
+    });
+  }
+
   override positionCatalog(): Observable<ChurchPosition[]> {
     return this.http.get<ChurchPosition[]>(apiUrl('/church-positions'));
   }

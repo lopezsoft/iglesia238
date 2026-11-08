@@ -8,6 +8,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.23.0 - 2026-11-08
+
+### Added
+
+- **Acta de liquidación de diezmos en PDF (`GET /api/accounting/tithe-settlements/:id/report.pdf`):** el detalle de cada liquidación tiene el botón «Descargar acta (PDF)». Es el documento para firmar y archivar: membrete de la sede, número LD y periodo cubierto, el diezmo bruto y su reparto con los porcentajes copiados al emitirla (cuota nacional, fondo local, neto del pastor), cada diezmo incluido con su recibo, aportante, carné y forma de pago, el total, dónde quedó cada egreso de caja y las firmas de tesorería, pastor y fiscal. Una liquidación anulada también se imprime, marcada como anulada con quién, cuándo (hora de Bogotá) y por qué.
+- **Directorio de miembros en PDF (`GET /api/members/report.pdf`):** la pantalla «Miembros» ofrece «Descargar PDF» junto al CSV, con los mismos filtros y los mismos permisos. Hoja horizontal con carné, nombre, documento, edad, teléfono, ingreso, cargos y estado; los miembros no activos salen en gris; el subtítulo dice qué filtros se aplicaron. Contiene datos personales: cada impresión queda en la auditoría (`MEMBERS_REPORT_PRINTED`, solo la cantidad de filas, nunca quiénes) y más de 5000 miembros se rechaza con un mensaje que indica filtrar o usar el CSV.
+- **Informe de asistencia en PDF (`GET /api/attendance-sessions/report.pdf`):** la pantalla «Asistencia» ofrece «Descargar PDF» junto al CSV, con los mismos filtros. Una fila por reunión en orden cronológico con una columna por categoría, fila de totales, y arriba el número de reuniones, la asistencia total, el promedio y el día de mayor asistencia; cuando hay varios tipos de reunión añade el promedio de cada uno. Más de 3000 reuniones se rechaza: hay que acotar las fechas o usar el CSV.
+
+### Changed
+
+- **Membrete de informes a nivel de denominación:** los informes de una sesión que cubre todas las sedes (directorio y asistencia) salen con el nombre de la denominación y «Todas las sedes», sin razón social ni NIT, porque una denominación tiene varias entidades legales. Si se filtra por una sede sale su membrete completo.
+- **Piezas compartidas de los informes (`common/reports`):** `ReportIssuer` (membrete, logo, color y fecha) y `report-format` (dinero, fechas, porcentajes y nombres de archivo). El libro de caja las usa también; su resultado no cambia. El porcentaje se escribe a mano («10 %») para que no dependa de los datos ICU del servidor.
+
 ## 0.22.0 - 2026-11-08
 
 ### Added

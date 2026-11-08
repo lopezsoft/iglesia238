@@ -24,6 +24,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
+import { sendPdf } from '../../../common/http/document-response.js';
 import { PositiveIntPipe } from '../../../common/http/positive-int.pipe.js';
 import type { Page } from '../../../common/pagination/page.js';
 import { CurrentTenant } from '../../../common/security/current-user.decorators.js';
@@ -31,6 +32,7 @@ import { RequirePermissions } from '../../../common/security/permissions.decorat
 import { ApiTenantScope } from '../../../common/tenancy/api-tenant-scope.decorator.js';
 import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import type { AttendanceSessionRecord } from '../application/attendance.models.js';
+import { AttendanceReportService } from '../application/attendance-report.service.js';
 import { CorrectAttendanceSession } from '../application/correct-attendance-session.use-case.js';
 import { DeleteAttendanceSession } from '../application/delete-attendance-session.use-case.js';
 import { ExportAttendanceSessions } from '../application/export-attendance-sessions.use-case.js';
@@ -80,6 +82,7 @@ export class AttendanceSessionsController {
     private readonly deleteSession: DeleteAttendanceSession,
     private readonly getStats: GetAttendanceStats,
     private readonly exportSessions: ExportAttendanceSessions,
+    private readonly report: AttendanceReportService,
   ) {}
 
   @Get('options')
@@ -151,6 +154,22 @@ export class AttendanceSessionsController {
       .header('Content-Type', 'text/csv; charset=utf-8')
       .header('Content-Disposition', `attachment; filename="${fileName}"`);
     return content;
+  }
+
+  @Get('report.pdf')
+  @ApiOperation({
+    summary: 'Informe de asistencia de las sesiones filtradas (PDF)',
+    description:
+      'Mismos filtros que la exportación: cifras por categoría de cada reunión, totales, promedio, máximo y promedio por tipo de reunión, con el membrete de la sede. Más de 3000 reuniones se rechaza: acota las fechas o usa el CSV.',
+  })
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async reportPdf(
+    @CurrentTenant() tenant: TenantContext,
+    @Query() query: AttendanceFilterQueryDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return sendPdf(reply, await this.report.pdf(tenant, query));
   }
 
   @Get(':id')

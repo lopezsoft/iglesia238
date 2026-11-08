@@ -18,6 +18,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
+import { sendPdf } from '../../../common/http/document-response.js';
 import { ApiTenantScope } from '../../../common/tenancy/api-tenant-scope.decorator.js';
 import {
   ClientIp,
@@ -29,6 +30,7 @@ import {
   ExportMembersUseCase,
   ListMembersUseCase,
 } from '../application/use-cases/list-members.use-case.js';
+import { MembersReportUseCase } from '../application/use-cases/members-report.use-case.js';
 import {
   ChangeMemberStatusUseCase,
   GetMemberRegistryUseCase,
@@ -71,6 +73,7 @@ export class MembersController {
   constructor(
     private readonly listMembers: ListMembersUseCase,
     private readonly exportMembers: ExportMembersUseCase,
+    private readonly membersReport: MembersReportUseCase,
     private readonly getMember: GetMemberUseCase,
     private readonly createMember: CreateMemberUseCase,
     private readonly updatePerson: UpdateMemberPersonUseCase,
@@ -128,6 +131,30 @@ export class MembersController {
         `attachment; filename="${result.fileName}"`,
       );
     return result.content;
+  }
+
+  @Get('report.pdf')
+  @RequirePermissions('members.read', 'members.write')
+  @ApiOperation({
+    summary: 'Directorio de miembros filtrado, listo para imprimir (PDF)',
+    description:
+      'Mismos filtros y mismos permisos que la exportación a CSV, con el membrete de la sede. Queda registrado en la auditoría (solo la cantidad de filas). Más de 5000 miembros se rechaza: filtra o usa el CSV.',
+  })
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async report(
+    @CurrentTenant() tenant: TenantContext,
+    @ClientIp() ipAddress: string | null,
+    @Query() query: MemberFiltersQueryDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return sendPdf(
+      reply,
+      await this.membersReport.execute(
+        toCommandContext(tenant, ipAddress),
+        toFilters(query),
+      ),
+    );
   }
 
   @Post()

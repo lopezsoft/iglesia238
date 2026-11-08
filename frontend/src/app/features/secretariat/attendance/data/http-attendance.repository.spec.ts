@@ -172,6 +172,20 @@ describe('HttpAttendanceRepository', () => {
     expect((error as DomainError).code).toBe('FORBIDDEN');
   });
 
+  it('downloads the printable sheet as a PDF blob with the filters', async () => {
+    const { repo, backend } = setup();
+
+    const file = firstValueFrom(repo.exportPdf({ congregationId: 10, from: '2026-01-01' }));
+    const request = backend.expectOne((req) => req.url === '/api/attendance-sessions/report.pdf');
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.headers.get('Accept')).toBe('application/pdf');
+    expect(request.request.params.get('congregationId')).toBe('10');
+    expect(request.request.params.get('from')).toBe('2026-01-01');
+    request.flush(new Blob(['%PDF-'], { type: 'application/pdf' }));
+
+    expect((await file).type).toBe('application/pdf');
+  });
+
   it('asks for the statistics grouped and downloads the export as a blob', async () => {
     const { repo, backend } = setup();
 

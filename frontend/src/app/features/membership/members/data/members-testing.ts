@@ -102,6 +102,7 @@ export function personOption(overrides: Partial<PersonOption> = {}): PersonOptio
 export class FakeMembersRepository extends MembersRepository {
   readonly queries: MemberListQuery[] = [];
   readonly exports: MemberFilters[] = [];
+  readonly pdfExports: MemberFilters[] = [];
   readonly created: MemberCreateInput[] = [];
   readonly statusChanges: StatusChangeInput[] = [];
   page: MemberListPage = {
@@ -123,6 +124,10 @@ export class FakeMembersRepository extends MembersRepository {
   override exportCsv(filters: MemberFilters): Observable<Blob> {
     this.exports.push(filters);
     return of(new Blob(['csv'], { type: 'text/csv' }));
+  }
+  override exportPdf(filters: MemberFilters): Observable<Blob> {
+    this.pdfExports.push(filters);
+    return of(new Blob(['%PDF-'], { type: 'application/pdf' }));
   }
   override positionCatalog = () => of([{ id: 6, name: 'Diácono', isActive: true }]);
   override createMember(input: MemberCreateInput): Observable<MemberDetail> {

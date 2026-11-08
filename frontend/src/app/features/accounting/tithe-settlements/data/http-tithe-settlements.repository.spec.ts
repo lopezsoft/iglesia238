@@ -121,4 +121,30 @@ describe('HttpTitheSettlementsRepository', () => {
 
     expect((await result).congregationName).toBe('Sede Central');
   });
+
+  it('downloads the act of a settlement as a PDF with the name the API proposes', async () => {
+    const { repo, backend } = setup();
+
+    const result = firstValueFrom(repo.reportPdf(7));
+    const request = backend.expectOne('/api/accounting/tithe-settlements/7/report.pdf');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.headers.get('Accept')).toBe('application/pdf');
+    request.flush(new Blob(['%PDF-']), {
+      headers: { 'Content-Disposition': 'inline; filename="acta-liquidacion-ld-2026-00007.pdf"' },
+    });
+
+    const file = await result;
+    expect(file.filename).toBe('acta-liquidacion-ld-2026-00007.pdf');
+    expect(file.blob).toBeInstanceOf(Blob);
+  });
+
+  it('falls back to a name built from the id when the header is missing', async () => {
+    const { repo, backend } = setup();
+
+    const result = firstValueFrom(repo.reportPdf(7));
+    backend.expectOne('/api/accounting/tithe-settlements/7/report.pdf').flush(new Blob(['%PDF-']));
+
+    expect((await result).filename).toBe('acta-liquidacion-7.pdf');
+  });
 });

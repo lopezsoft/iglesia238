@@ -51,7 +51,9 @@ export const detailArgs = {
         maritalStatus: { select: { code: true } },
         educationLevel: { select: { code: true } },
         personContacts: {
-          where: { type: { in: ['MOBILE', 'LANDLINE', 'EMAIL', 'WORK_PHONE'] } },
+          where: {
+            type: { in: ['MOBILE', 'LANDLINE', 'EMAIL', 'WORK_PHONE'] },
+          },
           orderBy: [{ isPrimary: 'desc' }, { id: 'asc' }],
         },
         personAddresses: {

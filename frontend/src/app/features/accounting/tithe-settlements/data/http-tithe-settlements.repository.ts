@@ -1,8 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { apiUrl } from '../../../../core/http/api-url';
 import { Page } from '../../../../shared/utils/pagination';
+import { ExportedFile, toExportedFile } from '../../data/accounting-http';
 import {
   SettlementQuery,
   TitheOverview,
@@ -55,5 +56,15 @@ export class HttpTitheSettlementsRepository extends TitheSettlementsRepository {
 
   override detail(settlementId: number): Observable<TitheSettlementDetail> {
     return this.http.get<TitheSettlementDetail>(apiUrl(`${BASE}/${settlementId}`));
+  }
+
+  override reportPdf(settlementId: number): Observable<ExportedFile> {
+    return this.http
+      .get(apiUrl(`${BASE}/${settlementId}/report.pdf`), {
+        headers: { Accept: 'application/pdf' },
+        observe: 'response',
+        responseType: 'blob',
+      })
+      .pipe(map((response) => toExportedFile(response, `acta-liquidacion-${settlementId}.pdf`)));
   }
 }

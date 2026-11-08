@@ -8,9 +8,9 @@
   "
 >
   <app-export-actions
-    [formats]="['csv']"
+    [formats]="['pdf', 'csv']"
     [disabled]="exporting() || !(historyData()?.total ?? 0)"
-    (export)="exportCsv()"
+    (export)="download($event)"
   />
 </app-page-header>
 

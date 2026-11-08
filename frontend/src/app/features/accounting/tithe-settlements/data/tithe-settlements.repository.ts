@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { Page } from '../../../../shared/utils/pagination';
+import { ExportedFile } from '../../data/accounting-http';
 import {
   SettlementQuery,
   TitheOverview,
@@ -23,4 +24,6 @@ export abstract class TitheSettlementsRepository {
   /** History of the sede, newest first, paginated and filtered by the server. */
   abstract list(query: SettlementQuery): Observable<Page<TitheSettlementRow>>;
   abstract detail(settlementId: number): Observable<TitheSettlementDetail>;
+  /** The act of a settlement to sign and file (PDF), with the name the API proposes. A voided one prints too, marked. */
+  abstract reportPdf(settlementId: number): Observable<ExportedFile>;
 }

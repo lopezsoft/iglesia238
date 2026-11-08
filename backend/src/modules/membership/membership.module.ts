@@ -15,6 +15,7 @@ import {
   PERSON_REPOSITORY,
 } from './application/ports/person.repository.js';
 import { CreateMemberUseCase } from './application/use-cases/create-member.use-case.js';
+import { MembersReportUseCase } from './application/use-cases/members-report.use-case.js';
 import {
   ExportMembersUseCase,
   ListMembersUseCase,
@@ -89,6 +90,7 @@ import {
 const USE_CASES = [
   ListMembersUseCase,
   ExportMembersUseCase,
+  MembersReportUseCase,
   GetMemberUseCase,
   CreateMemberUseCase,
   UpdateMemberPersonUseCase,

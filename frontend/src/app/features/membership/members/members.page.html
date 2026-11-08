@@ -53,9 +53,9 @@
     />
     @if (canWrite()) {
       <app-export-actions
-        [formats]="['csv']"
+        [formats]="['pdf', 'csv']"
         [disabled]="exporting() || total() === 0"
-        (export)="exportCsv()"
+        (export)="downloadList($event)"
       />
     }
   </div>

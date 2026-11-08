@@ -1,22 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DocumentBrandingService } from '../../../common/branding/document-branding.js';
-import {
-  BusinessRuleException,
-  NotFoundDomainException,
-} from '../../../common/errors/domain.exception.js';
+import { Injectable } from '@nestjs/common';
+import { BusinessRuleException } from '../../../common/errors/domain.exception.js';
 import { csvDate, toCsvDocument } from '../../../common/export/csv-document.js';
 import {
-  REPORT_LETTERHEAD_READER,
-  type ReportLetterheadReader,
-} from '../../../common/reports/report-letterhead.js';
+  fileSlug,
+  formatMoney,
+  formatShortDate,
+} from '../../../common/reports/report-format.js';
 import {
-  REPORT_PDF_RENDERER,
-  type ReportDocument,
-  type ReportPdfRenderer,
-  type ReportRow,
-} from '../../../common/reports/report-pdf.js';
+  ReportIssuer,
+  type ReportBody,
+} from '../../../common/reports/report-issuer.js';
+import type { ReportRow } from '../../../common/reports/report-pdf.js';
 import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
-import { Clock } from '../../../common/time/bogota-time.js';
 import { CashBookQueryService } from './cash-book-query.service.js';
 import type { CashBookRowView, CashBookViewResult } from './cash-book.views.js';
 
@@ -31,36 +26,6 @@ export interface CashBookReportInput {
 export interface CashBookReportFile<Content> {
   readonly filename: string;
   readonly content: Content;
-}
-
-const money = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const dayFormat = new Intl.DateTimeFormat('es-CO', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
-function shortDate(isoDate: string): string {
-  return dayFormat.format(new Date(`${isoDate}T00:00:00.000Z`));
-}
-
-/** "Fondo General" becomes "fondo-general": a file name people can read and a server can serve. */
-function slug(text: string): string {
-  return (
-    text
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'fondo'
-  );
 }
 
 /** What the line says about itself: a reversed line and its reversal are kept, marked, because the balance counts both. */
@@ -91,11 +56,7 @@ const STATUS_LABELS = {
 export class CashBookReportService {
   constructor(
     private readonly queries: CashBookQueryService,
-    @Inject(REPORT_LETTERHEAD_READER)
-    private readonly letterheads: ReportLetterheadReader,
-    @Inject(REPORT_PDF_RENDERER) private readonly renderer: ReportPdfRenderer,
-    private readonly branding: DocumentBrandingService,
-    private readonly clock: Clock,
+    private readonly issuer: ReportIssuer,
   ) {}
 
   async pdf(
@@ -103,20 +64,10 @@ export class CashBookReportService {
     input: CashBookReportInput,
   ): Promise<CashBookReportFile<Buffer>> {
     const book = await this.load(tenant, input);
-    const scope = tenant.congregationScope();
-    const [letterhead, branding] = await Promise.all([
-      this.letterheads.find(scope),
-      this.branding.current(scope),
-    ]);
-    if (!letterhead) {
-      throw new NotFoundDomainException('La sede no existe.');
-    }
-    const content = await this.renderer.render({
-      ...this.document(book),
-      letterhead,
-      generatedOn: this.clock.today(),
-      ...branding,
-    });
+    const content = await this.issuer.pdf(
+      tenant.congregationScope(),
+      this.document(book),
+    );
     return { filename: `${this.baseName(book)}.pdf`, content };
   }
 
@@ -191,22 +142,20 @@ export class CashBookReportService {
 
   private baseName(book: CashBookViewResult): string {
     const month = String(book.period.month).padStart(2, '0');
-    return `libro-de-caja-${book.period.year}-${month}-${slug(book.fundName)}`;
+    return `libro-de-caja-${book.period.year}-${month}-${fileSlug(book.fundName, 'fondo')}`;
   }
 
-  /** The report without the parts that come from outside (letterhead, date, branding). */
-  private document(
-    book: CashBookViewResult,
-  ): Omit<ReportDocument, 'letterhead' | 'generatedOn'> {
+  /** The body of the report: the issuer adds the letterhead, the date and the look of the denomination. */
+  private document(book: CashBookViewResult): ReportBody {
     const lines: ReportRow[] = book.rows.map((row) => ({
       cells: [
-        shortDate(row.postedOn),
+        formatShortDate(row.postedOn),
         row.voucherCode,
         `${row.accountCode} · ${row.accountName}`,
         describe(row),
-        row.direction === 'IN' ? money.format(row.amount) : '',
-        row.direction === 'OUT' ? money.format(row.amount) : '',
-        money.format(row.balance),
+        row.direction === 'IN' ? formatMoney(row.amount) : '',
+        row.direction === 'OUT' ? formatMoney(row.amount) : '',
+        formatMoney(row.balance),
       ],
       style: row.status === 'POSTED' ? 'normal' : 'muted',
     }));
@@ -217,16 +166,16 @@ export class CashBookReportService {
       subtitle: `${book.fundName} · ${book.period.label} · Periodo ${periodState}`,
       orientation: 'landscape',
       summary: [
-        { label: 'Saldo inicial', value: money.format(book.opening) },
+        { label: 'Saldo inicial', value: formatMoney(book.opening) },
         {
           label: `Entradas (${book.inCount})`,
-          value: money.format(book.income),
+          value: formatMoney(book.income),
         },
         {
           label: `Salidas (${book.outCount})`,
-          value: money.format(book.expense),
+          value: formatMoney(book.expense),
         },
-        { label: 'Saldo final', value: money.format(book.closing) },
+        { label: 'Saldo final', value: formatMoney(book.closing) },
       ],
       columns: [
         { header: 'Fecha', weight: 1.1 },
@@ -240,13 +189,13 @@ export class CashBookReportService {
       rows: [
         {
           cells: [
-            shortDate(book.period.from),
+            formatShortDate(book.period.from),
             '',
             '',
             'Saldo inicial',
             '',
             '',
-            money.format(book.opening),
+            formatMoney(book.opening),
           ],
           style: 'strong',
         },
@@ -257,9 +206,9 @@ export class CashBookReportService {
         '',
         '',
         'Totales del mes',
-        money.format(book.income),
-        money.format(book.expense),
-        money.format(book.closing),
+        formatMoney(book.income),
+        formatMoney(book.expense),
+        formatMoney(book.closing),
       ],
       emptyMessage: 'No hay movimientos en este periodo.',
       notes: hasReversals

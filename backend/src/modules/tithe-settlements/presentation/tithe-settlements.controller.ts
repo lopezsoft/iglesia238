@@ -7,6 +7,8 @@ import {
   Param,
   Post,
   Query,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
@@ -15,9 +17,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiProduces,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import type { FastifyReply } from 'fastify';
+import { sendPdf } from '../../../common/http/document-response.js';
 import { PositiveIntPipe } from '../../../common/http/positive-int.pipe.js';
 import type { Page } from '../../../common/pagination/page.js';
 import {
@@ -28,6 +33,7 @@ import { RequirePermissions } from '../../../common/security/permissions.decorat
 import { ApiTenantScope } from '../../../common/tenancy/api-tenant-scope.decorator.js';
 import type { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import { ConfirmTitheSettlementUseCase } from '../application/confirm-tithe-settlement.use-case.js';
+import { TitheSettlementReportService } from '../application/tithe-settlement-report.service.js';
 import { GetTitheOverviewUseCase } from '../application/get-tithe-overview.use-case.js';
 import {
   GetTitheSettlementUseCase,
@@ -68,6 +74,7 @@ export class TitheSettlementsController {
     private readonly voidSettlement: VoidTitheSettlementUseCase,
     private readonly listSettlements: ListTitheSettlementsUseCase,
     private readonly getSettlement: GetTitheSettlementUseCase,
+    private readonly report: TitheSettlementReportService,
   ) {}
 
   @Get('overview')
@@ -133,6 +140,25 @@ export class TitheSettlementsController {
     @Param('id', PositiveIntPipe) id: number,
   ): Promise<TitheSettlementDetail> {
     return this.getSettlement.execute(tenant, id);
+  }
+
+  @Get(':id/report.pdf')
+  @ApiOperation({
+    summary: 'Acta de la liquidación lista para firmar y archivar (PDF)',
+    description:
+      'Membrete de la sede, periodo cubierto, diezmos incluidos, reparto del bruto, dónde quedaron los egresos de caja y firmas. Una liquidación anulada también se imprime, marcada como anulada.',
+  })
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiNotFoundResponse({
+    description: 'La liquidación no existe o es de otra sede.',
+  })
+  async reportPdf(
+    @CurrentTenant() tenant: TenantContext,
+    @Param('id', PositiveIntPipe) id: number,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<StreamableFile> {
+    return sendPdf(reply, await this.report.pdf(tenant, id));
   }
 
   @Post()

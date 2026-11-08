@@ -12,7 +12,7 @@ import {
   LoadingComponent,
   PaginationComponent,
 } from '../../../shared/ui/feedback.components';
-import { ExportActionsComponent } from '../../../shared/ui/export-actions.component';
+import { ExportActionsComponent, ExportFormat } from '../../../shared/ui/export-actions.component';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
@@ -237,14 +237,18 @@ export class MembersPage {
     void this.router.navigate(['/members', memberId]);
   }
 
-  protected async exportCsv(): Promise<void> {
+  protected async downloadList(format: ExportFormat): Promise<void> {
+    if (format !== 'pdf' && format !== 'csv') {
+      return;
+    }
     this.exporting.set(true);
     this.exportMessage.set(null);
     this.exportError.set(null);
     try {
-      const file = await firstValueFrom(this.repository.exportCsv(this.filters()));
-      this.download.save(file, `miembros-${todayIso()}.csv`);
-      this.exportMessage.set('Se descargó el listado de miembros.');
+      const filters = this.filters();
+      const file = await firstValueFrom(format === 'pdf' ? this.repository.exportPdf(filters) : this.repository.exportCsv(filters));
+      this.download.save(file, `${format === 'pdf' ? 'directorio-miembros' : 'miembros'}-${todayIso()}.${format}`);
+      this.exportMessage.set(format === 'pdf' ? 'Se descargó el directorio de miembros.' : 'Se descargó el listado de miembros.');
     } catch (error) {
       this.exportError.set(userMessage(error));
     } finally {

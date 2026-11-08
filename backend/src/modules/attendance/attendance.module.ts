@@ -3,6 +3,7 @@ import { PrismaModule } from '../../infrastructure/prisma/prisma.module.js';
 import { ATTENDANCE_REPOSITORY } from './application/attendance.repository.js';
 import { CorrectAttendanceSession } from './application/correct-attendance-session.use-case.js';
 import { DeleteAttendanceSession } from './application/delete-attendance-session.use-case.js';
+import { AttendanceReportService } from './application/attendance-report.service.js';
 import { ExportAttendanceSessions } from './application/export-attendance-sessions.use-case.js';
 import { GetAttendanceOptions } from './application/get-attendance-options.use-case.js';
 import {
@@ -32,6 +33,7 @@ import { AttendanceSessionsController } from './presentation/attendance-sessions
     DeleteAttendanceSession,
     GetAttendanceStats,
     ExportAttendanceSessions,
+    AttendanceReportService,
   ],
 })
 export class AttendanceModule {}
