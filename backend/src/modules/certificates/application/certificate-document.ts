@@ -1,6 +1,13 @@
 // Pure rules of the printed documents. The text stored as a certificate snapshot is built here, so the
 // preview, the issued document and the PDF always print the same thing.
 
+import { amountInWords, formatPesos } from './amount-in-words.js';
+
+/** Code of the certificate type that adds up the donations of a member in a year. */
+export const DONATION_TYPE_CODE = 'DON';
+/** Concepts printed one by one; the rest are added up in «Otros conceptos» so the page never overflows. */
+export const MAX_DONATION_LINES = 6;
+
 const MONTHS = [
   'enero',
   'febrero',
@@ -21,6 +28,7 @@ const DEFAULT_TITLES: Readonly<Record<string, string>> = {
   TRA: 'Carta de traslado',
   BAU: 'Certificado de bautismo',
   ASI: 'Constancia de asistencia',
+  [DONATION_TYPE_CODE]: 'Certificado de donaciones',
 };
 
 /** What is printed on the certificate. It never changes once issued. */
@@ -44,6 +52,38 @@ export interface CertificateSnapshot {
   readonly issuedByName: string;
   readonly memberName: string;
   readonly memberCode: string;
+  /** Only in the donations certificate: what was added up. Missing in every other type. */
+  readonly donation?: DonationSnapshot;
+}
+
+/** The donations of the certificate as printed: texts, never numbers to recompute. It never changes once issued. */
+export interface DonationSnapshot {
+  readonly fiscalYear: number;
+  /** ISO dates (YYYY-MM-DD). */
+  readonly periodFrom: string;
+  readonly periodTo: string;
+  readonly receipts: number;
+  /** "$1.250.000" */
+  readonly total: string;
+  /** "un millón doscientos cincuenta mil pesos colombianos" */
+  readonly totalInWords: string;
+  readonly lines: readonly {
+    readonly concept: string;
+    readonly receipts: number;
+    readonly amount: string;
+  }[];
+}
+
+/** What the donations reader found, before it is formatted for print. Amounts in cents. */
+export interface DonationInput {
+  readonly fiscalYear: number;
+  readonly periodFrom: string;
+  readonly periodTo: string;
+  readonly lines: readonly {
+    readonly concept: string;
+    readonly receipts: number;
+    readonly amountCents: number;
+  }[];
 }
 
 export interface Letterhead {
@@ -82,6 +122,8 @@ export interface SnapshotInput {
   readonly issuedByName: string;
   readonly member: SnapshotMember;
   readonly notes: string | null;
+  /** Required for the donations certificate (DONATION_TYPE_CODE); ignored by the others. */
+  readonly donation?: DonationInput | null;
 }
 
 /** "2 de noviembre de 2026" from an ISO date (YYYY-MM-DD). */
@@ -165,6 +207,11 @@ export const TEMPLATE_PLACEHOLDERS = [
   'issuedOn',
   'pastorName',
   'secretaryName',
+  'fiscalYear',
+  'periodFrom',
+  'periodTo',
+  'totalAmount',
+  'totalInWords',
 ] as const;
 
 export type TemplatePlaceholder = (typeof TEMPLATE_PLACEHOLDERS)[number];
@@ -186,6 +233,15 @@ export const PLACEHOLDER_DESCRIPTIONS: Readonly<
   issuedOn: 'Fecha de expedición, por ejemplo «2 de noviembre de 2026»',
   pastorName: 'Nombre del pastor que firma',
   secretaryName: 'Nombre de quien firma por la secretaría',
+  fiscalYear: 'Año de los aportes (solo en el certificado de donaciones)',
+  periodFrom:
+    'Inicio del periodo de los aportes (solo en el certificado de donaciones)',
+  periodTo:
+    'Fin del periodo de los aportes (solo en el certificado de donaciones)',
+  totalAmount:
+    'Valor total de los aportes, por ejemplo «$1.250.000» (solo en el certificado de donaciones)',
+  totalInWords:
+    'Valor total de los aportes en letras (solo en el certificado de donaciones)',
 };
 
 /** The text each part prints when the type has no customized one (shown as a hint in the editor). */
@@ -222,6 +278,56 @@ export function templateProblems(text: string): {
     unknown: [...unknown],
     malformed: opened !== recognized || closed !== recognized,
   };
+}
+
+/** Formats what the donations reader found for print, collapsing the tail into «Otros conceptos» if it is long. */
+export function summarizeDonations(input: DonationInput): DonationSnapshot {
+  const collapse = input.lines.length > MAX_DONATION_LINES;
+  const shown = collapse
+    ? input.lines.slice(0, MAX_DONATION_LINES - 1)
+    : input.lines;
+  const rest = collapse ? input.lines.slice(MAX_DONATION_LINES - 1) : [];
+  const lines = rest.length
+    ? [
+        ...shown,
+        {
+          concept: 'Otros conceptos',
+          receipts: rest.reduce((sum, line) => sum + line.receipts, 0),
+          amountCents: rest.reduce((sum, line) => sum + line.amountCents, 0),
+        },
+      ]
+    : shown;
+  const totalCents = input.lines.reduce(
+    (sum, line) => sum + line.amountCents,
+    0,
+  );
+  return {
+    fiscalYear: input.fiscalYear,
+    periodFrom: input.periodFrom,
+    periodTo: input.periodTo,
+    receipts: input.lines.reduce((sum, line) => sum + line.receipts, 0),
+    total: formatPesos(totalCents),
+    totalInWords: amountInWords(totalCents),
+    lines: lines.map((line) => ({
+      concept: line.concept,
+      receipts: line.receipts,
+      amount: formatPesos(line.amountCents),
+    })),
+  };
+}
+
+function donationBody(
+  member: SnapshotMember,
+  letterhead: Letterhead,
+  donation: DonationSnapshot,
+  sede: string,
+): string {
+  return (
+    `Se certifica que ${who(member)} realizó aportes voluntarios a ${letterhead.legalName} ` +
+    `(NIT ${letterhead.taxId}) entre el ${longDate(donation.periodFrom)} y el ${longDate(donation.periodTo)}, ` +
+    `por un valor total de ${donation.total} (${donation.totalInWords}), según los recibos de aporte vigentes ` +
+    `en la contabilidad de ${sede}. El detalle por concepto es el siguiente:`
+  );
 }
 
 function renderTemplate(
@@ -288,6 +394,14 @@ export function buildCertificateSnapshot(
   const { letterhead, member } = input;
   const sede = sedeReference(letterhead.congregationName);
   const notes = input.notes?.trim() || null;
+  const isDonation = input.typeCode === DONATION_TYPE_CODE;
+  if (isDonation && !input.donation) {
+    throw new Error('A donations certificate needs the donations to print');
+  }
+  const donation =
+    isDonation && input.donation
+      ? summarizeDonations(input.donation)
+      : undefined;
   const values: Readonly<Record<TemplatePlaceholder, string>> = {
     memberName: member.fullName,
     document: member.documentLabel,
@@ -301,11 +415,18 @@ export function buildCertificateSnapshot(
     issuedOn: longDate(input.issuedOn),
     pastorName: input.pastorName ?? '',
     secretaryName: input.secretaryName ?? '',
+    fiscalYear: donation ? String(donation.fiscalYear) : '',
+    periodFrom: donation ? longDate(donation.periodFrom) : '',
+    periodTo: donation ? longDate(donation.periodTo) : '',
+    totalAmount: donation?.total ?? '',
+    totalInWords: donation?.totalInWords ?? '',
   };
   const body =
     input.template && input.template.trim() !== ''
       ? renderTemplate(input.template, values)
-      : defaultBody(input.typeCode, member, sede);
+      : donation
+        ? donationBody(member, letterhead, donation, sede)
+        : defaultBody(input.typeCode, member, sede);
   /** A customized text, or the default when there is none or it renders to nothing. */
   const customized = (
     template: string | null | undefined,
@@ -329,7 +450,9 @@ export function buildCertificateSnapshot(
     locationLine: letterhead.locationLine,
     intro: customized(
       input.introTemplate,
-      `La Secretaría de ${sede} hace constar`,
+      isDonation
+        ? `La Tesorería de ${sede} hace constar`
+        : `La Secretaría de ${sede} hace constar`,
     ),
     body,
     notes,
@@ -342,13 +465,17 @@ export function buildCertificateSnapshot(
       input.pastorTitleTemplate,
       `Pastor(a), ${letterhead.congregationName}`,
     ),
-    secretaryName: input.secretaryName,
+    // The second line of a donations certificate is for the treasurer, who signs by hand: no name is printed.
+    secretaryName: isDonation ? null : input.secretaryName,
     secretaryTitle: customized(
       input.secretaryTitleTemplate,
-      `Secretario(a), ${letterhead.congregationName}`,
+      isDonation
+        ? `Tesorero(a), ${letterhead.congregationName}`
+        : `Secretario(a), ${letterhead.congregationName}`,
     ),
     issuedByName: input.issuedByName,
     memberName: member.fullName,
     memberCode: member.code,
+    ...(donation ? { donation } : {}),
   };
 }

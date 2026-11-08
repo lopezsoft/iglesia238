@@ -54,6 +54,26 @@
         }
       </div>
 
+      @if (isDonation()) {
+        <div class="field">
+          <label for="cert-fiscal-year">Año de los aportes *</label>
+          <select
+            id="cert-fiscal-year"
+            class="select"
+            formControlName="fiscalYear"
+            aria-describedby="cert-fiscal-year-help"
+          >
+            @for (year of fiscalYears(); track year) {
+              <option [ngValue]="year">{{ year }}</option>
+            }
+          </select>
+          <p class="field__hint" id="cert-fiscal-year-help">
+            Suma los aportes vigentes del miembro en ese año (en el año en curso, hasta hoy). Necesitas
+            permiso para consultar aportes.
+          </p>
+        </div>
+      }
+
       <div class="field">
         <label for="cert-notes">Observaciones</label>
         <textarea

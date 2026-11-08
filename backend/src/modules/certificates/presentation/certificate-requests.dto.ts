@@ -53,6 +53,19 @@ export class PreviewCertificateDto {
     message: 'Las observaciones admiten máximo 255 caracteres.',
   })
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 2025,
+    description:
+      'Año de los aportes. Obligatorio solo para el certificado de donaciones (DON); los demás tipos lo ignoran.',
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  fiscalYear?: number | null;
 }
 
 export class IssueCertificateDto extends PreviewCertificateDto {}

@@ -13,6 +13,8 @@ import {
   CERTIFICATE_VERIFICATION_READER,
 } from './application/ports/certificate-verification.js';
 import { VerifyCertificateUseCase } from './application/use-cases/verify-certificate.use-case.js';
+import { CERTIFICATE_DONATION_READER } from './application/ports/certificate-donation.reader.js';
+import { PrismaCertificateDonationReader } from './infrastructure/prisma-certificate-donation.reader.js';
 import { HmacCertificateVerificationLinks } from './infrastructure/hmac-certificate-verification-links.js';
 import { PrismaCertificateVerificationReader } from './infrastructure/prisma-certificate-verification.reader.js';
 import { PublicCertificatesController } from './presentation/public-certificates.controller.js';
@@ -85,6 +87,10 @@ import { MembershipCardsController } from './presentation/membership-cards.contr
       useClass: PrismaCertificateContextReader,
     },
     { provide: DOCUMENT_PDF_RENDERER, useClass: PdfkitDocumentRenderer },
+    {
+      provide: CERTIFICATE_DONATION_READER,
+      useClass: PrismaCertificateDonationReader,
+    },
     {
       provide: CERTIFICATE_VERIFICATION_READER,
       useClass: PrismaCertificateVerificationReader,

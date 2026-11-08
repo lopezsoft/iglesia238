@@ -94,6 +94,44 @@
     color: $color-ink-muted;
   }
 
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+
+    th,
+    td {
+      padding: $space-1 $space-2;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+    }
+
+    thead th {
+      color: $color-ink-muted;
+      font-weight: 600;
+    }
+
+    tfoot th,
+    tfoot td {
+      border-bottom: 0;
+      font-weight: 700;
+    }
+  }
+
+  &__num {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   &__signatures {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));

@@ -1,6 +1,7 @@
 import {
   BusinessRuleException,
   ConflictDomainException,
+  ForbiddenDomainException,
   InvalidInputException,
   NotFoundDomainException,
 } from '../../../common/errors/domain.exception.js';
@@ -10,6 +11,9 @@ export const CertificateErrorCode = {
   CERTIFICATE_NOT_FOUND: 'CERTIFICATE_NOT_FOUND',
   CERTIFICATE_NOT_VERIFIABLE: 'CERTIFICATE_NOT_VERIFIABLE',
   CERTIFICATE_TYPE_INVALID: 'CERTIFICATE_TYPE_INVALID',
+  DONATION_CERTIFICATE_FORBIDDEN: 'DONATION_CERTIFICATE_FORBIDDEN',
+  FISCAL_YEAR_INVALID: 'FISCAL_YEAR_INVALID',
+  NO_DONATIONS_IN_PERIOD: 'NO_DONATIONS_IN_PERIOD',
   CERTIFICATE_TEMPLATE_INVALID: 'CERTIFICATE_TEMPLATE_INVALID',
   CERTIFICATE_TYPE_NOT_FOUND: 'CERTIFICATE_TYPE_NOT_FOUND',
   CERTIFICATE_ALREADY_VOIDED: 'CERTIFICATE_ALREADY_VOIDED',
@@ -49,6 +53,25 @@ export const certificateNotVerifiable = () =>
   new NotFoundDomainException(
     'No pudimos verificar este documento: el código no es válido o el documento no existe.',
     CertificateErrorCode.CERTIFICATE_NOT_VERIFIABLE,
+  );
+
+/** The donations certificate shows amounts: who issues it must also be allowed to read the contributions. */
+export const donationAccessForbidden = () =>
+  new ForbiddenDomainException(
+    'Para emitir el certificado de donaciones necesitas también permiso para consultar aportes.',
+    CertificateErrorCode.DONATION_CERTIFICATE_FORBIDDEN,
+  );
+
+export const fiscalYearInvalid = (currentYear: number) =>
+  new InvalidInputException(
+    `Indica el año de los aportes: un año entre 2000 y ${currentYear}.`,
+    CertificateErrorCode.FISCAL_YEAR_INVALID,
+  );
+
+export const noDonationsInPeriod = (year: number) =>
+  new BusinessRuleException(
+    `El miembro no tiene aportes vigentes en ${year}: no hay nada que certificar.`,
+    CertificateErrorCode.NO_DONATIONS_IN_PERIOD,
   );
 
 export const certificateTypeInvalid = (message: string) =>

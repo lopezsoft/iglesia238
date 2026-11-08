@@ -3,6 +3,22 @@
 import { Page, PageRequest } from '../../../../shared/utils/pagination';
 
 /** What was printed. The issued document never changes when the member data changes. */
+/** The donations of a donations certificate (DON) as printed. */
+export interface DonationSnapshot {
+  readonly fiscalYear: number;
+  readonly periodFrom: string;
+  readonly periodTo: string;
+  readonly receipts: number;
+  /** "$1.250.000" */
+  readonly total: string;
+  readonly totalInWords: string;
+  readonly lines: readonly {
+    readonly concept: string;
+    readonly receipts: number;
+    readonly amount: string;
+  }[];
+}
+
 export interface CertificateSnapshot {
   readonly number: string;
   readonly typeCode: string;
@@ -23,6 +39,8 @@ export interface CertificateSnapshot {
   readonly issuedByName: string;
   readonly memberName: string;
   readonly memberCode: string;
+  /** Only in the donations certificate (DON). */
+  readonly donation?: DonationSnapshot;
 }
 
 export type CertificateStatus = 'ISSUED' | 'VOIDED';
@@ -130,6 +148,8 @@ export interface IssueCertificateCommand {
   readonly memberId: number;
   readonly certificateTypeId: number;
   readonly notes: string | null;
+  /** Year of the contributions: only sent for the donations certificate (DON). */
+  readonly fiscalYear?: number;
 }
 
 export interface VoidCommand {

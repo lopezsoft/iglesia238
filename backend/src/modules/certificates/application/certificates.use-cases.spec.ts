@@ -290,6 +290,7 @@ describe('GetIssuingContextUseCase', () => {
       'CERT-TRA-2026-0001',
       'CERT-BAU-2026-0001',
       'CERT-ASI-2026-0001',
+      'CERT-DON-2026-0001',
     ]);
   });
 
@@ -545,6 +546,7 @@ describe('certificate types', () => {
       'TRA',
       'BAU',
       'ASI',
+      'DON',
     ]);
     expect(types.find((type) => type.code === 'TRA')?.validityDays).toBe(90);
   });

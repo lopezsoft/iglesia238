@@ -86,6 +86,59 @@ describe('PdfkitDocumentRenderer', () => {
     expect(withQr.length).toBeGreaterThan(withoutQr.length);
   });
 
+  it('draws a donations certificate with its table on one page, also at the limit of lines and with notes', async () => {
+    const donation = {
+      fiscalYear: 2025,
+      periodFrom: '2025-01-01',
+      periodTo: '2025-12-31',
+      lines: Array.from({ length: 9 }, (_, i) => ({
+        concept: `Concepto ${i}`,
+        receipts: 3,
+        amountCents: (100_000 + i) * 100,
+      })),
+    };
+    const donations = buildCertificateSnapshot({
+      number: 'CERT-DON-2026-0001',
+      typeCode: 'DON',
+      typeName: 'Certificado de donaciones',
+      template: null,
+      issuedOn: '2026-11-08',
+      letterhead: {
+        denominationName: 'Iglesia Cristiana Monte de Sion',
+        legalName: 'Corporación Iglesia Cristiana Monte de Sion',
+        taxId: '900.123.456-7',
+        congregationName: 'Sede Central',
+        cityName: 'Bogotá, D.C.',
+        locationLine: 'Sede Central · Bogotá, D.C. · Distrito 1',
+      },
+      pastorName: 'Pastor Daniel Herrera',
+      secretaryName: null,
+      issuedByName: 'Pastor Daniel Herrera',
+      member: {
+        fullName: 'Ana María Rojas Díaz de la Concepción Pérez Gómez',
+        code: 'SC-0130',
+        documentLabel: 'CC 52.418.916',
+        joinedOn: '2008-04-10',
+        waterBaptismOn: null,
+      },
+      notes: 'Para la declaración de renta del año gravable 2025.',
+      donation,
+    });
+
+    const pdf = await renderer.certificate({
+      snapshot: donations,
+      issuedOn: '2026-11-08',
+      expiresOn: null,
+      voided: false,
+      verificationUrl:
+        'https://app.iglesia238.com/verify-certificate?t=42.AbCdEfGhIjKlMnOpQrStUv',
+    });
+
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(pageCount(pdf)).toBe(1);
+    expect(donations.donation?.lines).toHaveLength(6);
+  });
+
   it('draws a two-page card (front and back) whatever its state', async () => {
     for (const status of ['VALID', 'EXPIRED', 'VOIDED'] as const) {
       const card = await renderer.card({

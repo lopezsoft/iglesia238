@@ -25,6 +25,10 @@ import { CertificateDocumentComponent } from './certificate-document.component';
 import { MemberSearchComponent } from './member-search.component';
 
 const PREVIEW_DEBOUNCE_MS = 300;
+/** Code of the certificate type that adds up the contributions of a year. */
+const DONATION_TYPE_CODE = 'DON';
+/** Years offered to the donations certificate: the current one and the five before. */
+const FISCAL_YEARS_OFFERED = 6;
 
 /** Issue form with the preview of the printed certificate, built by the server. */
 @Component({
@@ -50,6 +54,8 @@ export class CertificateIssueComponent {
   protected readonly notesMaxLength = NOTES_MAX_LENGTH;
   protected readonly form = this.fb.group({
     certificateTypeId: this.fb.control(0, [Validators.required, Validators.min(1)]),
+    /** Only used by the donations certificate; the previous year unless the person picks another. */
+    fiscalYear: this.fb.control(0),
     notes: this.fb.control('', [Validators.maxLength(NOTES_MAX_LENGTH)]),
   });
   protected readonly member = linkedSignal<MemberOption | null>(() => this.preselectedMember());
@@ -67,6 +73,21 @@ export class CertificateIssueComponent {
     return this.context().types.find((type) => type.id === id) ?? null;
   });
 
+  protected readonly isDonation = computed(() => this.selectedType()?.code === DONATION_TYPE_CODE);
+  protected readonly fiscalYears = computed(() =>
+    Array.from({ length: FISCAL_YEARS_OFFERED }, (_, index) => this.context().year - index),
+  );
+
+  /** The command of the API: the year travels only with the donations certificate. */
+  private commandOf(
+    memberId: number,
+    certificateTypeId: number,
+    notes: string | null,
+    fiscalYear: number | null,
+  ) {
+    return { memberId, certificateTypeId, notes, ...(fiscalYear !== null ? { fiscalYear } : {}) };
+  }
+
   /** The baptism certificate needs a registered baptism (the API checks it again). */
   protected readonly baptismMissing = computed(
     () =>
@@ -83,6 +104,7 @@ export class CertificateIssueComponent {
             memberId: member.id,
             certificateTypeId: typeId,
             notes: (this.formValue().notes ?? '').trim() || null,
+            fiscalYear: this.isDonation() ? (this.formValue().fiscalYear ?? 0) : null,
             // Issuing moves the next number: ask again after each emission.
             nextNumber: this.selectedType()?.nextNumber ?? '',
           }
@@ -91,11 +113,14 @@ export class CertificateIssueComponent {
     stream: ({ params }) =>
       timer(PREVIEW_DEBOUNCE_MS).pipe(
         switchMap(() =>
-          this.repo.preview({
-            memberId: params.memberId,
-            certificateTypeId: params.certificateTypeId,
-            notes: params.notes,
-          }),
+          this.repo.preview(
+            this.commandOf(
+              params.memberId,
+              params.certificateTypeId,
+              params.notes,
+              params.fiscalYear,
+            ),
+          ),
         ),
       ),
   });
@@ -108,6 +133,12 @@ export class CertificateIssueComponent {
 
   constructor() {
     // Default to the first type of the denomination once the context arrives.
+    // The donations certificate asks for the year: the previous one is what people usually need.
+    effect(() => {
+      if (this.form.controls.fiscalYear.value === 0) {
+        this.form.controls.fiscalYear.setValue(this.context().year - 1);
+      }
+    });
     effect(() => {
       const types = this.context().types;
       const current = this.form.controls.certificateTypeId.value;
@@ -142,13 +173,16 @@ export class CertificateIssueComponent {
     this.error.set(null);
     this.success.set(null);
     try {
-      const { certificateTypeId, notes } = this.form.getRawValue();
+      const { certificateTypeId, notes, fiscalYear } = this.form.getRawValue();
       const certificate = await firstValueFrom(
-        this.repo.issueCertificate({
-          memberId: member.id,
-          certificateTypeId,
-          notes: notes.trim() || null,
-        }),
+        this.repo.issueCertificate(
+          this.commandOf(
+            member.id,
+            certificateTypeId,
+            notes.trim() || null,
+            this.isDonation() ? fiscalYear : null,
+          ),
+        ),
       );
       this.success.set(`Certificado ${certificate.number} emitido para ${certificate.memberName}.`);
       this.member.set(null);

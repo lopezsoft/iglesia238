@@ -148,15 +148,20 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
     .fontSize(13)
     .fillColor(PALETTE.muted)
     .text(snapshot.intro, left, doc.y + 38, { width, align: 'center' });
+  // A donations certificate also carries a table: its text is set a little tighter so everything fits above the signatures.
+  const donation = snapshot.donation;
   doc
     .font('Times-Roman')
-    .fontSize(14)
+    .fontSize(donation ? 12 : 14)
     .fillColor(PALETTE.ink)
-    .text(snapshot.body, left, doc.y + 16, {
+    .text(snapshot.body, left, doc.y + (donation ? 12 : 16), {
       width,
       align: 'justify',
-      lineGap: 5,
+      lineGap: donation ? 3 : 5,
     });
+  if (donation) {
+    drawDonationTable(doc, donation, left, width);
+  }
   if (snapshot.notes) {
     doc
       .font('Times-Italic')
@@ -169,9 +174,12 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
   }
   doc
     .font('Times-Roman')
-    .fontSize(13)
+    .fontSize(donation ? 11 : 13)
     .fillColor(PALETTE.ink)
-    .text(snapshot.closing, left, doc.y + 20, { width, align: 'left' });
+    .text(snapshot.closing, left, doc.y + (donation ? 12 : 20), {
+      width,
+      align: 'left',
+    });
   if (input.expiresOn) {
     doc
       .font('Times-Italic')
@@ -228,6 +236,93 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
   if (input.voided) {
     watermark(doc, 'ANULADO', LETTER.width / 2, LETTER.height / 2, 110);
   }
+}
+
+/** Concept, receipts and amount of each line, then the total: the detail of a donations certificate. */
+function drawDonationTable(
+  doc: Doc,
+  donation: NonNullable<CertificatePdfInput['snapshot']['donation']>,
+  left: number,
+  width: number,
+): void {
+  const rowHeight = 14;
+  const receiptsWidth = 70;
+  const amountWidth = 110;
+  const conceptWidth = width - receiptsWidth - amountWidth;
+  const cell = (
+    text: string,
+    x: number,
+    y: number,
+    w: number,
+    align: 'left' | 'right',
+  ) =>
+    doc.text(text, x, y, {
+      width: w - 6,
+      align,
+      lineBreak: false,
+      ellipsis: true,
+    });
+
+  let y = doc.y + 10;
+  doc.rect(left, y, width, rowHeight).fill(PALETTE.primarySoft);
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(PALETTE.primary);
+  cell('Concepto', left + 6, y + 3.5, conceptWidth, 'left');
+  cell('Recibos', left + conceptWidth, y + 3.5, receiptsWidth, 'right');
+  cell(
+    'Valor',
+    left + conceptWidth + receiptsWidth,
+    y + 3.5,
+    amountWidth,
+    'right',
+  );
+  y += rowHeight;
+
+  doc.font('Helvetica').fontSize(9).fillColor(PALETTE.ink);
+  for (const line of donation.lines) {
+    cell(line.concept, left + 6, y + 3.5, conceptWidth, 'left');
+    cell(
+      String(line.receipts),
+      left + conceptWidth,
+      y + 3.5,
+      receiptsWidth,
+      'right',
+    );
+    cell(
+      line.amount,
+      left + conceptWidth + receiptsWidth,
+      y + 3.5,
+      amountWidth,
+      'right',
+    );
+    y += rowHeight;
+    doc
+      .moveTo(left, y)
+      .lineTo(left + width, y)
+      .lineWidth(0.4)
+      .strokeColor(PALETTE.rule)
+      .stroke();
+  }
+
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(PALETTE.ink);
+  cell('Total', left + 6, y + 3.5, conceptWidth, 'left');
+  cell(
+    String(donation.receipts),
+    left + conceptWidth,
+    y + 3.5,
+    receiptsWidth,
+    'right',
+  );
+  cell(
+    donation.total,
+    left + conceptWidth + receiptsWidth,
+    y + 3.5,
+    amountWidth,
+    'right',
+  );
+  y += rowHeight;
+  // The text that follows starts below the table.
+  doc.x = left;
+  doc.y = y;
 }
 
 /** Draws the QR code as vector squares (no image to embed, sharp at any print size). */

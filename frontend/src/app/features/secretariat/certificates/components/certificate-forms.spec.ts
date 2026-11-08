@@ -67,6 +67,7 @@ const context: IssuingContext = {
   types: [
     { id: 1, code: 'MEM', name: 'Certificado de membresía', nextNumber: 'CERT-MEM-2026-0003' },
     { id: 3, code: 'BAU', name: 'Certificado de bautismo', nextNumber: 'CERT-BAU-2026-0001' },
+    { id: 9, code: 'DON', name: 'Certificado de donaciones', nextNumber: 'CERT-DON-2026-0001' },
   ],
 };
 
@@ -189,6 +190,54 @@ describe('CertificateIssueComponent', () => {
     expect(element.textContent).toContain(
       'Certificado CERT-MEM-2026-0003 emitido para Ana María Rojas Díaz.',
     );
+  });
+
+  describe('donations certificate', () => {
+    const yearSelect = (element: HTMLElement) =>
+      element.querySelector<HTMLSelectElement>('#cert-fiscal-year');
+
+    it('does not ask for a year, nor send one, for the other types', async () => {
+      const { fixture, repo, element } = render({ ...member, isBaptized: true });
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await fixture.whenStable();
+
+      expect(yearSelect(element)).toBeNull();
+      expect(repo.previews.every((command) => !('fiscalYear' in command))).toBe(true);
+    });
+
+    it('asks for the year, offers the last six and defaults to the previous one', async () => {
+      const { fixture, repo, element } = render({ ...member, isBaptized: true });
+      fixture.componentInstance['form'].controls.certificateTypeId.setValue(9);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const options = [...(yearSelect(element)?.options ?? [])].map((option) => option.text.trim());
+      expect(options).toEqual(['2026', '2025', '2024', '2023', '2022', '2021']);
+      expect(repo.previews.at(-1)).toEqual({
+        memberId: 4,
+        certificateTypeId: 9,
+        notes: null,
+        fiscalYear: 2025,
+      });
+    });
+
+    it('previews and issues with the year the person picks', async () => {
+      const { fixture, repo, element } = render({ ...member, isBaptized: true });
+      fixture.componentInstance['form'].controls.certificateTypeId.setValue(9);
+      fixture.componentInstance['form'].controls.fiscalYear.setValue(2024);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await fixture.whenStable();
+
+      expect(repo.previews.at(-1)?.fiscalYear).toBe(2024);
+
+      (element.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+      await fixture.whenStable();
+
+      expect(repo.issued).toEqual([
+        { memberId: 4, certificateTypeId: 9, notes: null, fiscalYear: 2024 },
+      ]);
+    });
   });
 });
 

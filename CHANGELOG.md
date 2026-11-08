@@ -8,6 +8,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.19.0 - 2026-11-08
+
+### Added
+
+- **Certificado de donaciones (tipo `DON`) para la declaración de renta (`backend/src/modules/certificates`):** suma los aportes vigentes (no anulados) de un miembro en un año fiscal y los imprime por concepto, con total en cifras y en letras (`amountInWords`, español, pesos colombianos), el NIT de la razón social y el periodo. Como es un tipo de certificado más, hereda la numeración sin huecos, la anulación, el listado, el PDF y el QR de verificación.
+- **Alcance de los datos:** solo cuentan los aportes de las sedes que comparten la razón social de la sede que expide, que es quien figura con su NIT en el membrete. En el año en curso se suma hasta hoy; un año sin aportes no se puede emitir y no gasta un número.
+- **Permisos:** emitirlo exige `certificates.issue` y además `contributions.read` (hoy el pastor), porque muestra montos; se comprueba antes de leer nada del miembro. La segunda firma es para tesorería y se firma a mano: no se imprime el nombre de la secretaria.
+- **PDF con tabla de aportes (`pdfkit-document.renderer.ts`):** disposición compacta; con más de 6 conceptos los últimos se agrupan en «Otros conceptos» sin perder ningún valor. Verificado que el contenido termina antes de las firmas.
+- **Selector «Año de los aportes» al emitir (`certificate-issue.component`)** y tabla de aportes en la vista previa y en el documento.
+- **Marcadores nuevos para las plantillas:** `{{fiscalYear}}`, `{{periodFrom}}`, `{{periodTo}}`, `{{totalAmount}}` y `{{totalInWords}}` (vacíos en los demás tipos).
+
+### Changed
+
+- **Migración `20261108070000_donations_certificate_type`:** agrega el tipo `DON` a las denominaciones que ya existen (las nuevas lo reciben con la plantilla de denominación) y actualiza el comentario de `template`. Es idempotente.
+
 ## 0.18.1 - 2026-11-08
 
 ### Fixed

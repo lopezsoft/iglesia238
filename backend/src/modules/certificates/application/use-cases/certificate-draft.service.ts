@@ -3,14 +3,19 @@ import { NotFoundDomainException } from '../../../../common/errors/domain.except
 import type { TenantContext } from '../../../../common/tenancy/tenant-context.js';
 import type { TenantScope } from '../../../../common/tenancy/tenant-scope.js';
 import {
+  DONATION_TYPE_CODE,
   buildCertificateSnapshot,
   documentLabel,
   type CertificateSnapshot,
+  type DonationInput,
   type Letterhead,
 } from '../certificate-document.js';
 import {
   NOTES_MAX_LENGTH,
   certificateTypeNotFound,
+  donationAccessForbidden,
+  fiscalYearInvalid,
+  noDonationsInPeriod,
   memberNotActive,
   memberNotBaptized,
   memberNotFound,
@@ -26,6 +31,10 @@ import {
   type CertificateContextReader,
 } from '../ports/certificate-context.reader.js';
 import {
+  CERTIFICATE_DONATION_READER,
+  type CertificateDonationReader,
+} from '../ports/certificate-donation.reader.js';
+import {
   CERTIFICATE_MEMBER_READER,
   type CertificateMemberReader,
 } from '../ports/certificate-member.reader.js';
@@ -38,7 +47,12 @@ export interface DraftInput {
   readonly memberId: number;
   readonly certificateTypeId: number;
   readonly notes: string | null;
+  /** Year of the contributions; only the donations certificate uses it (and requires it). */
+  readonly fiscalYear?: number | null;
 }
+
+/** First year a donations certificate can ask for. */
+export const MIN_FISCAL_YEAR = 2000;
 
 /** Everything a certificate needs before it gets a number: validated type, member, notes and signers. */
 export interface CertificateDraft {
@@ -48,6 +62,8 @@ export interface CertificateDraft {
   readonly letterhead: Letterhead;
   readonly signers: ResolvedSigners;
   readonly issuedByName: string;
+  /** What the donations certificate adds up; null for every other type. */
+  readonly donation: DonationInput | null;
 }
 
 /**
@@ -64,6 +80,8 @@ export class CertificateDraftService {
     private readonly members: CertificateMemberReader,
     @Inject(CERTIFICATE_CONTEXT_READER)
     private readonly context: CertificateContextReader,
+    @Inject(CERTIFICATE_DONATION_READER)
+    private readonly donations: CertificateDonationReader,
   ) {}
 
   async prepare(
@@ -78,6 +96,10 @@ export class CertificateDraftService {
     );
     if (!type) {
       throw certificateTypeNotFound();
+    }
+    // The amounts are the treasury's: checked before anything about the member is read.
+    if (type.code === DONATION_TYPE_CODE && !tenant.has('contributions.read')) {
+      throw donationAccessForbidden();
     }
 
     const member = await this.members.findMember(scope, input.memberId);
@@ -104,7 +126,45 @@ export class CertificateDraftService {
     const issuedByName =
       (await this.context.findUserName(tenant.userId)) ?? '—';
 
-    return { type, member, notes, letterhead, signers, issuedByName };
+    const donation =
+      type.code === DONATION_TYPE_CODE
+        ? await this.donationsOf(
+            scope,
+            member.id,
+            input.fiscalYear ?? null,
+            today,
+          )
+        : null;
+
+    return { type, member, notes, letterhead, signers, issuedByName, donation };
+  }
+
+  /** The contributions of the year: the whole year, or up to today when it is the current one. */
+  private async donationsOf(
+    scope: TenantScope,
+    memberId: number,
+    fiscalYear: number | null,
+    today: string,
+  ): Promise<DonationInput> {
+    const currentYear = Number(today.slice(0, 4));
+    if (
+      fiscalYear === null ||
+      !Number.isInteger(fiscalYear) ||
+      fiscalYear < MIN_FISCAL_YEAR ||
+      fiscalYear > currentYear
+    ) {
+      throw fiscalYearInvalid(currentYear);
+    }
+    const periodFrom = `${fiscalYear}-01-01`;
+    const periodTo = fiscalYear === currentYear ? today : `${fiscalYear}-12-31`;
+    const lines = await this.donations.summarize(scope, memberId, {
+      from: periodFrom,
+      to: periodTo,
+    });
+    if (lines.reduce((sum, line) => sum + line.amountCents, 0) <= 0) {
+      throw noDonationsInPeriod(fiscalYear);
+    }
+    return { fiscalYear, periodFrom, periodTo, lines };
   }
 
   snapshotOf(
@@ -123,6 +183,7 @@ export class CertificateDraftService {
       pastorTitleTemplate: type.pastorTitleTemplate,
       secretaryTitleTemplate: type.secretaryTitleTemplate,
       issuedOn,
+      donation: draft.donation,
       letterhead: draft.letterhead,
       pastorName: draft.signers.pastor?.name ?? null,
       secretaryName: draft.signers.secretary?.name ?? null,

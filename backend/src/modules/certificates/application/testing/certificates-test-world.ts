@@ -36,6 +36,10 @@ import type {
   NewCertificate,
 } from '../ports/certificate.repository.js';
 import type {
+  CertificateDonationReader,
+  DonationLineRecord,
+} from '../ports/certificate-donation.reader.js';
+import type {
   CertificateVerificationLinks,
   CertificateVerificationReader,
   VerifiableCertificateRecord,
@@ -157,6 +161,44 @@ export class FakeVerificationLinks implements CertificateVerificationLinks {
   }
 }
 
+/** Donations of the tests: whatever the test arranged in `data.donations`, keyed by member and year. */
+class FakeDonationReader implements CertificateDonationReader {
+  constructor(private readonly data: FakeData) {}
+  summarize(
+    _scope: TenantScope,
+    memberId: number,
+    range: { from: string; to: string },
+  ) {
+    this.data.donationQueries.push({ memberId, ...range });
+    return Promise.resolve(
+      this.data.donations
+        .filter(
+          (d) =>
+            d.memberId === memberId &&
+            d.receivedOn >= range.from &&
+            d.receivedOn <= range.to,
+        )
+        .reduce<DonationLineRecord[]>((lines, d) => {
+          const line = lines.find((l) => l.concept === d.concept);
+          if (line) {
+            lines[lines.indexOf(line)] = {
+              ...line,
+              receipts: line.receipts + 1,
+              amountCents: line.amountCents + d.amountCents,
+            };
+          } else {
+            lines.push({
+              concept: d.concept,
+              receipts: 1,
+              amountCents: d.amountCents,
+            });
+          }
+          return lines;
+        }, []),
+    );
+  }
+}
+
 class FakeVerificationReader implements CertificateVerificationReader {
   constructor(private readonly data: FakeData) {}
   findById(certificateId: number): Promise<VerifiableCertificateRecord | null> {
@@ -186,6 +228,14 @@ type StoredType = CertificateTypeRecord & Owned;
 
 /** The tables of the fake database. Tests arrange rows here and assert on them. */
 export class FakeData {
+  /** Contributions of members, one row per receipt (amounts in cents). */
+  donations: {
+    memberId: number;
+    concept: string;
+    receivedOn: string;
+    amountCents: number;
+  }[] = [];
+  donationQueries: { memberId: number; from: string; to: string }[] = [];
   types: StoredType[] = [];
   certificates: StoredCertificate[] = [];
   cards: StoredCard[] = [];
@@ -575,6 +625,8 @@ class FakeContextReader implements CertificateContextReader {
   }
 }
 
+/** Id of the donations certificate type of denomination 1 (denomination 2 has the next one). */
+export const DON_TYPE_ID = 9;
 export const CENTRAL = { denominationId: 1, congregationId: 10 } as const;
 export const NORTE = { denominationId: 1, congregationId: 11 } as const;
 export const OTHER_DENOMINATION = {
@@ -666,6 +718,26 @@ export function buildWorld() {
     }
   }
 
+  // The donations certificate goes after the others, so the ids of the first four types of each
+  // denomination stay as they were (type 5 is still the first one of denomination 2).
+  for (const [id, denominationId] of [
+    [DON_TYPE_ID, 1],
+    [DON_TYPE_ID + 1, 2],
+  ] as const) {
+    data.types.push({
+      id,
+      denominationId,
+      code: 'DON',
+      name: 'Certificado de donaciones',
+      template: null,
+      introTemplate: null,
+      closingTemplate: null,
+      pastorTitleTemplate: null,
+      secretaryTitleTemplate: null,
+      validityDays: null,
+    });
+  }
+
   data.members.push(
     member(1, CENTRAL, 'SC-0130', { fullName: 'Ana María Rojas Díaz' }),
     member(2, CENTRAL, 'SC-0131', { isBaptized: false, waterBaptismOn: null }),
@@ -684,7 +756,12 @@ export function buildWorld() {
   const cards = new FakeCardRepository(data, transactions);
   const members = new FakeMemberReader(data);
   const context = new FakeContextReader(data);
-  const drafts = new CertificateDraftService(certificates, members, context);
+  const drafts = new CertificateDraftService(
+    certificates,
+    members,
+    context,
+    new FakeDonationReader(data),
+  );
 
   return {
     data,

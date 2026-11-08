@@ -181,6 +181,7 @@ export const DENOMINATION_TEMPLATE: DenominationTemplate = {
     { code: 'TRA', name: 'Carta de traslado' },
     { code: 'BAU', name: 'Certificado de bautismo' },
     { code: 'ASI', name: 'Certificado de asistencia' },
+    { code: 'DON', name: 'Certificado de donaciones' },
   ],
   pastoralRanks: ['Pastor', 'Evangelista', 'Misionero', 'Obrero'],
   churchPositions: [

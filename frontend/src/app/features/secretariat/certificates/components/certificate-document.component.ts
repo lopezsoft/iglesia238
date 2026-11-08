@@ -50,6 +50,40 @@ import { CertificateSnapshot } from '../data/certificates.models';
 
       @if (snapshot().body) {
         <p class="cert-doc__body">{{ snapshot().body }}</p>
+        @if (snapshot().donation; as donation) {
+          <table class="cert-doc__table">
+            <caption class="cert-doc__sr-only">
+              Aportes de
+              {{
+                donation.fiscalYear
+              }}
+              por concepto
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Concepto</th>
+                <th scope="col" class="cert-doc__num">Recibos</th>
+                <th scope="col" class="cert-doc__num">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of donation.lines; track line.concept) {
+                <tr>
+                  <td>{{ line.concept }}</td>
+                  <td class="cert-doc__num">{{ line.receipts }}</td>
+                  <td class="cert-doc__num">{{ line.amount }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Total</th>
+                <td class="cert-doc__num">{{ donation.receipts }}</td>
+                <td class="cert-doc__num">{{ donation.total }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        }
         @if (snapshot().notes) {
           <p class="cert-doc__body"><strong>Observaciones:</strong> {{ snapshot().notes }}</p>
         }
@@ -66,7 +100,12 @@ import { CertificateSnapshot } from '../data/certificates.models';
           <p class="cert-doc__meta">{{ snapshot().pastorTitle }}</p>
         </div>
         <div class="cert-doc__signature">
-          <p>{{ snapshot().secretaryName ?? 'Secretario(a) de la sede' }}</p>
+          <!-- The donations certificate leaves this line for the treasurer, who signs by hand. -->
+          <p>
+            {{
+              snapshot().secretaryName ?? (snapshot().donation ? '' : 'Secretario(a) de la sede')
+            }}
+          </p>
           <p class="cert-doc__meta">{{ snapshot().secretaryTitle }}</p>
         </div>
       </div>

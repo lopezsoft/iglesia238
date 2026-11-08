@@ -158,6 +158,7 @@ export class CertificatesController {
       memberId: body.memberId,
       certificateTypeId: body.certificateTypeId,
       notes: body.notes ?? null,
+      fiscalYear: body.fiscalYear ?? null,
     });
   }
 
@@ -213,6 +214,7 @@ export class CertificatesController {
         memberId: body.memberId,
         certificateTypeId: body.certificateTypeId,
         notes: body.notes ?? null,
+        fiscalYear: body.fiscalYear ?? null,
       },
       ip,
     );

@@ -263,12 +263,13 @@ describe('DENOMINATION_TEMPLATE', () => {
     );
   });
 
-  it('ships the four certificate types and the four contribution types', () => {
+  it('ships the five certificate types and the four contribution types', () => {
     expect(DENOMINATION_TEMPLATE.certificateTypes.map((t) => t.code)).toEqual([
       'MEM',
       'TRA',
       'BAU',
       'ASI',
+      'DON',
     ]);
     expect(
       DENOMINATION_TEMPLATE.contributionTypes.map((t) => t.category),

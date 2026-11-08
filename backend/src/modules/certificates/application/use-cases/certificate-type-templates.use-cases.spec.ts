@@ -30,6 +30,7 @@ describe('certificate type templates', () => {
       'TRA',
       'BAU',
       'ASI',
+      'DON',
     ]);
     expect(catalog.placeholders.map((p) => p.key)).toEqual([
       ...TEMPLATE_PLACEHOLDERS,
