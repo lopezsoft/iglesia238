@@ -1,11 +1,11 @@
 # Iglesia 238 — Plataforma de Gestión Eclesiástica, Contable y Administrativa
 
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-0.23.0-1d4ed8)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-0.24.0-1d4ed8)](CHANGELOG.md)
 [![Licencia: AGPL v3](https://img.shields.io/badge/licencia-GNU%20AGPLv3-047857)](LICENSE)
 [![Sitio Oficial](https://img.shields.io/badge/web-iglesia238.com-0f172a)](https://iglesia238.com)
 [![Nube Oficial](https://img.shields.io/badge/app-app.iglesia238.com-2563eb)](https://app.iglesia238.com)
 
-**Versión 0.23.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
+**Versión 0.24.0**. Los cambios de cada versión están en el [CHANGELOG](CHANGELOG.md).
 
 **Iglesia 238** es una plataforma multi-iglesia y multi-denominación de código abierto diseñada para gestionar con rigor pastoral, administrativo y contable cada congregación: **membresía, secretaría eclesiástica, contabilidad por fondos y liquidación denominacional de diezmos**, con aislamiento estricto de datos por denominación y por sede.
 

@@ -154,6 +154,11 @@ const USE_CASES = [
       useClass: PrismaPeopleSearchRepository,
     },
   ],
-  exports: [SearchPeopleUseCase, CreateMemberUseCase, MEMBER_REPOSITORY],
+  exports: [
+    SearchPeopleUseCase,
+    CreateMemberUseCase,
+    ListMembersUseCase,
+    MEMBER_REPOSITORY,
+  ],
 })
 export class MembershipModule {}

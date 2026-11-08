@@ -249,6 +249,8 @@ model Congregation {
   childDedications       ChildDedication[]
   attendanceSessions     AttendanceSession[]
   documentSequences      DocumentSequence[]
+  aiSettings             CongregationAiSettings[]
+  aiAccessTokens         AiAccessToken[]
   certificates           Certificate[]
   membershipCards        MembershipCard[]
 

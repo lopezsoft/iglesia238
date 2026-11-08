@@ -22,6 +22,8 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
     'certificates.issue',
     'contributions.read',
     'reports.read',
+    'ai.manage',
+    'ai.use',
   ],
   SECRETARY: [
     'applications.review',
@@ -31,6 +33,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
     'socioeconomic-profiles.write',
     'certificates.issue',
     'attendance.write',
+    'ai.use',
   ],
   TREASURER: [
     'contributions.read',
@@ -40,5 +43,6 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
     'tithe-settlements.write',
     'budgets.manage',
     'reports.read',
+    'ai.use',
   ],
 };

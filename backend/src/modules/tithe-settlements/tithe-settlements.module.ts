@@ -39,5 +39,7 @@ import { TitheSettlementsController } from './presentation/tithe-settlements.con
     { provide: TITHE_SETTLEMENT_WRITER, useClass: PrismaTitheSettlementWriter },
     { provide: TITHE_RULE_READER, useClass: PrismaTitheRuleReader },
   ],
+  // The AI assistant reads the same overview and history through the same use cases.
+  exports: [GetTitheOverviewUseCase, ListTitheSettlementsUseCase],
 })
 export class TitheSettlementsModule {}

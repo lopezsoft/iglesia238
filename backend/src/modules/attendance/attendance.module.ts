@@ -35,5 +35,7 @@ import { AttendanceSessionsController } from './presentation/attendance-sessions
     ExportAttendanceSessions,
     AttendanceReportService,
   ],
+  // The AI assistant reads the same statistics through the same use case.
+  exports: [GetAttendanceStats],
 })
 export class AttendanceModule {}

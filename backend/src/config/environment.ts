@@ -117,6 +117,16 @@ export class Environment {
   @MinLength(MIN_JWT_SECRET_LENGTH)
   CERTIFICATE_VERIFICATION_SECRET?: string;
 
+  /**
+   * Encrypts the AI keys that each sede pastes (AES-256-GCM). Optional: without it a key derived from JWT_SECRET is
+   * used. Set it (and never change it) if JWT_SECRET is rotated, because a new key makes the saved AI keys unreadable.
+   */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @MinLength(MIN_JWT_SECRET_LENGTH)
+  AI_SECRETS_KEY?: string;
+
   /** Where the uploaded files (the logo of a denomination) are kept. Only the local disk exists for now. */
   @IsIn(STORAGE_DRIVERS)
   STORAGE_DRIVER: StorageDriver = 'local';

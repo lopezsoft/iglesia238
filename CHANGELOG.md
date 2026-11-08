@@ -8,6 +8,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.24.0 - 2026-11-08
+
+### Added
+
+- **Asistente de IA por sede (`backend/src/modules/ai-assistant`, `frontend/.../ai-assistant`):** cada sede decide si usa inteligencia artificial y con qué cuenta. El pastor (permiso `ai.manage`) pega en **Organización → Configuración del asistente de IA** la clave de Anthropic de su sede: se comprueba con Anthropic antes de guardarla, se guarda **cifrada** (AES-256-GCM) y nunca se vuelve a mostrar (solo sus últimos 4 caracteres); el gasto va a la cuenta de la propia sede. Desde ahí activa o apaga el chat, elige el modelo (Opus 5.5, Sonnet 5.5 o Haiku 5.5) y gestiona las conexiones externas.
+- **Chat dentro de la aplicación (`/assistant`, permiso `ai.use` para pastor, secretaría y tesorería):** se pregunta en español («¿cuánto se recibió este año?») y el asistente responde con las cifras que consulta, diciendo qué consultó. Cada persona solo recibe las consultas de las pantallas que puede abrir, y se ejecutan con su propio contexto y su sede. Límites: 30 preguntas cada 10 minutos por IP, 20 mensajes por conversación y 6 rondas de consulta por pregunta, para que un modelo confundido no dispare el gasto de la sede.
+- **Servidor MCP de solo lectura (`POST /api/mcp`):** una herramienta externa de IA (Claude u otra) se conecta con un token de la sede y consulta los mismos datos con su propia suscripción, sin usar la clave de arriba. Los tokens (`i238_mcp_…`) se muestran una sola vez y se guardan como hash; se pueden vencer, revocar (efecto inmediato) o cortar todos apagando las conexiones. Un token solo sirve en esa ruta y solo ve su sede. Hasta 10 conexiones activas por sede.
+- **Cuatro consultas, solo con cifras sumadas y sin datos personales:** `resumen_financiero` (ingresos, egresos, saldos por fondo y aportes por tipo), `resumen_diezmos` (porcentajes, resumen del año y últimas liquidaciones), `estadisticas_asistencia` (promedios, serie y comparación con el año anterior) y `miembros_por_estado` (cantidades por estado, sexo y edad). Ninguna entrega nombres ni documentos y ninguna modifica nada. Detalle en `docs/2026-11-08-1230-asistente-ia.md`.
+- **Permisos `ai.manage` y `ai.use`**, que sincroniza el seed sin migración de datos.
+- **Variable opcional `AI_SECRETS_KEY`** (mínimo 32 caracteres): clave con la que se cifran las claves de IA de las sedes. Sin ella se deriva de `JWT_SECRET`; **si ese secreto se rota, las claves guardadas dejan de poder leerse** y cada sede las pega de nuevo. Para poder rotarlo sin ese efecto, define `AI_SECRETS_KEY` antes y no la cambies.
+
+### Changed
+
+- **Migración `20261108120000_ai_assistant`:** crea `congregation_ai_settings` (una fila por sede: ajustes y clave cifrada) y `ai_access_tokens` (tokens de conexión, solo el hash), con sus comentarios y claves foráneas. No cambia nada de lo existente.
+- **Nueva dependencia del backend:** `@anthropic-ai/sdk`.
+
 ## 0.23.0 - 2026-11-08
 
 ### Added

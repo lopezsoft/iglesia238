@@ -125,6 +125,8 @@ const PERMISSIONS = [
   'certificate-types.manage',
   'donation-certificates.issue',
   'branding.manage',
+  'ai.manage',
+  'ai.use',
   'attendance.write',
   'contributions.read',
   'contributions.write',
@@ -171,6 +173,8 @@ const ROLES: RoleSeed[] = [
       'certificates.issue',
       'contributions.read',
       'reports.read',
+      'ai.manage',
+      'ai.use',
     ],
   },
   {
@@ -184,6 +188,7 @@ const ROLES: RoleSeed[] = [
       'socioeconomic-profiles.write',
       'certificates.issue',
       'attendance.write',
+      'ai.use',
     ],
   },
   {
@@ -197,6 +202,7 @@ const ROLES: RoleSeed[] = [
       'tithe-settlements.write',
       'budgets.manage',
       'reports.read',
+      'ai.use',
     ],
   },
 ];

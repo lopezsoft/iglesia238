@@ -55,6 +55,8 @@ model User {
   memberStatusHistories MemberStatusHistory[]
   memberTransfers       MemberTransfer[]
   issuedCertificates    Certificate[]           @relation("CertificateIssuer")
+  aiSettingsEdited      CongregationAiSettings[] @relation("AiSettingsEditor")
+  aiTokensCreated       AiAccessToken[]          @relation("AiTokenCreator")
   recordedAttendance    AttendanceSession[]     @relation("AttendanceRecorder")
 
   @@map("users")

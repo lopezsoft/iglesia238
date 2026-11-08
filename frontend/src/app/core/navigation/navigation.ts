@@ -17,6 +17,8 @@ export const ACCESS = {
   certificates: ['certificates.issue', 'donation-certificates.issue'],
   certificateTemplates: ['certificate-types.manage'],
   branding: ['branding.manage'],
+  aiSettings: ['ai.manage'],
+  aiChat: ['ai.use'],
   attendance: ['attendance.write'],
   secretariatRecords: ['members.write'],
   contributions: ['contributions.read'],
@@ -45,7 +47,13 @@ export interface NavGroup {
 }
 
 export const NAV_GROUPS: readonly NavGroup[] = [
-  { label: 'General', items: [{ label: 'Inicio', shortLabel: 'Inicio', path: '/dashboard', icon: 'home', permissions: [] }] },
+  {
+    label: 'General',
+    items: [
+      { label: 'Inicio', shortLabel: 'Inicio', path: '/dashboard', icon: 'home', permissions: [] },
+      { label: 'Asistente de IA', shortLabel: 'Asistente', path: '/assistant', icon: 'sparkles', permissions: ACCESS.aiChat },
+    ],
+  },
   {
     label: 'Plataforma',
     items: [{ label: 'Denominaciones', shortLabel: 'Denominac.', path: '/denominations', icon: 'landmark', permissions: ACCESS.denominations }],
@@ -58,6 +66,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Usuarios y roles', shortLabel: 'Usuarios', path: '/users', icon: 'users', permissions: ACCESS.users },
       { label: 'Plantillas de certificados', shortLabel: 'Plantillas', path: '/certificate-templates', icon: 'certificate', permissions: ACCESS.certificateTemplates },
       { label: 'Identidad visual', shortLabel: 'Identidad', path: '/branding', icon: 'sparkles', permissions: ACCESS.branding },
+      { label: 'Configuración del asistente de IA', shortLabel: 'IA', path: '/ai-settings', icon: 'key', permissions: ACCESS.aiSettings },
     ],
   },
   {

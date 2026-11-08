@@ -121,6 +121,18 @@ export const routes: Routes = [
         loadChildren: () => import('./features/secretariat/certificate-templates.routes'),
       },
       {
+        path: 'assistant',
+        title: 'Asistente de IA',
+        canMatch: [permissionGuard(...ACCESS.aiChat)],
+        loadChildren: () => import('./features/ai-assistant/ai-chat.routes'),
+      },
+      {
+        path: 'ai-settings',
+        title: 'Configuración del asistente de IA',
+        canMatch: [permissionGuard(...ACCESS.aiSettings)],
+        loadChildren: () => import('./features/ai-assistant/ai-settings.routes'),
+      },
+      {
         path: 'branding',
         title: 'Identidad visual',
         canMatch: [permissionGuard(...ACCESS.branding)],

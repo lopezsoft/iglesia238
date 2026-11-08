@@ -19,6 +19,25 @@ describe('validateEnvironment', () => {
     expect(environment.TRUST_PROXY).toBe(false);
   });
 
+  it('does not need a dedicated key for the AI keys of the sedes, and checks it when it is set', () => {
+    expect(
+      validateEnvironment(validEnvironment).AI_SECRETS_KEY,
+    ).toBeUndefined();
+    expect(
+      validateEnvironment({ ...validEnvironment, AI_SECRETS_KEY: '' })
+        .AI_SECRETS_KEY,
+    ).toBeUndefined();
+    expect(
+      validateEnvironment({
+        ...validEnvironment,
+        AI_SECRETS_KEY: 'a-dedicated-key-with-at-least-32-characters',
+      }).AI_SECRETS_KEY,
+    ).toBe('a-dedicated-key-with-at-least-32-characters');
+    expect(() =>
+      validateEnvironment({ ...validEnvironment, AI_SECRETS_KEY: 'corta' }),
+    ).toThrow(/AI_SECRETS_KEY/);
+  });
+
   it('parses numbers and booleans sent as strings', () => {
     const environment = validateEnvironment({
       ...validEnvironment,

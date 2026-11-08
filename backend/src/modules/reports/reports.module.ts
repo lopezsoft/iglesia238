@@ -26,5 +26,7 @@ import { ReportsController } from './presentation/reports.controller.js';
     CashBalanceWidgets,
     { provide: FINANCIAL_DATA_READER, useClass: PrismaFinancialDataReader },
   ],
+  // The AI assistant reads the same figures through the same use case.
+  exports: [GetFinancialReportUseCase],
 })
 export class ReportsModule {}

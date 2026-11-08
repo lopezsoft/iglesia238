@@ -1,0 +1,67 @@
+/// Ajustes del asistente de IA de una sede: si lo activa para el chat de la aplicación y para conexiones MCP externas, el modelo que usa y la clave del proveedor que pegó la propia sede. Ámbito: por sede; una fila por sede.
+/// La clave se guarda cifrada (AES-256-GCM) y nunca se devuelve completa: la API solo muestra sus últimos 4 caracteres. Cada sede decide si lo usa: sin clave o sin activar, el asistente no funciona en ella.
+model CongregationAiSettings {
+  /// Identificador interno autoincremental.
+  id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int          @map("denomination_id")
+  /// Sede a la que pertenece el registro: la dueña de estos ajustes y de la clave (FK a congregations.id).
+  congregationId Int          @map("congregation_id")
+  /// Indica si el chat con el asistente está disponible para los usuarios de la sede; además exige que haya una clave guardada.
+  chatEnabled    Boolean      @default(false) @map("chat_enabled")
+  /// Indica si la sede acepta conexiones MCP externas (con los tokens de ai_access_tokens); no necesita clave porque la IA la pone quien se conecta.
+  mcpEnabled     Boolean      @default(false) @map("mcp_enabled")
+  /// Proveedor de IA de la clave; hoy solo ANTHROPIC.
+  provider       String       @default("ANTHROPIC") @db.VarChar(20)
+  /// Modelo que usa el chat de la sede (por ejemplo claude-opus-5-5); la API solo acepta los de su lista.
+  model          String       @default("claude-opus-5-5") @db.VarChar(60)
+  /// Clave del proveedor cifrada con AES-256-GCM (formato versión.iv.etiqueta.texto en base64url); nula si la sede no ha guardado ninguna.
+  apiKeyCipher   String?      @map("api_key_cipher") @db.VarChar(1024)
+  /// Últimos 4 caracteres de la clave guardada, para que la sede reconozca cuál es; nulos si no hay clave.
+  apiKeyLast4    String?      @map("api_key_last4") @db.VarChar(4)
+  /// Usuario que hizo el último cambio; nulo si no hay usuario asociado (FK a users.id).
+  updatedById    Int?         @map("updated_by_id")
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt      DateTime     @default(now()) @map("created_at")
+  /// Fecha y hora de la última modificación (UTC).
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  congregation Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  updatedBy    User?        @relation("AiSettingsEditor", fields: [updatedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([congregationId])
+  @@map("congregation_ai_settings")
+}
+
+/// Token con el que una herramienta externa de IA (Claude, ChatGPT u otra) se conecta por MCP a los datos agregados de una sede. Ámbito: por sede.
+/// Solo se guarda el hash SHA-256: el token completo se muestra una vez, al crearlo. Se revoca, nunca se borra; deja de servir si vence, se revoca o la sede desactiva las conexiones MCP.
+model AiAccessToken {
+  /// Identificador interno autoincremental.
+  id             Int          @id @default(autoincrement())
+  /// Denominación dueña del registro; aísla los datos entre iglesias (FK a denominations.id).
+  denominationId Int          @map("denomination_id")
+  /// Sede a la que da acceso el token: solo ve los datos de esa sede (FK a congregations.id).
+  congregationId Int          @map("congregation_id")
+  /// Nombre que la sede le dio a la conexión para reconocerla («Claude del pastor»); máximo 80 caracteres.
+  name           String       @db.VarChar(80)
+  /// Hash SHA-256 del token en hexadecimal; único, y con él se busca el token al conectarse.
+  tokenHash      String       @unique @map("token_hash") @db.VarChar(64)
+  /// Primeros caracteres del token, para reconocerlo en la lista sin mostrarlo entero.
+  tokenPrefix    String       @map("token_prefix") @db.VarChar(16)
+  /// Usuario que creó el token (FK a users.id).
+  createdById    Int          @map("created_by_id")
+  /// Fecha y hora de creación del registro (UTC).
+  createdAt      DateTime     @default(now()) @map("created_at")
+  /// Fecha y hora del último uso (UTC), con precisión de un minuto; nula si nunca se ha usado.
+  lastUsedAt     DateTime?    @map("last_used_at")
+  /// Fecha y hora de vencimiento (UTC); nula si no vence.
+  expiresAt      DateTime?    @map("expires_at")
+  /// Fecha y hora de revocación (UTC); nula si el token sigue vigente.
+  revokedAt      DateTime?    @map("revoked_at")
+
+  congregation Congregation @relation(fields: [denominationId, congregationId], references: [denominationId, id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy    User         @relation("AiTokenCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([congregationId, revokedAt])
+  @@map("ai_access_tokens")
+}
