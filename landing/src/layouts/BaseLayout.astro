@@ -9,6 +9,7 @@ interface Props {
   keywords?: string;
   ogImage?: string;
   includeFaqSchema?: boolean;
+  noindex?: boolean;
 }
 
 const {
@@ -17,7 +18,12 @@ const {
   keywords = 'software para iglesias, gestión eclesiástica, membresía de iglesia F-701, contabilidad para iglesias, libro de caja iglesia, certificados de bautismo en PDF, liquidación de diezmos, administración pastoral multi-sede, software congregaciones Colombia Latinoamérica',
   ogImage = 'https://iglesia238.com/brand/png/iglesia238-logo-horizontal-1024.png',
   includeFaqSchema = false,
+  noindex = false,
 } = Astro.props;
+
+const robotsContent = noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 
 const siteUrl = 'https://iglesia238.com';
 const pathname = Astro.url.pathname;
@@ -163,7 +169,7 @@ const jsonLd = JSON.stringify({
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
     <meta name="author" content="Lopezsoft · Iglesia 238" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="robots" content={robotsContent} />
     <meta name="theme-color" content="#2a5ee8" />
 
     <!-- Canonical & Hreflang SEO -->

@@ -8,6 +8,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.16.1 - 2026-11-08
+
+### Added
+
+- **Verificación de propiedad en Google Search Console (`landing/public/googleef5fcd30aae71046.html`):** archivo de verificación HTML servido en la raíz de `iglesia238.com` para poder indexar el sitio.
+- **Página 404 real para la landing (`landing/src/pages/404.astro`):** con `noindex` mediante la nueva prop `noindex` de `BaseLayout.astro`.
+
+### Fixed
+
+- **Soft-404 y contenido duplicado en `iglesia238.com` (`docker/nginx/dokploy.conf`):** las rutas inexistentes respondían `200` con la home por el fallback de SPA (`try_files … /index.html`); ahora responden `404`. `www.iglesia238.com` redirige con `301` al dominio sin `www` y los redirects de directorio son relativos (`absolute_redirect off`) para no saltar a `http`.
+- **Pantalla de login de la app indexable (`frontend/src/index.html`):** se añade `<meta name="robots" content="noindex, nofollow">`.
+
 ## 0.16.0 - 2026-11-08
 
 ### Added

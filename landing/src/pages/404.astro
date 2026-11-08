@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Página no encontrada — Iglesia 238"
+  description="La página que buscas no existe o fue movida."
+  noindex
+>
+  <section class="not-found">
+    <div class="container">
+      <span class="section-eyebrow">Error 404</span>
+      <h1 class="section-title">Página no encontrada</h1>
+      <p class="section-subtitle" style="margin: 0 auto;">
+        El enlace que seguiste no existe o fue movido. Vuelve al inicio para seguir explorando Iglesia 238.
+      </p>
+      <p>
+        <a class="btn btn-primary" href="/">Ir al inicio</a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    padding: 6rem 0;
+    text-align: center;
+  }
+</style>
