@@ -2,7 +2,7 @@
 
 Aplicación Angular 22 del sistema multi-iglesia: membresía, secretaría y contabilidad, con acceso por rol y por alcance (plataforma, denominación o sede).
 
-El diseño aprobado es el prototipo navegable en Claude Design: [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5). La API y el modelo de datos están en [backend/](../backend/README.md).
+La API y el modelo de datos están documentados en [backend/](../backend/README.md).
 
 ## Conexión con la API real
 

@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.15.2 - 2026-11-07
+
+### Added
+
+- **Licenciamiento Open Source `GNU AGPLv3` y gobernanza pública (`LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `README.md`):** incorporación del texto oficial de la licencia `GNU Affero General Public License v3.0 (AGPL-3.0-or-later)` con titularidad de **LopezSoft SAS**, política de divulgación responsable de vulnerabilidades (`SECURITY.md`), guía de contribución (`CONTRIBUTING.md`) y presentación pública del monorepo en `README.md`.
+
 ## 0.15.1 - 2026-11-07
 
 ### Fixed
@@ -258,7 +264,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Added
 
-- Prototipo navegable del frontend en Claude Design, [Iglesia 238 — App por roles](https://claude.ai/artifact/7GpCsLf1Kfe6e8tsWQ5DW5): 21 pantallas con la navegación de cada rol y el mapa de acceso por permiso.
+- Prototipo funcional del frontend (`Iglesia 238 — App por roles`): 21 pantallas con la navegación de cada rol y el mapa de acceso por permiso.
 - Aplicación Angular con todas las pantallas del MVP del plan, en modo demostración con datos ficticios en memoria mientras la API no expone los módulos:
   - **Acceso:** ingreso con bloqueo tras 5 intentos fallidos y recuperación de contraseña sin revelar si el correo existe.
   - **Inscripción pública:** formulario por pasos con acudiente para menores, autorización de datos según la política vigente, campo trampa contra bots, límite de envíos y consulta del estado por código.

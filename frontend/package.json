@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4700 --open",
@@ -23,6 +23,8 @@
     ]
   },
   "private": true,
+  "license": "AGPL-3.0-or-later",
+  "author": "LopezSoft SAS <contact@lewislopez.io>",
   "dependencies": {
     "@angular/common": "^22.2.4",
     "@angular/compiler": "^22.2.4",

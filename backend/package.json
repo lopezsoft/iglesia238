@@ -1,10 +1,10 @@
 {
   "name": "church-management-api",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "Multi-tenant church management API: membership, secretariat and accounting",
-  "author": "",
+  "author": "LopezSoft SAS <contact@lewislopez.io>",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"prisma/**/*.ts\"",
