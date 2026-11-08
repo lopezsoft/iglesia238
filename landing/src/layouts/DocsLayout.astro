@@ -44,8 +44,8 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
         <div class="docs-sidebar__group">
           <div class="docs-sidebar__title">2. Manual Operativo</div>
           <a
-            href="/docs/manual-roles"
-            class:list={['docs-nav-item', { active: currentPath === '/docs/manual-roles' }]}
+            href="/docs/roles-manual"
+            class:list={['docs-nav-item', { active: currentPath === '/docs/roles-manual' }]}
           >
             <span>👥 Manual por Rol (Pastor, Secretaría y Tesorería)</span>
           </a>
@@ -54,8 +54,8 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
         <div class="docs-sidebar__group">
           <div class="docs-sidebar__title">3. Open Source & Cloud</div>
           <a
-            href="/docs/auto-alojamiento"
-            class:list={['docs-nav-item', { active: currentPath === '/docs/auto-alojamiento' }]}
+            href="/docs/self-hosting"
+            class:list={['docs-nav-item', { active: currentPath === '/docs/self-hosting' }]}
           >
             <span>🐳 Auto-Alojamiento (Docker, Dokploy y AWS SES)</span>
           </a>

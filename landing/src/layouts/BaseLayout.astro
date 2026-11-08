@@ -40,15 +40,15 @@ const breadcrumbItems = [
 
 if (pathname !== '/') {
   const cleanName =
-    pathname.includes('soluciones')
+    pathname.includes('solutions')
       ? 'Soluciones por Ministerio'
-      : pathname.includes('como-funciona')
+      : pathname.includes('how-it-works')
         ? 'Cómo funciona'
-        : pathname.includes('seguridad')
+        : pathname.includes('security')
           ? 'Seguridad y Ley 1581'
-          : pathname.includes('docs/manual-roles')
+          : pathname.includes('docs/roles-manual')
             ? 'Manual Operativo por Rol'
-            : pathname.includes('docs/auto-alojamiento')
+            : pathname.includes('docs/self-hosting')
               ? 'Guía de Auto-Alojamiento (Docker / Dokploy)'
               : pathname.includes('docs')
                 ? 'Documentación y Manuales'

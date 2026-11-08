@@ -11,7 +11,7 @@ const currentPath = Astro.url.pathname;
 
     <nav class="main-nav" aria-label="Navegación principal">
       <div class="nav-dropdown">
-        <a href="/soluciones" class:list={['nav-link', 'nav-link--dropdown', { active: currentPath.startsWith('/soluciones') }]}>
+        <a href="/solutions" class:list={['nav-link', 'nav-link--dropdown', { active: currentPath.startsWith('/solutions') }]}>
           <span>Soluciones</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -19,28 +19,28 @@ const currentPath = Astro.url.pathname;
         </a>
         <div class="mega-menu">
           <div class="mega-menu__grid">
-            <a href="/soluciones#membresia" class="mega-item">
+            <a href="/solutions#membresia" class="mega-item">
               <div class="mega-item__icon mega-item__icon--blue">🪪</div>
               <div>
                 <div class="mega-item__title">Membresía y Formato F-701</div>
                 <div class="mega-item__desc">Inscripción pública en línea, núcleo familiar, bautismo y expediente 360°.</div>
               </div>
             </a>
-            <a href="/soluciones#secretaria" class="mega-item">
+            <a href="/solutions#secretaria" class="mega-item">
               <div class="mega-item__icon mega-item__icon--purple">📜</div>
               <div>
                 <div class="mega-item__title">Secretaría y Certificados PDF</div>
                 <div class="mega-item__desc">Certificados con consecutivo, carnés, asistencia, matrimonios y presentaciones.</div>
               </div>
             </a>
-            <a href="/soluciones#contabilidad" class="mega-item">
+            <a href="/solutions#contabilidad" class="mega-item">
               <div class="mega-item__icon mega-item__icon--emerald">💼</div>
               <div>
                 <div class="mega-item__title">Contabilidad, Diezmos y Votos</div>
                 <div class="mega-item__desc">Recibos REC, libro de caja mensual, promesas de voto y liquidación de diezmos.</div>
               </div>
             </a>
-            <a href="/soluciones#gobierno" class="mega-item">
+            <a href="/solutions#gobierno" class="mega-item">
               <div class="mega-item__icon mega-item__icon--amber">🏛</div>
               <div>
                 <div class="mega-item__title">Gobierno Multi-Sede</div>
@@ -63,10 +63,10 @@ const currentPath = Astro.url.pathname;
         <span>Formato F-701</span>
       </a>
 
-      <a href="/como-funciona" class:list={['nav-link', { active: currentPath.startsWith('/como-funciona') }]}>
+      <a href="/how-it-works" class:list={['nav-link', { active: currentPath.startsWith('/how-it-works') }]}>
         Cómo funciona
       </a>
-      <a href="/seguridad" class:list={['nav-link', { active: currentPath.startsWith('/seguridad') }]}>
+      <a href="/security" class:list={['nav-link', { active: currentPath.startsWith('/security') }]}>
         Seguridad
       </a>
       <a href="/docs" class:list={['nav-link', { active: currentPath.startsWith('/docs') }]}>

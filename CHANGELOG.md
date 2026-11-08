@@ -8,6 +8,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.16.2 - 2026-11-08
+
+### Changed
+
+- **URLs de la landing con slugs en inglés (`landing/src/pages/*`):** `/soluciones` → `/solutions`, `/como-funciona` → `/how-it-works`, `/seguridad` → `/security`, `/docs/manual-roles` → `/docs/roles-manual` y `/docs/auto-alojamiento` → `/docs/self-hosting`. Se actualizan enlaces internos, breadcrumbs, canonicals y `sitemap.xml`.
+
+### Added
+
+- **Redirects `301` desde las URLs antiguas (`docker/nginx/dokploy.conf`):** las rutas en español redirigen a su equivalente en inglés para conservar el posicionamiento ya solicitado en Google Search Console.
+
 ## 0.16.1 - 2026-11-08
 
 ### Added

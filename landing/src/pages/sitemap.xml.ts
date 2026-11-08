@@ -4,12 +4,12 @@ const SITE_URL = 'https://iglesia238.com';
 
 const pages = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
-  { path: '/soluciones/', priority: '0.9', changefreq: 'monthly' },
-  { path: '/como-funciona/', priority: '0.9', changefreq: 'monthly' },
-  { path: '/seguridad/', priority: '0.8', changefreq: 'monthly' },
+  { path: '/solutions/', priority: '0.9', changefreq: 'monthly' },
+  { path: '/how-it-works/', priority: '0.9', changefreq: 'monthly' },
+  { path: '/security/', priority: '0.8', changefreq: 'monthly' },
   { path: '/docs/', priority: '0.9', changefreq: 'weekly' },
-  { path: '/docs/manual-roles/', priority: '0.85', changefreq: 'monthly' },
-  { path: '/docs/auto-alojamiento/', priority: '0.85', changefreq: 'monthly' },
+  { path: '/docs/roles-manual/', priority: '0.85', changefreq: 'monthly' },
+  { path: '/docs/self-hosting/', priority: '0.85', changefreq: 'monthly' },
 ];
 
 export const GET: APIRoute = () => {
