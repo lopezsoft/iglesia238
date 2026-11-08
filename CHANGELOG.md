@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.16.4 - 2026-11-08
+
+### Fixed
+
+- **Ancla `/#open-source` de la sección Open Source (`landing/src/components/OpenSourceDeployment.astro`):** la URL anunciada no existía (el `id` real es `despliegue`). Se añade un alias para que ambas anclas lleven a la misma sección.
+
 ## 0.16.3 - 2026-11-08
 
 ### Changed
