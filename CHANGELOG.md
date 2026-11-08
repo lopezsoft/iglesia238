@@ -8,6 +8,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.16.3 - 2026-11-08
+
+### Changed
+
+- **Títulos SEO acortados a ≤60 caracteres (`landing/src/pages/*`, `BaseLayout.astro`):** home, `/how-it-works/`, `/security/` y `/docs/self-hosting/`; la home incorpora «Software para Iglesias» en el `<title>`.
+- **Caché de assets y HSTS en `docker/nginx/dokploy.conf`:** `/_astro/` se sirve con `Cache-Control: public, max-age=31536000, immutable` y el sitio principal envía `Strict-Transport-Security: max-age=31536000` (sin `includeSubDomains`).
+
 ## 0.16.2 - 2026-11-08
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4700 --open",
