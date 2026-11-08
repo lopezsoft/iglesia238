@@ -14,6 +14,7 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module.js';
 import { AccountingSetupModule } from './modules/accounting-setup/accounting-setup.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
 import { CashBookModule } from './modules/cash-book/cash-book.module.js';
+import { BrandingModule } from './modules/branding/branding.module.js';
 import { CertificatesModule } from './modules/certificates/certificates.module.js';
 import { ContributionsModule } from './modules/contributions/contributions.module.js';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module.js';
@@ -57,6 +58,7 @@ import { TitheSettlementsModule } from './modules/tithe-settlements/tithe-settle
     AttendanceModule,
     SecretariatRecordsModule,
     CertificatesModule,
+    BrandingModule,
     ContributionsModule,
     VowsModule,
     TitheSettlementsModule,

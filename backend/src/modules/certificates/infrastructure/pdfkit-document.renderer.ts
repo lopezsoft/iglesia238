@@ -35,6 +35,57 @@ const STATUS_LABELS = {
 
 type Doc = InstanceType<typeof PDFDocument>;
 
+/** Side of the box the logo is fitted in, on the certificate and on the card. */
+const LOGO_BOX = { certificate: [64, 56], card: [30, 30] } as const;
+
+/** A color mixed with white: the soft background that goes with the color of the denomination. */
+function tint(hex: string, amount = 0.9): string {
+  const mixed = [1, 3, 5].map((start) => {
+    const channel = parseInt(hex.slice(start, start + 2), 16);
+    return Math.round(channel + (255 - channel) * amount)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${mixed.join('')}`;
+}
+
+/** The largest font size (down to `min`) at which the text fits in `lines` lines of the given width. */
+function fittedFontSize(
+  doc: Doc,
+  text: string,
+  font: string,
+  max: number,
+  min: number,
+  width: number,
+  lines: number,
+): number {
+  for (let size = max; size > min; size -= 0.5) {
+    doc.font(font).fontSize(size);
+    if (
+      doc.heightOfString(text, { width }) <=
+      doc.currentLineHeight(true) * lines + 0.5
+    ) {
+      return size;
+    }
+  }
+  return min;
+}
+
+/** Draws the logo. A picture that cannot be drawn is left out: a document without logo beats no document. */
+function drawLogo(
+  doc: Doc,
+  logo: Buffer,
+  x: number,
+  y: number,
+  box: readonly [number, number],
+): void {
+  try {
+    doc.image(logo, x, y, { fit: [box[0], box[1]] });
+  } catch {
+    // Nothing to do: the letterhead is printed without it.
+  }
+}
+
 /** Draws the documents with pdfkit and standard fonts (nothing to install or embed). */
 @Injectable()
 export class PdfkitDocumentRenderer implements DocumentPdfRenderer {
@@ -85,11 +136,13 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
   const { snapshot } = input;
   const left = MARGIN;
   const width = LETTER.width - MARGIN * 2;
+  // The color of the denomination, or the blue of the system.
+  const accent = input.accentColor ?? PALETTE.primary;
 
   // Frame.
   doc
     .lineWidth(1.5)
-    .strokeColor(PALETTE.primary)
+    .strokeColor(accent)
     .rect(32, 32, LETTER.width - 64, LETTER.height - 64)
     .stroke();
   doc
@@ -98,24 +151,51 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
     .rect(38, 38, LETTER.width - 76, LETTER.height - 76)
     .stroke();
 
-  // Letterhead.
+  // Letterhead. With a logo, it sits at the left and the text leaves the same space on both sides, so it stays centered.
+  const logoSpace = input.logo ? LOGO_BOX.certificate[0] + 12 : 0;
+  const textLeft = left + logoSpace;
+  const textWidth = width - logoSpace * 2;
+  if (input.logo) {
+    drawLogo(doc, input.logo, left, 54, LOGO_BOX.certificate);
+  }
   doc.y = 70;
+  // With a logo the text box is narrower: a long name shrinks to fit two lines instead of pushing everything down.
+  // Without a logo the letterhead is drawn exactly as it always was, so old certificates reprint the same.
+  const nameSize = input.logo
+    ? fittedFontSize(
+        doc,
+        snapshot.denominationName,
+        'Helvetica-Bold',
+        17,
+        12,
+        textWidth,
+        2,
+      )
+    : 17;
+  const legalLine = `Razón social: ${snapshot.legalName}  ·  NIT ${snapshot.taxId}`;
+  const legalSize = input.logo
+    ? fittedFontSize(doc, legalLine, 'Helvetica', 9, 7, textWidth, 1)
+    : 9;
   doc
     .font('Helvetica-Bold')
-    .fontSize(17)
-    .fillColor(PALETTE.primary)
-    .text(snapshot.denominationName, left, doc.y, { width, align: 'center' });
+    .fontSize(nameSize)
+    .fillColor(accent)
+    .text(snapshot.denominationName, textLeft, doc.y, {
+      width: textWidth,
+      align: 'center',
+    });
   doc
     .font('Helvetica')
-    .fontSize(9)
+    .fontSize(legalSize)
     .fillColor(PALETTE.muted)
-    .text(
-      `Razón social: ${snapshot.legalName}  ·  NIT ${snapshot.taxId}`,
-      left,
-      doc.y + 4,
-      { width, align: 'center' },
-    )
-    .text(snapshot.locationLine, left, doc.y + 2, { width, align: 'center' });
+    .text(legalLine, textLeft, doc.y + 4, {
+      width: textWidth,
+      align: 'center',
+    })
+    .text(snapshot.locationLine, textLeft, doc.y + 2, {
+      width: textWidth,
+      align: 'center',
+    });
   doc
     .moveTo(left, doc.y + 12)
     .lineTo(left + width, doc.y + 12)
@@ -160,7 +240,7 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
       lineGap: donation ? 3 : 5,
     });
   if (donation) {
-    drawDonationTable(doc, donation, left, width);
+    drawDonationTable(doc, donation, left, width, accent);
   }
   if (snapshot.notes) {
     doc
@@ -191,7 +271,8 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
   }
 
   // Signatures.
-  const signatureY = LETTER.height - 230;
+  // The donations certificate carries a table: its signatures sit 23 points lower, still above the QR code.
+  const signatureY = LETTER.height - (donation ? 207 : 230);
   const signatureWidth = (width - 48) / 2;
   drawSignature(
     doc,
@@ -244,6 +325,7 @@ function drawDonationTable(
   donation: NonNullable<CertificatePdfInput['snapshot']['donation']>,
   left: number,
   width: number,
+  accent: string,
 ): void {
   const rowHeight = 14;
   const receiptsWidth = 70;
@@ -264,8 +346,8 @@ function drawDonationTable(
     });
 
   let y = doc.y + 10;
-  doc.rect(left, y, width, rowHeight).fill(PALETTE.primarySoft);
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(PALETTE.primary);
+  doc.rect(left, y, width, rowHeight).fill(tint(accent));
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(accent);
   cell('Concepto', left + 6, y + 3.5, conceptWidth, 'left');
   cell('Recibos', left + conceptWidth, y + 3.5, receiptsWidth, 'right');
   cell(
@@ -392,16 +474,28 @@ function watermark(
 function drawCard(doc: Doc, input: CardPdfInput): void {
   const inset = 12;
   const innerWidth = CARD.width - inset * 2;
+  const accent = input.accentColor ?? PALETTE.primary;
+  // With a logo at the top right, the two lines of the letterhead leave room for it.
+  const headWidth = input.logo ? innerWidth - LOGO_BOX.card[0] - 6 : innerWidth;
 
   // Front.
-  doc.rect(0, 0, CARD.width, CARD.height).fill(PALETTE.primary);
+  doc.rect(0, 0, CARD.width, CARD.height).fill(accent);
+  if (input.logo) {
+    drawLogo(
+      doc,
+      input.logo,
+      CARD.width - inset - LOGO_BOX.card[0],
+      8,
+      LOGO_BOX.card,
+    );
+  }
   doc.rect(0, CARD.height - 22, CARD.width, 22).fill(PALETTE.ink);
   doc
     .font('Helvetica-Bold')
     .fontSize(9.5)
     .fillColor(PALETTE.onPrimary)
     .text(input.denominationName.toUpperCase(), inset, 14, {
-      width: innerWidth,
+      width: headWidth,
       lineBreak: false,
       ellipsis: true,
     });
@@ -410,7 +504,7 @@ function drawCard(doc: Doc, input: CardPdfInput): void {
     .fontSize(7)
     .fillColor(PALETTE.onPrimaryMuted)
     .text(input.congregationName, inset, 28, {
-      width: innerWidth,
+      width: headWidth,
       lineBreak: false,
       ellipsis: true,
     });
@@ -444,11 +538,11 @@ function drawCard(doc: Doc, input: CardPdfInput): void {
 
   // Back.
   doc.addPage({ size: [CARD.width, CARD.height], margin: 0 });
-  doc.rect(0, 0, CARD.width, CARD.height).fill(PALETTE.primarySoft);
+  doc.rect(0, 0, CARD.width, CARD.height).fill(tint(accent));
   doc
     .font('Helvetica-Bold')
     .fontSize(8)
-    .fillColor(PALETTE.primary)
+    .fillColor(accent)
     .text('DATOS DEL CARNÉ', inset, 14, { width: innerWidth });
   const rows: ReadonlyArray<readonly [string, string]> = [
     ['Número', input.cardNumber],

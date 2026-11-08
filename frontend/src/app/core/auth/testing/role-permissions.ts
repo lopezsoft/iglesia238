@@ -9,6 +9,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
     'congregations.manage',
     'users.manage',
     'certificate-types.manage',
+    'branding.manage',
     'members.read',
     'reports.read',
     'audit-logs.read',

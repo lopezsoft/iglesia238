@@ -7,6 +7,7 @@ import {
   cardStatusOf,
   readScope,
 } from '../certificate-mappers.js';
+import { DocumentBrandingService } from '../document-branding.service.js';
 import type { PdfFile } from '../certificate.models.js';
 import {
   DOCUMENT_PDF_RENDERER,
@@ -26,6 +27,7 @@ export class RenderCardPdfUseCase {
     @Inject(DOCUMENT_PDF_RENDERER)
     private readonly renderer: DocumentPdfRenderer,
     private readonly clock: Clock,
+    private readonly branding: DocumentBrandingService,
   ) {}
 
   async execute(tenant: TenantContext, id: number): Promise<PdfFile> {
@@ -34,7 +36,10 @@ export class RenderCardPdfUseCase {
       throw cardNotFound();
     }
     const cardNumber = cardNumberOf(card);
+    // A card is not an archived document: it wears the identity the denomination has today.
+    const branding = await this.branding.current(readScope(tenant));
     const content = await this.renderer.card({
+      ...branding,
       denominationName: card.denominationName,
       congregationName: card.congregationName,
       memberName: card.memberName,

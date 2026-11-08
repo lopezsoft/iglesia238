@@ -8,6 +8,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.21.0 - 2026-11-08
+
+### Added
+
+- **Logo y color por denominación (`backend/src/modules/branding`, `frontend/.../organization/branding`):** el administrador de la denominación sube su logo y elige su color institucional en la pantalla «Identidad visual». El logo se envía en **base64** (PNG o JPEG, máximo 512 KB y entre 32 y 2000 px por lado), se valida por sus bytes y se guarda **fuera de la base de datos**: en el almacenamiento, con un nombre derivado del hash de su contenido; en la BD queda solo la clave (`denominations.logo_path`). El color se valida como `#RRGGBB` con contraste mínimo 4,5:1 sobre blanco.
+- **Almacenamiento de archivos (`FILE_STORAGE`, `LocalFileStorage`):** puerto con adaptador a disco, configurable con `STORAGE_DRIVER=local` y `STORAGE_DIR` (por defecto `./storage`; en producción, `/app/backend/storage`). Las claves son rutas relativas en minúsculas que no pueden salirse de la carpeta; la escritura es atómica. Al arrancar, la API avisa en el log si la carpeta no es escribible. Cambiar a S3 será añadir un adaptador, sin tocar certificados ni pantallas. **En producción hay que montar un volumen persistente en esa carpeta** (Dokploy → Advanced → Volumes) e incluirlo en los respaldos; la guía de auto-alojamiento lo explica.
+- **Endpoints `GET/PATCH /api/branding`, `PUT/DELETE /api/branding/logo` y `GET /api/public/branding/:denominationId/:fileName`:** el último sirve el logo con caché de un año (`immutable`), porque el nombre lleva el hash; sirve también los logos anteriores, que usan los certificados ya expedidos. Subir un logo queda limitado a 20 por hora y por IP, y cada cambio queda en la auditoría.
+- **Permiso `branding.manage`** para el rol `DENOMINATION_ADMIN` (lo sincroniza el seed, sin migración de datos).
+- **Los certificados y el carné se imprimen con el logo y el color:** el PDF y la vista en pantalla muestran el logo en el membrete y usan el color para el marco, el nombre y las tablas. El certificado guarda en su snapshot el logo y el color con los que se emitió, así que **cada reimpresión sale idéntica** aunque la denominación cambie su identidad después; los emitidos antes no cambian. El carné usa la identidad vigente. Si falta el archivo o el disco falla, el documento sale sin logo en vez de fallar.
+
+### Fixed
+
+- **Un PNG corrupto podía tumbar la API:** `png-js` (dentro de `pdfkit`) lanza el error desde un callback de zlib, fuera de cualquier `try/catch`, y el proceso terminaba. Antes de aceptar un logo se comprueba que `pdfkit` pueda incrustarlo **en un worker aislado**: si falla, solo muere el worker y el logo se rechaza.
+- **Solape de la tabla de donaciones con las firmas en el peor caso** (nombre de denominación muy largo + logo + observaciones): el nombre se reduce para caber en 2 líneas cuando hay logo y las firmas del certificado de donaciones bajan 23 pt. El diseño de los demás certificados y de los que no llevan logo no cambia.
+
+### Changed
+
+- **Migración `20261108080000_denomination_branding`:** agrega `denominations.primary_color` (`VARCHAR(7)`, nula) y actualiza el comentario de `logo_path`, que dejó de estar reservado. Los certificados nuevos incluyen `branding` en el snapshot solo si la denominación eligió algo.
+
 ## 0.20.0 - 2026-11-08
 
 ### Added

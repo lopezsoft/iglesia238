@@ -19,6 +19,13 @@ export interface DonationSnapshot {
   }[];
 }
 
+/** The logo and color of the denomination when a certificate was issued. */
+export interface BrandingSnapshot {
+  /** Key of the logo in the storage: its URL is `brandingFileUrl(logoKey)`. */
+  readonly logoKey: string | null;
+  readonly primaryColor: string | null;
+}
+
 export interface CertificateSnapshot {
   readonly number: string;
   readonly typeCode: string;
@@ -41,6 +48,8 @@ export interface CertificateSnapshot {
   readonly memberCode: string;
   /** Only in the donations certificate (DON). */
   readonly donation?: DonationSnapshot;
+  /** Missing in the certificates issued before the identity existed. */
+  readonly branding?: BrandingSnapshot;
 }
 
 export type CertificateStatus = 'ISSUED' | 'VOIDED';

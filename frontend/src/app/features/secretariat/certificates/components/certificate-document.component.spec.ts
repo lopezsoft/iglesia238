@@ -66,6 +66,57 @@ describe('CertificateDocumentComponent', () => {
     expect(element.textContent).not.toContain('Secretario(a) de la sede');
   });
 
+  describe('with the identity of the denomination', () => {
+    const KEY = 'branding/1/logo-3f9a1c0b5d7e2a46.png';
+    const branded = { ...BASE, branding: { logoKey: KEY, primaryColor: '#8b0000' } };
+
+    it('shows the logo that was printed on the certificate, from its own key', () => {
+      const element = render(branded);
+
+      const logo = element.querySelector('img.cert-doc__logo');
+      expect(logo?.getAttribute('src')).toBe(`/api/public/${KEY}`);
+      expect(logo?.getAttribute('alt')).toBe('Logo de Iglesia Cristiana Monte de Sion');
+      expect(element.querySelector('.cert-doc__mark')).toBeNull();
+    });
+
+    it('sets the color of the denomination as the accent of the document', () => {
+      const element = render(branded);
+
+      const article = element.querySelector<HTMLElement>('article.cert-doc')!;
+      expect(article.style.getPropertyValue('--cert-accent')).toBe('#8b0000');
+    });
+
+    it('puts the icon back when the logo cannot be loaded, instead of a broken picture', () => {
+      const fixture = TestBed.createComponent(CertificateDocumentComponent);
+      fixture.componentRef.setInput('snapshot', branded);
+      fixture.detectChanges();
+      const element = fixture.nativeElement as HTMLElement;
+
+      element.querySelector('img.cert-doc__logo')!.dispatchEvent(new Event('error'));
+      fixture.detectChanges();
+
+      expect(element.querySelector('img.cert-doc__logo')).toBeNull();
+      expect(element.querySelector('.cert-doc__mark')).not.toBeNull();
+    });
+
+    it('keeps the icon and the default color for a certificate issued before the identity existed', () => {
+      const element = render({ ...BASE, branding: undefined });
+
+      expect(element.querySelector('img.cert-doc__logo')).toBeNull();
+      expect(element.querySelector('.cert-doc__mark')).not.toBeNull();
+      const article = element.querySelector<HTMLElement>('article.cert-doc')!;
+      expect(article.style.getPropertyValue('--cert-accent')).toBe('');
+    });
+
+    it('uses the color alone when there is no logo', () => {
+      const element = render({ ...BASE, branding: { logoKey: null, primaryColor: '#006400' } });
+
+      expect(element.querySelector('img.cert-doc__logo')).toBeNull();
+      const article = element.querySelector<HTMLElement>('article.cert-doc')!;
+      expect(article.style.getPropertyValue('--cert-accent')).toBe('#006400');
+    });
+  });
+
   it('draws no table for the other types, and keeps the placeholder name of the secretary', () => {
     const element = render({
       ...BASE,

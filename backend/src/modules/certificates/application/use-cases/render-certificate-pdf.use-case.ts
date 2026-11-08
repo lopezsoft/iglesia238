@@ -12,6 +12,7 @@ import {
   type DocumentPdfRenderer,
 } from '../ports/document-pdf.renderer.js';
 import { canSeeType } from '../certificate-access.js';
+import { DocumentBrandingService } from '../document-branding.service.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -27,6 +28,7 @@ export class RenderCertificatePdfUseCase {
     private readonly renderer: DocumentPdfRenderer,
     @Inject(CERTIFICATE_VERIFICATION_LINKS)
     private readonly links: CertificateVerificationLinks,
+    private readonly branding: DocumentBrandingService,
   ) {}
 
   async execute(tenant: TenantContext, id: number): Promise<PdfFile> {
@@ -34,7 +36,10 @@ export class RenderCertificatePdfUseCase {
     if (!record || !canSeeType(tenant, record.typeCode)) {
       throw certificateNotFound();
     }
+    // The identity it was issued with, not the one of today: a reprint is identical to the original.
+    const branding = await this.branding.forSnapshot(record.snapshot.branding);
     const content = await this.renderer.certificate({
+      ...branding,
       snapshot: record.snapshot,
       issuedOn: record.issuedOn,
       expiresOn: record.expiresOn,

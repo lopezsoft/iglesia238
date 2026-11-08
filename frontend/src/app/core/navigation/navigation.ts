@@ -16,6 +16,7 @@ export const ACCESS = {
   // The treasury only gets the donations certificate: the module narrows what it shows.
   certificates: ['certificates.issue', 'donation-certificates.issue'],
   certificateTemplates: ['certificate-types.manage'],
+  branding: ['branding.manage'],
   attendance: ['attendance.write'],
   secretariatRecords: ['members.write'],
   contributions: ['contributions.read'],
@@ -56,6 +57,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Política de datos', shortLabel: 'Política', path: '/privacy-policy', icon: 'shield-check', permissions: ACCESS.privacyPolicy },
       { label: 'Usuarios y roles', shortLabel: 'Usuarios', path: '/users', icon: 'users', permissions: ACCESS.users },
       { label: 'Plantillas de certificados', shortLabel: 'Plantillas', path: '/certificate-templates', icon: 'certificate', permissions: ACCESS.certificateTemplates },
+      { label: 'Identidad visual', shortLabel: 'Identidad', path: '/branding', icon: 'sparkles', permissions: ACCESS.branding },
     ],
   },
   {

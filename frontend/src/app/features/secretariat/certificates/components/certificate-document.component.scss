@@ -28,7 +28,8 @@
     justify-content: space-between;
     gap: $space-4;
     padding-bottom: $space-4;
-    border-bottom: 2px solid $color-primary;
+    // The color of the denomination when it chose one; the primary color of the system otherwise.
+    border-bottom: 2px solid var(--cert-accent, #{$color-primary});
   }
 
   &__brand {
@@ -48,8 +49,16 @@
     color: $color-primary;
   }
 
+  &__logo {
+    max-width: 4rem;
+    max-height: 3.5rem;
+    object-fit: contain;
+    flex: none;
+  }
+
   &__denomination {
     font-weight: $font-weight-semibold;
+    color: var(--cert-accent, inherit);
   }
 
   &__meta {
@@ -107,7 +116,7 @@
     }
 
     thead th {
-      color: $color-ink-muted;
+      color: var(--cert-accent, #{$color-ink-muted});
       font-weight: 600;
     }
 

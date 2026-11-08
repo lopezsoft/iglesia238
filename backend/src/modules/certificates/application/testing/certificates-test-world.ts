@@ -13,7 +13,13 @@ import { TenantScope } from '../../../../common/tenancy/tenant-scope.js';
 import { Clock } from '../../../../common/time/bogota-time.js';
 import { buildTenantContext } from '../../../../../test/support/tenants.js';
 import { formatMemberCode } from '../../../../common/numbering/document-numbering.service.js';
-import type { Letterhead } from '../certificate-document.js';
+import type { BrandingSnapshot, Letterhead } from '../certificate-document.js';
+import { DocumentBrandingService } from '../document-branding.service.js';
+import {
+  StorageUnavailableError,
+  type FileStorage,
+} from '../../../../common/storage/file-storage.port.js';
+import type { CertificateBrandingReader } from '../ports/certificate-branding.reader.js';
 import type {
   CardCandidateRecord,
   CardFilter,
@@ -199,6 +205,27 @@ class FakeDonationReader implements CertificateDonationReader {
   }
 }
 
+class FakeBrandingReader implements CertificateBrandingReader {
+  constructor(private readonly data: FakeData) {}
+  findBranding() {
+    return Promise.resolve(this.data.branding);
+  }
+}
+
+class FakeStorage implements FileStorage {
+  constructor(private readonly data: FakeData) {}
+  write(key: string, content: Buffer) {
+    this.data.files.set(key, content);
+    return Promise.resolve();
+  }
+  read(key: string) {
+    if (this.data.storageFailing) {
+      return Promise.reject(new StorageUnavailableError('storage down'));
+    }
+    return Promise.resolve(this.data.files.get(key) ?? null);
+  }
+}
+
 class FakeVerificationReader implements CertificateVerificationReader {
   constructor(private readonly data: FakeData) {}
   findById(certificateId: number): Promise<VerifiableCertificateRecord | null> {
@@ -228,6 +255,10 @@ type StoredType = CertificateTypeRecord & Owned;
 
 /** The tables of the fake database. Tests arrange rows here and assert on them. */
 export class FakeData {
+  /** The logo and color the denomination has chosen, and the files of the storage. */
+  branding: BrandingSnapshot = { logoKey: null, primaryColor: null };
+  files = new Map<string, Buffer>();
+  storageFailing = false;
   /** Contributions of members, one row per receipt (amounts in cents). */
   donations: {
     memberId: number;
@@ -768,6 +799,11 @@ export function buildWorld() {
     members,
     context,
     new FakeDonationReader(data),
+    new FakeBrandingReader(data),
+  );
+  const branding = new DocumentBrandingService(
+    new FakeBrandingReader(data),
+    new FakeStorage(data),
   );
 
   return {
@@ -807,6 +843,7 @@ export function buildWorld() {
         certificates,
         renderer,
         new FakeVerificationLinks(),
+        branding,
       ),
       listTemplates: new ListCertificateTypeTemplatesUseCase(certificates),
       updateType: new UpdateCertificateTypeUseCase(
@@ -837,7 +874,7 @@ export function buildWorld() {
         clock,
       ),
       voidCard: new VoidCardUseCase(cards, transactions, audit, clock),
-      cardPdf: new RenderCardPdfUseCase(cards, renderer, clock),
+      cardPdf: new RenderCardPdfUseCase(cards, renderer, clock, branding),
     },
   };
 }

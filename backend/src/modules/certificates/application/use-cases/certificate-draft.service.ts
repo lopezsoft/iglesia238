@@ -7,6 +7,7 @@ import {
   DONATION_TYPE_CODE,
   buildCertificateSnapshot,
   documentLabel,
+  type BrandingSnapshot,
   type CertificateSnapshot,
   type DonationInput,
   type Letterhead,
@@ -31,6 +32,10 @@ import {
   CERTIFICATE_CONTEXT_READER,
   type CertificateContextReader,
 } from '../ports/certificate-context.reader.js';
+import {
+  CERTIFICATE_BRANDING_READER,
+  type CertificateBrandingReader,
+} from '../ports/certificate-branding.reader.js';
 import {
   CERTIFICATE_DONATION_READER,
   type CertificateDonationReader,
@@ -65,6 +70,8 @@ export interface CertificateDraft {
   readonly issuedByName: string;
   /** What the donations certificate adds up; null for every other type. */
   readonly donation: DonationInput | null;
+  /** Logo and color of the denomination now: the snapshot keeps them. */
+  readonly branding: BrandingSnapshot;
 }
 
 /**
@@ -83,6 +90,8 @@ export class CertificateDraftService {
     private readonly context: CertificateContextReader,
     @Inject(CERTIFICATE_DONATION_READER)
     private readonly donations: CertificateDonationReader,
+    @Inject(CERTIFICATE_BRANDING_READER)
+    private readonly brandingReader: CertificateBrandingReader,
   ) {}
 
   async prepare(
@@ -141,7 +150,18 @@ export class CertificateDraftService {
           )
         : null;
 
-    return { type, member, notes, letterhead, signers, issuedByName, donation };
+    const branding = await this.brandingReader.findBranding(scope);
+
+    return {
+      type,
+      member,
+      notes,
+      letterhead,
+      signers,
+      issuedByName,
+      donation,
+      branding,
+    };
   }
 
   /** The contributions of the year: the whole year, or up to today when it is the current one. */
@@ -189,6 +209,7 @@ export class CertificateDraftService {
       secretaryTitleTemplate: type.secretaryTitleTemplate,
       issuedOn,
       donation: draft.donation,
+      branding: draft.branding,
       letterhead: draft.letterhead,
       pastorName: draft.signers.pastor?.name ?? null,
       secretaryName: draft.signers.secretary?.name ?? null,

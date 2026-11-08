@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  input,
+  signal,
+} from '@angular/core';
 import { IconComponent } from '../../../../shared/ui/icon.component';
+import { brandingFileUrl } from '../../../../shared/utils/branding-url';
 import { CertificateSnapshot } from '../data/certificates.models';
 
 /**
@@ -18,13 +26,23 @@ import { CertificateSnapshot } from '../data/certificates.models';
       class="cert-doc"
       [class.cert-doc--printable]="printable()"
       [class.cert-doc--voided]="voided()"
+      [style.--cert-accent]="snapshot().branding?.primaryColor ?? null"
       [attr.aria-label]="label()"
     >
       <header class="cert-doc__head">
         <div class="cert-doc__brand">
-          <span class="cert-doc__mark" aria-hidden="true"
-            ><app-icon name="church" [size]="22"
-          /></span>
+          @if (logoUrl(); as url) {
+            <img
+              class="cert-doc__logo"
+              [src]="url"
+              [alt]="'Logo de ' + snapshot().denominationName"
+              (error)="failedKey.set(snapshot().branding?.logoKey ?? null)"
+            />
+          } @else {
+            <span class="cert-doc__mark" aria-hidden="true"
+              ><app-icon name="church" [size]="22"
+            /></span>
+          }
           <div>
             <p class="cert-doc__denomination">{{ snapshot().denominationName }}</p>
             <p class="cert-doc__meta">
@@ -123,4 +141,11 @@ export class CertificateDocumentComponent {
   readonly printable = input(false);
   readonly voided = input(false);
   readonly label = input('Certificado impreso');
+
+  /** The logo that failed to load, so the icon takes its place instead of a broken picture. */
+  protected readonly failedKey = signal<string | null>(null);
+  protected readonly logoUrl = computed(() => {
+    const key = this.snapshot().branding?.logoKey ?? null;
+    return key && key !== this.failedKey() ? brandingFileUrl(key) : null;
+  });
 }

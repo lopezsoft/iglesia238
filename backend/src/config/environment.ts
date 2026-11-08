@@ -50,6 +50,9 @@ export const MAX_ACCESS_TOKEN_SECONDS = 30 * 60;
 const toTrustProxy = ({ value }: { value: unknown }): unknown =>
   value === undefined ? value : (parseTrustProxy(value) ?? value);
 
+export const STORAGE_DRIVERS = ['local'] as const;
+export type StorageDriver = (typeof STORAGE_DRIVERS)[number];
+
 export class Environment {
   @IsIn(NODE_ENVIRONMENTS)
   NODE_ENV: NodeEnvironment = 'development';
@@ -113,6 +116,18 @@ export class Environment {
   @IsString()
   @MinLength(MIN_JWT_SECRET_LENGTH)
   CERTIFICATE_VERIFICATION_SECRET?: string;
+
+  /** Where the uploaded files (the logo of a denomination) are kept. Only the local disk exists for now. */
+  @IsIn(STORAGE_DRIVERS)
+  STORAGE_DRIVER: StorageDriver = 'local';
+
+  /**
+   * Folder of the local storage. In production mount a persistent volume here: without it the files are lost
+   * every time the container is redeployed. It is created if it does not exist.
+   */
+  @IsString()
+  @MinLength(1)
+  STORAGE_DIR: string = './storage';
 
   /** Lifetime of the access token (30s, 15m, 1h, 1d). */
   @Matches(DURATION_PATTERN, { message: 'JWT_EXPIRATION must look like 15m' })

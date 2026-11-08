@@ -154,3 +154,6 @@ frontend/typings/
 
 # Generated Prisma client
 backend/src/generated/
+
+# Archivos subidos (logos): viven en un volumen, no en el repositorio
+backend/storage/

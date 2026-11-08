@@ -9,6 +9,7 @@ import { MAILER } from '../common/mail/mailer.port.js';
 import { DocumentNumberingService } from '../common/numbering/document-numbering.service.js';
 import { DOCUMENT_SEQUENCE_STORE } from '../common/numbering/document-sequence.store.js';
 import { TRANSACTION_RUNNER } from '../common/persistence/transaction.js';
+import { FILE_STORAGE } from '../common/storage/file-storage.port.js';
 import { RateLimitGuard } from '../common/rate-limit/rate-limit.guard.js';
 import { RateLimitService } from '../common/rate-limit/rate-limit.service.js';
 import { RATE_LIMITER } from '../common/rate-limit/rate-limiter.port.js';
@@ -20,6 +21,7 @@ import { TenantContextResolver } from '../common/tenancy/tenant-context.resolver
 import { Clock, SystemClock } from '../common/time/bogota-time.js';
 import { Environment, isMailConfigured } from '../config/environment.js';
 import { LoggingMailer } from '../infrastructure/mail/logging.mailer.js';
+import { LocalFileStorage } from '../infrastructure/storage/local-file-storage.js';
 import { NodemailerMailer } from '../infrastructure/mail/nodemailer.mailer.js';
 import { PrismaAssignmentsReader } from '../infrastructure/prisma/prisma-assignments.reader.js';
 import { PrismaAuditRecorder } from '../infrastructure/prisma/prisma-audit-recorder.js';
@@ -97,6 +99,26 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
       useFactory: (config: ConfigService<Environment, true>): string =>
         config.get('DEFAULT_COUNTRY_ISO', { infer: true }),
     },
+    {
+      // Uploaded files. Only the local disk exists for now; a missing volume is reported at startup.
+      provide: FILE_STORAGE,
+      inject: [ConfigService, SmartLogger],
+      useFactory: async (
+        config: ConfigService<Environment, true>,
+        logger: SmartLogger,
+      ) => {
+        const storage = new LocalFileStorage(
+          config.get('STORAGE_DIR', { infer: true }),
+        );
+        const problem = await storage.check();
+        if (problem) {
+          logger.warn(
+            `${problem}. Uploads will fail until it is fixed: mount a persistent volume on STORAGE_DIR.`,
+          );
+        }
+        return storage;
+      },
+    },
     { provide: TRANSACTION_RUNNER, useClass: PrismaTransactionRunner },
     { provide: AUDIT_RECORDER, useClass: PrismaAuditRecorder },
     { provide: DOCUMENT_SEQUENCE_STORE, useClass: PrismaDocumentSequenceStore },
@@ -114,6 +136,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
     MAILER,
     EXPOSE_DEV_LINKS,
     DEFAULT_COUNTRY_ISO,
+    FILE_STORAGE,
     TRANSACTION_RUNNER,
     AUDIT_RECORDER,
     DocumentNumberingService,

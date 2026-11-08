@@ -121,6 +121,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/secretariat/certificate-templates.routes'),
       },
       {
+        path: 'branding',
+        title: 'Identidad visual',
+        canMatch: [permissionGuard(...ACCESS.branding)],
+        loadChildren: () => import('./features/organization/branding.routes'),
+      },
+      {
         path: 'attendance',
         title: 'Asistencia',
         canMatch: [permissionGuard(...ACCESS.attendance)],

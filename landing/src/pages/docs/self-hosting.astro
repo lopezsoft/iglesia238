@@ -68,7 +68,11 @@ SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_USER=AKIAXXXXXXXXXXXXXXXX
 SMTP_PASSWORD=TuPasswordSmtpDeIamEnAwsSes
-SMTP_FROM=Iglesia 238 &lt;no-reply@tu-dominio.org&gt;</code></pre>
+SMTP_FROM=Iglesia 238 &lt;no-reply@tu-dominio.org&gt;
+
+# Archivos subidos (logo de la denominación). Monta un volumen persistente en esa carpeta
+STORAGE_DRIVER=local
+STORAGE_DIR=/app/backend/storage</code></pre>
 
   <div class="doc-callout doc-callout--emerald">
     <div class="doc-callout__title">Normalización automática de DATABASE_URL</div>
@@ -82,6 +86,7 @@ SMTP_FROM=Iglesia 238 &lt;no-reply@tu-dominio.org&gt;</code></pre>
     <li>Crea un proyecto en Dokploy y añade dos servicios internos: <strong>MariaDB 11.8</strong> y <strong>Redis 8</strong>.</li>
     <li>Crea un servicio de tipo <strong>Application</strong> apuntando al repositorio <code>https://github.com/lopezsoft/iglesia238.git</code> (rama <code>main</code>, <em>Build Type: Dockerfile</em>, ruta <code>Dockerfile</code>).</li>
     <li>En la pestaña <strong>Environment</strong>, pega las variables del bloque anterior y haz clic en <strong>Save</strong>.</li>
+    <li>En <strong>Advanced → Volumes</strong>, agrega un volumen persistente montado en <code>/app/backend/storage</code>. Ahí se guardan los logos de las denominaciones: sin el volumen se pierden en cada despliegue, y conviene incluirlo en tus respaldos.</li>
     <li>En la pestaña <strong>Domains</strong>, agrega tus dominios apuntando todos al <strong>Container Port <code>80</code></strong> con HTTPS (Let's Encrypt) activo:
       <ul>
         <li><code>tu-dominio.org</code> y <code>www.tu-dominio.org</code> → sirven el sitio Astro y <code>/docs</code>.</li>

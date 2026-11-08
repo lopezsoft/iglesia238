@@ -54,6 +54,8 @@ export interface CertificateSnapshot {
   readonly memberCode: string;
   /** Only in the donations certificate: what was added up. Missing in every other type. */
   readonly donation?: DonationSnapshot;
+  /** The logo and color of the denomination when it was issued. Missing in the certificates issued before. */
+  readonly branding?: BrandingSnapshot;
 }
 
 /** The donations of the certificate as printed: texts, never numbers to recompute. It never changes once issued. */
@@ -84,6 +86,14 @@ export interface DonationInput {
     readonly receipts: number;
     readonly amountCents: number;
   }[];
+}
+
+/** The visual identity a certificate was issued with: every reprint prints the same, even if the denomination changes it. */
+export interface BrandingSnapshot {
+  /** Key of the logo in the file storage (branding/<id>/logo-<hash>.png), or null. */
+  readonly logoKey: string | null;
+  /** #RRGGBB, or null for the default color of the system. */
+  readonly primaryColor: string | null;
 }
 
 export interface Letterhead {
@@ -124,6 +134,8 @@ export interface SnapshotInput {
   readonly notes: string | null;
   /** Required for the donations certificate (DONATION_TYPE_CODE); ignored by the others. */
   readonly donation?: DonationInput | null;
+  /** Logo and color of the denomination at the time of issuing; the snapshot keeps them. */
+  readonly branding?: BrandingSnapshot | null;
 }
 
 /** "2 de noviembre de 2026" from an ISO date (YYYY-MM-DD). */
@@ -438,6 +450,10 @@ export function buildCertificateSnapshot(
     return renderTemplate(template, values) || fallback;
   };
   const place = letterhead.cityName ? ` en ${letterhead.cityName}` : '';
+  const branding =
+    input.branding && (input.branding.logoKey || input.branding.primaryColor)
+      ? input.branding
+      : undefined;
 
   return {
     number: input.number,
@@ -477,5 +493,6 @@ export function buildCertificateSnapshot(
     memberName: member.fullName,
     memberCode: member.code,
     ...(donation ? { donation } : {}),
+    ...(branding ? { branding } : {}),
   };
 }

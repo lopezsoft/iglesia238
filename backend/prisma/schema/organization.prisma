@@ -94,8 +94,10 @@ model Denomination {
   id                   Int                   @id @default(autoincrement())
   /// Nombre de la denominación; único en la plataforma.
   name                 String                @unique @db.VarChar(200)
-  /// Ruta del archivo del logo de la denominación; nulo si no tiene logo. Reservado: el código actual aún no la usa.
+  /// Clave del archivo del logo en el almacenamiento (branding/<id>/logo-<hash>.png o .jpg); nulo si no tiene logo. La API lo sirve por URL y los PDF lo incrustan.
   logoPath             String?               @map("logo_path") @db.VarChar(255)
+  /// Color institucional en formato #RRGGBB, con contraste suficiente sobre blanco para el texto de los documentos; nulo usa el color por defecto del sistema.
+  primaryColor         String?               @map("primary_color") @db.VarChar(7)
   /// Indica si la denominación está activa; si es falso, sus roles no dan acceso y sus sedes salen del formulario público.
   isActive             Boolean               @default(true) @map("is_active")
   /// Fecha y hora de creación del registro (UTC).

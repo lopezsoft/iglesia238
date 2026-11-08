@@ -34,6 +34,14 @@ describe('visibleNavGroups', () => {
     expect(ROLE_PERMISSIONS.TREASURER).not.toContain('certificates.issue');
   });
 
+  it('shows the denomination admin the visual identity and the certificate templates, and nobody else', () => {
+    expect(menuFor('DENOMINATION_ADMIN')).toContain('Identidad visual');
+    expect(menuFor('DENOMINATION_ADMIN')).toContain('Plantillas de certificados');
+    for (const role of ['PASTOR', 'SECRETARY', 'TREASURER', 'PLATFORM_ADMIN'] as const) {
+      expect(menuFor(role)).not.toContain('Identidad visual');
+    }
+  });
+
   it('shows the pastor read access to contributions but not the cash book', () => {
     const menu = menuFor('PASTOR');
     expect(menu).toContain('Aportes');
