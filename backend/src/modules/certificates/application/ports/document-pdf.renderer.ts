@@ -7,6 +7,8 @@ export interface CertificatePdfInput {
   readonly issuedOn: string;
   readonly expiresOn: string | null;
   readonly voided: boolean;
+  /** Public verification link, drawn as a QR code. Without it the certificate prints the number only. */
+  readonly verificationUrl?: string;
 }
 
 export interface CardPdfInput {

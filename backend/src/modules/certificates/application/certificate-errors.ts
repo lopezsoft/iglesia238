@@ -8,6 +8,7 @@ import {
 /** Stable codes of this module. The frontend maps them to messages, so they never change once published. */
 export const CertificateErrorCode = {
   CERTIFICATE_NOT_FOUND: 'CERTIFICATE_NOT_FOUND',
+  CERTIFICATE_NOT_VERIFIABLE: 'CERTIFICATE_NOT_VERIFIABLE',
   CERTIFICATE_TYPE_NOT_FOUND: 'CERTIFICATE_TYPE_NOT_FOUND',
   CERTIFICATE_ALREADY_VOIDED: 'CERTIFICATE_ALREADY_VOIDED',
   MEMBER_NOT_FOUND: 'MEMBER_NOT_FOUND',
@@ -39,6 +40,13 @@ export const certificateNotFound = () =>
   new NotFoundDomainException(
     'El certificado no existe o pertenece a otra sede.',
     CertificateErrorCode.CERTIFICATE_NOT_FOUND,
+  );
+
+/** A malformed token, a wrong signature and an unknown certificate answer the same: the caller learns nothing. */
+export const certificateNotVerifiable = () =>
+  new NotFoundDomainException(
+    'No pudimos verificar este documento: el código no es válido o el documento no existe.',
+    CertificateErrorCode.CERTIFICATE_NOT_VERIFIABLE,
   );
 
 export const certificateTypeNotFound = () =>

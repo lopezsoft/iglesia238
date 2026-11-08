@@ -36,6 +36,12 @@ export const routes: Routes = [
     loadChildren: () => import('./features/public/public.routes'),
   },
   {
+    // Opened by the QR code printed on a certificate: anyone can check a document, no account needed.
+    path: 'verify-certificate',
+    component: PublicLayoutComponent,
+    loadChildren: () => import('./features/public/verify-certificate/verify-certificate.routes'),
+  },
+  {
     // Anyone can register a sede: no account and no prior link.
     path: 'register-congregation',
     component: PublicLayoutComponent,

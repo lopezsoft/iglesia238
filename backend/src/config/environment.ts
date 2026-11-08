@@ -103,6 +103,17 @@ export class Environment {
   @MinLength(MIN_JWT_SECRET_LENGTH)
   JWT_SECRET!: string;
 
+  /**
+   * Signs the verification links (QR codes) printed on certificates. Optional: without it a key derived
+   * from JWT_SECRET is used. Set it (and never change it) if JWT_SECRET is rotated, because a new key
+   * invalidates every QR code already printed.
+   */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @MinLength(MIN_JWT_SECRET_LENGTH)
+  CERTIFICATE_VERIFICATION_SECRET?: string;
+
   /** Lifetime of the access token (30s, 15m, 1h, 1d). */
   @Matches(DURATION_PATTERN, { message: 'JWT_EXPIRATION must look like 15m' })
   JWT_EXPIRATION: string = '15m';

@@ -192,6 +192,21 @@ export interface CertificatesSummaryView {
   readonly cardsExpired: number;
 }
 
+/** Answer of the public verification (anonymous): only what the printed document already shows, with the holder masked. */
+export interface CertificateVerificationView {
+  readonly status: 'VALID' | 'EXPIRED' | 'VOIDED';
+  readonly number: string;
+  readonly title: string;
+  readonly denominationName: string;
+  readonly congregationName: string;
+  /** "Ana M. R. D." */
+  readonly holderName: string;
+  readonly issuedOn: string;
+  readonly expiresOn: string | null;
+  /** Day (Bogotá) the check was made. */
+  readonly verifiedOn: string;
+}
+
 export interface PdfFile {
   readonly filename: string;
   readonly content: Buffer;

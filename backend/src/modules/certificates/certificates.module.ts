@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Environment } from '../../config/environment.js';
 import { PrismaModule } from '../../infrastructure/prisma/prisma.module.js';
 import { CERTIFICATE_CONTEXT_READER } from './application/ports/certificate-context.reader.js';
 import { CERTIFICATE_MEMBER_READER } from './application/ports/certificate-member.reader.js';
@@ -6,6 +8,14 @@ import { CERTIFICATE_MEMBER_SEARCH } from './application/ports/certificate-membe
 import { MembershipModule } from '../membership/membership.module.js';
 import { MembershipMemberSearch } from './infrastructure/membership-member-search.js';
 import { CERTIFICATE_REPOSITORY } from './application/ports/certificate.repository.js';
+import {
+  CERTIFICATE_VERIFICATION_LINKS,
+  CERTIFICATE_VERIFICATION_READER,
+} from './application/ports/certificate-verification.js';
+import { VerifyCertificateUseCase } from './application/use-cases/verify-certificate.use-case.js';
+import { HmacCertificateVerificationLinks } from './infrastructure/hmac-certificate-verification-links.js';
+import { PrismaCertificateVerificationReader } from './infrastructure/prisma-certificate-verification.reader.js';
+import { PublicCertificatesController } from './presentation/public-certificates.controller.js';
 import { DOCUMENT_PDF_RENDERER } from './application/ports/document-pdf.renderer.js';
 import { MEMBERSHIP_CARD_REPOSITORY } from './application/ports/membership-card.repository.js';
 import { CertificateDraftService } from './application/use-cases/certificate-draft.service.js';
@@ -47,6 +57,7 @@ import { MembershipCardsController } from './presentation/membership-cards.contr
     CertificatesController,
     CertificateTypesController,
     MembershipCardsController,
+    PublicCertificatesController,
   ],
   providers: [
     { provide: CERTIFICATE_REPOSITORY, useClass: PrismaCertificateRepository },
@@ -67,6 +78,25 @@ import { MembershipCardsController } from './presentation/membership-cards.contr
       useClass: PrismaCertificateContextReader,
     },
     { provide: DOCUMENT_PDF_RENDERER, useClass: PdfkitDocumentRenderer },
+    {
+      provide: CERTIFICATE_VERIFICATION_READER,
+      useClass: PrismaCertificateVerificationReader,
+    },
+    {
+      provide: CERTIFICATE_VERIFICATION_LINKS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Environment, true>) => {
+        const dedicated = config.get('CERTIFICATE_VERIFICATION_SECRET', {
+          infer: true,
+        });
+        return new HmacCertificateVerificationLinks({
+          secret: dedicated ?? config.get('JWT_SECRET', { infer: true }),
+          derived: dedicated === undefined,
+          appBaseUrl: config.get('APP_BASE_URL', { infer: true }),
+        });
+      },
+    },
+    VerifyCertificateUseCase,
     CertificateDraftService,
     GetIssuingContextUseCase,
     ListCertificateTypesUseCase,

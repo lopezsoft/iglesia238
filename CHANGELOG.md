@@ -8,6 +8,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.17.0 - 2026-11-08
+
+### Added
+
+- **Código QR de verificación pública en los certificados (`backend/src/modules/certificates`):** el PDF de cada certificado imprime un QR vectorial con un enlace firmado (HMAC-SHA256) a `/verify-certificate?t=<id>.<firma>`. El token no contiene datos personales y no se puede falsificar ni adivinar a partir del consecutivo. Los PDF ya expedidos también lo llevan al reimprimirse.
+- **Endpoint público `GET /api/public/certificates/verify` (`PublicCertificatesController`):** responde si el documento está vigente, vencido o anulado, con lo que el documento ya imprime y el titular enmascarado («Ana M. R. D.»). Un token inválido y un documento inexistente responden igual (404). Limitado a 30 consultas por minuto y por IP.
+- **Página pública `/verify-certificate` (`frontend/src/app/features/public/verify-certificate`):** la que abre el QR; no requiere cuenta.
+- **Variable opcional `CERTIFICATE_VERIFICATION_SECRET` (`backend/.env.example`):** clave de firma de los enlaces; si no se define se deriva de `JWT_SECRET`.
+
+### Changed
+
+- **Dependencia `qrcode` (+ `@types/qrcode`) en el backend:** para generar la matriz del QR; el dibujo es vectorial en `pdfkit`, sin imágenes incrustadas.
+
 ## 0.16.4 - 2026-11-08
 
 ### Fixed

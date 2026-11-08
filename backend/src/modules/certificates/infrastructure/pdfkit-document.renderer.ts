@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 import { longDate } from '../application/certificate-document.js';
 import type {
   CardPdfInput,
@@ -21,6 +22,8 @@ const PALETTE = {
 
 const LETTER = { width: 612, height: 792 } as const;
 const MARGIN = 64;
+/** Side of the verification QR code in points (about 2.5 cm: reliable to scan from a printed page). */
+const QR_SIZE = 72;
 // CR80 (85.6 x 54 mm) in PDF points.
 const CARD = { width: 242.65, height: 153.07 } as const;
 
@@ -199,13 +202,24 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
     snapshot.secretaryTitle,
   );
 
-  // Footer.
+  // Footer: with a verification link the QR code does the checking; without it only the number is printed.
+  if (input.verificationUrl) {
+    drawQrCode(
+      doc,
+      input.verificationUrl,
+      (LETTER.width - QR_SIZE) / 2,
+      LETTER.height - 84 - 14 - QR_SIZE,
+      QR_SIZE,
+    );
+  }
   doc
     .font('Helvetica')
     .fontSize(8)
     .fillColor(PALETTE.muted)
     .text(
-      `Verifique la autenticidad con el número del documento (${snapshot.number}). Emitido por ${snapshot.issuedByName}.`,
+      input.verificationUrl
+        ? `Escanee el código QR para verificar la autenticidad de este documento (${snapshot.number}). Emitido por ${snapshot.issuedByName}.`
+        : `Verifique la autenticidad con el número del documento (${snapshot.number}). Emitido por ${snapshot.issuedByName}.`,
       left,
       LETTER.height - 84,
       { width, align: 'center' },
@@ -214,6 +228,26 @@ function drawCertificate(doc: Doc, input: CertificatePdfInput): void {
   if (input.voided) {
     watermark(doc, 'ANULADO', LETTER.width / 2, LETTER.height / 2, 110);
   }
+}
+
+/** Draws the QR code as vector squares (no image to embed, sharp at any print size). */
+function drawQrCode(
+  doc: Doc,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  const { modules } = QRCode.create(text, { errorCorrectionLevel: 'M' });
+  const cell = size / modules.size;
+  for (let row = 0; row < modules.size; row += 1) {
+    for (let col = 0; col < modules.size; col += 1) {
+      if (modules.get(row, col)) {
+        doc.rect(x + col * cell, y + row * cell, cell, cell);
+      }
+    }
+  }
+  doc.fillColor(PALETTE.ink).fill();
 }
 
 function drawSignature(

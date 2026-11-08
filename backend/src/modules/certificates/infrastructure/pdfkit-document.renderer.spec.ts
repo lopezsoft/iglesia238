@@ -56,6 +56,36 @@ describe('PdfkitDocumentRenderer', () => {
     expect(voided.length).toBeGreaterThan(1000);
   });
 
+  it('draws the verification QR code on one page, also on a voided certificate', async () => {
+    const withoutQr = await renderer.certificate({
+      snapshot,
+      issuedOn: '2026-11-02',
+      expiresOn: null,
+      voided: false,
+    });
+    const verificationUrl =
+      'https://app.iglesia238.com/verify-certificate?t=42.AbCdEfGhIjKlMnOpQrStUv';
+    const withQr = await renderer.certificate({
+      snapshot,
+      issuedOn: '2026-11-02',
+      expiresOn: null,
+      voided: false,
+      verificationUrl,
+    });
+    const voidedWithQr = await renderer.certificate({
+      snapshot,
+      issuedOn: '2026-11-02',
+      expiresOn: null,
+      voided: true,
+      verificationUrl,
+    });
+
+    expect(pageCount(withQr)).toBe(1);
+    expect(pageCount(voidedWithQr)).toBe(1);
+    // The QR code is hundreds of vector squares: the page content grows even after pdfkit compresses it.
+    expect(withQr.length).toBeGreaterThan(withoutQr.length);
+  });
+
   it('draws a two-page card (front and back) whatever its state', async () => {
     for (const status of ['VALID', 'EXPIRED', 'VOIDED'] as const) {
       const card = await renderer.card({

@@ -35,6 +35,11 @@ import type {
   NewCertificate,
 } from '../ports/certificate.repository.js';
 import type {
+  CertificateVerificationLinks,
+  CertificateVerificationReader,
+  VerifiableCertificateRecord,
+} from '../ports/certificate-verification.js';
+import type {
   CardPdfInput,
   CertificatePdfInput,
   DocumentPdfRenderer,
@@ -59,6 +64,7 @@ import { ListCertificatesUseCase } from '../use-cases/list-certificates.use-case
 import { PreviewCertificateUseCase } from '../use-cases/preview-certificate.use-case.js';
 import { RenderCardPdfUseCase } from '../use-cases/render-card-pdf.use-case.js';
 import { RenderCertificatePdfUseCase } from '../use-cases/render-certificate-pdf.use-case.js';
+import { VerifyCertificateUseCase } from '../use-cases/verify-certificate.use-case.js';
 import {
   FindCertificateMemberUseCase,
   SearchCertificateMembersUseCase,
@@ -131,6 +137,34 @@ export class FakePdfRenderer implements DocumentPdfRenderer {
   card(input: CardPdfInput): Promise<Buffer> {
     this.cards.push(input);
     return Promise.resolve(Buffer.from('%PDF-card'));
+  }
+}
+
+/** Verification links of the tests: `<id>.sig` is the only token that checks out. */
+export class FakeVerificationLinks implements CertificateVerificationLinks {
+  linkFor(certificateId: number): string {
+    return `https://app.test/verify-certificate?t=${certificateId}.sig`;
+  }
+  certificateIdOf(token: string): number | null {
+    const match = /^(\d+)\.sig$/.exec(token);
+    return match ? Number(match[1]) : null;
+  }
+}
+
+class FakeVerificationReader implements CertificateVerificationReader {
+  constructor(private readonly data: FakeData) {}
+  findById(certificateId: number): Promise<VerifiableCertificateRecord | null> {
+    const row = this.data.certificates.find((c) => c.id === certificateId);
+    return Promise.resolve(
+      row
+        ? {
+            snapshot: row.snapshot,
+            issuedOn: row.issuedOn,
+            expiresOn: row.expiresOn,
+            voidedAt: row.voidedAt,
+          }
+        : null,
+    );
   }
 }
 
@@ -660,7 +694,16 @@ export function buildWorld() {
         clock,
       ),
       summary: new GetCertificatesSummaryUseCase(certificates, cards, clock),
-      pdf: new RenderCertificatePdfUseCase(certificates, renderer),
+      pdf: new RenderCertificatePdfUseCase(
+        certificates,
+        renderer,
+        new FakeVerificationLinks(),
+      ),
+      verify: new VerifyCertificateUseCase(
+        new FakeVerificationLinks(),
+        new FakeVerificationReader(data),
+        clock,
+      ),
       searchMembers: new SearchCertificateMembersUseCase(
         new FakeMemberSearch(data),
       ),

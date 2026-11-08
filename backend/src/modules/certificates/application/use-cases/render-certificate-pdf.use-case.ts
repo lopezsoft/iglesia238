@@ -4,6 +4,10 @@ import { certificateNotFound } from '../certificate-errors.js';
 import { certificateNumberOf, readScope } from '../certificate-mappers.js';
 import type { PdfFile } from '../certificate.models.js';
 import {
+  CERTIFICATE_VERIFICATION_LINKS,
+  type CertificateVerificationLinks,
+} from '../ports/certificate-verification.js';
+import {
   DOCUMENT_PDF_RENDERER,
   type DocumentPdfRenderer,
 } from '../ports/document-pdf.renderer.js';
@@ -20,6 +24,8 @@ export class RenderCertificatePdfUseCase {
     private readonly certificates: CertificateRepository,
     @Inject(DOCUMENT_PDF_RENDERER)
     private readonly renderer: DocumentPdfRenderer,
+    @Inject(CERTIFICATE_VERIFICATION_LINKS)
+    private readonly links: CertificateVerificationLinks,
   ) {}
 
   async execute(tenant: TenantContext, id: number): Promise<PdfFile> {
@@ -32,6 +38,7 @@ export class RenderCertificatePdfUseCase {
       issuedOn: record.issuedOn,
       expiresOn: record.expiresOn,
       voided: record.voidedAt !== null,
+      verificationUrl: this.links.linkFor(record.id),
     });
     return { filename: `${certificateNumberOf(record)}.pdf`, content };
   }
