@@ -8,6 +8,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.18.1 - 2026-11-08
+
+### Fixed
+
+- **Despliegue de 0.18.0 bloqueado por el CI (`frontend/.../certificate-templates.page.ts`):** los botones de marcadores usaban el atributo nativo `title`, que el paso «Verify no native HTML title attributes» prohíbe. Ahora usan `appCustomTooltip`. 0.18.0 nunca llegó a producción: este es el primer despliegue con las plantillas de certificados y su migración.
+
 ## 0.18.0 - 2026-11-08
 
 ### Added

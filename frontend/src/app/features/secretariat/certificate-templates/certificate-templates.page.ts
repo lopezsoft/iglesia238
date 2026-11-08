@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, debounceTime, filter, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { userMessage } from '../../../core/errors/domain-error';
+import { CustomTooltipDirective } from '../../../shared/ui/custom-tooltip.directive';
 import {
   CertificateTypeChanges,
   CertificateTypeTemplate,
@@ -59,7 +60,7 @@ const TEXT_FIELDS: readonly TextFieldConfig[] = [
 @Component({
   selector: 'app-certificate-templates-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CustomTooltipDirective],
   styles: `
     @use 'tokens' as *;
 
@@ -225,7 +226,7 @@ const TEXT_FIELDS: readonly TextFieldConfig[] = [
                   <button
                     type="button"
                     class="btn btn--ghost btn--sm"
-                    [title]="placeholder.description"
+                    [appCustomTooltip]="placeholder.description"
                     (click)="insert(placeholder.key)"
                   >
                     {{ '{{' + placeholder.key + '}}' }}
