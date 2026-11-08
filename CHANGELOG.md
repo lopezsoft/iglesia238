@@ -8,6 +8,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.16.0 - 2026-11-08
+
+### Added
+
+- **Sección Open Source (`GNU AGPLv3`), Auto-Alojamiento y Soporte Institucional en `iglesia238.com` (`landing/src/components/OpenSourceDeployment.astro`):** incorporación de las tres modalidades oficiales de despliegue (Nube Oficial Lista para Usar, Edición Open Source Auto-Alojada con Docker/Dokploy bajo licencia `GNU AGPLv3` y Soporte Institucional / Implementación Gestionada por **LopezSoft SAS**), junto con acceso directo al repositorio en GitHub desde `Navbar.astro` y `Footer.astro`.
+- **Centro de Documentación y Manuales estilo Docusaurus en `/docs` (`landing/src/layouts/DocsLayout.astro` y `landing/src/pages/docs/*`):** arquitectura de documentación de tres columnas (barra lateral de capítulos sticky, contenido técnico con callouts/pasos/tablas/bloques de código y tabla de contenidos lateral `En esta página`), incluyendo:
+  - [`/docs`](landing/src/pages/docs/index.astro): Guía de Implementación en 5 Pasos (desde el registro de sede hasta el cierre contable mensual).
+  - [`/docs/manual-roles`](landing/src/pages/docs/manual-roles.astro): Manual Operativo por Rol (Pastor, Secretaría y Tesorería) y matriz de aislamiento RBAC (`X-Scope`).
+  - [`/docs/auto-alojamiento`](landing/src/pages/docs/auto-alojamiento.astro): Guía Técnica de Auto-Alojamiento con Docker Multi-Stage, Dokploy, variables `.env` y configuración de correo transaccional con AWS SES (`us-west-2`, puerto `465`).
+
 ## 0.15.2 - 2026-11-07
 
 ### Added

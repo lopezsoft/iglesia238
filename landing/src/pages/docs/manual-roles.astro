@@ -1,0 +1,150 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const toc = [
+  { id: 'matriz-roles', label: 'Matriz de roles y alcances' },
+  { id: 'rol-pastor', label: 'Rol Pastor y Dirección Local' },
+  { id: 'rol-secretaria', label: 'Rol Secretaría y Membresía F-701' },
+  { id: 'certificados-registros', label: 'Certificados PDF, Carnés y Registros' },
+  { id: 'rol-tesoreria', label: 'Rol Tesorería y Contabilidad' },
+  { id: 'cierre-liquidacion', label: 'Libro de Caja, Votos y Diezmos' },
+];
+---
+
+<DocsLayout
+  title="Manual Operativo por Rol — Documentación Iglesia 238"
+  description="Manual de operación diaria en Iglesia 238 para Pastores, Secretarios, Tesoreros y Administradores de Denominación."
+  chapter="2. Manual Operativo"
+  heading="Manual Operativo por Rol (Pastor, Secretaría y Tesorería)"
+  lead="Cada usuario ve únicamente los módulos y acciones autorizados para su cargo y alcance. Aquí tienes el flujo de trabajo diario para cada ministerio administrativo."
+  toc={toc}
+  prev={{ href: '/docs', label: 'Guía de Implementación (5 Pasos)' }}
+  next={{ href: '/docs/auto-alojamiento', label: 'Auto-Alojamiento (Docker, Dokploy y AWS SES)' }}
+>
+  <h2 id="matriz-roles">Matriz de roles y alcances</h2>
+  <p>
+    El control de acceso basado en roles (RBAC) se valida tanto en la interfaz (ocultando rutas y botones no autorizados) como en cada endpoint de la API:
+  </p>
+  <div class="doc-table-wrap">
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Rol</th>
+          <th>Alcance</th>
+          <th>Responsabilidades principales</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Administrador de Plataforma</strong></td>
+          <td><code>P</code></td>
+          <td>Crea denominaciones, razones sociales, habilita países y administra cuentas globales.</td>
+        </tr>
+        <tr>
+          <td><strong>Administrador de Denominación</strong></td>
+          <td><code>D:&lt;id&gt;</code></td>
+          <td>Administra sedes, distritos, política Ley 1581, usuarios de la denominación, reportes consolidados y auditoría.</td>
+        </tr>
+        <tr>
+          <td><strong>Pastor</strong></td>
+          <td><code>C:&lt;id&gt;</code></td>
+          <td>Supervisión integral de la sede: membresía, secretaría, certificados, asistencia, reportes financieros y rangos pastorales.</td>
+        </tr>
+        <tr>
+          <td><strong>Secretario(a)</strong></td>
+          <td><code>C:&lt;id&gt;</code></td>
+          <td>Revisión del Formato F-701, expediente de miembros, carnés, certificados PDF, asistencia y actas eclesiásticas.</td>
+        </tr>
+        <tr>
+          <td><strong>Tesorero(a)</strong></td>
+          <td><code>C:&lt;id&gt;</code></td>
+          <td>Recibos de aportes (<code>REC</code>), promesas de voto, libro de caja mensual, comprobantes de egreso, presupuesto y liquidación de diezmos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="rol-pastor">Rol Pastor y Dirección Local</h2>
+  <p>
+    El pastor cuenta con una vista ejecutiva en el <strong>Tablero de Inicio</strong> (<code>/dashboard</code>) que resume el crecimiento de la congregación, las solicitudes de membresía pendientes, la tendencia de asistencia y el estado de los fondos contables de la sede.
+  </p>
+  <ul>
+    <li>Puede asignar y cerrar <strong>cargos locales</strong> (diáconos, líderes de comité, maestros) dentro de la ficha de cada miembro.</li>
+    <li>Gestiona los <strong>traslados de miembros</strong> entre sedes de la misma denominación conservando el historial espiritual y ministerial sin duplicar la identidad de la persona.</li>
+    <li>Tiene acceso con permiso específico al <strong>perfil socioeconómico</strong> para orientar la obra social y el cuidado pastoral de las familias.</li>
+  </ul>
+
+  <h2 id="rol-secretaria">Rol Secretaría y Membresía F-701</h2>
+  <p>
+    El trabajo diario de secretaría se concentra en tres módulos principales bajo el menú <strong>Membresía</strong> y <strong>Secretaría</strong>:
+  </p>
+  <ol>
+    <li>
+      <strong>Revisión de solicitudes F-701 (<code>/applications</code>):</strong>
+      <ul>
+        <li>Revisa las solicitudes enviadas desde el formulario público <code>/apply</code>.</li>
+        <li>El sistema alerta automáticamente si el número de documento ya existe en la denominación para evitar registros duplicados.</li>
+        <li>Al hacer clic en <strong>Aprobar</strong>, en una sola transacción atómica se crea la persona, el miembro activo, su número consecutivo de carné y el respaldo de su consentimiento de privacidad.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Expediente 360° del Miembro (<code>/members/:id</code>):</strong>
+      <ul>
+        <li>Administra datos personales, bautismo, recepción, vínculos del <strong>núcleo familiar</strong> (cónyuge, hijos, padres), formación académica/teológica y cargos ejercidos.</li>
+        <li>Permite gestionar la revocación de consentimiento o la <strong>anonimización por Habeas Data</strong> cuando la ley lo exige, sin romper la integridad histórica de la contabilidad.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2 id="certificados-registros">Certificados PDF, Carnés y Registros Eclesiásticos</h2>
+  <ul>
+    <li>
+      <strong>Certificados Oficiales (<code>/certificates</code>):</strong> emite certificados de bautismo, membresía activa, presentación de niños o matrimonio con <strong>numeración consecutiva sin huecos</strong> por sede, tipo y año. Incluye vista previa de impresión y anulación motivada (sin borrado físico).
+    </li>
+    <li>
+      <strong>Carnés de Membresía:</strong> emisión y renovación de carnés con fecha de vigencia y estado verificable.
+    </li>
+    <li>
+      <strong>Asistencia (<code>/attendance</code>):</strong> registro de asistencia desglosada por categoría (adultos, jóvenes, niños, visitas) y gráficas de tendencia por servicio.
+    </li>
+    <li>
+      <strong>Registros Especiales (<code>/records</code>):</strong> libros oficiales de <strong>presentación de niños</strong>, <strong>matrimonios</strong> y <strong>períodos pastorales</strong> (validando automáticamente que no existan solapamientos de fechas).
+    </li>
+  </ul>
+
+  <h2 id="rol-tesoreria">Rol Tesorería y Contabilidad</h2>
+  <p>
+    El módulo contable de <strong>Iglesia 238</strong> está diseñado bajo principios de trazabilidad e inmutabilidad (ningún movimiento contable se borra; las correcciones se realizan mediante reversas auditadas):
+  </p>
+  <ul>
+    <li>
+      <strong>Aportes y Recibos <code>REC</code> (<code>/accounting/contributions</code>):</strong> registra diezmos, ofrendas, primicias y donaciones tanto <strong>nominales</strong> (asociados al aportante para su certificado anual) como <strong>anónimos</strong> (ofrenda general de culto), generando recibo consecutivo automático.
+    </li>
+    <li>
+      <strong>Promesas de Voto (<code>/accounting/vows</code>):</strong> registra compromisos de fe (ej. voto pro-templo), controla cada abono parcial y calcula en tiempo real el saldo pendiente y la fecha límite.
+    </li>
+  </ul>
+
+  <h2 id="cierre-liquidacion">Libro de Caja, Presupuesto y Liquidación de Diezmos</h2>
+  <ol>
+    <li>
+      <strong>Libro de Caja Mensual (<code>/accounting/cash-book</code>):</strong>
+      <ul>
+        <li>Abre el período mensual de la sede, consolida los aportes recibidos por fondo y registra los comprobantes de egreso sobre las cuentas autorizadas.</li>
+        <li>Al finalizar el mes, ejecuta el <strong>cierre del período</strong>, dejando los saldos iniciales listos para el mes siguiente.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Liquidación de Diezmos (<code>/accounting/tithe-settlements</code>):</strong>
+      <ul>
+        <li>Calcula automáticamente la liquidación del período sin permitir solapamientos de fechas, desglosando cada porcentaje que corresponde enviar a la tesorería nacional o distrital.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Presupuesto Anual (<code>/accounting/budget</code>):</strong>
+      <ul>
+        <li>Define el presupuesto anual fijo o por comités (y permite copiar la estructura del año anterior en un clic) comparando en tiempo real lo presupuestado frente a lo ejecutado.</li>
+      </ul>
+    </li>
+  </ol>
+</DocsLayout>

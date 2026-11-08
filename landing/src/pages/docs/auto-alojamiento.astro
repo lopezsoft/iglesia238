@@ -1,0 +1,109 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const toc = [
+  { id: 'arquitectura', label: 'Arquitectura del contenedor unificado' },
+  { id: 'requisitos', label: 'Requisitos del servidor' },
+  { id: 'variables-entorno', label: 'Variables de entorno (.env)' },
+  { id: 'despliegue-dokploy', label: 'Despliegue en Dokploy o Docker' },
+  { id: 'configuracion-ses', label: 'Correo transaccional con AWS SES' },
+  { id: 'actualizacion-cicd', label: 'Auto-actualización y CI/CD' },
+];
+---
+
+<DocsLayout
+  title="Auto-Alojamiento Open Source (Docker, Dokploy y AWS SES) — Iglesia 238"
+  description="Guía técnica completa para auto-alojar Iglesia 238 (GNU AGPLv3) con Docker, Dokploy, MariaDB 11.8, Redis 8 y Amazon SES."
+  chapter="3. Open Source & Cloud"
+  heading="Guía de Auto-Alojamiento (Docker, Dokploy y AWS SES)"
+  lead="Iglesia 238 se distribuye bajo licencia GNU AGPLv3. Aquí encontrarás todos los pasos técnicos para desplegar tu propia instancia en producción o en desarrollo local."
+  toc={toc}
+  prev={{ href: '/docs/manual-roles', label: 'Manual por Rol (Pastor, Secretaría y Tesorería)' }}
+>
+  <h2 id="arquitectura">Arquitectura del contenedor unificado de producción</h2>
+  <p>
+    El archivo <code>Dockerfile</code> de la raíz compila en 4 etapas (<em>multi-stage build</em>) todo el ecosistema y genera una imagen ligera sobre <code>node:22.23-alpine</code> + <code>nginx</code> + <code>dumb-init</code>:
+  </p>
+  <ul>
+    <li><strong>Etapa 1 (<code>landing-builder</code>):</strong> compila el sitio institucional y la documentación en Astro 5 hacia <code>/usr/share/nginx/landing</code>.</li>
+    <li><strong>Etapa 2 (<code>frontend-builder</code>):</strong> genera el manifiesto <code>/version.json</code> y compila la SPA en Angular 22 hacia <code>/usr/share/nginx/html</code>.</li>
+    <li><strong>Etapa 3 (<code>backend-builder</code>):</strong> genera el cliente de Prisma 7 y compila la API en NestJS 12 (Fastify 5) hacia <code>/app/backend/dist</code>.</li>
+    <li><strong>Etapa 4 (<code>production</code>):</strong> al arrancar, <code>docker/entrypoint.prod.sh</code> ejecuta automáticamente <code>prisma migrate deploy</code>, aplica el seed idempotente de catálogos geográficos, aprovisiona el administrador inicial (si se definieron las variables <code>PLATFORM_ADMIN_*</code>) y levanta NestJS en <code>127.0.0.1:3000</code> junto con Nginx en el puerto <code>80</code>.</li>
+  </ul>
+
+  <h2 id="requisitos">Requisitos del servidor</h2>
+  <ul>
+    <li><strong>VPS o Servidor Linux:</strong> mínimo 2 vCPU y 4 GB de RAM (Ubuntu 22.04 / 24.04 LTS o Debian 12).</li>
+    <li><strong>Base de datos:</strong> MariaDB <code>11.8</code> (juego de caracteres <code>utf8mb4_uca1400_ai_ci</code>).</li>
+    <li><strong>Almacén en memoria:</strong> Redis <code>8.x</code> (para límites de intentos y bloqueos temporales).</li>
+    <li><strong>Orquestador recomendado:</strong> <strong>Dokploy</strong> o <strong>Docker Compose v2</strong>.</li>
+  </ul>
+
+  <h2 id="variables-entorno">Variables de entorno de producción</h2>
+  <p>
+    Configura el siguiente bloque de variables en tu servicio de aplicación en Dokploy (o archivo <code>.env</code> de producción):
+  </p>
+  <pre class="doc-pre"><code>NODE_ENV=production
+PORT=3000
+TRUST_PROXY=1
+DEFAULT_COUNTRY_ISO=CO
+
+# Conexión a MariaDB 11.8 y Redis 8
+DATABASE_URL=mysql://iglesia238:TU_CLAVE_DB@host-mariadb:3306/iglesia238
+REDIS_URL=redis://default:TU_CLAVE_REDIS@host-redis:6379
+
+# Seguridad JWT (mínimo 32 caracteres aleatorios) y dominios públicos
+JWT_SECRET=genera_una_cadena_hexadecimal_segura_de_64_caracteres
+APP_BASE_URL=https://app.tu-dominio.org
+CORS_ORIGIN=https://app.tu-dominio.org,https://tu-dominio.org,https://www.tu-dominio.org
+
+# Administrador inicial de plataforma (se crea de forma idempotente en el primer arranque)
+PLATFORM_ADMIN_EMAIL=admin@tu-dominio.org
+PLATFORM_ADMIN_PASSWORD=TuContrasenaInicialSegura2026!
+PLATFORM_ADMIN_NAME=Administrador Principal
+
+# Correo transaccional SMTP (Amazon SES recomendado)
+SMTP_HOST=email-smtp.us-west-2.amazonaws.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=AKIAXXXXXXXXXXXXXXXX
+SMTP_PASSWORD=TuPasswordSmtpDeIamEnAwsSes
+SMTP_FROM=Iglesia 238 &lt;no-reply@tu-dominio.org&gt;</code></pre>
+
+  <div class="doc-callout doc-callout--emerald">
+    <div class="doc-callout__title">Normalización automática de DATABASE_URL</div>
+    <p>
+      Si tu panel de Dokploy entrega la cadena interna con el esquema <code>mariadb://...</code>, el script <code>docker/entrypoint.prod.sh</code> la convierte automáticamente a <code>mysql://...</code> antes de ejecutar Prisma y NestJS.
+    </p>
+  </div>
+
+  <h2 id="despliegue-dokploy">Despliegue paso a paso en Dokploy</h2>
+  <ol>
+    <li>Crea un proyecto en Dokploy y añade dos servicios internos: <strong>MariaDB 11.8</strong> y <strong>Redis 8</strong>.</li>
+    <li>Crea un servicio de tipo <strong>Application</strong> apuntando al repositorio <code>https://github.com/lopezsoft/iglesia238.git</code> (rama <code>main</code>, <em>Build Type: Dockerfile</em>, ruta <code>Dockerfile</code>).</li>
+    <li>En la pestaña <strong>Environment</strong>, pega las variables del bloque anterior y haz clic en <strong>Save</strong>.</li>
+    <li>En la pestaña <strong>Domains</strong>, agrega tus dominios apuntando todos al <strong>Container Port <code>80</code></strong> con HTTPS (Let's Encrypt) activo:
+      <ul>
+        <li><code>tu-dominio.org</code> y <code>www.tu-dominio.org</code> → sirven el sitio Astro y <code>/docs</code>.</li>
+        <li><code>app.tu-dominio.org</code> → sirve la aplicación Angular y hace proxy de <code>/api/*</code>.</li>
+        <li><code>api.tu-dominio.org</code> → expone directamente la API NestJS.</li>
+      </ul>
+    </li>
+    <li>Haz clic en <strong>Deploy</strong>.</li>
+  </ol>
+
+  <h2 id="configuracion-ses">Configuración de correo transaccional con AWS SES</h2>
+  <p>
+    Para que las invitaciones, la verificación de correo en el autorregistro de sedes (<code>/register-congregation</code>) y la recuperación de contraseñas lleguen con firma DKIM y plantillas HTML corporativas:
+  </p>
+  <ol>
+    <li>En <strong>AWS Console → Amazon SES → Identities</strong>, verifica tu dominio con <strong>Easy DKIM (RSA 2048-bit)</strong> y agrega los 3 registros <code>CNAME</code> en tu DNS.</li>
+    <li>En <strong>Configuración de SMTP</strong>, elige la opción <strong>Credenciales SMTP de IAM</strong> (evita <em>SMTP de Mail Manager</em> para no incurrir en cargos fijos por hora de puntos de enlace) y genera el usuario SMTP.</li>
+    <li>Copia el usuario (<code>AKIA...</code>) y la contraseña SMTP en las variables <code>SMTP_USER</code> y <code>SMTP_PASSWORD</code> con <code>SMTP_PORT=465</code> y <code>SMTP_SECURE=true</code>.</li>
+  </ol>
+
+  <h2 id="actualizacion-cicd">Auto-actualización del Frontend y CI/CD</h2>
+  <p>
+    Cada vez que compilas una nueva versión, el script <code>frontend/scripts/write-version-manifest.mjs</code> sincroniza automáticamente <code>frontend/public/version.json</code> y <code>environment.ts</code>. Nginx sirve <code>/version.json</code> con cabeceras <code>Cache-Control: no-store, no-cache, must-revalidate</code>, y el servicio <code>VersionUpdateService</code> en Angular recarga de forma transparente las pestañas abiertas cuando detecta una versión nueva.
+  </p>
+</DocsLayout>

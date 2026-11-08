@@ -1,0 +1,145 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const toc = [
+  { id: 'vision-general', label: 'Visión general de la jerarquía' },
+  { id: 'paso-1-organizacion', label: 'Paso 1: Denominación y Razón Social' },
+  { id: 'paso-2-sedes', label: 'Paso 2: Distritos y primera Sede' },
+  { id: 'paso-3-usuarios', label: 'Paso 3: Invitación de Usuarios y Roles' },
+  { id: 'paso-4-privacidad', label: 'Paso 4: Política Ley 1581 y Formato F-701' },
+  { id: 'paso-5-contabilidad', label: 'Paso 5: Apertura Contable y Diezmos' },
+];
+---
+
+<DocsLayout
+  title="Guía de Implementación en 5 Pasos — Documentación Iglesia 238"
+  description="Manual paso a paso para poner en marcha tu denominación, razón social, distritos, sedes, equipo pastoral, membresía F-701 y contabilidad en Iglesia 238."
+  chapter="1. Puesta en Marcha"
+  heading="Guía de Implementación en 5 Pasos"
+  lead="Sigue este recorrido ordenado para configurar la estructura legal y eclesiástica de tu denominación y dejar operativa tu primera congregación en minutos."
+  toc={toc}
+  next={{ href: '/docs/manual-roles', label: 'Manual por Rol (Pastor, Secretaría y Tesorería)' }}
+>
+  <h2 id="vision-general">Visión general de la jerarquía</h2>
+  <p>
+    En <strong>Iglesia 238</strong> todos los registros administrativos, pastorales y contables se organizan en una jerarquía de tres niveles con aislamiento estricto de datos:
+  </p>
+  <div class="doc-table-wrap">
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Nivel</th>
+          <th>Alcance técnico</th>
+          <th>Propósito dentro de la organización</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Plataforma</strong></td>
+          <td><code>P</code></td>
+          <td>Gobierno global: administra países habilitados, denominaciones y sus razones sociales (entidades legales con NIT/RUT).</td>
+        </tr>
+        <tr>
+          <td><strong>2. Denominación</strong></td>
+          <td><code>D:&lt;id&gt;</code></td>
+          <td>Estructura nacional o conciliar: gestiona distritos, sedes, política de protección de datos vigente y parámetros de liquidación de diezmos.</td>
+        </tr>
+        <tr>
+          <td><strong>3. Sede (Congregación)</strong></td>
+          <td><code>C:&lt;id&gt;</code></td>
+          <td>Iglesia local: administra su membresía (F-701), certificados PDF, asistencia, diezmos, ofrendas, votos, libro de caja y presupuesto anual.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="doc-callout">
+    <div class="doc-callout__title">Selector «Actuar en»</div>
+    <p>
+      En la barra superior de la aplicación (<code>https://app.iglesia238.com</code>) encontrarás el botón de contexto activo. Si eres administrador de plataforma o de denominación, desde allí puedes cambiar en tiempo real entre la vista global de la denominación y la vista operativa de cualquier sede.
+    </p>
+  </div>
+
+  <h2 id="paso-1-organizacion">Paso 1: Crear la Denominación y la Razón Social (NIT)</h2>
+  <div class="doc-step-card">
+    <div class="doc-step-card__head">
+      <span class="doc-step-card__num">1</span>
+      <h3>Registrar la Denominación y su Entidad Legal</h3>
+    </div>
+    <p>
+      Ingresa con tu cuenta de <strong>Administrador de Plataforma</strong> en <code>https://app.iglesia238.com</code> y dirígete en el menú lateral a <strong>Denominaciones</strong>:
+    </p>
+    <ol>
+      <li>Haz clic en <strong>Nueva denominación</strong> y registra el nombre oficial, sigla (ej. <code>IPUC</code>) y país principal.</li>
+      <li>Dentro de la denominación, abre la pestaña <strong>Razones sociales</strong> y crea la entidad jurídica oficial (Nombre legal, NIT con dígito de verificación, municipio y representante legal).</li>
+      <li>Esta razón social se imprimirá automáticamente en el encabezado legal de los <strong>certificados PDF</strong> y de los <strong>recibos contables</strong> de todas las sedes adscritas a ella.</li>
+    </ol>
+  </div>
+
+  <h2 id="paso-2-sedes">Paso 2: Crear Distritos y la primera Sede (Congregación)</h2>
+  <div class="doc-step-card">
+    <div class="doc-step-card__head">
+      <span class="doc-step-card__num">2</span>
+      <h3>Dar de alta la primera iglesia local</h3>
+    </div>
+    <p>
+      Existen dos caminos complementarios para crear una sede en <strong>Iglesia 238</strong>:
+    </p>
+    <ul>
+      <li>
+        <strong>Opción A — Desde el panel administrativo (Organización → Sedes):</strong> selecciona la denominación en el selector superior, crea primero el <strong>Distrito</strong> (si tu organización agrupa sedes por zonas) y luego haz clic en <strong>+ Nueva sede</strong> eligiendo la razón social, el municipio (catálogo oficial DIVIPOLA/país), dirección y teléfono.
+      </li>
+      <li>
+        <strong>Opción B — Autorregistro público (<code>/register-congregation</code>):</strong> el pastor de la sede puede entrar desde la pantalla de inicio de sesión a <strong>«Registrar mi sede»</strong>, seleccionar la razón social activa, completar los datos de su congregación y confirmar su correo electrónico. El sistema le asigna automáticamente los roles iniciales de <code>Pastor</code>, <code>Secretario</code> y <code>Tesorero</code> sobre esa sede.
+      </li>
+    </ul>
+  </div>
+
+  <h2 id="paso-3-usuarios">Paso 3: Invitar al Equipo (Pastor, Secretario y Tesorero)</h2>
+  <div class="doc-step-card">
+    <div class="doc-step-card__head">
+      <span class="doc-step-card__num">3</span>
+      <h3>Asignar permisos por alcance y enviar invitaciones</h3>
+    </div>
+    <p>
+      Ve al módulo <strong>Usuarios y roles</strong> (<code>/users</code>) y haz clic en <strong>Invitar usuario</strong>:
+    </p>
+    <ol>
+      <li>Escribe el nombre completo y el correo electrónico de la persona.</li>
+      <li>Elige el rol que desempeñará (<code>Administrador de denominación</code>, <code>Pastor</code>, <code>Secretario</code>, <code>Tesorero</code> o <code>Auditor</code>) y la sede correspondiente.</li>
+      <li>
+        <strong>Entrega híbrida (Correo AWS SES + WhatsApp):</strong> al guardar, el sistema envía automáticamente un correo con plantilla institucional (válido por 72 horas) y, además, te muestra en pantalla el <strong>enlace único de un solo uso</strong> para que puedas copiarlo y enviarlo por WhatsApp.
+      </li>
+      <li>Cuando el invitado abre el enlace y define su contraseña personal, su correo queda verificado automáticamente.</li>
+    </ol>
+  </div>
+
+  <h2 id="paso-4-privacidad">Paso 4: Política de Privacidad (Ley 1581) y Formato F-701</h2>
+  <div class="doc-step-card">
+    <div class="doc-step-card__head">
+      <span class="doc-step-card__num">4</span>
+      <h3>Activar las inscripciones públicas de membresía</h3>
+    </div>
+    <ol>
+      <li>En el menú lateral, entra a <strong>Política</strong> (<code>/privacy-policy</code>) y publica la versión vigente de la <strong>Política de Tratamiento de Datos Personales</strong> de la denominación.</li>
+      <li>En <strong>Sedes</strong>, verifica que la congregación tenga habilitada la opción <strong>Acepta inscripciones públicas</strong>.</li>
+      <li>Comparte con los creyentes el enlace público <code>https://app.iglesia238.com/apply</code> (Formato F-701). Cada persona podrá seleccionar su sede, diligenciar sus datos (con acudiente obligatorio si es menor de edad), aceptar la política de privacidad y consultar el estado de su solicitud con su código único en <code>/apply/status</code>.</li>
+    </ol>
+  </div>
+
+  <h2 id="paso-5-contabilidad">Paso 5: Apertura Contable, Fondos y Regla de Diezmos</h2>
+  <div class="doc-step-card">
+    <div class="doc-step-card__head">
+      <span class="doc-step-card__num">5</span>
+      <h3>Parametrizar la contabilidad de la sede</h3>
+    </div>
+    <p>
+      Con el contexto activo situado en la sede (<code>C:&lt;id&gt;</code>), entra a <strong>Contabilidad → Configuración</strong>:
+    </p>
+    <ul>
+      <li><strong>Fondos:</strong> verifica o crea los fondos de la congregación (ej. <em>Fondo Local General</em>, <em>Fondo Pro-Templo</em>, <em>Fondo Misionero</em>, <em>Obra Social</em>).</li>
+      <li><strong>Plan de cuentas y conceptos de aporte:</strong> habilita los conceptos de ingreso (Diezmos, Ofrendas, Votos, Primicias) y las categorías de egreso.</li>
+      <li><strong>Porcentaje de liquidación de diezmos:</strong> verifica la tasa de envío a la denominación/distrito para que el módulo de <strong>Liquidaciones de diezmo</strong> calcule automáticamente los componentes sobre el ingreso bruto del período.</li>
+    </ul>
+  </div>
+</DocsLayout>

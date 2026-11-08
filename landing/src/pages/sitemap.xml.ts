@@ -7,10 +7,13 @@ const pages = [
   { path: '/soluciones/', priority: '0.9', changefreq: 'monthly' },
   { path: '/como-funciona/', priority: '0.9', changefreq: 'monthly' },
   { path: '/seguridad/', priority: '0.8', changefreq: 'monthly' },
+  { path: '/docs/', priority: '0.9', changefreq: 'weekly' },
+  { path: '/docs/manual-roles/', priority: '0.85', changefreq: 'monthly' },
+  { path: '/docs/auto-alojamiento/', priority: '0.85', changefreq: 'monthly' },
 ];
 
 export const GET: APIRoute = () => {
-  const lastmod = '2026-11-06';
+  const lastmod = '2026-11-08';
   const urls = pages
     .map(
       (page) => `  <url>

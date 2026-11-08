@@ -1,4 +1,6 @@
 ---
+import pkg from '../../package.json';
+const appVersion = pkg.version;
 ---
 
 <footer class="site-footer">
@@ -33,17 +35,18 @@
           <span>IGLESIA <strong>238</strong></span>
         </a>
         <p>
-          Plataforma multi-iglesia y multi-sede para la administración de membresía oficial (F-701), secretaría, certificados en PDF, asistencia y contabilidad eclesiástica.
+          Plataforma multi-iglesia y multi-sede de código abierto (GNU AGPLv3) para la administración de membresía oficial (F-701), secretaría, certificados en PDF, asistencia y contabilidad eclesiástica.
         </p>
       </div>
 
       <div class="footer-col">
-        <h4>Plataforma</h4>
+        <h4>Plataforma y Manuales</h4>
         <ul>
           <li><a href="/soluciones">Soluciones por ministerio</a></li>
           <li><a href="/como-funciona">Cómo funciona</a></li>
+          <li><a href="/docs">Guía de implementación (5 pasos)</a></li>
+          <li><a href="/docs/manual-roles">Manual operativo por rol</a></li>
           <li><a href="/seguridad">Seguridad y Ley 1581</a></li>
-          <li><a href="/#preguntas">Preguntas frecuentes</a></li>
         </ul>
       </div>
 
@@ -58,18 +61,18 @@
       </div>
 
       <div class="footer-col">
-        <h4>Cumplimiento</h4>
+        <h4>Open Source & Soporte</h4>
         <ul>
-          <li><span>Ley 1581 de 2012 (Colombia)</span></li>
-          <li><span>18 países hispanohablantes</span></li>
-          <li><span>DIVIPOLA DANE integrado</span></li>
-          <li><span>Aislamiento multi-tenant</span></li>
+          <li><a href="https://github.com/lopezsoft/iglesia238" target="_blank" rel="noopener noreferrer">Repositorio GitHub (AGPLv3) ↗</a></li>
+          <li><a href="/docs/auto-alojamiento">Guía de Auto-Alojamiento (Docker)</a></li>
+          <li><a href="mailto:contact@lewislopez.io?subject=Soporte%20Institucional%20Iglesia%20238">Soporte e implementación</a></li>
+          <li><span>Ley 1581 de 2012 · Multi-tenant</span></li>
         </ul>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <span>© 2026 <strong>lopezsoft.net.co</strong> · Todos los derechos reservados · v0.13.7</span>
+      <span>© 2026 <strong>lopezsoft.net.co</strong> · Licencia GNU AGPLv3 · v{appVersion}</span>
       <span>Tus datos se tratan conforme a la Ley 1581 de 2012.</span>
     </div>
   </div>

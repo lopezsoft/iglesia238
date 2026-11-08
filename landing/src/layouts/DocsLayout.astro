@@ -1,0 +1,585 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+export interface TocItem {
+  readonly id: string;
+  readonly label: string;
+}
+
+export interface PagerLink {
+  readonly href: string;
+  readonly label: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  chapter: string;
+  heading: string;
+  lead: string;
+  toc: readonly TocItem[];
+  prev?: PagerLink;
+  next?: PagerLink;
+}
+
+const { title, description, chapter, heading, lead, toc, prev, next } = Astro.props;
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="docs-shell">
+    <div class="container docs-grid">
+      <!-- Left Sidebar (Docusaurus Navigation) -->
+      <aside class="docs-sidebar" aria-label="Menú de documentación">
+        <div class="docs-sidebar__group">
+          <div class="docs-sidebar__title">1. Puesta en Marcha</div>
+          <a
+            href="/docs"
+            class:list={['docs-nav-item', { active: currentPath === '/docs' }]}
+          >
+            <span>🚀 Guía de Implementación (5 Pasos)</span>
+          </a>
+        </div>
+
+        <div class="docs-sidebar__group">
+          <div class="docs-sidebar__title">2. Manual Operativo</div>
+          <a
+            href="/docs/manual-roles"
+            class:list={['docs-nav-item', { active: currentPath === '/docs/manual-roles' }]}
+          >
+            <span>👥 Manual por Rol (Pastor, Secretaría y Tesorería)</span>
+          </a>
+        </div>
+
+        <div class="docs-sidebar__group">
+          <div class="docs-sidebar__title">3. Open Source & Cloud</div>
+          <a
+            href="/docs/auto-alojamiento"
+            class:list={['docs-nav-item', { active: currentPath === '/docs/auto-alojamiento' }]}
+          >
+            <span>🐳 Auto-Alojamiento (Docker, Dokploy y AWS SES)</span>
+          </a>
+        </div>
+
+        <div class="docs-sidebar__group">
+          <div class="docs-sidebar__title">4. Recursos y Código</div>
+          <a
+            href="https://github.com/lopezsoft/iglesia238"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="docs-nav-item"
+          >
+            <span>🔓 Repositorio GitHub (AGPLv3) ↗</span>
+          </a>
+          <a
+            href="https://app.iglesia238.com/register-congregation"
+            data-app-path="/register-congregation"
+            class="docs-nav-item"
+          >
+            <span>🏛 Registrar nueva sede ↗</span>
+          </a>
+          <a
+            href="mailto:contact@lewislopez.io?subject=Soporte%20Iglesia%20238"
+            class="docs-nav-item"
+          >
+            <span>🛡️ Soporte LopezSoft SAS ✉</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Article Content -->
+      <main class="docs-main">
+        <div class="docs-breadcrumbs">
+          <a href="/">Inicio</a>
+          <span>/</span>
+          <a href="/docs">Documentación</a>
+          <span>/</span>
+          <span class="docs-breadcrumbs__current">{chapter}</span>
+        </div>
+
+        <header class="docs-header">
+          <span class="docs-badge">{chapter}</span>
+          <h1>{heading}</h1>
+          <p class="docs-lead">{lead}</p>
+        </header>
+
+        <article class="docs-article">
+          <slot />
+        </article>
+
+        {(prev || next) && (
+          <nav class="docs-pager" aria-label="Navegación entre capítulos">
+            {prev ? (
+              <a href={prev.href} class="docs-pager__card docs-pager__card--prev">
+                <span class="docs-pager__hint">← Capítulo anterior</span>
+                <strong class="docs-pager__title">{prev.label}</strong>
+              </a>
+            ) : (
+              <div />
+            )}
+            {next ? (
+              <a href={next.href} class="docs-pager__card docs-pager__card--next">
+                <span class="docs-pager__hint">Siguiente capítulo →</span>
+                <strong class="docs-pager__title">{next.label}</strong>
+              </a>
+            ) : (
+              <div />
+            )}
+          </nav>
+        )}
+      </main>
+
+      <!-- Right Table of Contents -->
+      <aside class="docs-toc" aria-label="Tabla de contenidos">
+        <div class="docs-toc__box">
+          <div class="docs-toc__title">En esta página</div>
+          <ul class="docs-toc__list">
+            {toc.map((item) => (
+              <li>
+                <a href={`#${item.id}`}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+
+          <div class="docs-toc__cta">
+            <div class="docs-toc__cta-title">¿Necesitas apoyo directo?</div>
+            <p>
+              Nuestro equipo de ingeniería acompaña a denominaciones e iglesias en su migración y puesta en marcha.
+            </p>
+            <a
+              href="mailto:contact@lewislopez.io?subject=Implementacion%20Iglesia%20238"
+              class="btn btn--primary docs-toc__btn"
+            >
+              Contactar soporte
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .docs-shell {
+    padding: 2.5rem 0 5rem;
+    background: var(--bg);
+    min-height: 80vh;
+  }
+
+  .docs-grid {
+    display: grid;
+    grid-template-columns: 265px minmax(0, 1fr) 235px;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 92px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+  }
+
+  .docs-sidebar__group + .docs-sidebar__group {
+    margin-top: 1.35rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .docs-sidebar__title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.55rem;
+    padding: 0 0.55rem;
+  }
+
+  .docs-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.58rem 0.7rem;
+    border-radius: 10px;
+    font-size: 0.87rem;
+    font-weight: 600;
+    color: var(--text-body);
+    line-height: 1.35;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .docs-nav-item:hover {
+    background: var(--bg-muted);
+    color: var(--text-navy);
+  }
+
+  .docs-nav-item.active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .docs-main {
+    min-width: 0;
+  }
+
+  .docs-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .docs-breadcrumbs a:hover {
+    color: var(--primary);
+  }
+
+  .docs-breadcrumbs__current {
+    color: var(--text-navy);
+    font-weight: 600;
+  }
+
+  .docs-header {
+    padding-bottom: 1.75rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .docs-badge {
+    display: inline-block;
+    font-size: 0.73rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+  }
+
+  .docs-header h1 {
+    font-size: clamp(1.75rem, 2.8vw, 2.35rem);
+    font-weight: 800;
+    color: var(--text-navy);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+
+  .docs-lead {
+    font-size: 1.05rem;
+    color: var(--text-body);
+    line-height: 1.65;
+  }
+
+  /* Article Typography & Docusaurus Components */
+  .docs-article h2 {
+    font-size: 1.42rem;
+    font-weight: 800;
+    color: var(--text-navy);
+    margin: 2.5rem 0 0.9rem;
+    padding-top: 0.5rem;
+    letter-spacing: -0.015em;
+    scroll-margin-top: 96px;
+  }
+
+  .docs-article h2:first-child {
+    margin-top: 0;
+  }
+
+  .docs-article h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-navy);
+    margin: 1.5rem 0 0.55rem;
+  }
+
+  .docs-article p {
+    font-size: 0.96rem;
+    color: var(--text-body);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .docs-article ul,
+  .docs-article ol {
+    padding-left: 1.35rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .docs-article li {
+    font-size: 0.95rem;
+    color: var(--text-body);
+    line-height: 1.65;
+    margin-bottom: 0.45rem;
+  }
+
+  .docs-article li strong {
+    color: var(--text-navy);
+  }
+
+  .docs-article code {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.84em;
+    background: var(--bg-muted);
+    color: var(--primary);
+    padding: 0.16rem 0.42rem;
+    border-radius: 6px;
+  }
+
+  .doc-pre {
+    background: #0b1528;
+    color: #e2e8f0;
+    border: 1px solid #1e2d4a;
+    border-radius: 14px;
+    padding: 1.15rem 1.35rem;
+    overflow-x: auto;
+    margin: 1rem 0 1.4rem;
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.84rem;
+    line-height: 1.65;
+  }
+
+  .doc-pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .doc-callout {
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin: 1.25rem 0;
+    border-left: 4px solid var(--primary);
+    background: var(--primary-soft);
+  }
+
+  .doc-callout--emerald {
+    border-left-color: var(--emerald);
+    background: var(--emerald-soft);
+  }
+
+  .doc-callout--amber {
+    border-left-color: var(--amber);
+    background: var(--amber-soft);
+  }
+
+  .doc-callout__title {
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-navy);
+    margin-bottom: 0.35rem;
+  }
+
+  .doc-callout p {
+    margin: 0;
+    font-size: 0.91rem;
+    color: var(--text-navy);
+  }
+
+  .doc-step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1.15rem;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .doc-step-card__head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .doc-step-card__num {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .doc-step-card__head h3 {
+    margin: 0;
+    font-size: 1.06rem;
+  }
+
+  .doc-table-wrap {
+    overflow-x: auto;
+    margin: 1.15rem 0 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.89rem;
+  }
+
+  .doc-table th,
+  .doc-table td {
+    padding: 0.78rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .doc-table th {
+    background: var(--bg-subtle);
+    font-weight: 700;
+    color: var(--text-navy);
+  }
+
+  .doc-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .docs-pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .docs-pager__card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .docs-pager__card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .docs-pager__card--next {
+    text-align: right;
+  }
+
+  .docs-pager__hint {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .docs-pager__title {
+    font-size: 0.96rem;
+    color: var(--primary);
+  }
+
+  /* Right TOC */
+  .docs-toc {
+    position: sticky;
+    top: 92px;
+  }
+
+  .docs-toc__box {
+    border-left: 2px solid var(--border);
+    padding-left: 1.15rem;
+  }
+
+  .docs-toc__title {
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-navy);
+    margin-bottom: 0.65rem;
+  }
+
+  .docs-toc__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.48rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .docs-toc__list a {
+    font-size: 0.83rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    transition: color 0.15s ease;
+  }
+
+  .docs-toc__list a:hover {
+    color: var(--primary);
+  }
+
+  .docs-toc__cta {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+  }
+
+  .docs-toc__cta-title {
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: var(--text-navy);
+    margin-bottom: 0.35rem;
+  }
+
+  .docs-toc__cta p {
+    font-size: 0.79rem;
+    color: var(--text-body);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  .docs-toc__btn {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 0.52rem 0.9rem;
+  }
+
+  @media (max-width: 1100px) {
+    .docs-grid {
+      grid-template-columns: 240px minmax(0, 1fr);
+    }
+
+    .docs-toc {
+      display: none;
+    }
+  }
+
+  @media (max-width: 780px) {
+    .docs-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
+      position: static;
+    }
+
+    .docs-pager {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

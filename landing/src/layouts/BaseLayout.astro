@@ -40,7 +40,13 @@ if (pathname !== '/') {
         ? 'Cómo funciona'
         : pathname.includes('seguridad')
           ? 'Seguridad y Ley 1581'
-          : 'Página';
+          : pathname.includes('docs/manual-roles')
+            ? 'Manual Operativo por Rol'
+            : pathname.includes('docs/auto-alojamiento')
+              ? 'Guía de Auto-Alojamiento (Docker / Dokploy)'
+              : pathname.includes('docs')
+                ? 'Documentación y Manuales'
+                : 'Página';
   breadcrumbItems.push({
     '@type': 'ListItem',
     position: 2,
@@ -61,7 +67,7 @@ const schemaGraph: Record<string, unknown>[] = [
       width: 512,
       height: 512,
     },
-    sameAs: ['https://app.iglesia238.com'],
+    sameAs: ['https://app.iglesia238.com', 'https://github.com/lopezsoft/iglesia238'],
   },
   {
     '@type': 'WebSite',
