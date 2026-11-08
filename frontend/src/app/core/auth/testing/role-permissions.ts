@@ -33,6 +33,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
   ],
   TREASURER: [
     'contributions.read',
+    'donation-certificates.issue',
     'contributions.write',
     'cash-transactions.write',
     'tithe-settlements.write',

@@ -69,7 +69,9 @@ export class CertificatesTableComponent {
   protected readonly statusLabels = CERTIFICATE_STATUS_LABELS;
   protected readonly hasSede = computed(() => this.auth.tenant().congregationId !== null);
   protected readonly canIssue = computed(
-    () => this.auth.can('certificates.issue') && this.hasSede(),
+    () =>
+      (this.auth.can('certificates.issue') || this.auth.can('donation-certificates.issue')) &&
+      this.hasSede(),
   );
   protected readonly typeFilter = signal<string | null>(null);
   protected readonly statusFilter = signal<CertificateStatus | null>(null);

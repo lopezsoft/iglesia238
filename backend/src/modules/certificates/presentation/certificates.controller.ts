@@ -24,7 +24,8 @@ import {
   ClientIp,
   CurrentTenant,
 } from '../../../common/security/current-user.decorators.js';
-import { RequirePermissions } from '../../../common/security/permissions.decorator.js';
+import { RequireAnyPermission } from '../../../common/security/permissions.decorator.js';
+import { DONATION_ISSUE_PERMISSION } from '../application/certificate-access.js';
 import { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import { ExportCertificatesUseCase } from '../application/use-cases/export-certificates.use-case.js';
 import { GetCertificateUseCase } from '../application/use-cases/get-certificate.use-case.js';
@@ -74,7 +75,7 @@ function toFilter(query: CertificateFilterQueryDto): CertificateFilter {
 
 @ApiTags('certificates')
 @ApiTenantScope()
-@RequirePermissions('certificates.issue')
+@RequireAnyPermission('certificates.issue', DONATION_ISSUE_PERMISSION)
 @Controller('certificates')
 export class CertificatesController {
   constructor(

@@ -5,6 +5,8 @@ import { CARD_EXPIRY_WARNING_DAYS } from '../certificate-errors.js';
 import { addDays } from '../certificate-document.js';
 import { readScope } from '../certificate-mappers.js';
 import type { CertificatesSummaryView } from '../certificate.models.js';
+import { donationsOnly } from '../certificate-access.js';
+import { DONATION_TYPE_CODE } from '../certificate-document.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -36,12 +38,21 @@ export class GetCertificatesSummaryUseCase {
     const today = this.clock.today();
     const year = Number(today.slice(0, 4));
 
+    // Who only handles donations sees only their certificates, and nothing about the membership cards.
+    const onlyDonations = donationsOnly(tenant);
     const [issued, cards] = await Promise.all([
-      this.certificates.countIssued(scope, {
-        from: `${year}-01-01`,
-        to: `${year}-12-31`,
-      }),
-      this.cards.counts(scope, today, addDays(today, CARD_EXPIRY_WARNING_DAYS)),
+      this.certificates.countIssued(
+        scope,
+        { from: `${year}-01-01`, to: `${year}-12-31` },
+        onlyDonations ? DONATION_TYPE_CODE : undefined,
+      ),
+      onlyDonations
+        ? Promise.resolve({ valid: 0, expiringSoon: 0, expired: 0 })
+        : this.cards.counts(
+            scope,
+            today,
+            addDays(today, CARD_EXPIRY_WARNING_DAYS),
+          ),
     ]);
     return {
       year,

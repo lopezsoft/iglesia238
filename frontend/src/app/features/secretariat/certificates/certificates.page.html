@@ -1,6 +1,6 @@
 <app-page-header
   breadcrumb="Secretaría"
-  title="Certificados y carnés"
+  [title]="donationsOnly() ? 'Certificados de donaciones' : 'Certificados y carnés'"
   [description]="description()"
 >
   @if (canReadMembers()) {
@@ -23,7 +23,10 @@
         tone="indigo"
         [label]="'Certificados emitidos en ' + stats.year"
         [value]="stats.issued"
-        [hint]="'Todas las series, ' + (hasSede() ? scopeLabel() : 'todas las sedes')"
+        [hint]="
+          (donationsOnly() ? 'Certificados de donaciones, ' : 'Todas las series, ') +
+          (hasSede() ? scopeLabel() : 'todas las sedes')
+        "
       />
       <app-stat-card
         icon="ban"
@@ -32,20 +35,22 @@
         [value]="stats.voided"
         hint="Conservan su número y el motivo"
       />
-      <app-stat-card
-        icon="id-card"
-        tone="green"
-        label="Carnés vigentes"
-        [value]="stats.cardsValid"
-        [hint]="cardsHint()"
-      />
-      <app-stat-card
-        icon="clock"
-        tone="orange"
-        label="Carnés vencidos"
-        [value]="stats.cardsExpired"
-        hint="Pendientes de renovación"
-      />
+      @if (!donationsOnly()) {
+        <app-stat-card
+          icon="id-card"
+          tone="green"
+          label="Carnés vigentes"
+          [value]="stats.cardsValid"
+          [hint]="cardsHint()"
+        />
+        <app-stat-card
+          icon="clock"
+          tone="orange"
+          label="Carnés vencidos"
+          [value]="stats.cardsExpired"
+          hint="Pendientes de renovación"
+        />
+      }
     } @else if (summary.error()) {
       <app-error-banner message="No fue posible cargar el resumen." (retry)="summary.reload()" />
     } @else {
@@ -53,9 +58,16 @@
     }
   </section>
 
-  <app-tab-cards ariaLabel="Tipo de documento" idPrefix="certs" [items]="tabs" [(selected)]="tab" />
+  @if (!donationsOnly()) {
+    <app-tab-cards
+      ariaLabel="Tipo de documento"
+      idPrefix="certs"
+      [items]="tabs"
+      [(selected)]="tab"
+    />
+  }
 
-  @if (tab() === 'certificates') {
+  @if (tab() === 'certificates' || donationsOnly()) {
     <div
       class="stack"
       role="tabpanel"

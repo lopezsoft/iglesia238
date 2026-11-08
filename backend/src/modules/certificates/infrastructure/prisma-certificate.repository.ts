@@ -209,9 +209,11 @@ export class PrismaCertificateRepository
   async countIssued(
     scope: TenantScope,
     range: { from: string; to: string },
+    typeCode?: string,
   ): Promise<{ issued: number; voided: number }> {
     const where = this.scoped(scope, {
       issuedOn: { gte: parseIsoDate(range.from), lte: parseIsoDate(range.to) },
+      ...(typeCode ? { certificateType: { code: typeCode } } : {}),
     });
     const [issued, voided] = await Promise.all([
       this.prisma.certificate.count({ where }),

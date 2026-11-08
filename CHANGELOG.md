@@ -8,6 +8,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.20.0 - 2026-11-08
+
+### Added
+
+- **Tesorería puede emitir el certificado de donaciones (`donation-certificates.issue`):** permiso propio, concedido al rol `TREASURER` por el seed (sin migración de datos). Con él se emite, consulta, imprime y anula el certificado de donaciones, y nada más: no concede `certificates.issue`, así que Tesorería sigue sin poder emitir los certificados de membresía, traslado, bautismo o asistencia ni los carnés.
+- **El módulo se acota a `DON` para quien solo tiene ese permiso (`certificate-access.ts`):** el formulario y el catálogo ofrecen solo ese tipo; el listado, la exportación y los contadores incluyen solo esos certificados (y ningún dato de carnés); ver, imprimir o anular otro tipo responde como si no existiera; emitir u obtener la vista previa de otro tipo se rechaza como tipo inexistente.
+- **Pantalla «Certificados de donaciones» para Tesorería (`certificates.page`):** sin pestaña ni cifras de carnés, con el formulario de emisión y el listado; el menú «Certificados y carnés» y la acción rápida «Emitir certificado» aparecen para el rol.
+
+### Changed
+
+- **`GET /api/certificates`, `/api/certificate-types` y el resto de endpoints de certificados aceptan cualquiera de los dos permisos** (`RequireAnyPermission`); `countIssued` admite filtrar por tipo.
+
 ## 0.19.0 - 2026-11-08
 
 ### Added

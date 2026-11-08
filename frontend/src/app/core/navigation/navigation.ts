@@ -13,7 +13,8 @@ export const ACCESS = {
   users: ['users.manage'],
   applications: ['applications.review'],
   members: ['members.read'],
-  certificates: ['certificates.issue'],
+  // The treasury only gets the donations certificate: the module narrows what it shows.
+  certificates: ['certificates.issue', 'donation-certificates.issue'],
   certificateTemplates: ['certificate-types.manage'],
   attendance: ['attendance.write'],
   secretariatRecords: ['members.write'],

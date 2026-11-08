@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundDomainException } from '../../../../common/errors/domain.exception.js';
 import type { TenantContext } from '../../../../common/tenancy/tenant-context.js';
 import type { TenantScope } from '../../../../common/tenancy/tenant-scope.js';
+import { canIssueDonations, canSeeType } from '../certificate-access.js';
 import {
   DONATION_TYPE_CODE,
   buildCertificateSnapshot,
@@ -97,8 +98,12 @@ export class CertificateDraftService {
     if (!type) {
       throw certificateTypeNotFound();
     }
+    // Who only handles donations does not even know the other types exist.
+    if (!canSeeType(tenant, type.code)) {
+      throw certificateTypeNotFound();
+    }
     // The amounts are the treasury's: checked before anything about the member is read.
-    if (type.code === DONATION_TYPE_CODE && !tenant.has('contributions.read')) {
+    if (type.code === DONATION_TYPE_CODE && !canIssueDonations(tenant)) {
       throw donationAccessForbidden();
     }
 

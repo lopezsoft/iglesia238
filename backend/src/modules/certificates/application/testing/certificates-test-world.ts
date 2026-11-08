@@ -401,10 +401,17 @@ class FakeCertificateRepository implements CertificateRepository {
     return Promise.resolve(true);
   }
 
-  countIssued(scope: TenantScope, range: { from: string; to: string }) {
+  countIssued(
+    scope: TenantScope,
+    range: { from: string; to: string },
+    typeCode?: string,
+  ) {
     const rows = this.data.certificates.filter(
       (c) =>
-        inScope(scope, c) && c.issuedOn >= range.from && c.issuedOn <= range.to,
+        inScope(scope, c) &&
+        c.issuedOn >= range.from &&
+        c.issuedOn <= range.to &&
+        (typeCode === undefined || c.typeCode === typeCode),
     );
     return Promise.resolve({
       issued: rows.length,

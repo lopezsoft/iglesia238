@@ -7,6 +7,7 @@ import type {
   CertificateListItemView,
   PageParams,
 } from '../certificate.models.js';
+import { restrictedFilter } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -34,7 +35,7 @@ export class ListCertificatesUseCase {
     const scope = readScope(tenant, input.congregationId);
     const page = await this.certificates.list(
       scope,
-      input.filter,
+      restrictedFilter(tenant, input.filter),
       input.paging,
     );
     return mapPage(page, toCertificateListItem);

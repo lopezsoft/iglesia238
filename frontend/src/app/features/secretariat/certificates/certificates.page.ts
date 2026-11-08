@@ -61,12 +61,22 @@ export class CertificatesPage {
   protected readonly tabs = TABS;
   protected readonly tab = signal<string>('certificates');
   protected readonly reloadKey = signal(0);
-  protected readonly canIssue = computed(() => this.auth.can('certificates.issue'));
+  /** The general permission, or the one of the treasury (donations certificate only). */
+  protected readonly canIssue = computed(
+    () => this.auth.can('certificates.issue') || this.auth.can('donation-certificates.issue'),
+  );
+  /** The treasury: no membership cards, and the figures are those of the donations certificate. */
+  protected readonly donationsOnly = computed(
+    () => !this.auth.can('certificates.issue') && this.auth.can('donation-certificates.issue'),
+  );
   protected readonly canReadMembers = computed(() => this.auth.can('members.read'));
   protected readonly hasSede = computed(() => this.auth.tenant().congregationId !== null);
   protected readonly scopeLabel = computed(() => this.auth.activeScope()?.label ?? '');
   protected readonly description = computed(() => {
     const sede = this.hasSede() ? sedeReference(this.scopeLabel()) : 'cada sede';
+    if (this.donationsOnly()) {
+      return `Emite el certificado de donaciones de los miembros de ${sede}: suma los aportes vigentes de un año para su declaración de renta.`;
+    }
     return `Emite certificados con numeración consecutiva y controla la vigencia de los carnés de ${sede}.`;
   });
 

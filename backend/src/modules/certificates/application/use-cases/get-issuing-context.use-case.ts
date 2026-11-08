@@ -8,6 +8,7 @@ import {
   CERTIFICATE_CONTEXT_READER,
   type CertificateContextReader,
 } from '../ports/certificate-context.reader.js';
+import { canSeeType } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -32,11 +33,12 @@ export class GetIssuingContextUseCase {
     if (!letterhead) {
       throw new NotFoundDomainException('La sede no existe.');
     }
-    const [signers, issuedByName, types] = await Promise.all([
+    const [signers, issuedByName, allTypes] = await Promise.all([
       this.context.findSigners(scope, tenant.userId, today),
       this.context.findUserName(tenant.userId),
       this.certificates.listTypes(scope),
     ]);
+    const types = allTypes.filter((type) => canSeeType(tenant, type.code));
     const last = await this.certificates.lastSequenceValues(
       scope,
       types.map((type) => type.code),

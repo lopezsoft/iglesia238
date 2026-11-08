@@ -123,6 +123,7 @@ const PERMISSIONS = [
   'socioeconomic-profiles.write',
   'certificates.issue',
   'certificate-types.manage',
+  'donation-certificates.issue',
   'attendance.write',
   'contributions.read',
   'contributions.write',
@@ -188,6 +189,7 @@ const ROLES: RoleSeed[] = [
     name: 'Tesorero(a)',
     permissions: [
       'contributions.read',
+      'donation-certificates.issue',
       'contributions.write',
       'cash-transactions.write',
       'tithe-settlements.write',

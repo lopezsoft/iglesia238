@@ -73,8 +73,10 @@ export interface CertificateRepository {
     at: Date,
     transaction: Transaction,
   ): Promise<boolean>;
+  /** Narrow the count to one type code when it is given. */
   countIssued(
     scope: TenantScope,
     range: { from: string; to: string },
+    typeCode?: string,
   ): Promise<{ issued: number; voided: number }>;
 }

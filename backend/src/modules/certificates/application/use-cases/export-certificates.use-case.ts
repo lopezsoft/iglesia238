@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { TenantContext } from '../../../../common/tenancy/tenant-context.js';
 import { readScope, toCertificateListItem } from '../certificate-mappers.js';
 import type { CertificateFilter } from '../certificate.models.js';
+import { restrictedFilter } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -54,7 +55,7 @@ export class ExportCertificatesUseCase {
     const scope = readScope(tenant, congregationId);
     const rows = await this.certificates.listForExport(
       scope,
-      filter,
+      restrictedFilter(tenant, filter),
       EXPORT_MAX_ROWS,
     );
     const lines = rows.map((record) => {

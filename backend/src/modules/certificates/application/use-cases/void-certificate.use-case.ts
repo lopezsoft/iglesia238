@@ -17,6 +17,7 @@ import {
 } from '../certificate-errors.js';
 import { toCertificateListItem } from '../certificate-mappers.js';
 import type { CertificateListItemView } from '../certificate.models.js';
+import { canSeeType } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -44,7 +45,7 @@ export class VoidCertificateUseCase {
   ): Promise<CertificateListItemView> {
     const scope = tenant.congregationScope();
     const existing = await this.certificates.findById(scope, input.id);
-    if (!existing) {
+    if (!existing || !canSeeType(tenant, existing.typeCode)) {
       throw certificateNotFound();
     }
     if (existing.voidedAt !== null) {

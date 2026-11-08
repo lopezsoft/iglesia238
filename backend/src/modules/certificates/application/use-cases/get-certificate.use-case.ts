@@ -3,6 +3,7 @@ import type { TenantContext } from '../../../../common/tenancy/tenant-context.js
 import { certificateNotFound } from '../certificate-errors.js';
 import { readScope, toCertificateDetail } from '../certificate-mappers.js';
 import type { CertificateDetailView } from '../certificate.models.js';
+import { canSeeType } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -20,7 +21,7 @@ export class GetCertificateUseCase {
     id: number,
   ): Promise<CertificateDetailView> {
     const record = await this.certificates.findById(readScope(tenant), id);
-    if (!record) {
+    if (!record || !canSeeType(tenant, record.typeCode)) {
       throw certificateNotFound();
     }
     return toCertificateDetail(record);

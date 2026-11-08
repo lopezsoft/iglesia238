@@ -11,6 +11,7 @@ import {
   DOCUMENT_PDF_RENDERER,
   type DocumentPdfRenderer,
 } from '../ports/document-pdf.renderer.js';
+import { canSeeType } from '../certificate-access.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,
@@ -30,7 +31,7 @@ export class RenderCertificatePdfUseCase {
 
   async execute(tenant: TenantContext, id: number): Promise<PdfFile> {
     const record = await this.certificates.findById(readScope(tenant), id);
-    if (!record) {
+    if (!record || !canSeeType(tenant, record.typeCode)) {
       throw certificateNotFound();
     }
     const content = await this.renderer.certificate({

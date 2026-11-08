@@ -12,7 +12,12 @@ function menuFor(role: RoleCode): string[] {
 
 describe('visibleNavGroups', () => {
   it('shows the platform admin only platform modules', () => {
-    expect(menuFor('PLATFORM_ADMIN')).toEqual(['Inicio', 'Denominaciones', 'Usuarios y roles', 'Auditoría']);
+    expect(menuFor('PLATFORM_ADMIN')).toEqual([
+      'Inicio',
+      'Denominaciones',
+      'Usuarios y roles',
+      'Auditoría',
+    ]);
   });
 
   it('shows the treasurer the accounting modules but no membership data', () => {
@@ -21,6 +26,12 @@ describe('visibleNavGroups', () => {
     expect(menu).toContain('Configuración contable');
     expect(menu).not.toContain('Miembros');
     expect(menu).not.toContain('Solicitudes');
+  });
+
+  it('shows the treasurer the certificates module, for the donations certificate only', () => {
+    expect(menuFor('TREASURER')).toContain('Certificados y carnés');
+    expect(ROLE_PERMISSIONS.TREASURER).toContain('donation-certificates.issue');
+    expect(ROLE_PERMISSIONS.TREASURER).not.toContain('certificates.issue');
   });
 
   it('shows the pastor read access to contributions but not the cash book', () => {
@@ -61,6 +72,7 @@ describe('visibleQuickActions', () => {
 
     expect(labels).toContain('Registrar aporte');
     expect(labels).toContain('Registrar movimiento de caja');
+    expect(labels).toContain('Emitir certificado');
     expect(labels).not.toContain('Nuevo miembro');
   });
 
@@ -68,6 +80,9 @@ describe('visibleQuickActions', () => {
     const granted = new Set<Permission>(ROLE_PERMISSIONS.PLATFORM_ADMIN);
     const canAny = (permissions: readonly Permission[]) => permissions.some((p) => granted.has(p));
 
-    expect(visibleQuickActions(canAny).map((action) => action.label)).toEqual(['Invitar usuario', 'Nueva denominación']);
+    expect(visibleQuickActions(canAny).map((action) => action.label)).toEqual([
+      'Invitar usuario',
+      'Nueva denominación',
+    ]);
   });
 });
