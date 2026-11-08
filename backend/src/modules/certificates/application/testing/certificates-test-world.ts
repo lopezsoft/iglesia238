@@ -14,12 +14,14 @@ import { Clock } from '../../../../common/time/bogota-time.js';
 import { buildTenantContext } from '../../../../../test/support/tenants.js';
 import { formatMemberCode } from '../../../../common/numbering/document-numbering.service.js';
 import type { BrandingSnapshot, Letterhead } from '../certificate-document.js';
-import { DocumentBrandingService } from '../document-branding.service.js';
+import {
+  DocumentBrandingService,
+  type DocumentBrandingReader,
+} from '../../../../common/branding/document-branding.js';
 import {
   StorageUnavailableError,
   type FileStorage,
 } from '../../../../common/storage/file-storage.port.js';
-import type { CertificateBrandingReader } from '../ports/certificate-branding.reader.js';
 import type {
   CardCandidateRecord,
   CardFilter,
@@ -205,7 +207,7 @@ class FakeDonationReader implements CertificateDonationReader {
   }
 }
 
-class FakeBrandingReader implements CertificateBrandingReader {
+class FakeBrandingReader implements DocumentBrandingReader {
   constructor(private readonly data: FakeData) {}
   findBranding() {
     return Promise.resolve(this.data.branding);
@@ -794,16 +796,16 @@ export function buildWorld() {
   const cards = new FakeCardRepository(data, transactions);
   const members = new FakeMemberReader(data);
   const context = new FakeContextReader(data);
+  const branding = new DocumentBrandingService(
+    new FakeBrandingReader(data),
+    new FakeStorage(data),
+  );
   const drafts = new CertificateDraftService(
     certificates,
     members,
     context,
     new FakeDonationReader(data),
-    new FakeBrandingReader(data),
-  );
-  const branding = new DocumentBrandingService(
-    new FakeBrandingReader(data),
-    new FakeStorage(data),
+    branding,
   );
 
   return {

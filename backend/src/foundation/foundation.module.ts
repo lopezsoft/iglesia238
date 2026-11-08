@@ -2,6 +2,10 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AUDIT_RECORDER } from '../common/audit/audit-recorder.port.js';
+import {
+  DOCUMENT_BRANDING_READER,
+  DocumentBrandingService,
+} from '../common/branding/document-branding.js';
 import { DEFAULT_COUNTRY_ISO } from '../common/geo/default-country.js';
 import { SmartLogger } from '../common/logging/smart-logger.service.js';
 import { EXPOSE_DEV_LINKS } from '../common/mail/dev-link.js';
@@ -9,6 +13,8 @@ import { MAILER } from '../common/mail/mailer.port.js';
 import { DocumentNumberingService } from '../common/numbering/document-numbering.service.js';
 import { DOCUMENT_SEQUENCE_STORE } from '../common/numbering/document-sequence.store.js';
 import { TRANSACTION_RUNNER } from '../common/persistence/transaction.js';
+import { REPORT_LETTERHEAD_READER } from '../common/reports/report-letterhead.js';
+import { REPORT_PDF_RENDERER } from '../common/reports/report-pdf.js';
 import { FILE_STORAGE } from '../common/storage/file-storage.port.js';
 import { RateLimitGuard } from '../common/rate-limit/rate-limit.guard.js';
 import { RateLimitService } from '../common/rate-limit/rate-limit.service.js';
@@ -21,9 +27,12 @@ import { TenantContextResolver } from '../common/tenancy/tenant-context.resolver
 import { Clock, SystemClock } from '../common/time/bogota-time.js';
 import { Environment, isMailConfigured } from '../config/environment.js';
 import { LoggingMailer } from '../infrastructure/mail/logging.mailer.js';
+import { PdfkitReportRenderer } from '../infrastructure/pdf/pdfkit-report.renderer.js';
 import { LocalFileStorage } from '../infrastructure/storage/local-file-storage.js';
 import { NodemailerMailer } from '../infrastructure/mail/nodemailer.mailer.js';
 import { PrismaAssignmentsReader } from '../infrastructure/prisma/prisma-assignments.reader.js';
+import { PrismaDocumentBrandingReader } from '../infrastructure/prisma/prisma-document-branding.reader.js';
+import { PrismaReportLetterheadReader } from '../infrastructure/prisma/prisma-report-letterhead.reader.js';
 import { PrismaAuditRecorder } from '../infrastructure/prisma/prisma-audit-recorder.js';
 import { PrismaDocumentSequenceStore } from '../infrastructure/prisma/prisma-document-sequence.store.js';
 import { PrismaTransactionRunner } from '../infrastructure/prisma/prisma-transaction.js';
@@ -119,6 +128,16 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
         return storage;
       },
     },
+    {
+      provide: DOCUMENT_BRANDING_READER,
+      useClass: PrismaDocumentBrandingReader,
+    },
+    DocumentBrandingService,
+    { provide: REPORT_PDF_RENDERER, useClass: PdfkitReportRenderer },
+    {
+      provide: REPORT_LETTERHEAD_READER,
+      useClass: PrismaReportLetterheadReader,
+    },
     { provide: TRANSACTION_RUNNER, useClass: PrismaTransactionRunner },
     { provide: AUDIT_RECORDER, useClass: PrismaAuditRecorder },
     { provide: DOCUMENT_SEQUENCE_STORE, useClass: PrismaDocumentSequenceStore },
@@ -137,6 +156,9 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
     EXPOSE_DEV_LINKS,
     DEFAULT_COUNTRY_ISO,
     FILE_STORAGE,
+    DocumentBrandingService,
+    REPORT_PDF_RENDERER,
+    REPORT_LETTERHEAD_READER,
     TRANSACTION_RUNNER,
     AUDIT_RECORDER,
     DocumentNumberingService,

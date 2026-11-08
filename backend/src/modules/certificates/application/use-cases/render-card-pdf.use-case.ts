@@ -7,7 +7,7 @@ import {
   cardStatusOf,
   readScope,
 } from '../certificate-mappers.js';
-import { DocumentBrandingService } from '../document-branding.service.js';
+import { DocumentBrandingService } from '../../../../common/branding/document-branding.js';
 import type { PdfFile } from '../certificate.models.js';
 import {
   DOCUMENT_PDF_RENDERER,

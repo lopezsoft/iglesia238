@@ -39,6 +39,9 @@ export interface CashBookOptions {
   readonly accounts: readonly CashAccountOption[];
 }
 
+/** Formats of the monthly report of the book: printable and for a spreadsheet. */
+export type CashBookReportFormat = 'pdf' | 'csv';
+
 export interface CashBookQuery {
   readonly fundId: number;
   readonly periodId: number;

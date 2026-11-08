@@ -46,6 +46,7 @@ class FakeRepository extends CashBookRepository {
   closePeriod = () => throwError(() => new Error('not used'));
   consolidationPreview = () => throwError(() => new Error('not used'));
   consolidate = () => throwError(() => new Error('not used'));
+  report = () => throwError(() => new Error('not used'));
 }
 
 async function render() {

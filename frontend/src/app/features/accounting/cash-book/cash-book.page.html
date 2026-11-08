@@ -193,7 +193,11 @@
                   Solo las cuentas imputables del plan de cuentas reciben movimientos. El saldo sigue el orden de registro, también al filtrar.
                 </p>
               </div>
+              <app-export-actions [formats]="['pdf', 'csv']" [disabled]="downloading()" (export)="downloadReport($event)" />
             </div>
+            @if (reportError(); as message) {
+              <div class="alert alert--danger moves__alert" role="alert">{{ message }}</div>
+            }
             <div class="toolbar moves__filters" role="search" aria-label="Filtrar movimientos">
               <app-segmented-control [options]="directionOptions" [value]="direction()" (valueChange)="setDirection($event)" ariaLabel="Sentido del movimiento" />
               <div class="field">

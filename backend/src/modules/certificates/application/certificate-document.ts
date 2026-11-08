@@ -1,7 +1,11 @@
 // Pure rules of the printed documents. The text stored as a certificate snapshot is built here, so the
 // preview, the issued document and the PDF always print the same thing.
 
+import type { BrandingSnapshot } from '../../../common/branding/document-branding.js';
 import { amountInWords, formatPesos } from './amount-in-words.js';
+
+/** The logo and color a certificate was issued with: every reprint prints the same. It lives in the shared branding module. */
+export type { BrandingSnapshot };
 
 /** Code of the certificate type that adds up the donations of a member in a year. */
 export const DONATION_TYPE_CODE = 'DON';
@@ -86,14 +90,6 @@ export interface DonationInput {
     readonly receipts: number;
     readonly amountCents: number;
   }[];
-}
-
-/** The visual identity a certificate was issued with: every reprint prints the same, even if the denomination changes it. */
-export interface BrandingSnapshot {
-  /** Key of the logo in the file storage (branding/<id>/logo-<hash>.png), or null. */
-  readonly logoKey: string | null;
-  /** #RRGGBB, or null for the default color of the system. */
-  readonly primaryColor: string | null;
 }
 
 export interface Letterhead {

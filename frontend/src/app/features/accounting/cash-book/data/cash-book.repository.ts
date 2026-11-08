@@ -1,7 +1,9 @@
 import { Observable } from 'rxjs';
 import { Page } from '../../../../shared/utils/pagination';
+import { ExportedFile } from '../../data/accounting-http';
 import {
   CashBookOptions,
+  CashBookReportFormat,
   CashBookQuery,
   CashBookView,
   CashMovementReceipt,
@@ -37,4 +39,6 @@ export abstract class CashBookRepository {
   abstract voucher(id: number): Observable<VoucherDetail>;
   /** The receipt or voucher ready to print (PDF). A failure keeps the API's code and message. */
   abstract voucherPdf(id: number): Observable<Blob>;
+  /** The whole book of a fund in a month, printable (PDF) or for a spreadsheet (CSV), with the name the API proposes. */
+  abstract report(format: CashBookReportFormat, fundId: number, periodId: number): Observable<ExportedFile>;
 }

@@ -1,6 +1,6 @@
 {
   "name": "church-management-api",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Multi-tenant church management API: membership, secretariat and accounting",
   "author": "LopezSoft SAS <contact@lewislopez.io>",
   "private": true,

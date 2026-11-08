@@ -12,7 +12,7 @@ import {
   type DocumentPdfRenderer,
 } from '../ports/document-pdf.renderer.js';
 import { canSeeType } from '../certificate-access.js';
-import { DocumentBrandingService } from '../document-branding.service.js';
+import { DocumentBrandingService } from '../../../../common/branding/document-branding.js';
 import {
   CERTIFICATE_REPOSITORY,
   type CertificateRepository,

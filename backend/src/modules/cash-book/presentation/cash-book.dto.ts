@@ -67,6 +67,21 @@ export class CashBookQueryDto extends PageQueryDto {
   search?: string;
 }
 
+/** The report of a month: the whole book of a fund, with no filters or pages. */
+export class CashBookReportQueryDto {
+  @ApiProperty({ description: 'Fondo del libro.' })
+  @Type(() => Number)
+  @IsInt({ message: 'Elige el fondo.' })
+  @Min(1)
+  fundId!: number;
+
+  @ApiProperty({ description: 'Periodo contable de la sede.' })
+  @Type(() => Number)
+  @IsInt({ message: 'Elige el periodo.' })
+  @Min(1)
+  periodId!: number;
+}
+
 export class RecordMovementDto {
   @ApiProperty() @IsInt({ message: 'Elige el fondo.' }) @Min(1) fundId!: number;
 

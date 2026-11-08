@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { apiUrl } from '../../../../core/http/api-url';
 import { Page } from '../../../../shared/utils/pagination';
-import { toParams } from '../../data/accounting-http';
+import { ExportedFile, toExportedFile, toParams } from '../../data/accounting-http';
 import {
   CashBookOptions,
+  CashBookReportFormat,
   CashBookQuery,
   CashBookView,
   CashMovementReceipt,
@@ -92,5 +93,16 @@ export class HttpCashBookRepository extends CashBookRepository {
       responseType: 'blob',
       headers: { Accept: 'application/pdf' },
     });
+  }
+
+  override report(format: CashBookReportFormat, fundId: number, periodId: number): Observable<ExportedFile> {
+    return this.http
+      .get(apiUrl(`/accounting/cash-book/report.${format}`), {
+        params: toParams({ fundId, periodId }),
+        headers: { Accept: format === 'pdf' ? 'application/pdf' : 'text/csv' },
+        observe: 'response',
+        responseType: 'blob',
+      })
+      .pipe(map((response) => toExportedFile(response, `libro-de-caja.${format}`)));
   }
 }

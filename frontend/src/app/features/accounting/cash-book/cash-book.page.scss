@@ -49,6 +49,11 @@
 
 .moves {
   &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
     padding: $space-5 $space-5 0;
 
     h2 {
@@ -67,5 +72,9 @@
 
   &__search {
     flex: 1 1 14rem;
+  }
+
+  &__alert {
+    margin: $space-4 $space-5 0;
   }
 }

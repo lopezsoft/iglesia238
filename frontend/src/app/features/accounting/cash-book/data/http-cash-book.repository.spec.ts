@@ -114,4 +114,34 @@ describe('HttpCashBookRepository', () => {
 
     expect(await pdf).toBeInstanceOf(Blob);
   });
+
+  it('downloads the month of a fund as a PDF with the name the API proposes', async () => {
+    const { repository, backend } = setup();
+
+    const file = firstValueFrom(repository.report('pdf', 1, 11));
+    const request = backend.expectOne((req) => req.url === '/api/accounting/cash-book/report.pdf');
+    expect(request.request.params.get('fundId')).toBe('1');
+    expect(request.request.params.get('periodId')).toBe('11');
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.headers.get('Accept')).toBe('application/pdf');
+    request.flush(new Blob(['%PDF-']), {
+      headers: { 'Content-Disposition': 'attachment; filename="libro-de-caja-2026-11-fondo-general.pdf"' },
+    });
+
+    const done = await file;
+    expect(done.filename).toBe('libro-de-caja-2026-11-fondo-general.pdf');
+    expect(done.blob).toBeInstanceOf(Blob);
+  });
+
+  it('downloads the same month as a CSV, and falls back to a name when the header is missing', async () => {
+    const { repository, backend } = setup();
+
+    const file = firstValueFrom(repository.report('csv', 2, 12));
+    const request = backend.expectOne((req) => req.url === '/api/accounting/cash-book/report.csv');
+    expect(request.request.params.get('fundId')).toBe('2');
+    expect(request.request.headers.get('Accept')).toBe('text/csv');
+    request.flush(new Blob(['a;b']));
+
+    expect((await file).filename).toBe('libro-de-caja.csv');
+  });
 });

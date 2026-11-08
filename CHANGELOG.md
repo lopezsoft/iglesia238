@@ -8,6 +8,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.22.0 - 2026-11-08
+
+### Added
+
+- **Libro de caja en PDF y CSV (`GET /api/accounting/cash-book/report.pdf` y `report.csv`):** la pantalla «Libro de caja» tiene los botones «Descargar PDF» y «Descargar CSV». El informe trae **todo el mes del fondo elegido** (no solo la página ni los filtros en pantalla): saldo inicial, cada línea con su saldo corrido, totales de entradas y salidas, saldo final y las firmas de tesorería, pastor y fiscal. Las líneas reversadas y sus reversas se conservan en gris y marcadas, porque el saldo ya las incluye. Usa las mismas cifras y el mismo permiso (`cash-transactions.write`) que la pantalla. El CSV sale en UTF-8 con BOM y punto y coma, con cifras sin separador de miles para poder sumarlas y con las celdas que una hoja de cálculo ejecutaría como fórmula neutralizadas. Un mes de más de 5000 líneas se rechaza con un mensaje claro en vez de generar un archivo inmanejable.
+- **Motor de informes PDF (`common/reports`, `infrastructure/pdf/pdfkit-report.renderer.ts`):** un único generador de informes tabulares que cualquier módulo puede usar con solo describir columnas y filas. Pone el membrete de la sede (denominación, razón social y NIT), el logo y el color institucional de la denominación, una franja de cifras, la tabla con encabezado repetido y paginación automática, texto que se ajusta dentro de la celda, fila de totales, notas, el bloque de firmas siempre completo en una sola hoja, y el pie «Generado el … · Página i de n». Admite hoja vertical u horizontal.
+
+### Changed
+
+- **El logo y el color de la denominación se leen desde un servicio compartido (`common/branding`):** `DocumentBrandingService` y su lector salieron del módulo de certificados para que los informes y los certificados usen exactamente la misma identidad. No cambia nada para quien usa la aplicación; los certificados y carnés se imprimen igual que en la 0.21.0.
+
 ## 0.21.0 - 2026-11-08
 
 ### Added

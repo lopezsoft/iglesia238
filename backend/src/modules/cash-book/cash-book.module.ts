@@ -3,6 +3,7 @@ import { CONGREGATION_LOOKUP } from '../../common/accounting/congregation-lookup
 import { PrismaCongregationLookup } from '../../infrastructure/prisma/prisma-congregation-lookup.js';
 import { PrismaModule } from '../../infrastructure/prisma/prisma.module.js';
 import { CashBookQueryService } from './application/cash-book-query.service.js';
+import { CashBookReportService } from './application/cash-book-report.service.js';
 import { CASH_BOOK_REPOSITORY } from './application/cash-book.repository.js';
 import { CashMovementsService } from './application/cash-movements.service.js';
 import { ConsolidationService } from './application/consolidation.service.js';
@@ -26,6 +27,7 @@ import {
   controllers: [CashBookController, PeriodCloseController, VouchersController],
   providers: [
     CashBookQueryService,
+    CashBookReportService,
     CashMovementsService,
     ConsolidationService,
     PeriodCloseService,

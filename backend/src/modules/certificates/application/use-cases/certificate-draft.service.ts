@@ -32,10 +32,7 @@ import {
   CERTIFICATE_CONTEXT_READER,
   type CertificateContextReader,
 } from '../ports/certificate-context.reader.js';
-import {
-  CERTIFICATE_BRANDING_READER,
-  type CertificateBrandingReader,
-} from '../ports/certificate-branding.reader.js';
+import { DocumentBrandingService } from '../../../../common/branding/document-branding.js';
 import {
   CERTIFICATE_DONATION_READER,
   type CertificateDonationReader,
@@ -90,8 +87,7 @@ export class CertificateDraftService {
     private readonly context: CertificateContextReader,
     @Inject(CERTIFICATE_DONATION_READER)
     private readonly donations: CertificateDonationReader,
-    @Inject(CERTIFICATE_BRANDING_READER)
-    private readonly brandingReader: CertificateBrandingReader,
+    private readonly branding: DocumentBrandingService,
   ) {}
 
   async prepare(
@@ -150,7 +146,7 @@ export class CertificateDraftService {
           )
         : null;
 
-    const branding = await this.brandingReader.findBranding(scope);
+    const branding = await this.branding.snapshotOf(scope);
 
     return {
       type,

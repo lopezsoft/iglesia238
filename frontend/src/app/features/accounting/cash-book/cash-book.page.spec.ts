@@ -4,10 +4,13 @@ import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { DomainError } from '../../../core/errors/domain-error';
+import { FileDownloadService } from '../../../shared/utils/file-download.service';
 import { Page } from '../../../shared/utils/pagination';
+import { ExportedFile } from '../data/accounting-http';
 import { CashBookPage } from './cash-book.page';
 import {
   CashBookOptions,
+  CashBookReportFormat,
   CashBookQuery,
   CashBookRow,
   CashBookView,
@@ -119,6 +122,12 @@ class FakeRepository extends CashBookRepository {
   voucherPdf(): Observable<Blob> {
     throw new Error('not used');
   }
+  readonly reports: Array<{ format: string; fundId: number; periodId: number }> = [];
+  report$: Observable<ExportedFile> = of({ blob: new Blob(['x']), filename: 'libro-de-caja-2026-11-fondo-local.pdf' });
+  override report(format: CashBookReportFormat, fundId: number, periodId: number): Observable<ExportedFile> {
+    this.reports.push({ format, fundId, periodId });
+    return this.report$;
+  }
 }
 
 async function render(repository = new FakeRepository()) {
@@ -126,14 +135,24 @@ async function render(repository = new FakeRepository()) {
     can: () => true,
     tenant: signal({ denominationId: 1, congregationId: 10 }),
   };
+  const saved: Array<{ blob: Blob; filename: string }> = [];
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: CashBookRepository, useValue: repository }, { provide: AuthService, useValue: auth }],
+    providers: [
+      provideRouter([]),
+      { provide: CashBookRepository, useValue: repository },
+      { provide: AuthService, useValue: auth },
+      { provide: FileDownloadService, useValue: { save: (blob: Blob, filename: string) => saved.push({ blob, filename }) } },
+    ],
   });
   const fixture = TestBed.createComponent(CashBookPage);
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return { fixture, element: fixture.nativeElement as HTMLElement, repository };
+  return { fixture, element: fixture.nativeElement as HTMLElement, repository, saved };
+}
+
+function exportButton(element: HTMLElement, label: string): HTMLButtonElement {
+  return [...element.querySelectorAll<HTMLButtonElement>('app-export-actions button')].find((b) => b.textContent?.trim() === label)!;
 }
 
 describe('CashBookPage', () => {
@@ -177,6 +196,44 @@ describe('CashBookPage', () => {
     expect(repository.queries.at(-1)).toMatchObject({ direction: 'OUT', page: 1 });
     // The opening row only makes sense in the unfiltered book.
     expect(element.textContent).not.toContain('Saldo inicial del periodo');
+  });
+
+  it('downloads the whole month of the selected fund as a PDF, ignoring the page and the filters on screen', async () => {
+    const { fixture, repository, saved, element } = await render();
+    element.querySelectorAll<HTMLButtonElement>('app-segmented-control button').forEach((b) => b.textContent?.trim() === 'Salidas' && b.click());
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    exportButton(element, 'PDF').click();
+    fixture.detectChanges();
+
+    expect(repository.reports).toEqual([{ format: 'pdf', fundId: 1, periodId: 11 }]);
+    expect(saved).toHaveLength(1);
+    expect(saved[0].filename).toBe('libro-de-caja-2026-11-fondo-local.pdf');
+  });
+
+  it('downloads the month as a CSV too', async () => {
+    const { fixture, repository, element } = await render();
+
+    exportButton(element, 'CSV').click();
+    fixture.detectChanges();
+
+    expect(repository.reports).toEqual([{ format: 'csv', fundId: 1, periodId: 11 }]);
+  });
+
+  it('says why the report failed (a month too big, for instance) and lets the user try again', async () => {
+    const repository = new FakeRepository();
+    repository.report$ = throwError(
+      () => new DomainError('CASH_BOOK_REPORT_TOO_LARGE', 'El libro de este mes es demasiado grande para un solo informe.', 422),
+    );
+    const { fixture, saved, element } = await render(repository);
+
+    exportButton(element, 'PDF').click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain('demasiado grande');
+    expect(saved).toHaveLength(0);
+    expect(exportButton(element, 'PDF').disabled).toBe(false);
   });
 
   it('explains how to open the first period when the sede has none', async () => {

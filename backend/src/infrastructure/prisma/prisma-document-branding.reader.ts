@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { TenantScope } from '../../../common/tenancy/tenant-scope.js';
-import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
-import type { BrandingSnapshot } from '../application/certificate-document.js';
-import type { CertificateBrandingReader } from '../application/ports/certificate-branding.reader.js';
+import type {
+  BrandingSnapshot,
+  DocumentBrandingReader,
+} from '../../common/branding/document-branding.js';
+import type { TenantScope } from '../../common/tenancy/tenant-scope.js';
+import { PrismaService } from './prisma.service.js';
 
 @Injectable()
-export class PrismaCertificateBrandingReader implements CertificateBrandingReader {
+export class PrismaDocumentBrandingReader implements DocumentBrandingReader {
   constructor(private readonly prisma: PrismaService) {}
 
   async findBranding(scope: TenantScope): Promise<BrandingSnapshot> {

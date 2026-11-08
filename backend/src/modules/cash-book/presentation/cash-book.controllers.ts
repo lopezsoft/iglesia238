@@ -25,7 +25,7 @@ import {
   CATALOG_READ_PERMISSIONS,
 } from '../../../common/accounting/accounting-permissions.js';
 import type { FastifyReply } from 'fastify';
-import { sendPdf } from '../../../common/http/document-response.js';
+import { sendCsv, sendPdf } from '../../../common/http/document-response.js';
 import { CurrentTenant } from '../../../common/security/current-user.decorators.js';
 import {
   RequireAnyPermission,
@@ -34,6 +34,7 @@ import {
 import { ApiTenantScope } from '../../../common/tenancy/api-tenant-scope.decorator.js';
 import { TenantContext } from '../../../common/tenancy/tenant-context.js';
 import { CashBookQueryService } from '../application/cash-book-query.service.js';
+import { CashBookReportService } from '../application/cash-book-report.service.js';
 import { CashMovementsService } from '../application/cash-movements.service.js';
 import { ConsolidationService } from '../application/consolidation.service.js';
 import { PeriodCloseService } from '../application/period-close.service.js';
@@ -42,6 +43,7 @@ import { VouchersService } from '../application/vouchers.service.js';
 import {
   CashBookOptionsDto,
   CashBookQueryDto,
+  CashBookReportQueryDto,
   CashBookViewDto,
   CashMovementReceiptDto,
   CashPeriodDto,
@@ -65,6 +67,7 @@ const CASH = AccountingPermissions.cashWrite;
 export class CashBookController {
   constructor(
     private readonly queries: CashBookQueryService,
+    private readonly report: CashBookReportService,
     private readonly movements: CashMovementsService,
     private readonly consolidation: ConsolidationService,
   ) {}
@@ -97,6 +100,43 @@ export class CashBookController {
     @Query() query: CashBookQueryDto,
   ): Promise<CashBookViewDto> {
     return this.queries.view(tenant, query);
+  }
+
+  @Get('report.pdf')
+  @RequirePermissions(CASH)
+  @ApiOperation({
+    summary: 'Libro de caja de un fondo en un mes, en PDF',
+    description:
+      'Hoja horizontal con el membrete de la denominación, saldo inicial, todas las líneas con su saldo corrido, totales del mes y firmas de tesorería, pastor y fiscal.',
+  })
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiNotFoundResponse({
+    description: 'El periodo o el fondo no existen en la sede',
+  })
+  async reportPdf(
+    @CurrentTenant() tenant: TenantContext,
+    @Query() query: CashBookReportQueryDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return sendPdf(reply, await this.report.pdf(tenant, query));
+  }
+
+  @Get('report.csv')
+  @RequirePermissions(CASH)
+  @ApiOperation({
+    summary: 'Libro de caja de un fondo en un mes, en CSV',
+    description:
+      'UTF-8 con BOM y separador punto y coma, para abrirlo en una hoja de cálculo. Las cifras van sin separador de miles para poder sumarlas.',
+  })
+  @ApiProduces('text/csv')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async reportCsv(
+    @CurrentTenant() tenant: TenantContext,
+    @Query() query: CashBookReportQueryDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return sendCsv(reply, await this.report.csv(tenant, query));
   }
 
   @Post('transactions')

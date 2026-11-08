@@ -6,6 +6,7 @@ import { Subject, debounceTime } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { userMessage } from '../../../core/errors/domain-error';
 import { MoneyPipe, formatMoney } from '../../../shared/pipes/money.pipe';
+import { ExportActionsComponent, ExportFormat } from '../../../shared/ui/export-actions.component';
 import {
   EmptyStateComponent,
   ErrorBannerComponent,
@@ -19,6 +20,7 @@ import { SegmentedControlComponent, SegmentOption } from '../../../shared/ui/seg
 import { StatCardComponent } from '../../../shared/ui/stat-card.component';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge.component';
 import { TabCardItem, TabCardsComponent } from '../../../shared/ui/tab-cards.component';
+import { FileDownloadService } from '../../../shared/utils/file-download.service';
 import { displayDate } from '../../../shared/utils/period';
 import { CashDirection } from '../data/accounting.models';
 import { CashMovementsTableComponent } from './components/cash-movements-table.component';
@@ -56,6 +58,7 @@ const TABS: readonly TabCardItem[] = [
     DatePipe,
     EmptyStateComponent,
     ErrorBannerComponent,
+    ExportActionsComponent,
     IconComponent,
     LoadingComponent,
     MoneyPipe,
@@ -77,6 +80,7 @@ const TABS: readonly TabCardItem[] = [
 export class CashBookPage {
   private readonly repository = inject(CashBookRepository);
   private readonly auth = inject(AuthService);
+  private readonly downloads = inject(FileDownloadService);
 
   protected readonly canWrite = computed(() => this.auth.can('cash-transactions.write'));
   protected readonly loadErrorMessage = userMessage;
@@ -141,6 +145,8 @@ export class CashBookPage {
   });
 
   protected readonly flash = signal<string | null>(null);
+  protected readonly downloading = signal(false);
+  protected readonly reportError = signal<string | null>(null);
   protected readonly newOpen = signal(false);
   protected readonly closeOpen = signal(false);
   protected readonly consolidateOpen = signal(false);
@@ -199,6 +205,27 @@ export class CashBookPage {
     this.typedSearch.pipe(debounceTime(350), takeUntilDestroyed()).subscribe((text) => this.search.set(text.trim()));
   }
 
+  /** Downloads the whole month of the selected fund (not just the page or the filters on screen). */
+  protected downloadReport(format: ExportFormat): void {
+    const fundId = this.fundId();
+    const periodId = this.periodId();
+    if (fundId === null || periodId === null || this.downloading() || (format !== 'pdf' && format !== 'csv')) {
+      return;
+    }
+    this.downloading.set(true);
+    this.reportError.set(null);
+    this.repository.report(format, fundId, periodId).subscribe({
+      next: (file) => {
+        this.downloads.save(file.blob, file.filename);
+        this.downloading.set(false);
+      },
+      error: (error: unknown) => {
+        this.reportError.set(userMessage(error));
+        this.downloading.set(false);
+      },
+    });
+  }
+
   protected selectTab(id: string): void {
     this.tab.set(id === 'vouchers' ? 'vouchers' : 'book');
   }
@@ -206,11 +233,13 @@ export class CashBookPage {
   protected selectFund(event: Event): void {
     this.fundId.set(Number((event.target as HTMLSelectElement).value));
     this.flash.set(null);
+    this.reportError.set(null);
   }
 
   protected selectPeriod(event: Event): void {
     this.periodId.set(Number((event.target as HTMLSelectElement).value));
     this.flash.set(null);
+    this.reportError.set(null);
   }
 
   protected goToPeriod(period: CashPeriodOption): void {
