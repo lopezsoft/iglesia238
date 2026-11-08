@@ -16,6 +16,12 @@ import { VerifyCertificateUseCase } from './application/use-cases/verify-certifi
 import { HmacCertificateVerificationLinks } from './infrastructure/hmac-certificate-verification-links.js';
 import { PrismaCertificateVerificationReader } from './infrastructure/prisma-certificate-verification.reader.js';
 import { PublicCertificatesController } from './presentation/public-certificates.controller.js';
+import {
+  ListCertificateTypeTemplatesUseCase,
+  PreviewCertificateTemplateUseCase,
+  UpdateCertificateTypeUseCase,
+} from './application/use-cases/certificate-type-templates.use-cases.js';
+import { CertificateTypeTemplatesController } from './presentation/certificate-type-templates.controller.js';
 import { DOCUMENT_PDF_RENDERER } from './application/ports/document-pdf.renderer.js';
 import { MEMBERSHIP_CARD_REPOSITORY } from './application/ports/membership-card.repository.js';
 import { CertificateDraftService } from './application/use-cases/certificate-draft.service.js';
@@ -58,6 +64,7 @@ import { MembershipCardsController } from './presentation/membership-cards.contr
     CertificateTypesController,
     MembershipCardsController,
     PublicCertificatesController,
+    CertificateTypeTemplatesController,
   ],
   providers: [
     { provide: CERTIFICATE_REPOSITORY, useClass: PrismaCertificateRepository },
@@ -97,6 +104,9 @@ import { MembershipCardsController } from './presentation/membership-cards.contr
       },
     },
     VerifyCertificateUseCase,
+    ListCertificateTypeTemplatesUseCase,
+    UpdateCertificateTypeUseCase,
+    PreviewCertificateTemplateUseCase,
     CertificateDraftService,
     GetIssuingContextUseCase,
     ListCertificateTypesUseCase,

@@ -20,6 +20,7 @@ import type { CertificateSnapshot } from '../application/certificate-document.js
 import type {
   CertificateFilter,
   CertificateRecord,
+  CertificateTypeChanges,
   CertificateTypeRecord,
   PageParams,
 } from '../application/certificate.models.js';
@@ -76,6 +77,25 @@ export class PrismaCertificateRepository
     const row = await this.prisma.certificateType.findFirst({
       where: { id: typeId, denominationId: scope.denominationId },
     });
+    return row ? toTypeRecord(row) : null;
+  }
+
+  async updateType(
+    scope: TenantScope,
+    typeId: number,
+    changes: CertificateTypeChanges,
+    transaction: Transaction,
+  ): Promise<CertificateTypeRecord | null> {
+    const client = clientOf(this.prisma, transaction);
+    const where = { id: typeId, denominationId: scope.denominationId };
+    const result = await client.certificateType.updateMany({
+      where,
+      data: changes,
+    });
+    if (result.count !== 1) {
+      return null;
+    }
+    const row = await client.certificateType.findFirst({ where });
     return row ? toTypeRecord(row) : null;
   }
 
@@ -260,6 +280,10 @@ function toTypeRecord(row: {
   code: string;
   name: string;
   template: string | null;
+  introTemplate: string | null;
+  closingTemplate: string | null;
+  pastorTitleTemplate: string | null;
+  secretaryTitleTemplate: string | null;
   validityDays: number | null;
 }): CertificateTypeRecord {
   return {
@@ -267,6 +291,10 @@ function toTypeRecord(row: {
     code: row.code,
     name: row.name,
     template: row.template,
+    introTemplate: row.introTemplate,
+    closingTemplate: row.closingTemplate,
+    pastorTitleTemplate: row.pastorTitleTemplate,
+    secretaryTitleTemplate: row.secretaryTitleTemplate,
     validityDays: row.validityDays,
   };
 }

@@ -70,6 +70,11 @@ export interface SnapshotInput {
   readonly typeName: string;
   /** Text of CertificateType.template, when the denomination customized it. */
   readonly template: string | null;
+  /** Customized intro, closing and signer titles of the type (null or missing: the default text). */
+  readonly introTemplate?: string | null;
+  readonly closingTemplate?: string | null;
+  readonly pastorTitleTemplate?: string | null;
+  readonly secretaryTitleTemplate?: string | null;
   readonly issuedOn: string;
   readonly letterhead: Letterhead;
   readonly pastorName: string | null;
@@ -146,7 +151,7 @@ export function sedeReference(congregationName: string): string {
     : `la sede ${congregationName}`;
 }
 
-/** Placeholders a denomination can use in CertificateType.template. */
+/** Placeholders a denomination can use in any of the texts of a CertificateType. */
 export const TEMPLATE_PLACEHOLDERS = [
   'memberName',
   'document',
@@ -155,7 +160,69 @@ export const TEMPLATE_PLACEHOLDERS = [
   'sede',
   'joinedOn',
   'baptismDate',
+  'denomination',
+  'city',
+  'issuedOn',
+  'pastorName',
+  'secretaryName',
 ] as const;
+
+export type TemplatePlaceholder = (typeof TEMPLATE_PLACEHOLDERS)[number];
+
+/** What each placeholder prints; the editor shows it next to the placeholder. */
+export const PLACEHOLDER_DESCRIPTIONS: Readonly<
+  Record<TemplatePlaceholder, string>
+> = {
+  memberName: 'Nombre completo del miembro',
+  document: 'Documento del miembro, por ejemplo «CC 52.418.916»',
+  memberCode:
+    'Código del miembro en el libro de registro, por ejemplo «SC-0130»',
+  congregation: 'Nombre de la sede, por ejemplo «Sede Central»',
+  sede: 'La sede con su artículo, por ejemplo «la Sede Central»',
+  joinedOn: 'Fecha de ingreso, por ejemplo «10 de abril de 2008»',
+  baptismDate: 'Fecha del bautismo en agua',
+  denomination: 'Nombre de la denominación',
+  city: 'Ciudad de la sede',
+  issuedOn: 'Fecha de expedición, por ejemplo «2 de noviembre de 2026»',
+  pastorName: 'Nombre del pastor que firma',
+  secretaryName: 'Nombre de quien firma por la secretaría',
+};
+
+/** The text each part prints when the type has no customized one (shown as a hint in the editor). */
+export const DEFAULT_TEXT_HINTS = {
+  intro: 'La Secretaría de {{sede}} hace constar',
+  closing:
+    'Se expide en {{city}}, el {{issuedOn}}, a solicitud del interesado(a).',
+  pastorTitle: 'Pastor(a), {{congregation}}',
+  secretaryTitle: 'Secretario(a), {{congregation}}',
+} as const;
+
+const PLACEHOLDER_PATTERN = /\{\{\s*(\w+)\s*\}\}/g;
+
+/**
+ * Problems of a customized text: placeholders that do not exist (they would silently print nothing) and
+ * braces that do not form a placeholder (they would be printed as they are).
+ */
+export function templateProblems(text: string): {
+  readonly unknown: readonly string[];
+  readonly malformed: boolean;
+} {
+  const known = new Set<string>(TEMPLATE_PLACEHOLDERS);
+  const unknown = new Set<string>();
+  let recognized = 0;
+  for (const match of text.matchAll(PLACEHOLDER_PATTERN)) {
+    recognized += 1;
+    if (!known.has(match[1])) {
+      unknown.add(match[1]);
+    }
+  }
+  const opened = (text.match(/\{\{/g) ?? []).length;
+  const closed = (text.match(/\}\}/g) ?? []).length;
+  return {
+    unknown: [...unknown],
+    malformed: opened !== recognized || closed !== recognized,
+  };
+}
 
 function renderTemplate(
   template: string,
@@ -221,20 +288,34 @@ export function buildCertificateSnapshot(
   const { letterhead, member } = input;
   const sede = sedeReference(letterhead.congregationName);
   const notes = input.notes?.trim() || null;
+  const values: Readonly<Record<TemplatePlaceholder, string>> = {
+    memberName: member.fullName,
+    document: member.documentLabel,
+    memberCode: member.code,
+    congregation: letterhead.congregationName,
+    sede,
+    joinedOn: member.joinedOn ? longDate(member.joinedOn) : '',
+    baptismDate: member.waterBaptismOn ? longDate(member.waterBaptismOn) : '',
+    denomination: letterhead.denominationName,
+    city: letterhead.cityName,
+    issuedOn: longDate(input.issuedOn),
+    pastorName: input.pastorName ?? '',
+    secretaryName: input.secretaryName ?? '',
+  };
   const body =
     input.template && input.template.trim() !== ''
-      ? renderTemplate(input.template, {
-          memberName: member.fullName,
-          document: member.documentLabel,
-          memberCode: member.code,
-          congregation: letterhead.congregationName,
-          sede,
-          joinedOn: member.joinedOn ? longDate(member.joinedOn) : '',
-          baptismDate: member.waterBaptismOn
-            ? longDate(member.waterBaptismOn)
-            : '',
-        })
+      ? renderTemplate(input.template, values)
       : defaultBody(input.typeCode, member, sede);
+  /** A customized text, or the default when there is none or it renders to nothing. */
+  const customized = (
+    template: string | null | undefined,
+    fallback: string,
+  ): string => {
+    if (!template || template.trim() === '') {
+      return fallback;
+    }
+    return renderTemplate(template, values) || fallback;
+  };
   const place = letterhead.cityName ? ` en ${letterhead.cityName}` : '';
 
   return {
@@ -246,14 +327,26 @@ export function buildCertificateSnapshot(
     taxId: letterhead.taxId,
     congregationName: letterhead.congregationName,
     locationLine: letterhead.locationLine,
-    intro: `La Secretaría de ${sede} hace constar`,
+    intro: customized(
+      input.introTemplate,
+      `La Secretaría de ${sede} hace constar`,
+    ),
     body,
     notes,
-    closing: `Se expide${place ? `${place},` : ''} el ${longDate(input.issuedOn)}, a solicitud del interesado(a).`,
+    closing: customized(
+      input.closingTemplate,
+      `Se expide${place ? `${place},` : ''} el ${longDate(input.issuedOn)}, a solicitud del interesado(a).`,
+    ),
     pastorName: input.pastorName ?? 'Pastor(a) de la sede',
-    pastorTitle: `Pastor(a), ${letterhead.congregationName}`,
+    pastorTitle: customized(
+      input.pastorTitleTemplate,
+      `Pastor(a), ${letterhead.congregationName}`,
+    ),
     secretaryName: input.secretaryName,
-    secretaryTitle: `Secretario(a), ${letterhead.congregationName}`,
+    secretaryTitle: customized(
+      input.secretaryTitleTemplate,
+      `Secretario(a), ${letterhead.congregationName}`,
+    ),
     issuedByName: input.issuedByName,
     memberName: member.fullName,
     memberCode: member.code,

@@ -20,7 +20,22 @@ export interface CertificateTypeRecord {
   readonly code: string;
   readonly name: string;
   readonly template: string | null;
+  readonly introTemplate: string | null;
+  readonly closingTemplate: string | null;
+  readonly pastorTitleTemplate: string | null;
+  readonly secretaryTitleTemplate: string | null;
   readonly validityDays: number | null;
+}
+
+/** The editable part of a certificate type. A field that is missing is left as it is; null clears it. */
+export interface CertificateTypeChanges {
+  readonly name?: string;
+  readonly validityDays?: number | null;
+  readonly template?: string | null;
+  readonly introTemplate?: string | null;
+  readonly closingTemplate?: string | null;
+  readonly pastorTitleTemplate?: string | null;
+  readonly secretaryTitleTemplate?: string | null;
 }
 
 export interface CertificateRecord {
@@ -99,6 +114,48 @@ export interface CertificateTypeView {
   readonly name: string;
   readonly validityDays: number | null;
   readonly hasTemplate: boolean;
+}
+
+/** A certificate type with the texts the denomination customized (null: the default text). */
+export interface CertificateTypeTemplateView {
+  readonly id: number;
+  readonly code: string;
+  readonly name: string;
+  readonly validityDays: number | null;
+  readonly template: string | null;
+  readonly introTemplate: string | null;
+  readonly closingTemplate: string | null;
+  readonly pastorTitleTemplate: string | null;
+  readonly secretaryTitleTemplate: string | null;
+}
+
+export interface TemplatePlaceholderView {
+  readonly key: string;
+  readonly description: string;
+}
+
+/** What the template editor needs: the types, the placeholders it may offer and the default texts. */
+export interface TemplateCatalogView {
+  readonly types: readonly CertificateTypeTemplateView[];
+  readonly placeholders: readonly TemplatePlaceholderView[];
+  readonly defaults: {
+    readonly intro: string;
+    readonly closing: string;
+    readonly pastorTitle: string;
+    readonly secretaryTitle: string;
+  };
+}
+
+/** A sample certificate rendered with the texts being edited (nothing is saved or issued). */
+export interface TemplatePreviewView {
+  readonly title: string;
+  readonly intro: string;
+  readonly body: string;
+  readonly closing: string;
+  readonly pastorName: string;
+  readonly pastorTitle: string;
+  readonly secretaryName: string;
+  readonly secretaryTitle: string;
 }
 
 export interface CertificateTypeOptionView {

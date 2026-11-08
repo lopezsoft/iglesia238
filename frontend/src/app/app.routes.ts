@@ -115,6 +115,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/secretariat/certificates.routes'),
       },
       {
+        path: 'certificate-templates',
+        title: 'Plantillas de certificados',
+        canMatch: [permissionGuard(...ACCESS.certificateTemplates)],
+        loadChildren: () => import('./features/secretariat/certificate-templates.routes'),
+      },
+      {
         path: 'attendance',
         title: 'Asistencia',
         canMatch: [permissionGuard(...ACCESS.attendance)],

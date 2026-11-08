@@ -8,6 +8,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## Sin publicar
 
+## 0.18.0 - 2026-11-08
+
+### Added
+
+- **Plantillas de certificados editables por denominación (`backend/src/modules/certificates`, `frontend/.../secretariat/certificate-templates`):** el administrador de la denominación puede editar el nombre, la vigencia y los textos que imprime cada tipo de certificado: encabezado, cuerpo, cierre y títulos bajo la firma del pastor y de la secretaría. Antes solo existía el cuerpo y no había forma de editarlo desde la aplicación.
+- **Endpoints `GET /api/certificate-types/templates`, `PATCH /api/certificate-types/:id` y `POST /api/certificate-types/:id/preview`:** el último devuelve una vista previa con datos ficticios, sin guardar nada. Cada cambio queda en la auditoría.
+- **Marcadores nuevos** `{{denomination}}`, `{{city}}`, `{{issuedOn}}`, `{{pastorName}}` y `{{secretaryName}}`, además de los existentes. Se rechaza un marcador que no exista o una llave sin cerrar, en vez de imprimirlo vacío.
+- **Permiso `certificate-types.manage`** para el rol `DENOMINATION_ADMIN`; el seed lo sincroniza en cada despliegue, sin migración de datos.
+
+### Changed
+
+- **Migración `20261108060000_certificate_type_full_templates`:** añade `intro_template`, `closing_template`, `pastor_title_template` y `secretary_title_template` (todas nulas) a `certificate_types`. Un texto en blanco vuelve al texto por defecto, así que nada cambia hasta que se personalice.
+- **Los certificados ya expedidos no cambian:** cada uno conserva el texto con el que se imprimió (su snapshot).
+
 ## 0.17.0 - 2026-11-08
 
 ### Added

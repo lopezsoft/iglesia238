@@ -21,6 +21,7 @@ import type {
   CertificateFilter,
   CertificateMember,
   CertificateRecord,
+  CertificateTypeChanges,
   CertificateTypeRecord,
   PageParams,
   ResolvedSigners,
@@ -64,6 +65,11 @@ import { ListCertificatesUseCase } from '../use-cases/list-certificates.use-case
 import { PreviewCertificateUseCase } from '../use-cases/preview-certificate.use-case.js';
 import { RenderCardPdfUseCase } from '../use-cases/render-card-pdf.use-case.js';
 import { RenderCertificatePdfUseCase } from '../use-cases/render-certificate-pdf.use-case.js';
+import {
+  ListCertificateTypeTemplatesUseCase,
+  PreviewCertificateTemplateUseCase,
+  UpdateCertificateTypeUseCase,
+} from '../use-cases/certificate-type-templates.use-cases.js';
 import { VerifyCertificateUseCase } from '../use-cases/verify-certificate.use-case.js';
 import {
   FindCertificateMemberUseCase,
@@ -220,6 +226,21 @@ class FakeCertificateRepository implements CertificateRepository {
         (t) => t.id === typeId && t.denominationId === scope.denominationId,
       ) ?? null,
     );
+  }
+
+  updateType(
+    scope: TenantScope,
+    typeId: number,
+    changes: CertificateTypeChanges,
+  ) {
+    const index = this.data.types.findIndex(
+      (t) => t.id === typeId && t.denominationId === scope.denominationId,
+    );
+    if (index === -1) {
+      return Promise.resolve(null);
+    }
+    this.data.types[index] = { ...this.data.types[index], ...changes };
+    return Promise.resolve(this.data.types[index]);
   }
 
   lastSequenceValues(scope: TenantScope, typeCodes: readonly string[]) {
@@ -636,6 +657,10 @@ export function buildWorld() {
         code,
         name,
         template: null,
+        introTemplate: null,
+        closingTemplate: null,
+        pastorTitleTemplate: null,
+        secretaryTitleTemplate: null,
         validityDays,
       });
     }
@@ -698,6 +723,16 @@ export function buildWorld() {
         certificates,
         renderer,
         new FakeVerificationLinks(),
+      ),
+      listTemplates: new ListCertificateTypeTemplatesUseCase(certificates),
+      updateType: new UpdateCertificateTypeUseCase(
+        certificates,
+        transactions,
+        audit,
+      ),
+      previewTemplate: new PreviewCertificateTemplateUseCase(
+        certificates,
+        clock,
       ),
       verify: new VerifyCertificateUseCase(
         new FakeVerificationLinks(),

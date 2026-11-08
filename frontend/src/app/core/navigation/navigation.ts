@@ -14,6 +14,7 @@ export const ACCESS = {
   applications: ['applications.review'],
   members: ['members.read'],
   certificates: ['certificates.issue'],
+  certificateTemplates: ['certificate-types.manage'],
   attendance: ['attendance.write'],
   secretariatRecords: ['members.write'],
   contributions: ['contributions.read'],
@@ -53,6 +54,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Sedes y razones sociales', shortLabel: 'Sedes', path: '/organization', icon: 'building', permissions: ACCESS.organization },
       { label: 'Política de datos', shortLabel: 'Política', path: '/privacy-policy', icon: 'shield-check', permissions: ACCESS.privacyPolicy },
       { label: 'Usuarios y roles', shortLabel: 'Usuarios', path: '/users', icon: 'users', permissions: ACCESS.users },
+      { label: 'Plantillas de certificados', shortLabel: 'Plantillas', path: '/certificate-templates', icon: 'certificate', permissions: ACCESS.certificateTemplates },
     ],
   },
   {

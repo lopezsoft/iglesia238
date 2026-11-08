@@ -5,6 +5,7 @@ import type { CertificateSnapshot } from '../certificate-document.js';
 import type {
   CertificateFilter,
   CertificateRecord,
+  CertificateTypeChanges,
   CertificateTypeRecord,
   PageParams,
 } from '../certificate.models.js';
@@ -33,6 +34,13 @@ export interface CertificateRepository {
   findType(
     scope: TenantScope,
     typeId: number,
+  ): Promise<CertificateTypeRecord | null>;
+  /** Applies the changes to a type of the denomination of the scope; null when it is not found there. */
+  updateType(
+    scope: TenantScope,
+    typeId: number,
+    changes: CertificateTypeChanges,
+    transaction: Transaction,
   ): Promise<CertificateTypeRecord | null>;
   /** Last issued number per type code in the congregation of the scope (0 when none). */
   lastSequenceValues(

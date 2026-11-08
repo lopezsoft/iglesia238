@@ -9,6 +9,8 @@ import {
 export const CertificateErrorCode = {
   CERTIFICATE_NOT_FOUND: 'CERTIFICATE_NOT_FOUND',
   CERTIFICATE_NOT_VERIFIABLE: 'CERTIFICATE_NOT_VERIFIABLE',
+  CERTIFICATE_TYPE_INVALID: 'CERTIFICATE_TYPE_INVALID',
+  CERTIFICATE_TEMPLATE_INVALID: 'CERTIFICATE_TEMPLATE_INVALID',
   CERTIFICATE_TYPE_NOT_FOUND: 'CERTIFICATE_TYPE_NOT_FOUND',
   CERTIFICATE_ALREADY_VOIDED: 'CERTIFICATE_ALREADY_VOIDED',
   MEMBER_NOT_FOUND: 'MEMBER_NOT_FOUND',
@@ -47,6 +49,18 @@ export const certificateNotVerifiable = () =>
   new NotFoundDomainException(
     'No pudimos verificar este documento: el código no es válido o el documento no existe.',
     CertificateErrorCode.CERTIFICATE_NOT_VERIFIABLE,
+  );
+
+export const certificateTypeInvalid = (message: string) =>
+  new InvalidInputException(
+    message,
+    CertificateErrorCode.CERTIFICATE_TYPE_INVALID,
+  );
+
+export const certificateTemplateInvalid = (message: string) =>
+  new InvalidInputException(
+    message,
+    CertificateErrorCode.CERTIFICATE_TEMPLATE_INVALID,
   );
 
 export const certificateTypeNotFound = () =>

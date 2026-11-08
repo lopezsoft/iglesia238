@@ -14,6 +14,8 @@ import type {
   CertificateListItemView,
   CertificateMember,
   CertificateRecord,
+  CertificateTypeRecord,
+  CertificateTypeTemplateView,
   MemberOptionView,
 } from './certificate.models.js';
 
@@ -115,5 +117,21 @@ export function toMemberOption(member: CertificateMember): MemberOptionView {
     joinedOn: member.joinedOn,
     isBaptized: member.isBaptized === true,
     waterBaptismOn: member.waterBaptismOn,
+  };
+}
+
+export function toTypeTemplateView(
+  record: CertificateTypeRecord,
+): CertificateTypeTemplateView {
+  return {
+    id: record.id,
+    code: record.code,
+    name: record.name,
+    validityDays: record.validityDays,
+    template: record.template,
+    introTemplate: record.introTemplate,
+    closingTemplate: record.closingTemplate,
+    pastorTitleTemplate: record.pastorTitleTemplate,
+    secretaryTitleTemplate: record.secretaryTitleTemplate,
   };
 }

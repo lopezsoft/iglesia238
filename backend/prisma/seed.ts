@@ -122,6 +122,7 @@ const PERMISSIONS = [
   'socioeconomic-profiles.read',
   'socioeconomic-profiles.write',
   'certificates.issue',
+  'certificate-types.manage',
   'attendance.write',
   'contributions.read',
   'contributions.write',
@@ -150,6 +151,7 @@ const ROLES: RoleSeed[] = [
     permissions: [
       'congregations.manage',
       'users.manage',
+      'certificate-types.manage',
       'members.read',
       'reports.read',
       'audit-logs.read',

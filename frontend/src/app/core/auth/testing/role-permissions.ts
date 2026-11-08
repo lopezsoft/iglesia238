@@ -8,6 +8,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly Permission[]>>
   DENOMINATION_ADMIN: [
     'congregations.manage',
     'users.manage',
+    'certificate-types.manage',
     'members.read',
     'reports.read',
     'audit-logs.read',
